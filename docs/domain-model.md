@@ -4,7 +4,7 @@
 
 ### Project
 
-A Door43 repository that a manager can oversee. A project has one subject/type, a target language, a manifest, a default branch, repository history, and zero or more releases.
+A Door43 repository that a manager can oversee. A project has one project type, a target language, project metadata, a default branch, repository history, and zero or more releases.
 
 ### Book and story
 
@@ -28,7 +28,7 @@ Door43 commits, tags, branches, and releases are the authoritative record of cha
 Door43 account
   └─ has write access to → Organization
                               └─ contains → Project (repository)
-                                               ├─ has → Manifest
+                                               ├─ has → Project metadata (Scripture Burrito model)
                                                ├─ contains → Books / Stories
                                                ├─ has → Default branch state
                                                └─ has → Project versions
@@ -39,9 +39,10 @@ Door43 account
 
 | Project type | Content units | Version-one target |
 | --- | --- | ---: |
-| Bible translation | Bible books | 66 |
+| Bible translation | Bible books | 27, 39, or 66 by testament scope |
 | Open Bible Stories | Stories | 50 |
 | Bible Passage Set | Deferred | Not applicable |
+| translationStudio, translationCore, helps | Read-only, unsupported | Not applicable |
 
 Coverage is the number of recognized units present in the repository compared with the type-specific target. It is not a claim that a book/story is translated, complete, or approved.
 
@@ -53,7 +54,8 @@ Coverage is the number of recognized units present in the repository compared wi
 - **Selected**: Explicitly chosen for the current release preparation.
 - **Carried forward**: Included from the previous full release without current unselected changes.
 - **Excluded**: Present in the current default branch but intentionally omitted from the candidate.
-- **Unknown**: Not mapped to a recognized book, story, manifest project, or known administrative file.
+- **Administrative**: Listed in project metadata without a book or story scope. Always carried forward.
+- **Unknown**: Neither a recognized book or story nor listed in project metadata.
 
 ## 5. Health states
 
@@ -128,25 +130,26 @@ The version is project-level and release-event-level:
 
 - First release: `v1.0.0`.
 - New book/story: increment minor.
-- Revision or manifest-only change: increment patch.
+- Revision or metadata-only change: increment patch.
+- Baseline is the latest full release on Door43 regardless of creator. Loose tags are coerced to semver; a bare year or no release defaults to `v1.0.0`.
 - Fundamental format change: increment major.
 - Multiple categories use the highest-impact increment.
 - Manager edits are allowed after calculation, but the final version must be valid and greater than the latest release.
 - Pre-release promotion does not increment the version.
 
-## 8. Manifest model
+## 8. Project metadata model
 
-The manifest is an administrative description of a project. tC Admin owns the editing experience but Door43 owns the committed file.
+Project metadata is an administrative description of a project. tC Admin owns the editing experience but Door43 owns the committed file.
 
-The structured editor must support the type-specific manifest shape, including the Resource Container `dublin_core`, `checking`, and `projects` structures. Optional keys remain represented when the specification requires them.
+The internal model is Scripture Burrito: identification, languages, type (flavor and scope), copyright, localized names, and ingredients with size, checksum, and scope. Resource Container projects are mapped into this model on read (ADR 0008). Scripture Burrito has no version field; the project version is the Door43 release tag.
 
-The subject is a project-purpose identity. It is selected early and immutable after the first valid save in version one.
+The flavor is the project-purpose identity. It is selected early and immutable after the first valid save in version one.
 
 ## 9. Boundaries
 
 - Door43 owns identity and permissions.
 - Door43 owns repository content history and releases.
 - The Door43 health checker owns health conclusions.
-- tC Admin owns workflow presentation, candidate selection, manifest form, snapshot orchestration, and safe retry behavior.
+- tC Admin owns workflow presentation, candidate selection, metadata form, snapshot orchestration, and safe retry behavior.
 - Translation tools and managers own translation authorship.
 - Passage Sets and assignment concepts are future domain extensions, not version-one entities.

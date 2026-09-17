@@ -1,83 +1,142 @@
 # tC Admin Roadmap
 
-Status: Accepted planning baseline
+Status: Accepted, 17 September 2026
+Audience: the engineering team building tC Admin
+Tracking: [GitHub milestones](https://github.com/unfoldingWord-box3/tc-admin-app/milestones) and `EPIC:` issues in `unfoldingWord-box3/tc-admin-app`
+
+## How this roadmap works
+
+A **milestone** is a slice a real manager can use end to end. A milestone is done when the named acceptance owner has used it on the target Door43 host, not when its issues are closed.
+
+An **epic** is one GitHub issue titled `EPIC: …` with the `epic` label and a task list of child issues. Epics are the build phases inside a milestone.
+
+Only Milestone 1 carries a date. Milestones 2 and 3 carry a target month and are re-planned after the Milestone 1 demo.
+
+Capacity assumption: one primary engineer working part time with agent assistance, with product and design support from Birch. If capacity changes, dates move; scope inside Milestone 1 does not grow.
 
 ## Version one outcome
 
-Deliver a trustworthy end-to-end loop for Bible and OBS repositories:
+A manager signs in with Door43, sees the health and coverage of every project they can write to, creates a valid Scripture Burrito project without hand-writing metadata, and releases exactly the books they choose without publishing unfinished work.
 
-`sign in → discover → create/manage → upload/manifest → health check → prepare release → pre-release/full release → revise`
+`sign in → discover → create → health check → prepare release → pre-release / full release → promote`
 
-## Phase 0 — API and dependency verification
+## Decisions this roadmap depends on
 
-- Verify the Door43 Swagger v1 operations and OAuth configuration.
-- Verify writable organization/repository discovery.
-- Verify repository creation, file create/update, branch/ref, release create, release edit/promotion, and release lookup behavior.
-- Verify the Door43 health-check request and response contract.
-- Verify the Resource Container templates and Bible/OBS manifest rules.
-- Determine Worker/API upload size limits.
+Recorded in [CONTEXT.md](../CONTEXT.md) and the [ADRs](adr). The ones that shape the build order:
 
-## Phase 1 — Auth and portfolio
+- Scripture Burrito is the internal model and the only format tC Admin writes. Resource Container projects are read through an RC-to-SB mapping in the Worker and released in their existing layout ([ADR 0008](adr/0008-scripture-burrito-is-the-internal-model.md)).
+- translationStudio, translationCore, and helps repositories appear read-only with the reason stated ([ADR 0009](adr/0009-show-unsupported-projects-read-only.md)).
+- Door43 runs health checks on every pushed branch. tC Admin polls for the result on the temporary release branch rather than triggering anything.
+- Coverage counts against testament scope: 27, 39, or 66 books; 50 stories.
+- The version is the Door43 release tag. Loose tags such as `v105` are coerced to semver and bumped. A bare year or no release defaults to `v1.0.0`. The manager can edit before release.
 
-- Hosted frontend and Cloudflare Worker foundation.
-- Door43 OAuth callback and secure session.
-- Writable organization/repository discovery.
-- Organization grouping, filters, configurable sorting, async analysis.
-- Project pills, coverage counts, health states, refresh behavior.
+## Milestone 1 — Release
 
-## Phase 2 — Project creation and repository management
+**Due:** Friday 16 October 2026
+**Demo:** live on production Door43 against a real Bahtraku repository, in front of Birch and the Bahtraku team
+**Development host:** QA Door43
+**Acceptance owner:** Birch, using the `birch` account
+**Scope:** Bible projects only. Read both Scripture Burrito and Resource Container. Create Scripture Burrito only.
 
-- Bible creation wizard.
-- OBS creation wizard using shared flow with type-specific templates.
-- Manifest form and validation.
-- Optional initial upload.
-- Upload batches, overwrite warnings, diffs, unknown files, and one-commit operations.
-- Setup incomplete recovery.
+### What a manager can do at the end
 
-## Phase 3 — Health and project detail
+1. Sign in with Door43 and see every writable repository grouped by organization, with coverage and health.
+2. Create a new Bible project with valid Scripture Burrito metadata, no editor required.
+3. Pick one or more books from an existing project, watch tC Admin assemble a snapshot, wait for Door43's health result, review generated release notes and the calculated version, create a pre-release, and promote it later.
 
-- Door43 health-check adapter.
-- Dashboard-load and manual-refresh checks.
-- Post-manifest-save checks.
-- Health findings and error states.
-- Coverage derived from recognized books/stories.
+### What is deliberately not in Milestone 1
 
-## Phase 4 — Release preparation and release
+Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-incomplete recovery beyond a retry link, accessibility audit, custom domain.
 
-- Candidate detection and selection.
-- Additive snapshot assembly.
-- `temp-tca-release/<version>` lifecycle.
-- Stale-source protection.
-- Required release-note generation and editing.
-- Calculated-but-editable project versions.
-- Optional pre-release creation.
-- Idempotent retry and release lookup.
-- Pre-release promotion.
+### Epics
 
-## Phase 5 — Hardening
+**EPIC: Environments and Door43 setup** ([#6](https://github.com/unfoldingWord-box3/tc-admin-app/issues/6)) (week one)
+- Create the `tc-admin-qa` organization on production Door43 so it survives QA resets. Seed repositories may hold files there but never releases.
+- Register one confidential OAuth application per host at site-admin or unfoldingWord org level, with production, QA, and local redirect URIs.
+- Write a seed script that copies one RC Bible (`bahtraku/id_tb1`) and one SB Bible (`bahtraku/Perjanjian-Baru-Pendau`) into `tc-admin-qa` on QA after each reset.
+- Confirm the OAuth secret copied to QA by a reset still works, or document the manual step.
+- Measure health-check latency on QA after a branch push and record the number.
 
-- Accessibility verification against WCAG 2.2 AA target.
-- Security review of OAuth, sessions, CSRF, upload paths, and diagnostics.
-- Failure-mode and retry testing.
-- Performance testing with portfolios above 100 repositories.
-- Future-localization architecture review.
-- Production deployment and operational runbook.
+**EPIC: Application foundation** ([#11](https://github.com/unfoldingWord-box3/tc-admin-app/issues/11))
+- Replace `prototypes/tc-admin` with `web/` (Vite, React, TypeScript) and `worker/` (Cloudflare Worker, small router, Workers KV sessions, Wrangler).
+- Copy the translationCore 4 design system tokens and components into `web/`.
+- Deploy to a `workers.dev` URL with QA and production environment configuration.
+- Vitest for units. One Playwright smoke test that signs in on QA and loads the portfolio.
 
-## Deferred scope
+**EPIC: Sign-in and session** ([#16](https://github.com/unfoldingWord-box3/tc-admin-app/issues/16))
+- Authorization-code exchange in the Worker, HttpOnly SameSite session cookie, CSRF protection on mutations.
+- Live permission re-check before every mutation. Fail closed.
+- Expired-session handling that preserves unsaved form state where safe.
 
+**EPIC: Project model** ([#22](https://github.com/unfoldingWord-box3/tc-admin-app/issues/22))
+- Scripture Burrito reader: metadata, ingredients, scope, administrative files.
+- Resource Container to Scripture Burrito mapping in the Worker, following the same file naming as Door43's own `/sb/` archive.
+- Project type detection, coverage by testament scope, unknown-file detection.
+- Unsupported types (ts, tc, helps) surfaced read-only with a reason.
+
+**EPIC: Portfolio and health** ([#27](https://github.com/unfoldingWord-box3/tc-admin-app/issues/27))
+- Writable-repository discovery with pagination and de-duplication (carry over from the prototype).
+- Organization grouping, filters, configurable sorting, asynchronous per-project analysis.
+- Health states from Door43's `healthcheck_severity`, with never-checked, running, unavailable, and error states distinct from healthy.
+- Refresh behavior.
+
+**EPIC: Create a Bible project** ([#32](https://github.com/unfoldingWord-box3/tc-admin-app/issues/32))
+- Wizard: organization, project type, repository name, target language, title, testament scope.
+- Generated `metadata.json` with tC Admin as generator, `scripture/textTranslation` flavor, license ingredient.
+- Setup-incomplete state with a retry link when repository creation succeeds but the first commit fails.
+
+**EPIC: Selective release** ([#41](https://github.com/unfoldingWord-box3/tc-admin-app/issues/41))
+- Candidate detection: new, changed released, unchanged, unknown, grouped for selection.
+- Snapshot on `temp-tca-release/<version>` bound to the source commit SHA, carrying forward the latest full release and adding only selected books.
+- Correct size and md5 for every touched Scripture Burrito ingredient. Manifest version and projects for Resource Container.
+- Health poll: every 5 seconds for 3 minutes, then hand off to a refresh button.
+- Version calculation and edit, required release notes, pre-release option, create, promote.
+- Stale-source protection, lost-response lookup by tag, retained branch on failure, branch deletion after success.
+
+**EPIC: Demo readiness** ([#44](https://github.com/unfoldingWord-box3/tc-admin-app/issues/44))
+- Written demo script against a Bahtraku repository on production.
+- Full rehearsal on QA, then on production with a pre-release that is promoted during the demo.
+
+## Milestone 2 — Manage
+
+**Target:** November 2026
+**Acceptance owner:** Birch
+
+### Epics
+
+- **EPIC: Uploads** ([#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45)) — files, folders, drag and drop; path safety; overwrite warnings with text diffs; one-commit batches; metadata ingredient proposals.
+- **EPIC: Metadata editing** ([#46](https://github.com/unfoldingWord-box3/tc-admin-app/issues/46)) — structured form over the Scripture Burrito model; validation on blur and save; diff review; direct commit; health rerun.
+- **EPIC: Convert Resource Container to Scripture Burrito** ([#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47)) — one-time, manager-confirmed conversion committed to the default branch, using Door43's `/sb/` archive as the reference output.
+- **EPIC: Open Bible Stories** ([#48](https://github.com/unfoldingWord-box3/tc-admin-app/issues/48)) — story detection, 50-story coverage, OBS creation with `gloss/textStories` flavor, release flow parity.
+- **EPIC: Setup-incomplete recovery** ([#49](https://github.com/unfoldingWord-box3/tc-admin-app/issues/49)) — resume creation from any failed step without deleting the repository.
+
+## Milestone 3 — Pilot
+
+**Target:** December 2026
+**Acceptance owner:** `jeane_manuhutu` at Yayasan BahtraKu, with `birch` as second tester
+**Host:** production Door43 on an unfoldingWord domain
+
+### Epics
+
+- **EPIC: Accessibility** ([#50](https://github.com/unfoldingWord-box3/tc-admin-app/issues/50)) — WCAG 2.2 AA pass; no color-only health signals.
+- **EPIC: Security review** ([#51](https://github.com/unfoldingWord-box3/tc-admin-app/issues/51)) — OAuth, sessions, CSRF, upload paths, diagnostics redaction.
+- **EPIC: Performance** ([#52](https://github.com/unfoldingWord-box3/tc-admin-app/issues/52)) — portfolios above 100 repositories load progressively; failure-mode and retry testing.
+- **EPIC: Operations** ([#53](https://github.com/unfoldingWord-box3/tc-admin-app/issues/53)) — custom domain, production secrets, runbook, monitoring of Door43 availability.
+- **EPIC: Bahtraku pilot** ([#54](https://github.com/unfoldingWord-box3/tc-admin-app/issues/54)) — named testers, a real release per week for four weeks, issues triaged with the pilot owner.
+
+## Deferred
+
+- Converter for translationStudio and translationCore repositories.
+- A tC Admin MCP server exposing Worker operations to Claude clients.
 - Bible Passage Sets.
-- Deeper file-content validation.
+- Deeper file-content validation beyond Door43's health check.
 - Translation editing and suggestions.
 - Assignment and issue management.
-- Coordinated multi-repository/union releases.
-- Pull requests and translation-content merge resolution.
-- Rich historical progress metrics beyond book/story coverage.
-- User-configurable progress definitions.
+- Coordinated multi-repository releases (today handled by `release_uw_resources`).
+- Pull requests and merge resolution for translation content.
+- Rich progress metrics and user-configurable progress definitions.
+- Interface localization (architecture allows it; English first).
 
-## Future extension seams
+## Related experiments
 
-- Add project-type adapters for Passage Sets without changing the project portfolio model.
-- Add content validators behind the existing health adapter.
-- Add a work-management context referencing Projects and Books/Stories.
-- Add coordinated release orchestration above the single-project release service.
-- Add localized UI strings without changing domain terminology or Door43 data.
+- `prototypes/door43-mcp` is a read-only Door43 MCP proof of concept. It is not a tC Admin deliverable.
