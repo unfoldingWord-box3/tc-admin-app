@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Door43 Field Kit</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-mark" aria-hidden="true">D43</div>
+        <div class="brand-copy">
+          <p class="eyebrow">MCP field kit</p>
+          <h1>Door43, as you.</h1>
+          <p class="muted">A tiny control room for read-only access to Door43 resources.</p>
+        </div>
+
+        <div class="connection-card">
+          <div class="connection-line"><span id="connection-dot" class="status-dot"></span><span id="connection-label">Checking connection</span></div>
+          <p id="health-label" class="muted small">Checking git.door43.org…</p>
+          <button id="connect-button" class="button button-primary button-full">Connect Door43</button>
+          <a class="text-link" href="https://door43.klappy.dev" target="_blank" rel="noreferrer">Open server home ↗</a>
+        </div>
+
+        <nav class="journey-nav" aria-label="Door43 workflows">
+          <p class="eyebrow nav-label">Journeys</p>
+          <div id="journey-list"></div>
+          <p class="eyebrow nav-label tools-label">More options</p>
+          <button class="nav-button" data-tool="docs" data-mode="map"><span class="nav-icon">◌</span><span><strong>What can I access?</strong><small>Browse available areas</small></span></button>
+          <button class="nav-button" data-tool="docs" data-mode="recipes"><span class="nav-icon">⌘</span><span><strong>All shortcuts</strong><small>See every ready-made prompt</small></span></button>
+          <button class="nav-button" data-tool="docs" data-mode="raw"><span class="nav-icon">⌗</span><span><strong>Explain a path</strong><small>Learn what it returns</small></span></button>
+          <button class="nav-button" data-tool="execute" data-mode="raw"><span class="nav-icon">↗</span><span><strong>Advanced read</strong><small>Build a precise request</small></span></button>
+          <button class="nav-button" data-tool="telemetry" data-mode="telemetry"><span class="nav-icon">◒</span><span><strong>Server activity</strong><small>Usage, speed, and problems</small></span></button>
+        </nav>
+
+        <div class="sidebar-footer"><span>v0.1 POC</span><span class="live-pill"><i></i> live upstream</span></div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div><p class="eyebrow">Door43 MCP / workspace</p><p id="crumb" class="crumb">Choose a journey to begin</p></div>
+          <button id="copy-mcp" class="button button-quiet">Copy MCP URL</button>
+        </header>
+
+        <section class="intro-row">
+          <div>
+            <p class="eyebrow accent">ONE SERVER · THREE TOOLS · SIX RECIPES</p>
+            <h2>Find the right read,<br /><em>then follow the pin.</em></h2>
+          </div>
+          <p class="intro-note">The UI keeps the MCP envelope visible so a successful exploration can become a repeatable agent prompt.</p>
+        </section>
+
+        <section class="prompt-deck panel">
+          <div class="prompt-deck-heading"><div><p class="eyebrow">Start here</p><h3>Use a canned prompt</h3><p class="muted">Choose what you want to know. We’ll fill in the MCP call for you.</p></div><span class="prompt-count">No API vocabulary needed</span></div>
+          <div id="prompt-list" class="prompt-list"></div>
+        </section>
+
+        <div id="status-banner" class="status-banner hidden" role="status"></div>
+
+        <section class="workspace-grid">
+          <div class="primary-column">
+            <section class="panel runner-panel">
+              <div class="panel-heading"><div><p class="eyebrow">Ready to ask</p><h3 id="workflow-title">Who am I?</h3><p id="workflow-description" class="muted">Read the logged-in Door43 identity.</p><p id="active-prompt" class="active-prompt">“Who am I signed in as?”</p></div><span id="tool-badge" class="tool-badge">safe read</span></div>
+              <form id="runner-form"></form>
+              <div class="plain-request"><span class="plain-request-icon">✓</span><div><strong>What will happen</strong><p id="request-summary">We’ll check which Door43 account is connected.</p></div></div>
+              <details class="technical-details"><summary>Technical request details</summary><div class="request-preview"><div class="preview-heading"><span>Request payload</span><span id="price-label" class="muted small">MCP envelope</span></div><pre id="request-preview"></pre></div></details>
+              <div class="runner-actions"><button id="run-button" class="button button-primary">Run live read <span>↗</span></button><span id="run-hint" class="muted small">Requires a Door43 login.</span></div>
+            </section>
+
+            <section class="panel response-panel">
+              <div class="panel-heading compact"><div><p class="eyebrow">Answer</p><h3 id="response-title">Nothing fetched yet</h3></div><span id="response-status" class="response-status">—</span></div>
+              <div id="response-meta" class="response-meta hidden"></div>
+              <div id="response-output" class="response-output"><div class="empty-state"><span>↳</span><p>Your answer will appear here in a readable format.</p></div></div>
+              <details id="response-raw" class="technical-details response-raw hidden"><summary>View raw response</summary><pre id="response-json"></pre></details>
+            </section>
+          </div>
+
+          <aside class="secondary-column">
+            <section class="panel map-panel"><div class="panel-heading compact"><div><p class="eyebrow">How it works</p><h3>Three simple actions</h3></div><span class="orbit">◌</span></div><div class="tool-stack"><div class="tool-row active"><span class="tool-symbol docs-symbol">◌</span><span><strong>Learn</strong><small>See what Door43 can provide</small></span><span class="tool-state">guide</span></div><div class="tool-row"><span class="tool-symbol execute-symbol">↗</span><span><strong>Read</strong><small>Get the information you asked for</small></span><span class="tool-state">safe</span></div><div class="tool-row"><span class="tool-symbol telemetry-symbol">◒</span><span><strong>Measure</strong><small>Check server usage and speed</small></span><span class="tool-state">stats</span></div></div><div class="map-footnote"><span class="legend-dot"></span><span>Everything here is read-only. Nothing can edit or delete Door43 content.</span></div></section>
+            <section class="panel note-panel"><p class="eyebrow">Helpful tip</p><h3>Keep a result stable.</h3><p class="muted">When you need the exact same version later, choose “Read a pinned file” and paste the version ID from an earlier result.</p><button class="button button-outline" data-tool="docs" data-mode="raw">Learn about a path <span>↗</span></button></section>
+            <section class="panel stats-panel"><div class="panel-heading compact"><div><p class="eyebrow">Live upstream</p><h3>Door43 pulse</h3></div><span id="pulse-icon" class="pulse-icon"></span></div><div class="stat-grid"><div><strong id="upstream-version">—</strong><small>DCS version</small></div><div><strong id="upstream-latency">—</strong><small>health latency</small></div></div></section>
+          </aside>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,1 @@
+{"name":"tc-admin-prototype","private":true,"type":"module","scripts":{"start":"node server.mjs","test":"node --test door43.test.mjs"}}

@@ -1,0 +1,10 @@
+.DS_Store
+node_modules/
+dist/
+coverage/
+.wrangler/
+.dev.vars*
+.env
+.env.*
+!.env.example
+**/qa-client.json

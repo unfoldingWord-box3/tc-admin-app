@@ -1,0 +1,287 @@
+# tC Admin Product Specification
+
+Status: Accepted planning baseline
+
+## 1. Product summary
+
+tC Admin is a hosted, desktop-first web application for Bible translation team leaders and project managers. It manages writable Door43 repositories from creation through manifest maintenance, health checking, selective release preparation, release creation, and pre-release promotion.
+
+The first release supports Bible translation projects and Open Bible Stories projects. Bible Passage Sets are deferred.
+
+## 2. Users and access
+
+### Primary user
+
+Bible translation team leaders and project managers who are responsible for the status and release of one or more Door43 projects.
+
+### Authentication and authorization
+
+- Authentication uses Door43 OAuth.
+- Door43 organization and repository permissions are authoritative.
+- The portfolio includes every organization and repository where the current user has write access.
+- Repositories that are read-only to the user are not shown in the normal portfolio.
+- tC Admin must re-check authorization before mutations and releases; a stale screen must not grant access.
+
+## 3. Goals
+
+1. Create valid Bible and OBS repositories without hand-writing manifests.
+2. Give managers one portfolio view of project health and coverage.
+3. Make safe file upload and overwrite operations possible without becoming a translation editor.
+4. Allow managers to prepare releases containing only selected new or revised books/stories.
+5. Reduce routine release support work for unfoldingWord.
+6. Make every failure explicit, recoverable, and safe to retry.
+
+## 4. Non-goals for version one
+
+- Bible Passage Sets.
+- Scripture or OBS text editing in an in-app editor.
+- Translation suggestions or content-quality judgments beyond the Door43 health checker.
+- Deep file-content validation; a later validator integration may add this.
+- Assignment, issue management, or work queues.
+- Pull-request creation or merge-conflict resolution for translation content.
+- Coordinated releases across multiple repositories.
+- A local replacement for Door43 history or release records.
+
+## 5. Portfolio experience
+
+### Organization and repository display
+
+- Group projects by organization as the primary hierarchy.
+- Allow configurable secondary ordering, including most recent activity or language.
+- Provide filters for organization, language, project type, and health state.
+- Analyze projects asynchronously and show the project immediately with a loading state.
+- Display coverage as books present out of 66 for Bible projects and stories present out of 50 for OBS projects.
+- Do not present coverage as translation completeness; it is repository/file coverage only.
+
+### Health indicator
+
+Each project pill displays a colored pill or eyebrow plus a small issue-count badge. Color is supplemented with text or an icon.
+
+The model includes distinct states for:
+
+- Healthy
+- Warning
+- Failing
+- Never checked
+- Health check running
+- Door43 unavailable
+- Unexpected health-check error
+- Unsupported project type
+
+The dashboard must not represent unavailable or unknown health as healthy.
+
+## 6. Repository creation
+
+### Wizard inputs
+
+The manager provides:
+
+- Organization
+- Subject/project type
+- Repository name
+- Target language
+- Source resource
+- Project title
+
+The wizard infers or prefills other manifest values from the selected type-specific Door43 template. The manager reviews the complete manifest before creation.
+
+After the organization is selected, subject is the first protected project-purpose choice. Once the first valid manifest is saved, subject cannot be changed through normal editing. A purpose transition is a major repository change and is outside the normal version-one edit flow.
+
+Book names and abbreviations can be inferred as files are added. The wizard may optionally accept an initial upload as its final step.
+
+### Creation acceptance criteria
+
+- A repository is created only in an organization where Door43 permits repository creation.
+- The initial manifest contains all required keys and valid type-specific structure.
+- If repository creation succeeds but manifest or initial upload fails, the project is shown as **Setup incomplete** with a retry path.
+- tC Admin does not automatically delete a partially created repository.
+
+## 7. Manifest management
+
+- The primary editor is a friendly structured form.
+- An optional obscured raw representation may be shown for inspection; the structured form remains authoritative for normal edits.
+- Validation occurs as close to editing as practical: on blur where possible, before save, and during save.
+- A successful save commits directly to the project's default branch.
+- The manager reviews the manifest diff before confirming the commit.
+- A manifest save creates one descriptive Door43 commit attributed to the authenticated Door43 user.
+- Manifest changes are not allowed while release preparation is active.
+- After a successful manifest commit, the project is refreshed and health is rerun.
+
+The generated manifest must follow the Resource Container rules, including retaining expected keys even when optional values are empty. See the [Resource Container manifest specification](https://resource-container.readthedocs.io/en/latest/manifest.html).
+
+## 8. File management
+
+### Uploads
+
+Support individual files, multiple selected files, folder-style selection, and drag-and-drop. Uploads accept regular repository-relative files, including unknown files, subject to safety checks.
+
+Reject:
+
+- Absolute paths
+- Path traversal
+- Symlinks
+- Executable behavior
+- Files or batches over configured size limits
+
+The exact byte limits remain an implementation-time decision. Typical operations are expected to contain fewer than 100 files.
+
+### Overwrites
+
+Before an overwrite, show the affected file and a clear warning. Provide a text diff where practical; for binary files provide old/new metadata comparison. The user confirms the selected files and then confirms one final operation summary.
+
+All accepted additions and overwrites commit together as one operation. Door43 remains the history and recovery mechanism.
+
+### Manifest inference
+
+When a recognized new book or OBS story is uploaded, tC Admin proposes the corresponding manifest project entry. The manager reviews the proposed diff. If accepted, the content files and manifest update are committed together.
+
+Unrecognized files appear in an **Unknown files** section. They may be included only after explicit confirmation, remain prominent in release review, and are identified in release notes.
+
+## 9. Health checking
+
+The Door43 health-check service is authoritative for repository and release-snapshot health. tC Admin must not reinterpret its result into a more permissive release decision.
+
+Health checks run:
+
+- When the dashboard loads
+- When the manager uses the refresh button
+- After a manifest commit
+- Before release creation
+
+Health analysis is asynchronous. A health-check error or unavailable service blocks release creation. The UI shows the exact actionable state and allows retry.
+
+## 10. Release preparation and release
+
+### Release candidate selection
+
+The manager prepares a release for one project at a time. Candidate books/stories are grouped as:
+
+- New and never released
+- Previously released with current-branch changes
+- Unchanged and available to carry forward
+- Unknown files
+
+The manager explicitly selects new books/stories and approved revisions.
+
+### Snapshot rules
+
+The release is assembled on a temporary branch named:
+
+`temp-tca-release/<version>`
+
+The snapshot contains:
+
+- Previously released books/stories carried forward unchanged
+- Newly selected books/stories from the current default branch
+- Selected revisions to previously released books/stories
+- Explicitly included unknown files
+- Required release metadata and manifest changes
+
+Unselected changes on the default branch must not enter the release. This is the central safety property of selective release.
+
+### Release stepper
+
+1. Select new and revised books/stories.
+2. Review the candidate snapshot and file differences.
+3. Run the health check.
+4. Review and edit required release notes.
+5. Confirm the calculated version or edit it.
+6. Choose whether to create a pre-release.
+7. Create the Door43 release.
+8. Promote the same release later if it was a pre-release.
+
+The temporary branch is deleted only after release creation succeeds. It remains available for inspection and retry after a release failure.
+
+If the project changes during preparation, tC Admin shows:
+
+> Project has been edited. The release process will need to restart.
+
+The candidate is discarded and the stepper restarts from selection.
+
+### Versioning
+
+- No prior release: `v1.0.0`.
+- New books/stories: increment the minor component.
+- Revisions or manifest-only changes: increment the patch component.
+- Fundamental format changes: increment the major component.
+- When multiple change categories occur, use the highest-impact category.
+- The manager may edit the calculated version.
+- The final version must be valid and greater than the latest release.
+- Promotion does not change version or contents.
+- Changes after a pre-release require a new version.
+
+### Release notes
+
+Release notes are required. tC Admin generates a draft that includes:
+
+- Newly added books/stories
+- Revised books/stories
+- Carried-forward content summary
+- Explicitly included unknown files
+- Project version and source snapshot/commit
+
+The manager must review and confirm the notes before release creation.
+
+## 11. Failure and retry requirements
+
+| Situation | Required behavior |
+| --- | --- |
+| Door43 unavailable | Show “Door43 is unavailable currently. Please refresh later.” Do not mutate. |
+| Door43 session expired | Ask the user to sign in again and preserve unsaved form state where safe. |
+| User loses write access | Re-evaluate access and remove the project from the writable portfolio. |
+| Concurrent project edit | Show the restart message, discard the candidate, and rerun preparation. |
+| Commit failure | Show `Commit failed: <error message>`. |
+| Health-check error | Show the health-check error, block release, and offer retry. |
+| Release creation failure | Keep the temporary branch and offer retry. |
+| Lost release response | Query Door43 for the expected tag/release before retrying. |
+| Existing expected release found | Show the existing release; do not create a duplicate. |
+| Pre-release promotion failure | Show `Pre-release promotion failed. <error message>`. |
+| Partial creation | Show Setup incomplete with retry; do not auto-delete the repository. |
+
+## 12. Success measures
+
+- Managers can see the status of their writable projects without inspecting each repository individually.
+- More projects are released more often.
+- Routine release support requests to unfoldingWord decrease.
+- Managers can create a valid repository and manifest without manual YAML authoring.
+- Release attempts do not publish unselected unfinished changes.
+
+## 13. Acceptance scenarios
+
+### Create a project
+
+Given a manager has repository-creation permission in an organization, when they complete the Bible or OBS wizard, then tC Admin creates the repository and a valid manifest, and the project appears in the portfolio.
+
+### Upload and overwrite
+
+Given a project contains `08-RUT.usfm`, when the manager selects a replacement file, then tC Admin shows an overwrite warning, presents the final batch summary, and commits the accepted changes together under the manager's Door43 identity.
+
+### Selective release
+
+Given Ruth was previously released and Jonah is ready on the default branch, when the manager selects Jonah only, then the release snapshot carries forward the released Ruth version, includes Jonah, excludes unselected changes, and creates a new repository version.
+
+### Revision release
+
+Given Ruth was previously released and a new approved Ruth revision exists, when the manager selects Ruth, then the snapshot includes the revision and the release notes identify Ruth as updated.
+
+### Unknown file
+
+Given a repository contains an unmapped file, when the manager prepares a release, then the file appears under Unknown files and is included only after explicit confirmation.
+
+### Stale release preparation
+
+Given a release stepper has already passed health checking, when the project changes, then tC Admin discards the candidate and requires a fresh health check.
+
+### Pre-release promotion
+
+Given a pre-release exists, when the manager promotes it, then Door43 changes only its release status; version and contents remain unchanged.
+
+## 14. Open implementation checks
+
+These are facts to verify during implementation, not product decisions:
+
+- Exact Door43 Swagger v1 operations for OAuth, writable-repository discovery, repository creation, file commits, branch/ref operations, release creation, release editing, and promotion.
+- Exact Door43 health-check endpoint and asynchronous result shape.
+- Type-specific templates and required manifest fields for Bible and OBS projects.
+- How DCS represents tags and release targets for temporary branches.
+- Safe upload byte limits for the Worker and Door43 API.
