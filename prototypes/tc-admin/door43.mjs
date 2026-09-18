@@ -1,25 +1,31 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
-// Development is QA-only. No production fallback, gateway, or production credentials.
-export const DCS_ORIGIN = 'https://qa.door43.org';
-export const environment = { name: 'QA', host: 'qa.door43.org', origin: DCS_ORIGIN, development: true };
+// The Door43 host comes from DOOR43_ORIGIN in the root .env file (loaded by `npm start`). QA is the default.
+const KNOWN_ORIGINS = { 'https://qa.door43.org': { name: 'QA', development: true }, 'https://git.door43.org': { name: 'Production', development: false } };
+export const DCS_ORIGIN = (process.env.DOOR43_ORIGIN || 'https://qa.door43.org').replace(/\/+$/, '');
+if (!KNOWN_ORIGINS[DCS_ORIGIN]) throw new Error(`DOOR43_ORIGIN must be https://qa.door43.org or https://git.door43.org, got "${DCS_ORIGIN}".`);
+export const environment = { ...KNOWN_ORIGINS[DCS_ORIGIN], host: new URL(DCS_ORIGIN).host, origin: DCS_ORIGIN };
+const ENV = environment.name;
 export const nonce = () => randomBytes(32).toString('base64url');
 export class Door43Error extends Error {
   constructor(message, status = 502) { super(message); this.status = status; }
 }
 export async function clientId() {
+  if (process.env.DOOR43_CLIENT_ID) return process.env.DOOR43_CLIENT_ID;
   if (process.env.DOOR43_QA_CLIENT_ID) return process.env.DOOR43_QA_CLIENT_ID;
   try { return JSON.parse(await readFile(new URL('./qa-client.json', import.meta.url), 'utf8')).clientId || ''; }
   catch { return ''; }
 }
+// Present for a confidential client; absent for a public (PKCE-only) client. Never sent to the browser.
+export function clientSecret() { return process.env.DOOR43_CLIENT_SECRET || ''; }
 async function request(url, options = {}) {
-  if (new URL(url).origin !== DCS_ORIGIN) throw new Door43Error('Development builds can only connect to Door43 QA.');
+  if (new URL(url).origin !== DCS_ORIGIN) throw new Door43Error(`This build only connects to ${environment.host}.`);
   return fetch(url, { ...options, redirect: 'error', signal: AbortSignal.timeout(30000) });
 }
 export async function beginLogin(redirectUri) {
   const id = await clientId();
-  if (!id) throw new Door43Error('QA sign-in is not configured yet. Please try again after setup.', 503);
+  if (!id) throw new Door43Error(`${ENV} sign-in is not configured yet. Set DOOR43_CLIENT_ID in .env.`, 503);
   const verifier = nonce(), state = nonce();
   const url = new URL('/login/oauth/authorize', DCS_ORIGIN);
   url.search = new URLSearchParams({ response_type: 'code', client_id: id, redirect_uri: redirectUri, code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256', scope: 'read:user read:repository read:organization', state });
@@ -28,20 +34,20 @@ export async function beginLogin(redirectUri) {
 export async function exchangeCode(pending, code) {
   const response = await request(`${DCS_ORIGIN}/login/oauth/access_token`, {
     method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'authorization_code', code, client_id: pending.clientId, redirect_uri: pending.redirectUri, code_verifier: pending.verifier }),
+    body: new URLSearchParams({ grant_type: 'authorization_code', code, client_id: pending.clientId, ...(clientSecret() ? { client_secret: clientSecret() } : {}), redirect_uri: pending.redirectUri, code_verifier: pending.verifier }),
   });
-  if (!response.ok) throw new Door43Error('QA sign-in could not be completed. Please sign in again.');
+  if (!response.ok) throw new Door43Error(`${ENV} sign-in could not be completed (${response.status}). Please sign in again.`);
   const token = await response.json();
-  if (!token.access_token) throw new Door43Error('Door43 QA did not return a valid session.');
+  if (!token.access_token) throw new Door43Error(`Door43 ${ENV} did not return a valid session.`);
   return { token: token.access_token, expiresAt: Date.now() + Math.min(Number(token.expires_in) || 3600, 28800) * 1000 };
 }
 export async function readDoor43(session, path, query = {}) {
-  if (!path.startsWith('/') || path.startsWith('//')) throw new Door43Error('Invalid QA API path.');
+  if (!path.startsWith('/') || path.startsWith('//')) throw new Door43Error('Invalid Door43 API path.');
   const url = new URL('/api/v1' + path, DCS_ORIGIN);
   url.search = new URLSearchParams(Object.entries(query).map(([key,value]) => [key,String(value)]));
   const response = await request(url.href, { headers: { accept: 'application/json', authorization: `Bearer ${session.token}` } });
-  if (response.status === 401) throw new Door43Error('Your QA session expired. Please sign in again.', 401);
-  if (!response.ok) throw new Door43Error(`Door43 QA could not read this resource (${response.status}).`, response.status === 403 ? 403 : 502);
+  if (response.status === 401) throw new Door43Error(`Your ${ENV} session expired. Please sign in again.`, 401);
+  if (!response.ok) throw new Door43Error(`Door43 ${ENV} could not read this resource (${response.status}).`, response.status === 403 ? 403 : 502);
   return response.json();
 }
 export async function readPages(session, path, query = {}) {

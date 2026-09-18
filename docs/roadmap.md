@@ -24,8 +24,10 @@ A manager signs in with Door43, sees the health and coverage of every project th
 
 Recorded in [CONTEXT.md](../CONTEXT.md) and the [ADRs](adr). The ones that shape the build order:
 
-- Scripture Burrito is the internal model and the only format tC Admin writes. Resource Container projects are read through an RC-to-SB mapping in the Worker and released in their existing layout ([ADR 0008](adr/0008-scripture-burrito-is-the-internal-model.md)).
-- translationStudio, translationCore, and helps repositories appear read-only with the reason stated ([ADR 0009](adr/0009-show-unsupported-projects-read-only.md)).
+- Scripture Burrito is the internal model, the only format tC Admin creates, and the format of every release. Door43's Scripture Burrito archive supplies repository content for release, converting Resource Container, translationStudio, and translationCore refs on the way ([ADR 0008](adr/0008-scripture-burrito-is-the-internal-model.md)).
+- Any valid repository can be released; only Scripture Burrito repositories can be edited. Others are release-only until converted ([ADR 0009](adr/0009-release-any-valid-repository-edit-only-scripture-burrito.md)).
+- Each release is one commit on top of the previous release tag, on a lineage separate from the default branch ([ADR 0010](adr/0010-release-lineage-from-the-previous-release-tag.md)). Releases add and update books, never remove them.
+- Hard dependency: Rich's DCS change so `/sb/{ref}.zip` serves a rollup when the ref is already Scripture Burrito, deciding by the ref's own metadata type. tC Admin uses `/sb/{ref}.zip` for every ref and nothing else.
 - Door43 runs health checks on every pushed branch. tC Admin polls for the result on the temporary release branch rather than triggering anything.
 - Coverage counts against testament scope: 27, 39, or 66 books; 50 stories.
 - The version is the Door43 release tag. Loose tags such as `v105` are coerced to semver and bumped. A bare year or no release defaults to `v1.0.0`. The manager can edit before release.
@@ -36,7 +38,7 @@ Recorded in [CONTEXT.md](../CONTEXT.md) and the [ADRs](adr). The ones that shape
 **Demo:** live on production Door43 against a real Bahtraku repository, in front of Birch and the Bahtraku team
 **Development host:** QA Door43
 **Acceptance owner:** Birch, using the `birch` account
-**Scope:** Bible projects only. Read both Scripture Burrito and Resource Container. Create Scripture Burrito only.
+**Scope:** Bible projects only. Release any of the four metadata formats. Create Scripture Burrito only.
 
 ### What a manager can do at the end
 
@@ -70,9 +72,9 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 
 **EPIC: Project model** ([#22](https://github.com/unfoldingWord-box3/tc-admin-app/issues/22))
 - Scripture Burrito reader: metadata, ingredients, scope, administrative files.
-- Resource Container to Scripture Burrito mapping in the Worker, following the same file naming as Door43's own `/sb/` archive.
-- Project type detection, coverage by testament scope, unknown-file detection.
-- Unsupported types (ts, tc, helps) surfaced read-only with a reason.
+- Door43 Scripture Burrito archive client: download and unpack `/sb/{ref}.zip` for any ref.
+- Project type and metadata format detection, coverage by testament scope, unknown-file detection.
+- Release-only (rc, ts, tc) and unsupported (no metadata) projects surfaced with a reason.
 
 **EPIC: Portfolio and health** ([#27](https://github.com/unfoldingWord-box3/tc-admin-app/issues/27))
 - Writable-repository discovery with pagination and de-duplication (carry over from the prototype).
@@ -87,8 +89,8 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 
 **EPIC: Selective release** ([#41](https://github.com/unfoldingWord-box3/tc-admin-app/issues/41))
 - Candidate detection: new, changed released, unchanged, unknown, grouped for selection.
-- Snapshot on `temp-tca-release/<version>` bound to the source commit SHA, carrying forward the latest full release and adding only selected books.
-- Correct size and md5 for every touched Scripture Burrito ingredient. Manifest version and projects for Resource Container.
+- Snapshot on `temp-tca-release/<version>` started from the previous release tag, one commit assembled from the release-tag and default-branch archives, bound to the default-branch SHA.
+- Metadata merge: previous release metadata plus selected books, refreshed administrative entries, size and md5 for every file, scope set to released books. Nothing preselected; first release needs at least one book; released books are never removed.
 - Health poll: every 5 seconds for 3 minutes, then hand off to a refresh button.
 - Version calculation and edit, required release notes, pre-release option, create, promote.
 - Stale-source protection, lost-response lookup by tag, retained branch on failure, branch deletion after success.
@@ -106,7 +108,7 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 
 - **EPIC: Uploads** ([#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45)) — files, folders, drag and drop; path safety; overwrite warnings with text diffs; one-commit batches; metadata ingredient proposals.
 - **EPIC: Metadata editing** ([#46](https://github.com/unfoldingWord-box3/tc-admin-app/issues/46)) — structured form over the Scripture Burrito model; validation on blur and save; diff review; direct commit; health rerun.
-- **EPIC: Convert Resource Container to Scripture Burrito** ([#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47)) — one-time, manager-confirmed conversion committed to the default branch, using Door43's `/sb/` archive as the reference output.
+- **EPIC: Convert a release-only project to Scripture Burrito** ([#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47)) — one-time, manager-confirmed conversion of the default branch using Door43's `/sb/` archive, turning a release-only project into an editable one.
 - **EPIC: Open Bible Stories** ([#48](https://github.com/unfoldingWord-box3/tc-admin-app/issues/48)) — story detection, 50-story coverage, OBS creation with `gloss/textStories` flavor, release flow parity.
 - **EPIC: Setup-incomplete recovery** ([#49](https://github.com/unfoldingWord-box3/tc-admin-app/issues/49)) — resume creation from any failed step without deleting the repository.
 
@@ -120,13 +122,14 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 
 - **EPIC: Accessibility** ([#50](https://github.com/unfoldingWord-box3/tc-admin-app/issues/50)) — WCAG 2.2 AA pass; no color-only health signals.
 - **EPIC: Security review** ([#51](https://github.com/unfoldingWord-box3/tc-admin-app/issues/51)) — OAuth, sessions, CSRF, upload paths, diagnostics redaction.
-- **EPIC: Performance** ([#52](https://github.com/unfoldingWord-box3/tc-admin-app/issues/52)) — portfolios above 100 repositories load progressively; failure-mode and retry testing.
+- **EPIC: Performance** ([#52](https://github.com/unfoldingWord-box3/tc-admin-app/issues/52)) — portfolios above 100 repositories load progressively; failure-mode and retry testing; archive sizes against Worker memory limits.
 - **EPIC: Operations** ([#53](https://github.com/unfoldingWord-box3/tc-admin-app/issues/53)) — custom domain, production secrets, runbook, monitoring of Door43 availability.
 - **EPIC: Bahtraku pilot** ([#54](https://github.com/unfoldingWord-box3/tc-admin-app/issues/54)) — named testers, a real release per week for four weeks, issues triaged with the pilot owner.
 
 ## Deferred
 
-- Converter for translationStudio and translationCore repositories.
+- Release support for other book package repositories: Translation Notes, Translation Questions, Translation Words Links.
+- Release support for subjects without book or story structure, such as Translation Words and Translation Academy, released whole.
 - A tC Admin MCP server exposing Worker operations to Claude clients.
 - Bible Passage Sets.
 - Deeper file-content validation beyond Door43's health check.

@@ -9,8 +9,8 @@ const PORT = Number(process.env.PORT || 4173);
 const ORIGIN = `http://127.0.0.1:${PORT}`;
 const sessions = new Map();
 const pending = new Map();
-const cookieName = 'tca_qa_session';
-const loginCookie = 'tca_qa_login';
+const cookieName = `tca_${environment.name.toLowerCase()}_session`;
+const loginCookie = `tca_${environment.name.toLowerCase()}_login`;
 function cookie(req, name) { return (req.headers.cookie || '').split(';').map(s => s.trim()).find(s => s.startsWith(name + '='))?.slice(name.length + 1); }
 function setCookie(res, name, value, age) { res.setHeader('set-cookie', `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${age}`); }
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(body)); }
@@ -63,4 +63,4 @@ async function handle(req, res) {
   } catch { json(res, 404, { error: 'Not found.' }); }
 }
 export const server = createServer((req, res) => handle(req, res).catch(error => json(res, error.status || 502, { error: error.status ? error.message : 'Door43 is unavailable currently. Please refresh later.' })));
-server.listen(PORT, '127.0.0.1', () => console.log(`tC Admin running at ${ORIGIN}`));
+server.listen(PORT, '127.0.0.1', async () => console.log(`tC Admin running at ${ORIGIN} against ${environment.host} (${environment.name}) · client ${await clientId() ? 'configured' : 'NOT configured'} · redirect URI ${ORIGIN}/auth/callback`));

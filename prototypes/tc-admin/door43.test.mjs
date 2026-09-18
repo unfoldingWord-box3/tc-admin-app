@@ -22,7 +22,7 @@ test('an OBS container entry does not mean zero stories', () => {
   assert.equal(projectFromRepository({...base,subject:'Open Bible Stories',ingredients:[{identifier:'obs',exists:true,path:'./content'}]}).count,null);
 });
 
-test('QA API reads target QA only and keep tokens in server headers', async () => {
+test('API reads target the configured origin only and keep tokens in server headers', async () => {
   const { readDoor43 } = await import('./door43.mjs');
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, options) => {
@@ -35,7 +35,7 @@ test('QA API reads target QA only and keep tokens in server headers', async () =
   try { assert.equal((await readDoor43({token:'test-only'},'/user')).login,'tester'); }
   finally { globalThis.fetch = originalFetch; }
 });
-test('QA account expiration requires a new login', async () => {
+test('account expiration requires a new login', async () => {
   const { readDoor43 } = await import('./door43.mjs');
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => new Response('',{status:401});
@@ -49,15 +49,26 @@ test('pagination rejects repeated pages rather than loading forever', async () =
   try { await assert.rejects(readPages({token:'test-only'},'/repos/search'),/repeated/); }
   finally { globalThis.fetch = originalFetch; }
 });
-test('OAuth sends granular read scopes and PKCE only to QA', async () => {
+test('OAuth sends granular read scopes and PKCE to the configured origin', async () => {
   const { beginLogin } = await import('./door43.mjs');
-  const old = process.env.DOOR43_QA_CLIENT_ID;
-  process.env.DOOR43_QA_CLIENT_ID = 'test-public-client';
+  const old = process.env.DOOR43_CLIENT_ID;
+  process.env.DOOR43_CLIENT_ID = 'test-client';
   try {
     const flow=await beginLogin('http://127.0.0.1:4173/auth/callback'), url=new URL(flow.url);
     assert.equal(url.origin,'https://qa.door43.org');
     assert.equal(url.searchParams.get('scope'),'read:user read:repository read:organization');
     assert.equal(url.searchParams.get('code_challenge_method'),'S256');
     assert.ok(flow.verifier.length>=43);
-  } finally { if(old===undefined) delete process.env.DOOR43_QA_CLIENT_ID; else process.env.DOOR43_QA_CLIENT_ID=old; }
+  } finally { if(old===undefined) delete process.env.DOOR43_CLIENT_ID; else process.env.DOOR43_CLIENT_ID=old; }
+});
+test('token exchange sends the client secret only when configured', async () => {
+  const { exchangeCode } = await import('./door43.mjs');
+  const originalFetch = globalThis.fetch, oldSecret = process.env.DOOR43_CLIENT_SECRET;
+  let body;
+  globalThis.fetch = async (url, options) => { body = new URLSearchParams(options.body); return new Response(JSON.stringify({access_token:'t',expires_in:60}),{headers:{'content-type':'application/json'}}); };
+  const pending = { clientId:'c', redirectUri:'http://127.0.0.1:4173/auth/callback', verifier:'v' };
+  try {
+    delete process.env.DOOR43_CLIENT_SECRET; await exchangeCode(pending,'code'); assert.equal(body.has('client_secret'), false);
+    process.env.DOOR43_CLIENT_SECRET='s3cret'; await exchangeCode(pending,'code'); assert.equal(body.get('client_secret'),'s3cret'); assert.equal(body.get('code_verifier'),'v');
+  } finally { globalThis.fetch = originalFetch; if(oldSecret===undefined) delete process.env.DOOR43_CLIENT_SECRET; else process.env.DOOR43_CLIENT_SECRET=oldSecret; }
 });

@@ -15,7 +15,7 @@ Cloudflare Worker (tC Admin backend-for-frontend)
     ├─ Door43 OAuth callback and session handling
     ├─ Project/repository adapter
     ├─ Metadata and file-operation workflows
-    ├─ Scripture Burrito model with Resource Container read mapping
+    ├─ Scripture Burrito model fed by Door43 Scripture Burrito archives
     ├─ Health-check adapter
     ├─ Release snapshot orchestrator
     └─ Error/idempotency boundaries
@@ -80,6 +80,7 @@ Provide a narrow internal interface over the Door43 API for:
 - Release and tag reads
 - Release creation and promotion/editing
 - Door43 compare and history links
+- Scripture Burrito archive download for any ref (`/{owner}/{repo}/sb/{ref}.zip`, a web route with no API equivalent)
 
 Keep the Swagger-generated/API-specific shapes at the adapter boundary. The product and domain layers should use tC Admin concepts such as `Project`, `ProjectMetadata`, `Ingredient`, `Book`, `Story`, `ReleaseSnapshot`, and `ProjectVersion`.
 
@@ -101,15 +102,15 @@ The UI should receive normalized data, while the raw service response remains av
 
 The orchestrator must:
 
-1. Read the latest full release and current default branch state.
-2. Detect new, changed, unchanged, and unknown files.
-3. Bind preparation to the current default-branch commit SHA.
-4. Create `temp-tca-release/<version>`.
-5. Populate it with carried-forward released content plus explicitly selected current content.
-6. Apply required metadata changes: ingredient size and md5 for Scripture Burrito, version and project entries for Resource Container.
-7. Run the health check against the temporary branch/ref.
-8. Re-check the source SHA before release creation.
-9. Create the Door43 release targeting the snapshot.
+1. Read the latest full release tag and the current default branch head; bind preparation to the default-branch commit SHA.
+2. Download the Scripture Burrito archive for the default branch and, when a release exists, for the latest full release tag. Door43 converts non-SB refs and rolls up SB refs.
+3. Detect new, changed released, unchanged, administrative, and unknown files by comparing the two trees.
+4. Create `temp-tca-release/<version>` from the latest full release tag, or from the default branch head for a first release (ADR 0010).
+5. Assemble one commit: root files and administrative ingredients from the default branch archive, released books from the tag archive, selected books from the default branch archive, and `metadata.json` merged from the previous release's metadata with size and md5 recomputed for every file and scope set to the released books.
+6. Push the commit with the multi-file contents endpoint.
+7. Poll the health check for the temporary branch.
+8. Re-check the default-branch SHA before release creation.
+9. Create the tag and Door43 release targeting the snapshot commit.
 10. Delete the temporary branch only after successful release creation.
 
 If the source SHA changes, the orchestrator must stop and return a restart-required result. It must never silently merge the new project state into an already reviewed candidate.
@@ -142,7 +143,7 @@ tC Admin must not become a content database or a second release-history database
 - Require explicit confirmation for overwrites and unknown-file inclusion.
 - Commit accepted file changes together.
 - Generate ingredient-entry proposals from recognized filenames; require manager confirmation.
-- Read Resource Container projects through an RC-to-SB mapping that follows the file naming of Door43's `/sb/` archive; never write Resource Container.
+- Never write to the default branch of a release-only project; a release touches only the temporary branch, the tag, and the Door43 release.
 - Never provide a Scripture/OBS text editor in version one.
 
 ## 6. Release safety and idempotency
@@ -202,7 +203,7 @@ Diagnostics may include request ID, project, commit SHA, version, target ref, he
 - [Door43 API Swagger](https://git.door43.org/swagger.v1.json)
 - [Scripture Burrito specification](https://docs.burrito.bible/)
 - [Resource Container manifest specification](https://resource-container.readthedocs.io/en/latest/manifest.html) (read-only mapping)
-- [Door43 RC-to-SB converter](https://github.com/unfoldingWord/go-rc2sb)
+- [Door43 RC-to-SB converter](https://github.com/unfoldingWord/go-rc2sb), used by Door43's Scripture Burrito archive
 - [Door43 health-check service](https://github.com/unfoldingWord/dcs/tree/release/dcs/v1.27/services/door43healthcheck)
 - [Reference release tooling](https://github.com/unfoldingWord-dev/release_uw_resources)
 - [Newer unfoldingWord application pattern](https://github.com/unfoldingWord/bible-editor)
