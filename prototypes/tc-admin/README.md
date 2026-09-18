@@ -1,6 +1,28 @@
-# tC Admin — QA development build
+# tC Admin — development prototype
 
-The local development build connects directly to **https://qa.door43.org**. Login, account reads, repository discovery, and repository links are QA-only. The Ocean title bar displays a persistent gold **QA · DEVELOPMENT** indicator (compact **QA** at narrow widths). There is no production fallback, sample portfolio, or mock account.
+The prototype connects to the Door43 host named in the root `.env` file. QA (`https://qa.door43.org`) is the default and the normal development target; production (`https://git.door43.org`) is allowed for sign-in verification only. The Ocean title bar shows **QA · DEVELOPMENT** or **PROD · PRODUCTION** according to the host. There is no sample portfolio or mock account.
+
+## Configure
+
+Create `.env` at the repository root (it is ignored by Git):
+
+```
+DOOR43_ORIGIN=https://qa.door43.org
+DOOR43_CLIENT_ID=<client id from the Door43 OAuth2 application>
+DOOR43_CLIENT_SECRET=<client secret, only for a confidential client>
+```
+
+Keep a second file such as `.env.prod` with the production values and copy it over `.env` when you want to test against production. `npm start` loads `../../.env` with Node's `--env-file-if-exists`, so no extra dependency is needed. `DOOR43_QA_CLIENT_ID` and `qa-client.json` still work as fallbacks for the client id.
+
+## Register the OAuth2 application on Door43
+
+On the chosen host, open Settings → Applications (your account, an organization, or the site admin area) and create an OAuth2 application:
+
+- Redirect URI: `http://127.0.0.1:4173/auth/callback` (exact match, including the port)
+- Confidential Client: checked if you will set `DOOR43_CLIENT_SECRET`; unchecked for a public PKCE-only client
+- Do not skip the authorization prompt
+
+Door43 never calls this server; the browser carries the redirect, so a local address works without any hosting. Register every redirect URI you will use on the production application, since QA is overwritten from production on each reset.
 
 ## Run
 
@@ -8,22 +30,9 @@ The local development build connects directly to **https://qa.door43.org**. Logi
 npm start --prefix prototypes/tc-admin
 ```
 
-Open http://127.0.0.1:4173. The previous Python static server cannot support login.
+Open http://127.0.0.1:4173 and choose **Sign in with Door43**. The startup line reports the host, whether a client id was found, and the exact redirect URI to register.
 
-## One-time QA OAuth setup
-
-Sign in to https://qa.door43.org/user/settings/applications and register:
-
-- Application name: `tC Admin QA Development`
-- Redirect URI: `http://127.0.0.1:4173/auth/callback`
-- Public client (Confidential Client unchecked)
-- Do not skip the authorization prompt.
-
-Store the public client ID in `prototypes/tc-admin/qa-client.json` as `{"clientId":"YOUR_PUBLIC_CLIENT_ID"}`, or set `DOOR43_QA_CLIENT_ID` when starting the server. The file is ignored by Git and is not served to browsers. No client secret is needed; the login uses PKCE S256. The server rereads the ID when starting login, so a new ID does not require a restart. Refresh the app after setup, then choose **Sign in with Door43 QA**.
-
-The authorization request uses only `read:user read:repository read:organization`. Tokens remain in server memory. The browser receives an opaque HttpOnly, SameSite cookie; QA cookies are named separately from the earlier production prototype. OAuth state expires after ten minutes, is single-use, and is bound to the initiating browser. Restarting the server clears sessions. A production deployment would need HTTPS Secure cookies and its own environment configuration and session storage.
-
-QA is reset from production periodically; the OAuth registration may need to be recreated after a reset. This build requests no production credentials and does not reuse production tokens.
+The authorization request uses only `read:user read:repository read:organization` and PKCE S256; the client secret, when present, is sent only in the server-side token exchange. Tokens remain in server memory. The browser receives an opaque HttpOnly, SameSite cookie named for the host. OAuth state expires after ten minutes, is single-use, and is bound to the initiating browser. Restarting the server clears sessions. A production deployment would need HTTPS Secure cookies and its own session storage.
 
 ## Portfolio
 
@@ -35,7 +44,7 @@ The connection is read-only. Use **Open in Door43** to manage a project on QA. C
 
 `?variant=A` shows cards grouped by owner, `B` a compact registry, and `C` health lanes. Use the bottom arrows to switch.
 
-Run `npm test --prefix prototypes/tc-admin` for QA-origin isolation, PKCE/scopes, expired sessions, pagination, coverage, and health normalization checks.
+Run `npm test --prefix prototypes/tc-admin` for origin isolation, PKCE/scopes, client-secret handling, expired sessions, pagination, coverage, and health normalization checks.
 
 QA end-to-end verification has been completed with a test account across multiple writable organizations and repositories. The prototype opened a real project on `qa.door43.org`, displayed the QA indicator, and completed authenticated repository discovery. No project mutations were performed.
 
