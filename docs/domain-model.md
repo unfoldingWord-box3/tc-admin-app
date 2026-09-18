@@ -8,7 +8,7 @@ A Door43 repository that a manager can oversee. A project has one project type, 
 
 ### Book and story
 
-A Bible project contains Bible books. An OBS project contains stories. These are the content-selection units within a project; they are not separate tC Admin projects.
+A Bible project is a book package repository: one file per Bible book, so books are the content-selection units for release. An OBS project contains stories, which are its selection units. Translation Notes, Translation Questions, and Translation Words Links repositories are also book package repositories and could be released the same way in a later version. None of these units are separate tC Admin projects.
 
 ### Project version
 

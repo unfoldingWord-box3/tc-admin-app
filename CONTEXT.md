@@ -10,11 +10,15 @@ _Avoid_: Workspace, release unit, project file, Bible (as the name for the repos
 
 **Project type**:
 The kind of content a project holds, derived from its metadata subject. Version one manages two types: Bible (including Aligned Bible) and Open Bible Stories.
-_Avoid_: Subject (in user-facing copy), resource type, book package
+_Avoid_: Subject (in user-facing copy), resource type
+
+**Book package repository**:
+A repository whose files are organized one per Bible book, so that books can be selected individually for release. Bible and Aligned Bible projects are book package repositories; Translation Notes, Translation Questions, and Translation Words Links repositories are too, and may be supported in a later version.
+_Avoid_: Multi-book repo, per-book repo
 
 **Bible project**:
-A project whose content units are Bible books.
-_Avoid_: Book package repo, book package
+A book package repository whose content is Scripture. The only book package type version one releases.
+_Avoid_: Bible (as the name for the repository), scripture repo
 
 **Metadata format**:
 How a repository describes itself on its default branch: Scripture Burrito, Resource Container, translationStudio, or translationCore. Any valid format can be released; only Scripture Burrito can be edited.

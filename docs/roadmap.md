@@ -27,7 +27,7 @@ Recorded in [CONTEXT.md](../CONTEXT.md) and the [ADRs](adr). The ones that shape
 - Scripture Burrito is the internal model, the only format tC Admin creates, and the format of every release. Door43's Scripture Burrito archive supplies repository content for release, converting Resource Container, translationStudio, and translationCore refs on the way ([ADR 0008](adr/0008-scripture-burrito-is-the-internal-model.md)).
 - Any valid repository can be released; only Scripture Burrito repositories can be edited. Others are release-only until converted ([ADR 0009](adr/0009-release-any-valid-repository-edit-only-scripture-burrito.md)).
 - Each release is one commit on top of the previous release tag, on a lineage separate from the default branch ([ADR 0010](adr/0010-release-lineage-from-the-previous-release-tag.md)). Releases add and update books, never remove them.
-- DCS change in progress: serve `/sb/{ref}.zip` as a rollup when the ref is already Scripture Burrito, deciding by the ref's own metadata type. Until it lands, the Worker falls back to `/archive/{ref}.zip` for SB refs.
+- Hard dependency: Rich's DCS change so `/sb/{ref}.zip` serves a rollup when the ref is already Scripture Burrito, deciding by the ref's own metadata type. tC Admin uses `/sb/{ref}.zip` for every ref and nothing else.
 - Door43 runs health checks on every pushed branch. tC Admin polls for the result on the temporary release branch rather than triggering anything.
 - Coverage counts against testament scope: 27, 39, or 66 books; 50 stories.
 - The version is the Door43 release tag. Loose tags such as `v105` are coerced to semver and bumped. A bare year or no release defaults to `v1.0.0`. The manager can edit before release.
@@ -72,7 +72,7 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 
 **EPIC: Project model** ([#22](https://github.com/unfoldingWord-box3/tc-admin-app/issues/22))
 - Scripture Burrito reader: metadata, ingredients, scope, administrative files.
-- Door43 Scripture Burrito archive client: download and unpack `/sb/{ref}.zip` for any ref, with the `/archive/` fallback for SB refs until the DCS change lands.
+- Door43 Scripture Burrito archive client: download and unpack `/sb/{ref}.zip` for any ref.
 - Project type and metadata format detection, coverage by testament scope, unknown-file detection.
 - Release-only (rc, ts, tc) and unsupported (no metadata) projects surfaced with a reason.
 
@@ -128,6 +128,7 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 
 ## Deferred
 
+- Release support for other book package repositories: Translation Notes, Translation Questions, Translation Words Links.
 - Release support for subjects without book or story structure, such as Translation Words and Translation Academy, released whole.
 - A tC Admin MCP server exposing Worker operations to Claude clients.
 - Bible Passage Sets.
