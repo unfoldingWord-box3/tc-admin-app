@@ -24,7 +24,7 @@ Rules that hold for every operation:
 5. **Permission at the boundary.** Every apply re-reads the repository permission first and fails closed (A2).
 6. **Idempotency by key.** Every apply accepts an idempotency key (the plan id serves) and returns the same receipt for a repeated call with the same key. An ambiguous outcome is reported, never retried silently (X1).
 7. **Errors from one catalog.** Every failure is a code from section 6 with the fixed user message, `retryable`, `next_action`, and `request_id` (X2).
-8. **Reads are cheap.** A read never downloads an archive unless the operation says so. Q17 decides the portfolio's analysis source.
+8. **Reads are cheap.** `portfolio.list` and `project.read` use the catalog metadata Door43 returns in the repository search (E12), which is the same for every project type; they never download an archive. Only `release.plan` downloads `/sb/` archives (Q17, closed).
 
 ## 2. Common shapes
 
@@ -45,10 +45,11 @@ project
   ref:               { owner, repo, id, url }
   title, description, default_branch
   language:          { code, title }
-  project_type:      bible | obs | other                 (Q11 decides how `other` is shown)
+  project_type:      bible | tn | tq | twl | obs | other   (see CONTEXT.md "Identifiers")
+  content_structure: book_package | story_package | whole  (derived from project_type)
   metadata_format:   sb | rc | ts | tc | none
   editability:       { state: editable | release_only | unsupported, reason }
-  coverage:          { present | null, target | null, scope: nt | ot | full | obs | unknown, basis, units: [{ id, present }] }
+  coverage:          { present | null, target | null, scope: nt | ot | full | obs | unknown, basis: catalog | archive, units: [{ id, present }] }
   health:            { state, severity_raw, ref, checked_at, issue_count | null, source: door43 }
   latest_full_release: { tag, version, sha, published_at, author } | null
   default_branch_head: { sha, committed_at }
@@ -156,7 +157,7 @@ The orientation call. One request tells a client who is signed in, which host, a
 ### `portfolio.list`
 
 - Inputs: optional filters (organization, language, project type, health state) and sort; filters are applied by the client where the whole portfolio is already loaded.
-- Door43 reads: repository search for the signed-in user, every page, de-duplicated by repository id (carried over from the prototype). Q17 decides whether per-project analysis reads the catalog metadata only or the `/sb/` archive.
+- Door43 reads: repository search for the signed-in user, every page, de-duplicated by repository id (carried over from the prototype). Per-project type, coverage, and health come from the catalog metadata in that response (E12); no archive is downloaded.
 - Returns: `{ organizations: [{ name, projects: [project summary] }], freshness, analysis: { complete, pending } }`. Projects appear immediately with `health.state = never_checked` and `coverage.present = null` until analysis completes (H3).
 - Filters: non-archived repositories with explicit push or admin permission (P1, P2). Nothing else is filtered out.
 - Errors: `session_expired`, `door43_unavailable`, `portfolio_too_large` (the prototype's read limit, retained until Milestone 3 performance work).
@@ -164,7 +165,7 @@ The orientation call. One request tells a client who is signed in, which host, a
 ### `project.read`
 
 - Inputs: `{ owner, repo }`.
-- Door43 reads: repository, default branch head, latest full release and its tag, health for the default branch. Archive download only when Q17 says so.
+- Door43 reads: repository catalog metadata, default branch head, latest full release and its tag, health for the default branch. No archive download (Q17); `coverage.basis = catalog`.
 - Returns: the project report.
 - Errors: `not_found`, `permission_denied` (the repository is not writable), `session_expired`, `door43_unavailable`.
 
@@ -201,7 +202,7 @@ Candidate detection and everything the manager needs to decide, with no writes.
 
 - Inputs: `{ owner, repo }`.
 - Door43 reads: default-branch head SHA; latest full release and its tag SHA; the `/sb/` archive for the default branch and, when a release exists, for the release tag. The archives are cached for the plan's lifetime so `release.prepare` does not download them again.
-- Computes: candidate groups (`new`, `changed_released`, `unchanged`, `unknown`) by comparing the two trees, with administrative ingredients and root files always taken from the default branch (R1); the proposed version from the baseline (R9); a draft of the release notes (product spec §10).
+- Computes: candidate groups (`new`, `changed_released`, `unchanged`, `unknown`) by comparing the two trees, with administrative ingredients and root files always taken from the default branch (R1); the proposed version from the baseline (R9); a draft of the release notes (product spec §10). The merged metadata's `currentScope` will list exactly the released books (Q7).
 - Returns: `plan.preview = { candidates: { new, changed_released, unchanged, unknown }, administrative: [path], version: { baseline_tag, proposed, rule_applied }, notes_draft, selection: {} }` with nothing selected (R4). `would_write = [branch, commit]`.
 - Errors: `not_releasable` (unsupported project), `permission_denied`, `archive_failed`, `session_expired`, `door43_unavailable`.
 
@@ -217,16 +218,16 @@ Candidate detection and everything the manager needs to decide, with no writes.
 
 - Inputs: `{ owner, repo, preparation_id }`.
 - Door43 reads: health for the temporary branch; default-branch head SHA. The Worker polls health every 5 seconds for 3 minutes after the push, then returns `health_checking` and lets the client refresh (Q2 tunes the constants).
-- Returns: the preparation. If the default-branch head moved, `state = restart_required` (R5). Health states map per H1; anything other than success leaves the preparation short of `ready_for_release` (H2; Q6 decides `warning`).
+- Returns: the preparation. If the default-branch head moved, `state = restart_required` (R5). Health states map per H1. `healthy` and `warning` move the preparation to `ready_for_release`; when the state is `warning`, `preparation.requires_acknowledgement` is true and the health issues are included for the manager to read. Every other state leaves the preparation short of `ready_for_release` (H2).
 - Errors: `not_found`, `session_expired`, `door43_unavailable`.
 
 ### `release.create`
 
-- Inputs: `{ owner, repo, preparation_id, version, notes, prerelease: boolean }`.
-- Checks: preparation in `ready_for_release`: health success on the snapshot (H2), `notes` non-empty, `version` valid and greater than the baseline (R9); `bound_to` re-read and unchanged (R5); permission re-read (A2).
+- Inputs: `{ owner, repo, preparation_id, version, notes, prerelease: boolean, acknowledge_warnings: boolean }`.
+- Checks: preparation in `ready_for_release`: snapshot health `healthy`, or `warning` with `acknowledge_warnings: true` (H2); `notes` non-empty; `version` valid and greater than the baseline (R9); `bound_to` re-read and unchanged (R5); permission re-read (A2).
 - Door43 writes: tag and Door43 release targeting the snapshot commit with the notes and pre-release flag; then delete the temporary branch (R3, R7).
-- Returns: `receipt.result = preparation` in `pre_release` or `full_release` with `release = { tag, url, prerelease }`. A failed branch deletion after a successful release is a `warnings` entry, not an error.
-- Errors: `health_blocked`, `invalid_version`, `validation_failed` (empty notes), `source_changed`, `permission_denied`, `release_failed` (branch retained, state `retryable_failure`), `release_outcome_unknown` (next action `release.lookup`), `release_exists`.
+- Returns: `receipt.result = preparation` in `pre_release` or `full_release` with `release = { tag, url, prerelease }`. When warnings were acknowledged the receipt records it (`acknowledged_warnings: true`). A failed branch deletion after a successful release is a `warnings` entry, not an error.
+- Errors: `health_blocked`, `warning_not_acknowledged`, `invalid_version`, `validation_failed` (empty notes), `source_changed`, `permission_denied`, `release_failed` (branch retained, state `retryable_failure`), `release_outcome_unknown` (next action `release.lookup`), `release_exists`.
 
 ### `release.lookup`
 
@@ -253,8 +254,10 @@ Defined in [domain-model.md](domain-model.md) and repeated here so a client can 
 
 | Field | Values |
 | --- | --- |
-| `project_type` | `bible`, `obs`, `other` |
+| `project_type` | `bible`, `tn`, `tq`, `twl`, `obs`, `other` |
+| `content_structure` | `book_package`, `story_package`, `whole` |
 | `metadata_format` | `sb`, `rc`, `ts`, `tc`, `none` |
+| `coverage.basis` | `catalog`, `archive` |
 | `editability.state` | `editable`, `release_only`, `unsupported` |
 | `coverage.scope` | `nt`, `ot`, `full`, `obs`, `unknown` |
 | `health.state` | `healthy`, `warning`, `failing`, `never_checked`, `checking`, `door43_unavailable`, `health_error`, `unsupported` |
@@ -286,6 +289,7 @@ Defined in [domain-model.md](domain-model.md) and repeated here so a client can 
 | `commit_failed` | 502 | yes | "Commit failed: <error message>." | retry | Commit failure | X1, R7 |
 | `archive_failed` | 502 | yes | "Door43 could not provide the project archive. Try again later." | retry | — | — |
 | `health_blocked` | 409 | yes | the health-check error or state | refresh health; retry when Door43 recovers | Health-check error | H2 |
+| `warning_not_acknowledged` | 409 | after confirmation | "The health check reported warnings. Review them and confirm to release anyway." | show the warnings; resend with `acknowledge_warnings: true` | Health warning | H2 |
 | `release_failed` | 502 | yes | "Release creation failed: <error message>." | retry; the temporary branch is kept | Release creation failure | R7 |
 | `release_outcome_unknown` | 502 | via lookup | "Door43 did not confirm the release." | run `release.lookup` for the tag before retrying | Lost release response | R6, X1 |
 | `release_exists` | 409 | no | "This release already exists on Door43." | open the existing release | Existing expected release found | R6 |

@@ -32,7 +32,7 @@ Recorded in [CONTEXT.md](../CONTEXT.md) and the [ADRs](adr). The ones that shape
 - Former hard dependency, satisfied: the DCS change so `/sb/{ref}.zip` serves a rollup when the ref is already Scripture Burrito shipped and was verified on production and QA on 18 September 2026 for all four formats (evidence E1 to E4). tC Admin uses `/sb/{ref}.zip` for every ref and nothing else.
 - Everything the system can do is a named operation with plan, apply, and receipt; the UI and any later agent client are projections of one catalog ([ADR 0011](adr/0011-one-operation-catalog-with-plan-apply-and-receipt.md)). The shared schema comes before the first route.
 - Tests run against recorded Door43 fixtures; live probes write evidence records ([ADR 0012](adr/0012-recorded-door43-fixtures-and-evidence-records.md)).
-- Open questions that shape Milestone 1 code are numbered in [evidence.md](evidence.md) with owners. The ones that block release code: Q1, Q2, Q3, Q6, Q7, Q8, Q10, Q17.
+- Open questions that shape Milestone 1 code are numbered in [evidence.md](evidence.md) with owners. Still open and blocking release code: Q1, Q2, Q3, Q8, Q10. Decided 18 September 2026: a `warning` health result does not block release but requires the manager's confirmation (Q6); a release's `currentScope` lists the released books (Q7); Translation Notes, Translation Questions, and Translation Words Links are book package types with the same creation and release flow as Bible (Q11); the portfolio reads catalog metadata, never archives (Q17).
 - Door43 runs health checks on every pushed branch. tC Admin polls for the result on the temporary release branch rather than triggering anything.
 - Coverage counts against testament scope: 27, 39, or 66 books; 50 stories.
 - The version is the Door43 release tag. Loose tags such as `v105` are coerced to semver and bumped. A bare year or no release defaults to `v1.0.0`. The manager can edit before release.
@@ -134,7 +134,7 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 
 ## Deferred
 
-- Release support for other book package repositories: Translation Notes, Translation Questions, Translation Words Links.
+- Creation and release of the other book package types, Translation Notes, Translation Questions, and Translation Words Links: the same operations as Bible, parameterized by flavor and book file pattern (Q11 decided; Q18 records the flavor and pattern). Not in Milestone 1; scheduled at the Milestone 1 re-plan.
 - Release support for subjects without book or story structure, such as Translation Words and Translation Academy, released whole.
 - A tC Admin MCP server exposing Worker operations to Claude clients. After ADR 0011 this is a projection of the operation catalog, one tool per operation with the same schemas, errors, and plan-before-apply rule, so it is a small epic rather than a redesign; it stays deferred because no partner has asked for it yet.
 - Bible Passage Sets.

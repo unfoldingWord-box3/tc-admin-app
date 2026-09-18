@@ -47,7 +47,8 @@ Door43 account
 
 | Project type | Content units | Version-one target |
 | --- | --- | ---: |
-| Bible translation | Bible books | 27, 39, or 66 by testament scope |
+| Bible translation (including Aligned Bible) | Bible books, one `.usfm` file per book | 27, 39, or 66 by testament scope |
+| Translation Notes, Translation Questions, Translation Words Links | Bible books, one `.tsv` file per book | 27, 39, or 66 by testament scope |
 | Open Bible Stories | Stories | 50 |
 | Bible Passage Set | Deferred | Not applicable |
 | Any of the above in Resource Container, translationStudio, or translationCore format | Release-only until converted | As above |
@@ -55,7 +56,9 @@ Door43 account
 
 Coverage is the number of recognized units present in the repository compared with the type-specific target. It is not a claim that a book/story is translated, complete, or approved (H5). Unknown coverage is `null`, never zero and never complete (H3).
 
-Identifiers: `project_type` is `bible`, `obs`, or `other`; `metadata_format` is `sb`, `rc`, `ts`, `tc`, or `none`; `editability` is `editable` (Scripture Burrito), `release_only` (Resource Container, translationStudio, translationCore), or `unsupported` (no recognized metadata), always with a one-line reason. A writable repository with valid metadata of another type (Translation Notes and similar) is `other`; how it is shown is open question Q11.
+Identifiers: `project_type` is `bible`, `tn`, `tq`, `twl`, `obs`, or `other`; `content_structure`, derived from it, is `book_package` (the first four), `story_package` (`obs`), or `whole` (`other`); `metadata_format` is `sb`, `rc`, `ts`, `tc`, or `none`; `editability` is `editable` (Scripture Burrito), `release_only` (Resource Container, translationStudio, translationCore), or `unsupported` (no recognized metadata), always with a one-line reason. Every book package type is created and released through the same operations, parameterized by its flavor and book file pattern (Q11, decided; Q18 records the flavor and pattern for the `.tsv` types). Milestone 1 exercises `bible`. A writable repository whose subject has no book or story structure (Translation Words, Translation Academy) is `other`: listed, with the reason stated, and neither releasable nor editable in version one.
+
+Type, coverage, and health are read from the catalog metadata Door43 returns in the repository search, which is the same for every type (E12); the `/sb/` archive is read only when planning a release.
 
 ## 4. Content inclusion states
 
@@ -83,7 +86,7 @@ Health is separate from project lifecycle and release state.
 - `health_error`
 - `unsupported`
 
-Only a successful health result can advance a release candidate toward release creation (H1, H2; open question Q6 decides `warning`). The Door43 health-check service determines the result and severity. Every health value carries the ref it was read for, the time, and the raw severity.
+A `healthy` result advances a release candidate toward release creation. A `warning` result also advances it, but release creation then requires the manager to have read the warnings and confirmed (H2, Q6 decided). Every other state blocks (H1, H2). The Door43 health-check service determines the result and severity. Every health value carries the ref it was read for, the time, and the raw severity.
 
 ## 6. Release state model
 
@@ -118,11 +121,12 @@ A release preparation is an addressable resource (see the [operation catalog](op
 | `selecting` | `release.prepare` | selection valid (R2, R4), version valid (R9), sha unchanged, permission (A2) | `snapshot_prepared` |
 | `selecting` | `release.prepare` | commit failed | `retryable_failure` |
 | `snapshot_prepared` | push confirmed | — | `health_checking` |
-| `health_checking` | health read | success | `ready_for_release` |
+| `health_checking` | health read | `healthy` | `ready_for_release` |
+| `health_checking` | health read | `warning` | `ready_for_release` with `requires_acknowledgement` |
 | `health_checking` | health read | failing, unavailable, error | `health_blocked` |
 | `health_checking` | health read | still running | `health_checking` |
 | `health_blocked` | manager retries | — | `health_checking` |
-| `ready_for_release` | `release.create` | notes confirmed, version valid, sha unchanged, permission | `pre_release` or `full_release` |
+| `ready_for_release` | `release.create` | notes confirmed, version valid, warnings acknowledged when present, sha unchanged, permission | `pre_release` or `full_release` |
 | `ready_for_release` | `release.create` | Door43 failed | `retryable_failure` |
 | `ready_for_release` | `release.create` | outcome unknown | `retryable_failure` (next action `release.lookup`, R6) |
 | `retryable_failure` | `release.lookup` | release found | `pre_release` or `full_release` |

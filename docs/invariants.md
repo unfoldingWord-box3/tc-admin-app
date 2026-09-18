@@ -96,11 +96,11 @@ Enforced in: `worker/src/model/health` (pure mapping, no local judgement); `work
 Verified by: mapping tests over every observed severity; no code path sets `healthy` without a Door43 success result.
 Issues: #25, #36.
 
-### H2 — Anything but a successful health result blocks release
-A failing, unavailable, errored, running, or never-run health check on the snapshot branch blocks release creation. Open question Q6 decides how `warning` is treated.
-Source: ADR 0007; product spec §9 and §11; domain model §5.
-Enforced in: `worker/src/operations/release-create` (precondition on `preparation.health.state`).
-Verified by: release attempt in each non-success state returns `health_blocked` and writes nothing.
+### H2 — Health blocks release, and a warning needs acknowledgement
+A failing, unavailable, errored, running, or never-run health check on the snapshot branch blocks release creation. A `warning` result does not block, but release creation requires the manager to have seen the warnings and confirmed they want to proceed; without that confirmation it is refused (decided 18 September 2026, Q6).
+Source: ADR 0007 (amended); product spec §9 and §11; domain model §5.
+Enforced in: `worker/src/operations/release-create` (precondition on `preparation.health.state`; `acknowledge_warnings` required when the state is `warning`).
+Verified by: release attempt in each blocking state returns `health_blocked` and writes nothing; release attempt on `warning` without acknowledgement returns `warning_not_acknowledged` and writes nothing; with acknowledgement it proceeds and the receipt records the acknowledgement.
 Issues: #36, #39.
 
 ### H3 — Unknown is never shown as good
@@ -118,7 +118,7 @@ Verified by: component test that every health state renders a visible label; Mil
 Issues: #8, #25, #50.
 
 ### H5 — Coverage is file coverage
-Coverage counts recognized books or stories present against the testament-scope target (27, 39, 66) or 50 stories. It is never presented as translation completeness.
+Coverage counts recognized books or stories present against the testament-scope target (27, 39, 66) for any book package type, or 50 stories. It is never presented as translation completeness. It is computed from catalog metadata (E12), and it is distinct from a release's `currentScope`, which lists only released books (Q7).
 Source: CONTEXT.md "Coverage"; product spec §5.
 Enforced in: `worker/src/model/project` (coverage carries `basis` and `target`); `web` copy uses the glossary wording.
 Verified by: coverage tests over each scope; UI copy review against CONTEXT.md.

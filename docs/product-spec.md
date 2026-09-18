@@ -156,6 +156,8 @@ Door43 runs the health check itself on every pushed branch and tag; tC Admin rea
 
 Health analysis is asynchronous. A health-check error or unavailable service blocks release creation. The UI shows the exact actionable state and allows retry.
 
+A health result of severity `warning` on the release snapshot does not block release creation. tC Admin shows the warnings and asks the manager to confirm they want to proceed; the release is created only after that confirmation (decided 18 September 2026).
+
 ## 10. Release preparation and release
 
 ### Release candidate selection
@@ -244,6 +246,7 @@ Each situation is an error code in the [operation catalog](operations.md) §6, w
 | Concurrent project edit | `source_changed` | Show the restart message, discard the candidate, and rerun preparation. |
 | Commit failure | `commit_failed` | Show `Commit failed: <error message>`. |
 | Health-check error | `health_blocked` | Show the health-check error, block release, and offer retry. |
+| Health-check warning | `warning_not_acknowledged` | Show the warnings; create the release only after the manager confirms they want to proceed. |
 | Release creation failure | `release_failed` | Keep the temporary branch and offer retry. |
 | Lost release response | `release_outcome_unknown` | Query Door43 for the expected tag/release before retrying. |
 | Existing expected release found | `release_exists` | Show the existing release; do not create a duplicate. |
@@ -301,4 +304,4 @@ These are facts to verify during implementation, not product decisions. Each is 
 - How DCS represents tags and release targets for temporary branches (Q5).
 - Safe upload byte limits for the Worker and Door43 API (Q15).
 
-Product decisions still open, owned by the acceptance owner: whether a `warning` health result blocks release (Q6), how projects of other types are shown (Q11), and whether a manager can discard a preparation (Q14).
+Product decisions still open: whether a manager can discard a preparation (Q14). Decided on 18 September 2026 and recorded in the evidence register: a `warning` does not block release but requires confirmation (Q6); Translation Notes, Translation Questions, and Translation Words Links are book package types created and released like Bible (Q11); the portfolio reads catalog metadata, not archives (Q17); a release's `currentScope` lists the released books (Q7).

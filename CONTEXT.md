@@ -9,11 +9,11 @@ A Door43 repository managed through tC Admin. A project may contain multiple Bib
 _Avoid_: Workspace, release unit, project file, Bible (as the name for the repository)
 
 **Project type**:
-The kind of content a project holds, derived from its metadata subject. Version one manages two types: Bible (including Aligned Bible) and Open Bible Stories.
+The kind of content a project holds, derived from its metadata subject. Recognized types: Bible (including Aligned Bible), Translation Notes, Translation Questions, Translation Words Links, and Open Bible Stories. The first four are book package types and share one creation and release flow; Milestone 1 exercises Bible. Any other subject is listed but neither released nor edited in version one.
 _Avoid_: Subject (in user-facing copy), resource type
 
 **Book package repository**:
-A repository whose files are organized one per Bible book, so that books can be selected individually for release. Bible and Aligned Bible projects are book package repositories; Translation Notes, Translation Questions, and Translation Words Links repositories are too, and may be supported in a later version.
+A repository whose files are organized one per Bible book, so that books can be selected individually for release. Bible and Aligned Bible projects are book package repositories with one `.usfm` file per book; Translation Notes, Translation Questions, and Translation Words Links repositories are too, with one `.tsv` file per book. All are created and released through the same operations (decided 18 September 2026, Q11); the milestone that delivers the `.tsv` types is set at the Milestone 1 re-plan.
 _Avoid_: Multi-book repo, per-book repo
 
 **Bible project**:
@@ -166,10 +166,12 @@ The identifier is the only spelling used in code, API payloads, tests, logs, and
 
 | Term | Identifier | Values |
 | --- | --- | --- |
-| Project type | `project_type` | `bible`, `obs`, `other` |
+| Project type | `project_type` | `bible`, `tn`, `tq`, `twl`, `obs`, `other` |
+| Content structure | `content_structure` | `book_package`, `story_package`, `whole` |
 | Metadata format | `metadata_format` | `sb`, `rc`, `ts`, `tc`, `none` |
 | Editability | `editability.state` | `editable`, `release_only`, `unsupported` |
 | Testament scope | `coverage.scope` | `nt`, `ot`, `full`, `obs`, `unknown` |
+| Coverage basis | `coverage.basis` | `catalog`, `archive` |
 | Health state | `health.state` | `healthy`, `warning`, `failing`, `never_checked`, `checking`, `door43_unavailable`, `health_error`, `unsupported` |
 | Content inclusion state | inclusion | `unreleased`, `released`, `changed_released`, `selected`, `carried_forward`, `excluded`, `administrative`, `unknown` |
 | Candidate group | group | `new`, `changed_released`, `unchanged`, `unknown` |
