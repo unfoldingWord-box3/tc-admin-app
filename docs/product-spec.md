@@ -20,7 +20,7 @@ Bible translation team leaders and project managers who are responsible for the 
 - Door43 organization and repository permissions are authoritative.
 - The portfolio includes every organization and repository where the current user has write access.
 - Repositories that are read-only to the user are not shown in the normal portfolio.
-- Writable repositories of unsupported types (translationStudio, translationCore, helps) are shown read-only with the reason stated (ADR 0009).
+- Writable repositories in Resource Container, translationStudio, or translationCore format are release-only: they can be released but not edited until converted (ADR 0009). Repositories with no recognized metadata are unsupported and shown with the reason.
 - tC Admin must re-check authorization before mutations and releases; a stale screen must not grant access.
 
 ## 3. Goals
@@ -100,7 +100,7 @@ Book names and abbreviations can be inferred as files are added. The wizard may 
 
 ## 7. Project metadata management
 
-Project metadata is `metadata.json` for Scripture Burrito projects and `manifest.yaml` for Resource Container projects. The manager sees one structured form over the Scripture Burrito model in both cases. tC Admin writes Scripture Burrito only; a Resource Container project is edited only after a manager-confirmed conversion (a later milestone).
+Project metadata is `metadata.json`. Only Scripture Burrito projects can be edited; a release-only project is edited only after a manager-confirmed conversion of its default branch (a later milestone, ADR 0009).
 
 - The primary editor is a friendly structured form.
 - An optional obscured raw representation may be shown for inspection; the structured form remains authoritative for normal edits.
@@ -158,7 +158,7 @@ Health analysis is asynchronous. A health-check error or unavailable service blo
 
 ### Release candidate selection
 
-The manager prepares a release for one project at a time. Candidate books/stories are grouped as:
+Any project with valid metadata in one of the four Door43 formats can be released; the result is always Scripture Burrito (ADR 0008). The manager prepares a release for one project at a time. Nothing is preselected. A first release requires at least one book or story. Candidate books/stories are grouped as:
 
 - New and never released
 - Previously released with current-branch changes
@@ -173,15 +173,15 @@ The release is assembled on a temporary branch named:
 
 `temp-tca-release/<version>`
 
-The snapshot contains:
+The branch starts from the latest full release tag, or from the default branch head for a first release (ADR 0010). tC Admin downloads two Door43 Scripture Burrito archives, the latest full release tag and the default branch, and assembles one commit containing:
 
-- Previously released books/stories carried forward unchanged
-- Newly selected books/stories from the current default branch
-- Selected revisions to previously released books/stories
+- Every root file and every administrative ingredient from the default branch archive
+- Previously released books/stories from the release-tag archive, carried forward unchanged unless selected
+- Selected new and revised books/stories from the default branch archive
 - Explicitly included unknown files
-- Required release metadata changes: ingredient sizes and checksums for Scripture Burrito, version and project entries for Resource Container
+- `metadata.json` based on the previous release's metadata, with selected books added or updated, administrative entries refreshed, ingredient size and md5 correct for every file, and the released books listed as the scope
 
-Unselected changes on the default branch must not enter the release. This is the central safety property of selective release.
+Unselected changes on the default branch must not enter the release. A released book or story is never removed by a later release. These are the central safety properties of selective release. The default branch is never modified by a release.
 
 ### Release stepper
 

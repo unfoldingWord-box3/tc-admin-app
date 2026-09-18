@@ -16,7 +16,11 @@ A project-level version assigned to a release event. One version can contain one
 
 ### Release snapshot
 
-An immutable candidate assembled for one release event. It has a source project state, a selected content set, a resulting commit, health result, release notes, and a target version.
+An immutable Scripture Burrito candidate assembled for one release event from two Door43 archives: the latest full release tag and the default branch. It has a source project state, a selected content set, a resulting commit on the release lineage, health result, release notes, and a target version.
+
+### Release lineage
+
+Each release is one commit on top of the previous release tag (ADR 0010). The lineage is separate from the default branch history, and for non-Scripture-Burrito repositories it is the only place Scripture Burrito exists.
 
 ### Repository history
 
@@ -42,7 +46,8 @@ Door43 account
 | Bible translation | Bible books | 27, 39, or 66 by testament scope |
 | Open Bible Stories | Stories | 50 |
 | Bible Passage Set | Deferred | Not applicable |
-| translationStudio, translationCore, helps | Read-only, unsupported | Not applicable |
+| Any of the above in Resource Container, translationStudio, or translationCore format | Release-only until converted | As above |
+| No recognized metadata | Unsupported | Not applicable |
 
 Coverage is the number of recognized units present in the repository compared with the type-specific target. It is not a claim that a book/story is translated, complete, or approved.
 
@@ -53,7 +58,7 @@ Coverage is the number of recognized units present in the repository compared wi
 - **Changed released**: Released previously, with newer default-branch changes.
 - **Selected**: Explicitly chosen for the current release preparation.
 - **Carried forward**: Included from the previous full release without current unselected changes.
-- **Excluded**: Present in the current default branch but intentionally omitted from the candidate.
+- **Excluded**: Never released, present in the current default branch, and intentionally omitted from this candidate. A released book or story can never become excluded.
 - **Administrative**: Listed in project metadata without a book or story scope. Always carried forward.
 - **Unknown**: Neither a recognized book or story nor listed in project metadata.
 
@@ -101,7 +106,7 @@ Successful release creation → temporary branch may be deleted
 The manager is choosing new books/stories, revisions, and unknown files.
 
 **Snapshot prepared**:
-A temporary branch contains the exact candidate contents and is bound to a source commit state.
+A temporary branch, started from the previous release tag, contains the exact candidate contents in one commit and is bound to the default branch commit the selected books came from.
 
 **Health checking**:
 The authoritative health service is evaluating the candidate snapshot.

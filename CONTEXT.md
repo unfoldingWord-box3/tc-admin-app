@@ -9,20 +9,36 @@ A Door43 repository managed through tC Admin. A project may contain multiple Bib
 _Avoid_: Workspace, release unit, project file, Bible (as the name for the repository)
 
 **Project type**:
-The kind of content a project holds, derived from its metadata subject. Version one manages two types: Bible (including Aligned Bible) and Open Bible Stories. Every other type is unsupported.
-_Avoid_: Subject (in user-facing copy), resource type
+The kind of content a project holds, derived from its metadata subject. Version one manages two types: Bible (including Aligned Bible) and Open Bible Stories.
+_Avoid_: Subject (in user-facing copy), resource type, book package
+
+**Bible project**:
+A project whose content units are Bible books.
+_Avoid_: Book package repo, book package
+
+**Metadata format**:
+How a repository describes itself on its default branch: Scripture Burrito, Resource Container, translationStudio, or translationCore. Any valid format can be released; only Scripture Burrito can be edited.
+_Avoid_: Metadata type (in user-facing copy), repo type
+
+**Release-only project**:
+A writable project whose metadata format is not Scripture Burrito. It can be released through tC Admin but not edited until it is converted.
+_Avoid_: Read-only project, legacy project, unsupported project
 
 **Unsupported project**:
-A writable repository whose project type tC Admin cannot manage, such as translationStudio, translationCore, or helps repositories. It appears in the portfolio read-only with the reason stated.
-_Avoid_: Hidden project, invalid project, legacy project
+A writable repository with no metadata Door43 recognizes, such as an empty repository. It appears in the portfolio with the reason stated and cannot be released or edited.
+_Avoid_: Hidden project, invalid project, broken project
 
 **Scripture Burrito**:
-The metadata format tC Admin uses as its internal model for every project and writes for every project it creates: a `metadata.json` file plus an `ingredients/` folder.
+The metadata format tC Admin uses as its internal model, writes for every project it creates, and produces for every release: a `metadata.json` file plus an `ingredients/` folder.
 _Avoid_: SB (in user-facing copy), burrito
 
 **Resource Container**:
-The older Door43 metadata format built around `manifest.yaml`. tC Admin reads Resource Container projects through the Scripture Burrito model and does not write new ones.
+The older Door43 metadata format built around `manifest.yaml`. Door43 converts it to Scripture Burrito when tC Admin reads it for release. tC Admin does not write it.
 _Avoid_: RC (in user-facing copy), legacy format
+
+**Scripture Burrito archive**:
+The zip Door43 serves for any ref of a repository, converted to Scripture Burrito when the ref is another format and rolled up as-is when it already is. tC Admin's only source of repository content for a release.
+_Avoid_: Conversion zip, sb zip (in user-facing copy)
 
 **Project metadata**:
 The file that describes a project: `metadata.json` for Scripture Burrito, `manifest.yaml` for Resource Container. Presented to the manager as one structured form regardless of format.
@@ -53,12 +69,16 @@ The version assigned to one release event for a project, recorded as the Door43 
 _Avoid_: Book version, file version, metadata version
 
 **Release snapshot**:
-The exact set of project files selected and prepared for a release, including carried-forward previously released content.
+The Scripture Burrito tree prepared for one release: previously released books from the latest full release, selected new and revised books plus every root file and administrative ingredient from the default branch, and metadata describing exactly that set.
 _Avoid_: Current project, master snapshot
 
+**Release lineage**:
+The line of commits made only of releases, each release one commit on top of the previous release tag. Separate from the default branch history.
+_Avoid_: Release branch (for the permanent history), master
+
 **Carried-forward content**:
-A book or story copied from the latest full release without incorporating newer unselected changes from the default branch.
-_Avoid_: Unchanged content, old content
+A book or story copied from the latest full release without incorporating newer unselected changes from the default branch. Once released, a book or story is carried forward in every later release; releases never remove content.
+_Avoid_: Unchanged content, old content, removed content
 
 **Pre-release**:
 An optional Door43 release created for review before being promoted to a full release. Promotion does not change its version or contents.
