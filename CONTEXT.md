@@ -1,6 +1,6 @@
 # tC Admin Context
 
-tC Admin manages Door43 translation repositories for Bible translation team leaders and project managers. This glossary defines the product language used across the planning and implementation documents.
+tC Admin manages Door43 translation repositories for Bible translation team leaders and project managers. This glossary defines the product language used across the planning and implementation documents. Terms are the spelling for prose and UI copy; the identifiers at the end are the spelling for code, API, tests, and logs. Neither has synonyms.
 
 ## Product language
 
@@ -121,3 +121,64 @@ _Avoid_: Publishing, deployment
 **Promotion**:
 Changing an existing Door43 pre-release into a full release without changing its version or contents.
 _Avoid_: Republish, rebuild
+
+## System language
+
+**Operation**:
+One named thing tC Admin can do, listed in the [operation catalog](docs/operations.md). Every action in the interface, every test, and every future agent tool is an operation. Three kinds: read, plan, apply.
+_Avoid_: Endpoint, action, command (as the generic term)
+
+**Plan**:
+The result of a plan operation: exactly what an apply would write to Door43, bound to the source commit it was computed from, without writing anything. The manager reviews a plan before confirming.
+_Avoid_: Preview, dry run, draft (as the generic term)
+
+**Receipt**:
+The result of an apply operation: what was written to Door43, with a request id. A receipt never lists a write the plan did not announce.
+_Avoid_: Response, result, log
+
+**Project report**:
+The complete situation of one project returned by one read: type, format, editability, coverage, health, latest release, default-branch head, active preparation, setup state, permissions, and freshness, each derived fact with its source and age.
+_Avoid_: Project detail, summary, dashboard data
+
+**Editability**:
+Whether tC Admin may write to a project's default branch: editable (Scripture Burrito), release-only (other valid formats), or unsupported (no recognized metadata). Always shown with its reason.
+_Avoid_: Mode, capability, status
+
+**Freshness**:
+When a fact was read, whether live or from cache, and how old it is. Every cached fact shows its freshness.
+_Avoid_: Timestamp, cache state
+
+**Invariant**:
+A safety property that must hold in every state, numbered in [invariants.md](docs/invariants.md), enforced in one place, and proven by a test carrying its identifier.
+_Avoid_: Rule, constraint, requirement (for these properties)
+
+**Evidence record**:
+A verified fact about Door43, Scripture Burrito, or the pilot repositories, numbered `E<n>` in the [evidence register](docs/evidence.md) with its host, date, and method.
+_Avoid_: Note, finding, assumption
+
+**Open question**:
+A missing fact or decision, numbered `Q<n>` in the evidence register with its owner, what it blocks, and how it closes. Not decided by whoever is building; built behind with a labeled assumption.
+_Avoid_: TODO, unknown, risk
+
+## Identifiers
+
+The identifier is the only spelling used in code, API payloads, tests, logs, and fixtures. The term is the only spelling used in prose and UI copy. A label map in `web/` translates identifier to term.
+
+| Term | Identifier | Values |
+| --- | --- | --- |
+| Project type | `project_type` | `bible`, `obs`, `other` |
+| Metadata format | `metadata_format` | `sb`, `rc`, `ts`, `tc`, `none` |
+| Editability | `editability.state` | `editable`, `release_only`, `unsupported` |
+| Testament scope | `coverage.scope` | `nt`, `ot`, `full`, `obs`, `unknown` |
+| Health state | `health.state` | `healthy`, `warning`, `failing`, `never_checked`, `checking`, `door43_unavailable`, `health_error`, `unsupported` |
+| Content inclusion state | inclusion | `unreleased`, `released`, `changed_released`, `selected`, `carried_forward`, `excluded`, `administrative`, `unknown` |
+| Candidate group | group | `new`, `changed_released`, `unchanged`, `unknown` |
+| Release preparation state | `preparation.state` | `selecting`, `snapshot_prepared`, `health_checking`, `health_blocked`, `ready_for_release`, `pre_release`, `full_release`, `restart_required`, `retryable_failure` |
+| Setup state | `setup.state` | `complete`, `incomplete` |
+| Freshness source | `freshness.source` | `live`, `cache` |
+| Temporary branch | — | `temp-tca-release/<version>` |
+| Operation | operation name | dotted, as in the [operation catalog](docs/operations.md) §3: `release.plan`, `release.prepare` |
+| Error | `error.code` | snake_case, as in the operation catalog §6: `source_changed`, `health_blocked` |
+| Invariant | — | group letter and number: `R1`, `H3`, `A2` |
+| Evidence record, open question | — | `E<n>`, `Q<n>` |
+| Acceptance scenario | — | `S1` to `S7` in product spec §13 |

@@ -4,15 +4,24 @@ tC Admin is a planned hosted web application for Bible translation team leaders 
 
 The project is currently in product-definition and prototyping.
 
+## Start here
+
+[AGENTS.md](AGENTS.md) is the entry point for anyone, human or agent, working in this repository: the document tower, the rules, how to work an issue.
+
 ## Product documentation
 
-- [Vision](docs/vision.md)
-- [Product specification](docs/product-spec.md)
-- [Domain model](docs/domain-model.md)
-- [Architecture](docs/architecture.md)
-- [Roadmap](docs/roadmap.md)
-- [Domain glossary](CONTEXT.md)
-- [Architecture decisions](docs/adr)
+Read downward for why, upward for how.
+
+- [Vision](docs/vision.md): why this exists
+- [Product specification](docs/product-spec.md): what it must do, with acceptance scenarios S1 to S7
+- [Domain model](docs/domain-model.md) and [glossary](CONTEXT.md): the concepts, their states, and their identifiers
+- [Invariants](docs/invariants.md): what must never break, numbered and tested
+- [Operation catalog](docs/operations.md): everything the system can do, with plan, apply, receipt, and typed errors
+- [Architecture](docs/architecture.md): the layers and where code goes
+- [Architecture decisions](docs/adr): why this way
+- [Evidence register](docs/evidence.md): what is verified about Door43 and what is still open, with owners
+- [Roadmap](docs/roadmap.md): milestones and epics
+- [Traceability](docs/traceability.md): how every issue connects to the above
 
 ## Prototypes
 

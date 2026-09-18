@@ -1,5 +1,9 @@
 # tC Admin Domain Model
 
+Status: Accepted planning baseline. Amended 18 September 2026 (proposed) with identifiers and the release transition table (ADR 0011); accepted when that pull request merges.
+
+Every state named here has an identifier, listed in [CONTEXT.md](../CONTEXT.md) "Identifiers" and repeated in the [operation catalog](operations.md) §5. The identifier is the spelling used in code, API, tests, and logs; the glossary term is the spelling used in prose and UI copy. The safety properties these states protect are numbered in [invariants.md](invariants.md).
+
 ## 1. Core concepts
 
 ### Project
@@ -49,18 +53,22 @@ Door43 account
 | Any of the above in Resource Container, translationStudio, or translationCore format | Release-only until converted | As above |
 | No recognized metadata | Unsupported | Not applicable |
 
-Coverage is the number of recognized units present in the repository compared with the type-specific target. It is not a claim that a book/story is translated, complete, or approved.
+Coverage is the number of recognized units present in the repository compared with the type-specific target. It is not a claim that a book/story is translated, complete, or approved (H5). Unknown coverage is `null`, never zero and never complete (H3).
+
+Identifiers: `project_type` is `bible`, `obs`, or `other`; `metadata_format` is `sb`, `rc`, `ts`, `tc`, or `none`; `editability` is `editable` (Scripture Burrito), `release_only` (Resource Container, translationStudio, translationCore), or `unsupported` (no recognized metadata), always with a one-line reason. A writable repository with valid metadata of another type (Translation Notes and similar) is `other`; how it is shown is open question Q11.
 
 ## 4. Content inclusion states
 
-- **Unreleased**: Present on the current default branch but not in the latest full release.
-- **Released**: Present in the latest full release.
-- **Changed released**: Released previously, with newer default-branch changes.
-- **Selected**: Explicitly chosen for the current release preparation.
-- **Carried forward**: Included from the previous full release without current unselected changes.
-- **Excluded**: Never released, present in the current default branch, and intentionally omitted from this candidate. A released book or story can never become excluded.
-- **Administrative**: Listed in project metadata without a book or story scope. Always carried forward.
-- **Unknown**: Neither a recognized book or story nor listed in project metadata.
+- **Unreleased** (`unreleased`): Present on the current default branch but not in the latest full release.
+- **Released** (`released`): Present in the latest full release.
+- **Changed released** (`changed_released`): Released previously, with newer default-branch changes.
+- **Selected** (`selected`): Explicitly chosen for the current release preparation.
+- **Carried forward** (`carried_forward`): Included from the previous full release without current unselected changes.
+- **Excluded** (`excluded`): Never released, present in the current default branch, and intentionally omitted from this candidate. A released book or story can never become excluded (R2).
+- **Administrative** (`administrative`): Listed in project metadata without a book or story scope. Always carried forward.
+- **Unknown** (`unknown`): Neither a recognized book or story nor listed in project metadata.
+
+For selection, `release.plan` groups units as `new` (unreleased), `changed_released`, `unchanged` (released and identical), and `unknown`. Nothing is selected by default (R4).
 
 ## 5. Health states
 
@@ -75,7 +83,7 @@ Health is separate from project lifecycle and release state.
 - `health_error`
 - `unsupported`
 
-Only a successful health result can advance a release candidate toward release creation. The Door43 health-check service determines the result and severity.
+Only a successful health result can advance a release candidate toward release creation (H1, H2; open question Q6 decides `warning`). The Door43 health-check service determines the result and severity. Every health value carries the ref it was read for, the time, and the raw severity.
 
 ## 6. Release state model
 
@@ -99,6 +107,31 @@ Promotion ───────────────────────�
 Any release-creation failure → Retryable failure (temporary branch retained)
 Successful release creation → temporary branch may be deleted
 ```
+
+### Transitions
+
+A release preparation is an addressable resource (see the [operation catalog](operations.md) §2). Its `state` takes these values, and only these transitions move it. `sha moved` means the default-branch head no longer equals the one the preparation is bound to (R5).
+
+| From | Event | Guard | To |
+| --- | --- | --- | --- |
+| (none) | `release.plan` | project releasable | `selecting` |
+| `selecting` | `release.prepare` | selection valid (R2, R4), version valid (R9), sha unchanged, permission (A2) | `snapshot_prepared` |
+| `selecting` | `release.prepare` | commit failed | `retryable_failure` |
+| `snapshot_prepared` | push confirmed | — | `health_checking` |
+| `health_checking` | health read | success | `ready_for_release` |
+| `health_checking` | health read | failing, unavailable, error | `health_blocked` |
+| `health_checking` | health read | still running | `health_checking` |
+| `health_blocked` | manager retries | — | `health_checking` |
+| `ready_for_release` | `release.create` | notes confirmed, version valid, sha unchanged, permission | `pre_release` or `full_release` |
+| `ready_for_release` | `release.create` | Door43 failed | `retryable_failure` |
+| `ready_for_release` | `release.create` | outcome unknown | `retryable_failure` (next action `release.lookup`, R6) |
+| `retryable_failure` | `release.lookup` | release found | `pre_release` or `full_release` |
+| `retryable_failure` | manager retries | — | the step that failed |
+| any state before release | sha moved | — | `restart_required` |
+| `restart_required` | `release.plan` | — | new preparation in `selecting` |
+| `pre_release` | `release.promote` | permission | `full_release` |
+
+The temporary branch exists from `snapshot_prepared` until `release.create` succeeds, and is retained in every failure state (R7).
 
 ### State definitions
 
@@ -151,6 +184,8 @@ The internal model is Scripture Burrito: identification, languages, type (flavor
 The flavor is the project-purpose identity. It is selected early and immutable after the first valid save in version one.
 
 ## 9. Boundaries
+
+The boundaries below are enforced as invariants R3, W1, W2, A1, A2, H1, and P3 in [invariants.md](invariants.md).
 
 - Door43 owns identity and permissions.
 - Door43 owns repository content history and releases.
