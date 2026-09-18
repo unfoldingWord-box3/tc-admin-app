@@ -1,10 +1,10 @@
 # tC Admin Product Specification
 
-Status: Accepted planning baseline
+Status: Accepted planning baseline. Amended 17 September 2026 for Scripture Burrito as the internal model (ADR 0008) and read-only unsupported projects (ADR 0009).
 
 ## 1. Product summary
 
-tC Admin is a hosted, desktop-first web application for Bible translation team leaders and project managers. It manages writable Door43 repositories from creation through manifest maintenance, health checking, selective release preparation, release creation, and pre-release promotion.
+tC Admin is a hosted, desktop-first web application for Bible translation team leaders and project managers. It manages writable Door43 repositories from creation through project metadata maintenance, health checking, selective release preparation, release creation, and pre-release promotion.
 
 The first release supports Bible translation projects and Open Bible Stories projects. Bible Passage Sets are deferred.
 
@@ -20,11 +20,12 @@ Bible translation team leaders and project managers who are responsible for the 
 - Door43 organization and repository permissions are authoritative.
 - The portfolio includes every organization and repository where the current user has write access.
 - Repositories that are read-only to the user are not shown in the normal portfolio.
+- Writable repositories of unsupported types (translationStudio, translationCore, helps) are shown read-only with the reason stated (ADR 0009).
 - tC Admin must re-check authorization before mutations and releases; a stale screen must not grant access.
 
 ## 3. Goals
 
-1. Create valid Bible and OBS repositories without hand-writing manifests.
+1. Create valid Bible and OBS repositories as Scripture Burrito without hand-writing metadata.
 2. Give managers one portfolio view of project health and coverage.
 3. Make safe file upload and overwrite operations possible without becoming a translation editor.
 4. Allow managers to prepare releases containing only selected new or revised books/stories.
@@ -50,7 +51,7 @@ Bible translation team leaders and project managers who are responsible for the 
 - Allow configurable secondary ordering, including most recent activity or language.
 - Provide filters for organization, language, project type, and health state.
 - Analyze projects asynchronously and show the project immediately with a loading state.
-- Display coverage as books present out of 66 for Bible projects and stories present out of 50 for OBS projects.
+- Display coverage as books present against the project's testament scope: 27 when only New Testament books are in scope, 39 when only Old Testament books are, 66 when both are; stories present out of 50 for OBS projects.
 - Do not present coverage as translation completeness; it is repository/file coverage only.
 
 ### Health indicator
@@ -77,37 +78,40 @@ The dashboard must not represent unavailable or unknown health as healthy.
 The manager provides:
 
 - Organization
-- Subject/project type
+- Project type (Bible or Open Bible Stories), stored as the Scripture Burrito flavor
+- Testament scope for Bible projects
 - Repository name
 - Target language
 - Source resource
 - Project title
 
-The wizard infers or prefills other manifest values from the selected type-specific Door43 template. The manager reviews the complete manifest before creation.
+The wizard generates complete Scripture Burrito metadata for the selected type, with tC Admin recorded as generator. The manager reviews the generated metadata before creation. Every project tC Admin creates is Scripture Burrito (ADR 0008).
 
-After the organization is selected, subject is the first protected project-purpose choice. Once the first valid manifest is saved, subject cannot be changed through normal editing. A purpose transition is a major repository change and is outside the normal version-one edit flow.
+After the organization is selected, project type is the first protected project-purpose choice. Once the first valid metadata is saved, it cannot be changed through normal editing. A purpose transition is a major repository change and is outside the normal version-one edit flow.
 
 Book names and abbreviations can be inferred as files are added. The wizard may optionally accept an initial upload as its final step.
 
 ### Creation acceptance criteria
 
 - A repository is created only in an organization where Door43 permits repository creation.
-- The initial manifest contains all required keys and valid type-specific structure.
-- If repository creation succeeds but manifest or initial upload fails, the project is shown as **Setup incomplete** with a retry path.
+- The initial `metadata.json` is valid Scripture Burrito for the chosen flavor and lists every ingredient with size and checksum.
+- If repository creation succeeds but the metadata commit or initial upload fails, the project is shown as **Setup incomplete** with a retry path.
 - tC Admin does not automatically delete a partially created repository.
 
-## 7. Manifest management
+## 7. Project metadata management
+
+Project metadata is `metadata.json` for Scripture Burrito projects and `manifest.yaml` for Resource Container projects. The manager sees one structured form over the Scripture Burrito model in both cases. tC Admin writes Scripture Burrito only; a Resource Container project is edited only after a manager-confirmed conversion (a later milestone).
 
 - The primary editor is a friendly structured form.
 - An optional obscured raw representation may be shown for inspection; the structured form remains authoritative for normal edits.
 - Validation occurs as close to editing as practical: on blur where possible, before save, and during save.
 - A successful save commits directly to the project's default branch.
-- The manager reviews the manifest diff before confirming the commit.
-- A manifest save creates one descriptive Door43 commit attributed to the authenticated Door43 user.
-- Manifest changes are not allowed while release preparation is active.
-- After a successful manifest commit, the project is refreshed and health is rerun.
+- The manager reviews the metadata diff before confirming the commit.
+- A metadata save creates one descriptive Door43 commit attributed to the authenticated Door43 user.
+- Metadata changes are not allowed while release preparation is active.
+- After a successful metadata commit, the project is refreshed and health is rerun.
 
-The generated manifest must follow the Resource Container rules, including retaining expected keys even when optional values are empty. See the [Resource Container manifest specification](https://resource-container.readthedocs.io/en/latest/manifest.html).
+Generated metadata must follow the Scripture Burrito specification. Door43's health check verifies that every listed ingredient exists and that its size matches, and verifies checksums on tags, so tC Admin writes size and md5 for every ingredient it touches. See the [Scripture Burrito specification](https://docs.burrito.bible/).
 
 ## 8. File management
 
@@ -131,21 +135,21 @@ Before an overwrite, show the affected file and a clear warning. Provide a text 
 
 All accepted additions and overwrites commit together as one operation. Door43 remains the history and recovery mechanism.
 
-### Manifest inference
+### Metadata inference
 
-When a recognized new book or OBS story is uploaded, tC Admin proposes the corresponding manifest project entry. The manager reviews the proposed diff. If accepted, the content files and manifest update are committed together.
+When a recognized new book or OBS story is uploaded, tC Admin proposes the corresponding ingredient entry. The manager reviews the proposed diff. If accepted, the content files and manifest update are committed together.
 
-Unrecognized files appear in an **Unknown files** section. They may be included only after explicit confirmation, remain prominent in release review, and are identified in release notes.
+Files listed in metadata without a book or story scope are administrative files and are carried forward without confirmation. Unrecognized files that are not listed in metadata appear in an **Unknown files** section. They may be included only after explicit confirmation, remain prominent in release review, and are identified in release notes.
 
 ## 9. Health checking
 
 The Door43 health-check service is authoritative for repository and release-snapshot health. tC Admin must not reinterpret its result into a more permissive release decision.
 
-Health checks run:
+Door43 runs the health check itself on every pushed branch and tag; tC Admin reads the result and never triggers or reinterprets it. tC Admin reads health:
 
 - When the dashboard loads
 - When the manager uses the refresh button
-- After a manifest commit
+- After a metadata commit
 - Before release creation
 
 Health analysis is asynchronous. A health-check error or unavailable service blocks release creation. The UI shows the exact actionable state and allows retry.
@@ -175,7 +179,7 @@ The snapshot contains:
 - Newly selected books/stories from the current default branch
 - Selected revisions to previously released books/stories
 - Explicitly included unknown files
-- Required release metadata and manifest changes
+- Required release metadata changes: ingredient sizes and checksums for Scripture Burrito, version and project entries for Resource Container
 
 Unselected changes on the default branch must not enter the release. This is the central safety property of selective release.
 
@@ -200,9 +204,11 @@ The candidate is discarded and the stepper restarts from selection.
 
 ### Versioning
 
-- No prior release: `v1.0.0`.
+- The baseline is the latest full release on Door43, whichever tool created it.
+- No prior release, or a latest tag that is a bare year such as `1974`: default `v1.0.0`.
+- A loose tag such as `v105` or `v1.2` is coerced to semver (`v105.0.0`, `v1.2.0`) before the increment.
 - New books/stories: increment the minor component.
-- Revisions or manifest-only changes: increment the patch component.
+- Revisions or metadata-only changes: increment the patch component.
 - Fundamental format changes: increment the major component.
 - When multiple change categories occur, use the highest-impact category.
 - The manager may edit the calculated version.
@@ -243,14 +249,14 @@ The manager must review and confirm the notes before release creation.
 - Managers can see the status of their writable projects without inspecting each repository individually.
 - More projects are released more often.
 - Routine release support requests to unfoldingWord decrease.
-- Managers can create a valid repository and manifest without manual YAML authoring.
+- Managers can create a valid repository and metadata without hand-writing metadata.
 - Release attempts do not publish unselected unfinished changes.
 
 ## 13. Acceptance scenarios
 
 ### Create a project
 
-Given a manager has repository-creation permission in an organization, when they complete the Bible or OBS wizard, then tC Admin creates the repository and a valid manifest, and the project appears in the portfolio.
+Given a manager has repository-creation permission in an organization, when they complete the Bible or OBS wizard, then tC Admin creates the repository and valid Scripture Burrito metadata, and the project appears in the portfolio.
 
 ### Upload and overwrite
 
@@ -282,6 +288,7 @@ These are facts to verify during implementation, not product decisions:
 
 - Exact Door43 Swagger v1 operations for OAuth, writable-repository discovery, repository creation, file commits, branch/ref operations, release creation, release editing, and promotion.
 - Exact Door43 health-check endpoint and asynchronous result shape.
-- Type-specific templates and required manifest fields for Bible and OBS projects.
+- Required Scripture Burrito metadata for Bible (`scripture/textTranslation`) and OBS (`gloss/textStories`) projects.
+- Health-check latency after a branch push on QA Door43.
 - How DCS represents tags and release targets for temporary branches.
 - Safe upload byte limits for the Worker and Door43 API.

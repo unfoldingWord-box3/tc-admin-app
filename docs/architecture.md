@@ -14,7 +14,8 @@ Hosted web frontend
 Cloudflare Worker (tC Admin backend-for-frontend)
     ├─ Door43 OAuth callback and session handling
     ├─ Project/repository adapter
-    ├─ Manifest and file-operation workflows
+    ├─ Metadata and file-operation workflows
+    ├─ Scripture Burrito model with Resource Container read mapping
     ├─ Health-check adapter
     ├─ Release snapshot orchestrator
     └─ Error/idempotency boundaries
@@ -32,7 +33,7 @@ The frontend owns:
 - Portfolio layout, organization grouping, sorting, and filters.
 - Project pills and accessible health indicators.
 - Async loading and refresh states.
-- Creation wizard and structured manifest form.
+- Creation wizard and structured metadata form.
 - Upload selection, overwrite warnings, diffs, and final summaries.
 - Release stepper, candidate review, release-note editing, and promotion controls.
 - Preservation of unsaved form state across re-authentication where safe.
@@ -63,7 +64,7 @@ The Worker must treat Door43 as live authority:
 
 - Discover organizations and repositories using the authenticated account.
 - Filter the portfolio to repositories with write access.
-- Re-check access before repository creation, file commits, manifest commits, branch changes, release creation, and promotion.
+- Re-check access before repository creation, file commits, metadata commits, branch changes, release creation, and promotion.
 - Fail closed when permission status is ambiguous.
 
 ### Project adapter
@@ -80,9 +81,11 @@ Provide a narrow internal interface over the Door43 API for:
 - Release creation and promotion/editing
 - Door43 compare and history links
 
-Keep the Swagger-generated/API-specific shapes at the adapter boundary. The product and domain layers should use tC Admin concepts such as `Project`, `Manifest`, `Book`, `Story`, `ReleaseSnapshot`, and `ProjectVersion`.
+Keep the Swagger-generated/API-specific shapes at the adapter boundary. The product and domain layers should use tC Admin concepts such as `Project`, `ProjectMetadata`, `Ingredient`, `Book`, `Story`, `ReleaseSnapshot`, and `ProjectVersion`.
 
 ### Health adapter
+
+Door43 runs the health check automatically on every branch push and tag; there is no trigger endpoint. The adapter reads `GET /repos/{owner}/{repo}/healthcheck?ref=` and polls after a push: every 5 seconds for up to 3 minutes, then returns a running state and lets the manager refresh.
 
 The health adapter accepts a repository/ref target and returns:
 
@@ -103,7 +106,7 @@ The orchestrator must:
 3. Bind preparation to the current default-branch commit SHA.
 4. Create `temp-tca-release/<version>`.
 5. Populate it with carried-forward released content plus explicitly selected current content.
-6. Apply required manifest and release metadata.
+6. Apply required metadata changes: ingredient size and md5 for Scripture Burrito, version and project entries for Resource Container.
 7. Run the health check against the temporary branch/ref.
 8. Re-check the source SHA before release creation.
 9. Create the Door43 release targeting the snapshot.
@@ -130,7 +133,7 @@ If the source SHA changes, the orchestrator must stop and return a restart-requi
 
 tC Admin must not become a content database or a second release-history database. Cached metadata must have freshness and invalidation rules, and stale data must be labeled.
 
-## 5. File and manifest safety
+## 5. File and metadata safety
 
 - Normalize and validate repository-relative paths.
 - Reject absolute paths, traversal, symlinks, and unsupported unsafe file types.
@@ -138,7 +141,8 @@ tC Admin must not become a content database or a second release-history database
 - Build an upload operation plan before writing any file.
 - Require explicit confirmation for overwrites and unknown-file inclusion.
 - Commit accepted file changes together.
-- Generate manifest project-entry proposals from recognized filenames/templates; require manager confirmation.
+- Generate ingredient-entry proposals from recognized filenames; require manager confirmation.
+- Read Resource Container projects through an RC-to-SB mapping that follows the file naming of Door43's `/sb/` archive; never write Resource Container.
 - Never provide a Scripture/OBS text editor in version one.
 
 ## 6. Release safety and idempotency
@@ -196,7 +200,9 @@ Diagnostics may include request ID, project, commit SHA, version, target ref, he
 ## 10. External implementation references
 
 - [Door43 API Swagger](https://git.door43.org/swagger.v1.json)
-- [Resource Container manifest specification](https://resource-container.readthedocs.io/en/latest/manifest.html)
+- [Scripture Burrito specification](https://docs.burrito.bible/)
+- [Resource Container manifest specification](https://resource-container.readthedocs.io/en/latest/manifest.html) (read-only mapping)
+- [Door43 RC-to-SB converter](https://github.com/unfoldingWord/go-rc2sb)
 - [Door43 health-check service](https://github.com/unfoldingWord/dcs/tree/release/dcs/v1.27/services/door43healthcheck)
 - [Reference release tooling](https://github.com/unfoldingWord-dev/release_uw_resources)
 - [Newer unfoldingWord application pattern](https://github.com/unfoldingWord/bible-editor)
