@@ -69,7 +69,47 @@ Source: ADR 0008, ADR 0009. Status: reported, undated. Consequence: release any 
 
 ### E12 — The catalog metadata in the repository search is the same for every project type
 The fields the repository search returns (E7: `subject`, `language`, `title`, `ingredients[]` with `exists`, `healthcheck_severity`, and the rest) are populated the same way for every metadata format and every subject, and are enough to classify a repository, count its coverage, and read its health without downloading an archive.
-Source: stated by the DCS maintainer (Rich), 18 September 2026, closing Q17. Status: stated by the maintainer; the fixture recording under #19 confirms it for the Scripture Burrito seed repository (Q16). Consequence: `portfolio.list` and `project.read` read catalog metadata only; only `release.plan` downloads `/sb/` archives.
+Source: stated by the DCS maintainer (Rich), 18 September 2026, closing Q17. Status: verified 21 September 2026 by E14 (both seed repositories, both formats). Consequence: `portfolio.list` and `project.read` read catalog metadata only; archives are downloaded only when a release snapshot is assembled.
+
+### E13 — DCS version on both hosts
+QA reports `1.27.3+dcs.6-ga7ba9b25c1`; production reports `1.27.3+dcs`. The swagger's own deprecation notes refer to Gitea 1.23, so the underlying Gitea is 1.22 or later, which has scoped OAuth tokens.
+Hosts: both. Date: 21 September 2026. Method: `GET /api/v1/version`. Status: verified.
+
+### E14 — The repository API carries the whole catalog view of a project
+`GET /api/v1/repos/{owner}/{repo}` (public for public repositories, no credentials) and each item of `GET /api/v1/repos/search` return, beyond Gitea's fields: `metadata_type` (`rc`, `sb`, `tc`, `ts`; the full vocabulary from `/catalog/list/metadata-types`), `metadata_version`, `subject`, `flavor_type`, `flavor`, `content_format`, `language`, `language_title`, `language_direction`, `language_is_gl`, `title`, `abbreviation`, `checking_level`, `books`, `licenses`, `relations`, `ingredients[] { categories, identifier, path, sort, title, versification, alignment_count, exists, is_dir, size }`, `healthcheck_severity`, `healthcheck_url`, and `catalog { prod, preprod, latest }`, each stage with `branch_or_tag_name`, `commit_sha`, `release_url`, `released`, `zipball_url`, `tarball_url`. `catalog.prod` is the latest full release (Pendau `v1.2`, id_tb1 `1974`), `catalog.preprod` the latest pre-release (null for both), `catalog.latest` the default branch. Ingredient paths are `./ingredients/1JN.usfm` for the Scripture Burrito repository and `./01-GEN.usfm` for the Resource Container one. The search endpoint also filters by `metadataType`, `subject`, `flavorType`, `flavor`, `healthcheckSeverity`, `is_healthy`, `book`, `lang`, `owner`, `uid`, `exclusive`, `private`, `archived`.
+Host: qa.door43.org; production identical for Pendau. Date: 21 September 2026. Fixtures: `fixtures/door43/qa.door43.org/2026-09-21/repos/`. Status: verified. Closes Q16. Consequence: `metadata_format` is read from `metadata_type`, `project_type` from `subject` and `flavor_type`, and the release baseline (tag and commit SHA) from `catalog.prod`, with no release paging.
+
+### E15 — Health-check endpoint shape and severity vocabulary
+`GET /api/v1/repos/{owner}/{repo}/healthcheck?ref={ref}` is public and returns `{ ok, data: { issues: { <rule_code>: [ { issue_code, rule, severity_level, positive_title, negative_title, details, suggestion } ] }, overall_severity_level, severity_level_count: { error, warning, info, success } } }`. Severities are `error`, `warning`, `info`, `success`. `ref` is a branch or tag and defaults to the canonical catalog entry. An unknown ref returns 422 `{ ok: false, error: "no metadata found for repo [...] and ref [...]" }`. Rule sets differ by format: Scripture Burrito repositories report `sb_ingredient_mismatch` (rule META-015) and `sb_ingredient_missing`; Resource Container ones report `usfm_invalid`, `usfm_no_alignment`, `release_needed`, `tn_relation_missing`, `repo_name_lang_mismatch`, and others.
+Host: qa.door43.org. Date: 21 September 2026. Fixtures: `healthcheck/`. Status: verified. Closes the shape and vocabulary part of Q2; latency stays open. Consequence: the poll treats a 422 with that message on a just-pushed branch as `checking` inside the poll window, not as `health_error`.
+
+### E16 — Door43 checks ingredient sizes on branches and on tags, as warnings
+Pendau `master` has 27 `sb_ingredient_mismatch` warnings and its tag `v1.2` has 55; each names the ingredient, the size in `metadata.json`, and the size on disk. Overall severity for both refs is `warning`. The rule's title covers sizes and checksums; only size mismatches were observed in the details.
+Host: qa.door43.org. Date: 21 September 2026. Fixtures: `healthcheck/bahtraku__Perjanjian-Baru-Pendau__master.json`, `__v1.2.json`. Status: verified for size on both ref kinds; md5 inferred from the rule title. Narrows Q1. Consequence: a snapshot with recomputed sizes and checksums (R10) clears these; Pendau's remaining warning (`ingredient_title_is_en`, the Acts title still in English) will persist and exercise the Q6 acknowledgement in the demo.
+
+### E17 — `/sb/` archive layout and size
+Each archive has one top-level folder (the repository name lowercased), a `metadata.json`, the repository's own root `README.md` (and `LICENSE.md` when the repository has one), and one `ingredients/` folder. Pendau (Scripture Burrito rollup): 35 entries, 415 KB zipped, 1.2 MB unpacked, 30 ingredients (27 books plus `versification.json`, `license.md`, `scribe-settings.json` as administrative ingredients), 28 of 30 with stale size or md5 (E5, carried as-is). id_tb1 (converted from Resource Container by `go-rc2sb v0.5.0`): 71 entries, 1.5 MB zipped, 5.2 MB unpacked, 67 ingredients (66 books plus `ingredients/LICENSE.md`), 0 stale. Both downloaded in about one second. The converter writes `identification.primary.dcs` keyed by the repository's original full name (`Indonesian-Bible-Society/id_tb1`) with the commit SHA as revision and the conversion time as timestamp; `localizedNames` keys are `book-1ch` style, Scribe's are `MAT` style; ingredient `mimeType` is `text/plain` from the converter and `text/x-usfm` from Scribe.
+Host: qa.door43.org. Date: 21 September 2026. Fixtures: `sb-archives/`. Status: verified. Narrows Q12: a 66-book unaligned Bible is far below Worker limits; an aligned Bible is larger and unmeasured.
+
+### E18 — Conversion and rollup preserve book bytes exactly
+The converted `ingredients/GEN.usfm` in id_tb1's archive is byte-identical to `01-GEN.usfm` on `master` (same md5, same git blob SHA `fcdd2dce…`). The rolled-up `ingredients/MAT.usfm` in Pendau's archive is byte-identical to the file on `master`.
+Host: qa.door43.org. Date: 21 September 2026. Method: md5 and git blob SHA comparison against the raw file endpoint. Status: verified for one book per repository. Consequence: a book's git blob SHA is the same whether it sits in a Resource Container layout on the default branch or in a Scripture Burrito release commit, so change detection can compare blob SHAs from `GET /repos/{owner}/{repo}/git/trees/{ref}?recursive=true` (E19) instead of downloading archives.
+
+### E19 — The git trees endpoint lists every blob with its SHA
+`GET /api/v1/repos/{owner}/{repo}/git/trees/{ref}?recursive=true&per_page=1000` returns `{ sha, tree: [ { path, mode, type, size, sha, url } ], truncated, total_count, page }`; id_tb1 `master` has 69 entries, not truncated.
+Host: qa.door43.org. Date: 21 September 2026. Fixture: `repos/bahtraku__id_tb1__git-trees__master.json`. Status: verified.
+
+### E20 — Catalog endpoints serve metadata per ref without an archive
+`GET /api/v1/catalog/metadata/{owner}/{repo}/{ref}` returns the Scripture Burrito `metadata.json` for a release tag or the default branch (8 KB for Pendau `v1.2`). `GET /api/v1/catalog/entry/{owner}/{repo}/{ref}` returns the catalog entry: `stage`, `commit_sha`, `metadata_type`, `ingredients[]` (as in E14), `healthcheck_severity`, `is_healthy`, `is_healthy_without_warnings`, `is_valid`, `released`. Release objects carry the same entry as `door43_metadata`.
+Host: qa.door43.org. Date: 21 September 2026. Fixtures: `catalog/`. Status: verified. Caution: for a Scripture Burrito repository this metadata is the repository's own file, so its sizes and checksums can be stale (E5); it is not a substitute for recomputation (R10).
+
+### E21 — The Milestone 1 write endpoints exist with these request shapes
+From the QA swagger (`1.27.3+dcs+6-ga7ba9b25c1`): `POST /orgs/{org}/repos` (`CreateRepoOption`: `name`, `auto_init`, `default_branch`, `private`, `readme`, `license`, `description`); `POST /repos/{owner}/{repo}/branches` (`CreateBranchRepoOption`: `new_branch_name`, `old_ref_name` "branch/tag/commit to create from"); `POST /repos/{owner}/{repo}/contents` (`ChangeFilesOptions`: `files[] { operation: create | update | upload | rename | delete, path, content (base64), sha for existing files }`, `branch` (base), `new_branch`, `message`, `author`, `committer`); `DELETE /repos/{owner}/{repo}/branches/{branch}`; `POST /repos/{owner}/{repo}/releases` (`CreateReleaseOption`: `tag_name`, `target_commitish`, `prerelease`, `draft`, `body`, `name`, `tag_message`); `PATCH /repos/{owner}/{repo}/releases/{id}` (`EditReleaseOption`: `prerelease` among others); `GET /repos/{owner}/{repo}/releases/tags/{tag}` (200 for Pendau `v1.2`, the lookup R6 needs). Existing releases have `target_commitish: master` and `prerelease: false`.
+Host: qa.door43.org. Date: 21 September 2026. Status: verified for existence and shape; not yet exercised with a token. Closes the endpoint part of Q3; the token probe remains.
+
+### E22 — Health on the Resource Container release tag
+id_tb1 tag `1974` reports `success` with zero issues under the Resource Container rule set.
+Host: qa.door43.org. Date: 21 September 2026. Fixture: `healthcheck/bahtraku__id_tb1__1974.json`. Status: verified.
 
 ## Stated in the design, not yet probed
 
@@ -77,28 +117,28 @@ These are asserted in the specification or architecture and shape the build. Eac
 
 | Statement | Where stated | Closes with |
 | --- | --- | --- |
-| Door43 verifies ingredient existence and size on branches and md5 on tags | product spec §7; #35 | Q1 |
-| Door43 runs the health check on every pushed branch and tag; there is no trigger endpoint; the result is at `GET /repos/{owner}/{repo}/healthcheck?ref=` | product spec §9; architecture §3; #36 | Q2 |
-| Health severities are `success`, `warning`, `error`, and possibly `info` | prototype `door43.mjs` | Q2 |
-| `POST /orgs/{org}/repos` creates a repository; `POST /repos/{owner}/{repo}/contents` commits several files at once; releases are created with `POST /repos/{owner}/{repo}/releases` and edited with `PATCH` | #30, #34, #39 | Q3 |
+| Door43 verifies md5 as well as size (size is verified on branches and tags, E16) | product spec §7; #35 | Q1 |
+| Door43 runs the health check on every pushed branch and tag, including branches created through the API, with no trigger endpoint | product spec §9; architecture §3; #36 | Q2 |
+| `go-rc2sb` preserves every book's bytes, not only the one checked per repository (E18) | E18 | Q3 token probe records a full-archive comparison |
 
 ## Open questions
 
 Each question names an owner. An agent does not decide an open question; it records a proposal here, builds behind the current text, and asks the owner. Owners: Rich (DCS and Worker), Birch (product and acceptance).
 
-### Q1 — What exactly does the health check verify on a branch and on a tag?
-Blocks: #35, #36. Owner: Rich.
-Close by: pushing a branch to a seed repository with one wrong size and one wrong md5 and reading the severity for the branch and for a tag on the same commit. Record the result as a fact and a fixture.
+### Q1 — Does the health check verify md5 as well as size, and on which refs?
+Size is verified on branches and tags and reported as `warning` (E16). Whether md5 is verified too, and at what severity, is not yet observed.
+Blocks: #35 (R10 already recomputes both regardless). Owner: Rich.
+Close by: pushing a branch to a `tc-admin-qa` repository with a correct size and a wrong md5 and reading the result for the branch and for a tag on the same commit.
 
-### Q2 — Health-check result shape, severity vocabulary, and latency
-The response shape of `GET /repos/{owner}/{repo}/healthcheck?ref=`, the complete set of `healthcheck_severity` values, and the time from branch push to a fresh result on QA.
-Blocks: #5, #25, #36. Owner: Rich.
-Close by: #5 records the latency; a probe records the shape and vocabulary as a fixture; the poll constants (5 seconds for 3 minutes) are tuned from the numbers.
+### Q2 — Health-check latency after a push, and whether API-created branches are checked
+Shape and vocabulary are closed (E15). Still open: the time from a branch push to a fresh result on QA, whether a branch created with `POST /branches` plus `POST /contents` triggers the check the same way a git push does, and whether a just-pushed branch answers 422 (no metadata yet) or an empty result while the check runs.
+Blocks: #5, #36. Owner: Rich.
+Close by: #5 pushes a branch through the API on a `tc-admin-qa` repository and records the sequence of responses and their timing; the poll constants and the 422 handling follow from it.
 
-### Q3 — Exact Door43 operations for the Milestone 1 writes
-Repository creation, multi-file commit, branch creation and deletion, release creation and editing, and how a release targets a commit. Includes whether the multi-file contents endpoint accepts a 66-book snapshot in one request (Q13).
+### Q3 — Do the Milestone 1 writes succeed with a tC Admin OAuth token, and does `target_commitish` accept a commit SHA?
+The endpoints and request shapes are closed (E21). Still open: each write exercised with an OAuth token on a `tc-admin-qa` repository, whether `CreateReleaseOption.target_commitish` accepts the snapshot commit SHA (existing releases carry a branch name), whether the `upload` operation removes the need for blob SHAs on existing files, and Q13.
 Blocks: #30, #34, #39. Owner: Rich.
-Close by: reading `https://qa.door43.org/swagger.v1.json` and probing each write on a `tc-admin-qa` repository; recording request and response fixtures.
+Close by: one scripted run on QA that creates a repository, commits files, creates a branch from a tag, commits to it, creates a release targeting the commit SHA, edits it, and deletes the branch, recording every request and response as fixtures.
 
 ### Q4 — Required Scripture Burrito metadata for the two flavors
 The minimum valid `metadata.json` for `scripture/textTranslation` and, for Milestone 2, `gloss/textStories`, and whether Door43's health check accepts what the wizard generates.
@@ -139,7 +179,8 @@ Close by: #4 after the next reset; result recorded here and in the runbook.
 This is about the OAuth `scope` parameter sent at sign-in (Gitea's token permissions), not the Scripture Burrito `currentScope` field, which is Q7.
 In plain terms: the prototype signs in requesting `read:user read:repository read:organization`, which lets it list repositories but would be refused when it tries to create a repository, commit files, create a branch or tag, or create a release. Gitea's OAuth scopes include `write:repository` and `write:organization` (and `write:user`); which of these, at minimum, lets every Milestone 1 write operation succeed is not yet known, and asking for too much would violate least privilege (architecture §8).
 Blocks: #2, #12, #30. Owner: Rich.
-Close by: reading the OAuth scope list for the DCS Gitea version and confirming on QA that each write in the operation catalog succeeds with the minimal set; recording the set as a fact.
+Proposal (labeled, inferred from Gitea's scoped-token model for 1.22 and later, E13): `read:user write:repository write:organization`, where `write:organization` covers `POST /orgs/{org}/repos` and `write:repository` covers contents, branches, tags, and releases. The swagger declares no scopes, so this is not evidence.
+Close by: confirming on QA that each write in the operation catalog succeeds with that set and fails without it; recording the set as a fact.
 
 ### Q11 — How does the portfolio show a writable repository with valid metadata whose type is neither Bible nor OBS? (closed)
 **Decided 18 September 2026 by Rich:** a Translation Notes repository is a book package repository like a Bible repository: it has one file per book, `.tsv` instead of `.usfm`. It can be created and released through the same operations as a Bible project. The same holds for Translation Questions and Translation Words Links (CONTEXT.md "Book package repository").
@@ -147,10 +188,10 @@ Recorded in: CONTEXT.md (project type, book package repository, identifiers `pro
 Opens: Q18 (the Scripture Burrito flavor and book file pattern for each type).
 Was blocking: #19, #21.
 
-### Q12 — Archive size against Worker limits
-The largest expected `/sb/` archive (a 66-book aligned Bible) against Cloudflare Worker memory and CPU limits, for download, unpack, and re-upload in one request.
-Blocks: #18, #34; Milestone 3 #52. Owner: Rich.
-Close by: measuring `bahtraku/id_tb1/sb/master.zip` size and unpacked size, and reading the current Workers limits; recording both.
+### Q12 — Aligned Bible archive size against Worker limits, and the Workers plan
+A 66-book unaligned Bible is 1.5 MB zipped and 5.2 MB unpacked (E17), well inside Worker memory. Still open: the size of an aligned Bible archive (alignment data multiplies USFM size), and whether the Cloudflare account is on the Workers Paid plan, since the free plan's CPU limit would not cover unzipping, hashing, and base64-encoding a snapshot in one request.
+Blocks: #34; Milestone 3 #52. Owner: Rich.
+Close by: measuring one aligned Bible archive on QA and recording the account plan.
 
 ### Q13 — Multi-file commit limits
 Maximum files and bytes per request for the multi-file contents endpoint, against a 66-book snapshot.
@@ -165,10 +206,8 @@ Proposal (labeled): `preparation.discard` deletes the temporary branch of an unr
 ### Q15 — Safe upload byte limits (Milestone 2)
 Blocks: #45. Owner: Rich. Close by: reading Worker request limits and Door43 contents limits; recording both.
 
-### Q16 — What does `ingredients[].exists` mean, and is it populated for Scripture Burrito repositories?
-The prototype counts coverage from `ingredients[].exists === true` in the search response. Whether Door43 populates `ingredients` for Scripture Burrito repositories the same way as for Resource Container is inferred, not observed.
-Blocks: #19, #23. Owner: Rich.
-Close by: reading the search response for bahtraku/Perjanjian-Baru-Pendau on QA and recording it as a fixture.
+### Q16 — Is `ingredients[]` populated for Scripture Burrito repositories? (closed)
+**Verified 21 September 2026 (E14):** yes, with `exists`, `size`, `path`, `identifier`, `categories`, and `sort` for both the Scripture Burrito and the Resource Container seed repository.
 
 ### Q17 — What is the portfolio's analysis source? (closed)
 **Decided 18 September 2026 by Rich:** the catalog metadata in the repository search response is enough to know about a repository, and its fields are the same for every project type (E12). `portfolio.list` and `project.read` read catalog metadata only; only `release.plan` downloads `/sb/` archives. The project report's `coverage.basis` is `catalog`; a release plan's candidate detection is `archive`.

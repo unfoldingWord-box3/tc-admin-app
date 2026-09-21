@@ -109,12 +109,12 @@ The operation layer is the catalog in [operations.md](operations.md), one module
 Three resources carry state across calls:
 
 - The **project report** (`project.read`) is the complete situation of one project: type, format, editability with reason, coverage with basis, health with provenance, latest full release, default-branch head, active preparation, setup state, permissions, freshness. Type, coverage, and health come from the catalog metadata in Door43's repository search, which is the same for every project type (E12, Q17); no archive is downloaded for a portfolio or a project report.
-- A **plan** is bound to the source SHAs it was computed from, lists `would_write`, expires, and is the idempotency key of its apply. Plans and the archives they downloaded live in Workers KV for their lifetime so `release.prepare` does not download again.
+- A **plan** is bound to the source SHAs it was computed from, lists `would_write`, expires, and is the idempotency key of its apply. Plans live in Workers KV for their lifetime; a release plan is small because it holds tree comparisons, not archives, which `release.prepare` downloads when it needs the bytes (E17: about one second and 1.5 MB for a 66-book Bible).
 - A **preparation** is the release state machine in [domain-model.md](domain-model.md) §6 as an addressable record: state, binding, selection, snapshot, health, version, notes, release, last error, history. `preparation.read` is how the UI polls and how a lost session, a support engineer, or an agent resumes.
 
 ### Health adapter
 
-Door43 runs the health check automatically on every branch push and tag; there is no trigger endpoint. The adapter reads `GET /repos/{owner}/{repo}/healthcheck?ref=` and polls after a push: every 5 seconds for up to 3 minutes, then returns a running state and lets the manager refresh.
+Door43 runs the health check automatically on every branch push and tag; there is no trigger endpoint. The adapter reads `GET /repos/{owner}/{repo}/healthcheck?ref=` and polls after a push: every 5 seconds for up to 3 minutes, then returns a running state and lets the manager refresh. The response shape, the severity vocabulary (`error`, `warning`, `info`, `success`), and the 422 answer for a ref without a result are recorded as E15; the rule sets differ by metadata format.
 
 The health adapter accepts a repository/ref target and returns:
 
@@ -131,8 +131,8 @@ The UI should receive normalized data, while the raw service response remains av
 The orchestrator must:
 
 1. Read the latest full release tag and the current default branch head; bind preparation to the default-branch commit SHA.
-2. Download the Scripture Burrito archive for the default branch and, when a release exists, for the latest full release tag. Door43 converts non-SB refs and rolls up SB refs.
-3. Detect new, changed released, unchanged, administrative, and unknown files by comparing the two trees.
+2. Detect new, changed released, unchanged, administrative, and unknown files by comparing the recursive git trees of the two refs book by book (E19), mapping book code to path through each ref's catalog entry (E20). Blob SHAs are comparable across layouts because conversion preserves bytes (E18). This is the plan; nothing is downloaded yet.
+3. On prepare, download the Scripture Burrito archive for the default branch and, when a release exists, for the latest full release tag (E17). Door43 converts non-SB refs and rolls up SB refs; the archive is the only source of file bytes (ADR 0008).
 4. Create `temp-tca-release/<version>` from the latest full release tag, or from the default branch head for a first release (ADR 0010).
 5. Assemble one commit: root files and administrative ingredients from the default branch archive, released books from the tag archive, selected books from the default branch archive, and `metadata.json` merged from the previous release's metadata with size and md5 recomputed for every file and scope set to the released books.
 6. Push the commit with the multi-file contents endpoint.

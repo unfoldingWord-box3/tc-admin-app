@@ -24,7 +24,7 @@ Rules that hold for every operation:
 5. **Permission at the boundary.** Every apply re-reads the repository permission first and fails closed (A2).
 6. **Idempotency by key.** Every apply accepts an idempotency key (the plan id serves) and returns the same receipt for a repeated call with the same key. An ambiguous outcome is reported, never retried silently (X1).
 7. **Errors from one catalog.** Every failure is a code from section 6 with the fixed user message, `retryable`, `next_action`, and `request_id` (X2).
-8. **Reads are cheap.** `portfolio.list` and `project.read` use the catalog metadata Door43 returns in the repository search (E12), which is the same for every project type; they never download an archive. Only `release.plan` downloads `/sb/` archives (Q17, closed).
+8. **Reads are cheap.** `portfolio.list` and `project.read` use the catalog metadata Door43 returns in the repository search (E12, E14), which is the same for every project type; they never download an archive. `release.plan` compares git trees (E18, E19), not archives. Only `release.prepare` downloads `/sb/` archives, because it needs the bytes.
 
 ## 2. Common shapes
 
@@ -165,7 +165,7 @@ The orientation call. One request tells a client who is signed in, which host, a
 ### `project.read`
 
 - Inputs: `{ owner, repo }`.
-- Door43 reads: repository catalog metadata, default branch head, latest full release and its tag, health for the default branch. No archive download (Q17); `coverage.basis = catalog`.
+- Door43 reads: the repository (E14 supplies `metadata_type`, `subject`, `flavor_type`, `ingredients`, `healthcheck_severity`, and `catalog.prod` as the latest full release with its tag and commit SHA, `catalog.preprod` as the latest pre-release, `catalog.latest` as the default-branch head); the health result for the default branch (E15) for the issue counts. No archive download (Q17); `coverage.basis = catalog`.
 - Returns: the project report.
 - Errors: `not_found`, `permission_denied` (the repository is not writable), `session_expired`, `door43_unavailable`.
 
@@ -201,23 +201,24 @@ The orientation call. One request tells a client who is signed in, which host, a
 Candidate detection and everything the manager needs to decide, with no writes.
 
 - Inputs: `{ owner, repo }`.
-- Door43 reads: default-branch head SHA; latest full release and its tag SHA; the `/sb/` archive for the default branch and, when a release exists, for the release tag. The archives are cached for the plan's lifetime so `release.prepare` does not download them again.
-- Computes: candidate groups (`new`, `changed_released`, `unchanged`, `unknown`) by comparing the two trees, with administrative ingredients and root files always taken from the default branch (R1); the proposed version from the baseline (R9); a draft of the release notes (product spec §10). The merged metadata's `currentScope` will list exactly the released books (Q7).
+- Door43 reads: the repository (`catalog.prod` for the baseline tag and commit SHA, `catalog.latest` for the default-branch head); the catalog entry for each of the two refs (E20) to map book code to path in each layout; the recursive git tree for each ref (E19). No archive download.
+- Computes: candidate groups (`new`, `changed_released`, `unchanged`, `unknown`) by comparing blob SHAs book by book across the two trees, which is exact because conversion preserves bytes (E18); administrative ingredients and root files always come from the default branch (R1); the proposed version from the baseline (R9); a draft of the release notes (product spec §10). The merged metadata's `currentScope` will list exactly the released books (Q7).
 - Returns: `plan.preview = { candidates: { new, changed_released, unchanged, unknown }, administrative: [path], version: { baseline_tag, proposed, rule_applied }, notes_draft, selection: {} }` with nothing selected (R4). `would_write = [branch, commit]`.
-- Errors: `not_releasable` (unsupported project), `permission_denied`, `archive_failed`, `session_expired`, `door43_unavailable`.
+- Errors: `not_releasable` (unsupported project), `permission_denied`, `session_expired`, `door43_unavailable`.
 
 ### `release.prepare`
 
 - Inputs: `{ plan_id, selection: { new: [unit], revised: [unit], unknown_included: [path] }, version | null }`.
 - Checks: plan not expired; `bound_to` matches Door43 (R5); selection valid: at least one unit on a first release, no released unit omitted (R2, R4); version valid and greater than the baseline when supplied (R9); permission re-read (A2).
-- Door43 writes: create `temp-tca-release/<version>` from the release tag SHA, or from the default-branch head for a first release (ADR 0010); one multi-file commit containing root files and administrative ingredients from the default-branch archive, released units from the tag archive, selected units from the default-branch archive, explicitly included unknown files, and the merged `metadata.json` with size and md5 recomputed for every file (R1, R3, R10, W5).
+- Door43 reads: the `/sb/` archive for the default branch and, when a release exists, for the release tag (E17), the only place the file bytes come from (ADR 0008).
+- Door43 writes: `POST /branches` creating `temp-tca-release/<version>` with `old_ref_name` set to the release tag, or to the default branch for a first release (ADR 0010); then one `POST /contents` on that branch containing root files and administrative ingredients from the default-branch archive, released units from the tag archive, selected units from the default-branch archive, explicitly included unknown files, and the merged `metadata.json` with size and md5 recomputed for every file (R1, R3, R10, W5; request shapes in E21).
 - Returns: `receipt.result = preparation` in state `snapshot_prepared`, moving to `health_checking` once the push is confirmed.
 - Errors: `plan_expired`, `source_changed`, `invalid_selection`, `invalid_version`, `permission_denied`, `commit_failed`, `door43_unavailable`. On `commit_failed` the branch is retained (R7) and the preparation is `retryable_failure`.
 
 ### `preparation.read`
 
 - Inputs: `{ owner, repo, preparation_id }`.
-- Door43 reads: health for the temporary branch; default-branch head SHA. The Worker polls health every 5 seconds for 3 minutes after the push, then returns `health_checking` and lets the client refresh (Q2 tunes the constants).
+- Door43 reads: health for the temporary branch (E15); default-branch head SHA. The Worker polls health every 5 seconds for 3 minutes after the push, then returns `health_checking` and lets the client refresh (Q2 tunes the constants). Inside that window a 422 "no metadata found" for the branch means the check has not run yet and maps to `checking`, not `health_error`.
 - Returns: the preparation. If the default-branch head moved, `state = restart_required` (R5). Health states map per H1. `healthy` and `warning` move the preparation to `ready_for_release`; when the state is `warning`, `preparation.requires_acknowledgement` is true and the health issues are included for the manager to read. Every other state leaves the preparation short of `ready_for_release` (H2).
 - Errors: `not_found`, `session_expired`, `door43_unavailable`.
 
@@ -232,7 +233,7 @@ Candidate detection and everything the manager needs to decide, with no writes.
 ### `release.lookup`
 
 - Inputs: `{ owner, repo, tag }`.
-- Door43 reads: release by tag.
+- Door43 reads: `GET /repos/{owner}/{repo}/releases/tags/{tag}` (E21).
 - Returns: `{ found: boolean, release: { tag, url, prerelease, target_sha } | null }`. Used before any retry after an ambiguous outcome (R6).
 
 ### `release.promote`
@@ -287,7 +288,7 @@ Defined in [domain-model.md](domain-model.md) and repeated here so a client can 
 | `plan_expired` | 409 | replan | "This plan has expired. Review the project again." | rerun the plan | — | R5 |
 | `source_changed` | 409 | replan | "Project has been edited. The release process will need to restart." | discard the preparation and plan again | Concurrent project edit | R5 |
 | `commit_failed` | 502 | yes | "Commit failed: <error message>." | retry | Commit failure | X1, R7 |
-| `archive_failed` | 502 | yes | "Door43 could not provide the project archive. Try again later." | retry | — | — |
+| `archive_failed` | 502 | yes | "Door43 could not provide the project archive. Try again later." | retry `release.prepare` | — | — |
 | `health_blocked` | 409 | yes | the health-check error or state | refresh health; retry when Door43 recovers | Health-check error | H2 |
 | `warning_not_acknowledged` | 409 | after confirmation | "The health check reported warnings. Review them and confirm to release anyway." | show the warnings; resend with `acknowledge_warnings: true` | Health warning | H2 |
 | `release_failed` | 502 | yes | "Release creation failed: <error message>." | retry; the temporary branch is kept | Release creation failure | R7 |

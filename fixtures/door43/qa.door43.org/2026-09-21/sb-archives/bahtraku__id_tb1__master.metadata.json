@@ -1,0 +1,1736 @@
+{
+  "format": "scripture burrito",
+  "meta": {
+    "version": "1.0.0",
+    "category": "source",
+    "generator": {
+      "softwareName": "go-rc2sb",
+      "softwareVersion": "v0.5.0",
+      "userName": ""
+    },
+    "defaultLocale": "en",
+    "dateCreated": "2026-09-21T13:49:36.139Z",
+    "normalization": "NFC"
+  },
+  "idAuthorities": {
+    "dcs": {
+      "id": "https://git.door43.org",
+      "name": {
+        "en": "Door43 Content Service"
+      }
+    }
+  },
+  "identification": {
+    "primary": {
+      "dcs": {
+        "Indonesian-Bible-Society/id_tb1": {
+          "revision": "6ac2aeb0dbaf97f1d71278c8ac4e5d5dc170dd6f",
+          "timestamp": "2026-09-21T13:49:36.139Z"
+        }
+      }
+    },
+    "name": {
+      "en": "Alkitab Terjemahan Baru"
+    },
+    "description": {
+      "en": "Alkitab Terjemahan Baru"
+    },
+    "abbreviation": {
+      "en": "TB1"
+    }
+  },
+  "languages": [
+    {
+      "tag": "id",
+      "name": {
+        "en": "Bahasa Indonesian"
+      },
+      "scriptDirection": "ltr"
+    }
+  ],
+  "type": {
+    "flavorType": {
+      "name": "scripture",
+      "flavor": {
+        "name": "textTranslation",
+        "usfmVersion": "3.0",
+        "translationType": "revision",
+        "audience": "common",
+        "projectType": "standard"
+      },
+      "currentScope": {
+        "1CH": [],
+        "1CO": [],
+        "1JN": [],
+        "1KI": [],
+        "1PE": [],
+        "1SA": [],
+        "1TH": [],
+        "1TI": [],
+        "2CH": [],
+        "2CO": [],
+        "2JN": [],
+        "2KI": [],
+        "2PE": [],
+        "2SA": [],
+        "2TH": [],
+        "2TI": [],
+        "3JN": [],
+        "ACT": [],
+        "AMO": [],
+        "COL": [],
+        "DAN": [],
+        "DEU": [],
+        "ECC": [],
+        "EPH": [],
+        "EST": [],
+        "EXO": [],
+        "EZK": [],
+        "EZR": [],
+        "GAL": [],
+        "GEN": [],
+        "HAB": [],
+        "HAG": [],
+        "HEB": [],
+        "HOS": [],
+        "ISA": [],
+        "JAS": [],
+        "JDG": [],
+        "JER": [],
+        "JHN": [],
+        "JOB": [],
+        "JOL": [],
+        "JON": [],
+        "JOS": [],
+        "JUD": [],
+        "LAM": [],
+        "LEV": [],
+        "LUK": [],
+        "MAL": [],
+        "MAT": [],
+        "MIC": [],
+        "MRK": [],
+        "NAM": [],
+        "NEH": [],
+        "NUM": [],
+        "OBA": [],
+        "PHM": [],
+        "PHP": [],
+        "PRO": [],
+        "PSA": [],
+        "REV": [],
+        "ROM": [],
+        "RUT": [],
+        "SNG": [],
+        "TIT": [],
+        "ZEC": [],
+        "ZEP": []
+      }
+    }
+  },
+  "confidential": false,
+  "localizedNames": {
+    "book-1ch": {
+      "abbr": {
+        "en": "1Ch",
+        "id": "1Taw."
+      },
+      "short": {
+        "en": "First Chronicles",
+        "id": "1 Tawarikh"
+      },
+      "long": {
+        "en": "The First Book of the Chronicles",
+        "id": "1 Tawarikh"
+      }
+    },
+    "book-1co": {
+      "abbr": {
+        "en": "1Co",
+        "id": "1Kor."
+      },
+      "short": {
+        "en": "First Corinthians",
+        "id": "1 Korintus"
+      },
+      "long": {
+        "en": "The First Letter of Paul to the Corinthians",
+        "id": "Surat Paulus Yang Pertama Kepada Jemaat di Korintus"
+      }
+    },
+    "book-1jn": {
+      "abbr": {
+        "en": "1Jn",
+        "id": "1Yoh."
+      },
+      "short": {
+        "en": "First John",
+        "id": "1 Yohanes"
+      },
+      "long": {
+        "en": "The First Letter of John",
+        "id": "Surat Yohanes Yang Pertama"
+      }
+    },
+    "book-1ki": {
+      "abbr": {
+        "en": "1Ki",
+        "id": "1Raj."
+      },
+      "short": {
+        "en": "First Kings",
+        "id": "1 Raja-raja"
+      },
+      "long": {
+        "en": "The First Book of Kings",
+        "id": "1 Raja-raja"
+      }
+    },
+    "book-1pe": {
+      "abbr": {
+        "en": "1Pe",
+        "id": "1Ptr."
+      },
+      "short": {
+        "en": "First Peter",
+        "id": "1 Petrus"
+      },
+      "long": {
+        "en": "The First Letter of Peter",
+        "id": "Surat Petrus Yang Pertama"
+      }
+    },
+    "book-1sa": {
+      "abbr": {
+        "en": "1Sa",
+        "id": "1Sam."
+      },
+      "short": {
+        "en": "First Samuel",
+        "id": "1 Samuel"
+      },
+      "long": {
+        "en": "The First Book of Samuel",
+        "id": "1 Samuel"
+      }
+    },
+    "book-1th": {
+      "abbr": {
+        "en": "1Th",
+        "id": "1Tes."
+      },
+      "short": {
+        "en": "First Thessalonians",
+        "id": "1 Tesalonika"
+      },
+      "long": {
+        "en": "The First Letter of Paul to the Thessalonians",
+        "id": "Surat Paulus Yang Pertama Kepada Jemaat Di Tesalonika"
+      }
+    },
+    "book-1ti": {
+      "abbr": {
+        "en": "1Ti",
+        "id": "1Tim."
+      },
+      "short": {
+        "en": "First Timothy",
+        "id": "1 Timotius"
+      },
+      "long": {
+        "en": "The First Letter of Paul to Timothy",
+        "id": "Surat Paulus Yang Pertama Kepada Timotius"
+      }
+    },
+    "book-2ch": {
+      "abbr": {
+        "en": "2Ch",
+        "id": "2Taw."
+      },
+      "short": {
+        "en": "Second Chronicles",
+        "id": "2 Tawarikh"
+      },
+      "long": {
+        "en": "The Second Book of the Chronicles",
+        "id": "2 Tawarikh"
+      }
+    },
+    "book-2co": {
+      "abbr": {
+        "en": "2Co",
+        "id": "2Kor."
+      },
+      "short": {
+        "en": "Second Corinthians",
+        "id": "2 Korintus"
+      },
+      "long": {
+        "en": "The Second Letter of Paul to the Corinthians",
+        "id": "Surat Paulus Yang Kedua Kepada Jemaat Di Korintus"
+      }
+    },
+    "book-2jn": {
+      "abbr": {
+        "en": "2Jn",
+        "id": "2Yoh."
+      },
+      "short": {
+        "en": "Second John",
+        "id": "2 Yohanes"
+      },
+      "long": {
+        "en": "The Second Letter of John",
+        "id": "Surat Yohanes Yang Kedua"
+      }
+    },
+    "book-2ki": {
+      "abbr": {
+        "en": "2Ki",
+        "id": "2Raj."
+      },
+      "short": {
+        "en": "Second Kings",
+        "id": "2 Raja-raja"
+      },
+      "long": {
+        "en": "The Second Book of Kings",
+        "id": "2 Raja-raja"
+      }
+    },
+    "book-2pe": {
+      "abbr": {
+        "en": "2Pe",
+        "id": "2Ptr."
+      },
+      "short": {
+        "en": "Second Peter",
+        "id": "2 Petrus"
+      },
+      "long": {
+        "en": "The Second Letter of Peter",
+        "id": "Surat Petrus Yang Kedua"
+      }
+    },
+    "book-2sa": {
+      "abbr": {
+        "en": "2Sa",
+        "id": "2Sam."
+      },
+      "short": {
+        "en": "Second Samuel",
+        "id": "2 Samuel"
+      },
+      "long": {
+        "en": "The Second Book of Samuel",
+        "id": "2 Samuel"
+      }
+    },
+    "book-2th": {
+      "abbr": {
+        "en": "2Th",
+        "id": "2Tes."
+      },
+      "short": {
+        "en": "Second Thessalonians",
+        "id": "2 Tesalonika"
+      },
+      "long": {
+        "en": "The Second Letter of Paul to the Thessalonians",
+        "id": "Surat Paulus Yang Kedua Kepada Jemaat Di Tesalonika"
+      }
+    },
+    "book-2ti": {
+      "abbr": {
+        "en": "2Ti",
+        "id": "2Tim."
+      },
+      "short": {
+        "en": "Second Timothy",
+        "id": "2 Timotius"
+      },
+      "long": {
+        "en": "The Second Letter of Paul to Timothy",
+        "id": "Surat Paulus Yang Kedua Kepada Timotius"
+      }
+    },
+    "book-3jn": {
+      "abbr": {
+        "en": "3Jn",
+        "id": "3Yoh."
+      },
+      "short": {
+        "en": "Third John",
+        "id": "3 Yohanes"
+      },
+      "long": {
+        "en": "The Third Letter of John",
+        "id": "Surat Yohanes Yang Ketiga"
+      }
+    },
+    "book-act": {
+      "abbr": {
+        "en": "Act",
+        "id": "Kis."
+      },
+      "short": {
+        "en": "Acts",
+        "id": "Kisah Para Rasul"
+      },
+      "long": {
+        "en": "The Acts of the Apostles",
+        "id": "Kisah Para Rasul"
+      }
+    },
+    "book-amo": {
+      "abbr": {
+        "en": "Amo",
+        "id": "Am."
+      },
+      "short": {
+        "en": "Amos",
+        "id": "Amos"
+      },
+      "long": {
+        "en": "The Book of Amos",
+        "id": "Amos"
+      }
+    },
+    "book-col": {
+      "abbr": {
+        "en": "Col",
+        "id": "Kol."
+      },
+      "short": {
+        "en": "Colossians",
+        "id": "Kolose"
+      },
+      "long": {
+        "en": "The Letter of Paul to the Colossians",
+        "id": "Surat Paulus Kepada Jemaat Di Kolose"
+      }
+    },
+    "book-dan": {
+      "abbr": {
+        "en": "Dan",
+        "id": "Dan."
+      },
+      "short": {
+        "en": "Daniel",
+        "id": "Daniel"
+      },
+      "long": {
+        "en": "The Book of Daniel",
+        "id": "Daniel"
+      }
+    },
+    "book-deu": {
+      "abbr": {
+        "en": "Deu",
+        "id": "Ul."
+      },
+      "short": {
+        "en": "Deuteronomy",
+        "id": "Ulangan"
+      },
+      "long": {
+        "en": "The Book of Deuteronomy",
+        "id": "Ulangan"
+      }
+    },
+    "book-ecc": {
+      "abbr": {
+        "en": "Ecc",
+        "id": "Pkh."
+      },
+      "short": {
+        "en": "Ecclesiastes",
+        "id": "Pengkhotbah"
+      },
+      "long": {
+        "en": "The Book of Ecclesiastes",
+        "id": "Pengkhotbah"
+      }
+    },
+    "book-eph": {
+      "abbr": {
+        "en": "Eph",
+        "id": "Ef."
+      },
+      "short": {
+        "en": "Ephesians",
+        "id": "Efesus"
+      },
+      "long": {
+        "en": "The Letter of Paul to the Ephesians",
+        "id": "Surat Paulus Kepada Jemaat Di Efesus"
+      }
+    },
+    "book-est": {
+      "abbr": {
+        "en": "Est",
+        "id": "Est."
+      },
+      "short": {
+        "en": "Esther",
+        "id": "Ester"
+      },
+      "long": {
+        "en": "The Book of Esther",
+        "id": "Ester"
+      }
+    },
+    "book-exo": {
+      "abbr": {
+        "en": "Exo",
+        "id": "Kel."
+      },
+      "short": {
+        "en": "Exodus",
+        "id": "Keluaran"
+      },
+      "long": {
+        "en": "The Book of Exodus",
+        "id": "Keluaran"
+      }
+    },
+    "book-ezk": {
+      "abbr": {
+        "en": "Ezk",
+        "id": "Yeh."
+      },
+      "short": {
+        "en": "Ezekiel",
+        "id": "Yehezkiel"
+      },
+      "long": {
+        "en": "The Book of Ezekiel",
+        "id": "Yehezkiel"
+      }
+    },
+    "book-ezr": {
+      "abbr": {
+        "en": "Ezr",
+        "id": "Ezr."
+      },
+      "short": {
+        "en": "Ezra",
+        "id": "Ezra"
+      },
+      "long": {
+        "en": "The Book of Ezra",
+        "id": "Ezra"
+      }
+    },
+    "book-gal": {
+      "abbr": {
+        "en": "Gal",
+        "id": "Gal."
+      },
+      "short": {
+        "en": "Galatians",
+        "id": "Galatia"
+      },
+      "long": {
+        "en": "The Letter of Paul to the Galatians",
+        "id": "Surat Paulus Kepada Jemaat di Galatia"
+      }
+    },
+    "book-gen": {
+      "abbr": {
+        "en": "Gen",
+        "id": "Kej."
+      },
+      "short": {
+        "en": "Genesis",
+        "id": "Kejadian"
+      },
+      "long": {
+        "en": "The Book of Genesis",
+        "id": "Kejadian"
+      }
+    },
+    "book-hab": {
+      "abbr": {
+        "en": "Hab",
+        "id": "Hab."
+      },
+      "short": {
+        "en": "Habakkuk",
+        "id": "Habakuk"
+      },
+      "long": {
+        "en": "The Book of Habakkuk",
+        "id": "Habakuk"
+      }
+    },
+    "book-hag": {
+      "abbr": {
+        "en": "Hag",
+        "id": "Hag."
+      },
+      "short": {
+        "en": "Haggai",
+        "id": "Hagai"
+      },
+      "long": {
+        "en": "The Book of Haggai",
+        "id": "Hagai"
+      }
+    },
+    "book-heb": {
+      "abbr": {
+        "en": "Heb",
+        "id": "Ibr."
+      },
+      "short": {
+        "en": "Hebrews",
+        "id": "Ibrani"
+      },
+      "long": {
+        "en": "The Letter to the Hebrews",
+        "id": "Surat Kepada Orang Ibrani"
+      }
+    },
+    "book-hos": {
+      "abbr": {
+        "en": "Hos",
+        "id": "Hos."
+      },
+      "short": {
+        "en": "Hosea",
+        "id": "Hosea"
+      },
+      "long": {
+        "en": "The Book of Hosea",
+        "id": "Hosea"
+      }
+    },
+    "book-isa": {
+      "abbr": {
+        "en": "Isa",
+        "id": "Yes."
+      },
+      "short": {
+        "en": "Isaiah",
+        "id": "Yesaya"
+      },
+      "long": {
+        "en": "The Book of Isaiah",
+        "id": "Yesaya"
+      }
+    },
+    "book-jas": {
+      "abbr": {
+        "en": "Jas",
+        "id": "Yak."
+      },
+      "short": {
+        "en": "James",
+        "id": "Yakobus"
+      },
+      "long": {
+        "en": "The Letter of James",
+        "id": "Surat Yakobus"
+      }
+    },
+    "book-jdg": {
+      "abbr": {
+        "en": "Jdg",
+        "id": "Hak."
+      },
+      "short": {
+        "en": "Judges",
+        "id": "Hakim-hakim"
+      },
+      "long": {
+        "en": "The Book of Judges",
+        "id": "Hakim-hakim"
+      }
+    },
+    "book-jer": {
+      "abbr": {
+        "en": "Jer",
+        "id": "Yer."
+      },
+      "short": {
+        "en": "Jeremiah",
+        "id": "Yeremia"
+      },
+      "long": {
+        "en": "The Book of Jeremiah",
+        "id": "Yeremia"
+      }
+    },
+    "book-jhn": {
+      "abbr": {
+        "en": "Jhn",
+        "id": "Yoh."
+      },
+      "short": {
+        "en": "John",
+        "id": "Yohanes"
+      },
+      "long": {
+        "en": "The Gospel of John",
+        "id": "Injil Yohanes"
+      }
+    },
+    "book-job": {
+      "abbr": {
+        "en": "Job",
+        "id": "Ayb."
+      },
+      "short": {
+        "en": "Job",
+        "id": "Ayub"
+      },
+      "long": {
+        "en": "The Book of Job",
+        "id": "Ayub"
+      }
+    },
+    "book-jol": {
+      "abbr": {
+        "en": "Jol",
+        "id": "Yl."
+      },
+      "short": {
+        "en": "Joel",
+        "id": "Y\"oel"
+      },
+      "long": {
+        "en": "The Book of Joel",
+        "id": "Y\"oel"
+      }
+    },
+    "book-jon": {
+      "abbr": {
+        "en": "Jon",
+        "id": "Yun."
+      },
+      "short": {
+        "en": "Jonah",
+        "id": "Yunus"
+      },
+      "long": {
+        "en": "The Book of Jonah",
+        "id": "Yunus"
+      }
+    },
+    "book-jos": {
+      "abbr": {
+        "en": "Jos",
+        "id": "Yos."
+      },
+      "short": {
+        "en": "Joshua",
+        "id": "Yosua"
+      },
+      "long": {
+        "en": "The Book of Joshua",
+        "id": "Yosua"
+      }
+    },
+    "book-jud": {
+      "abbr": {
+        "en": "Jud",
+        "id": "Yud."
+      },
+      "short": {
+        "en": "Jude",
+        "id": "Yudas"
+      },
+      "long": {
+        "en": "The Letter of Jude",
+        "id": "Surat Yudas"
+      }
+    },
+    "book-lam": {
+      "abbr": {
+        "en": "Lam",
+        "id": "Rat."
+      },
+      "short": {
+        "en": "Lamentations",
+        "id": "Ratapan"
+      },
+      "long": {
+        "en": "The Book of Lamentations",
+        "id": "Ratapan"
+      }
+    },
+    "book-lev": {
+      "abbr": {
+        "en": "Lev",
+        "id": "Im."
+      },
+      "short": {
+        "en": "Leviticus",
+        "id": "Imamat"
+      },
+      "long": {
+        "en": "The Book of Leviticus",
+        "id": "Imamat"
+      }
+    },
+    "book-luk": {
+      "abbr": {
+        "en": "Luk",
+        "id": "Luk."
+      },
+      "short": {
+        "en": "Luke",
+        "id": "Lukas"
+      },
+      "long": {
+        "en": "The Gospel of Luke",
+        "id": "Injil Lukas"
+      }
+    },
+    "book-mal": {
+      "abbr": {
+        "en": "Mal",
+        "id": "Mal."
+      },
+      "short": {
+        "en": "Malachi",
+        "id": "Maleakhi"
+      },
+      "long": {
+        "en": "The Book of Malachi",
+        "id": "Maleakhi"
+      }
+    },
+    "book-mat": {
+      "abbr": {
+        "en": "Mat",
+        "id": "Mat."
+      },
+      "short": {
+        "en": "Matthew",
+        "id": "Matius"
+      },
+      "long": {
+        "en": "The Gospel of Matthew",
+        "id": "Injil Matius"
+      }
+    },
+    "book-mic": {
+      "abbr": {
+        "en": "Mic",
+        "id": "Mi."
+      },
+      "short": {
+        "en": "Micah",
+        "id": "Mikha"
+      },
+      "long": {
+        "en": "The Book of Micah",
+        "id": "Mikha"
+      }
+    },
+    "book-mrk": {
+      "abbr": {
+        "en": "Mrk",
+        "id": "Mrk."
+      },
+      "short": {
+        "en": "Mark",
+        "id": "Markus"
+      },
+      "long": {
+        "en": "The Gospel of Mark",
+        "id": "Injil Markus"
+      }
+    },
+    "book-nam": {
+      "abbr": {
+        "en": "Nam",
+        "id": "Nah."
+      },
+      "short": {
+        "en": "Nahum",
+        "id": "Nahum"
+      },
+      "long": {
+        "en": "The Book of Nahum",
+        "id": "Nahum"
+      }
+    },
+    "book-neh": {
+      "abbr": {
+        "en": "Neh",
+        "id": "Neh."
+      },
+      "short": {
+        "en": "Nehemiah",
+        "id": "Nehemia"
+      },
+      "long": {
+        "en": "The Book of Nehemiah",
+        "id": "Nehemia"
+      }
+    },
+    "book-num": {
+      "abbr": {
+        "en": "Num",
+        "id": "Bil."
+      },
+      "short": {
+        "en": "Numbers",
+        "id": "Bilangan"
+      },
+      "long": {
+        "en": "The Book of Numbers",
+        "id": "Bilangan"
+      }
+    },
+    "book-oba": {
+      "abbr": {
+        "en": "Oba",
+        "id": "Ob."
+      },
+      "short": {
+        "en": "Obadiah",
+        "id": "Obaja"
+      },
+      "long": {
+        "en": "The Book of Obadiah",
+        "id": "Obaja"
+      }
+    },
+    "book-phm": {
+      "abbr": {
+        "en": "Phm",
+        "id": "Flm."
+      },
+      "short": {
+        "en": "Philemon",
+        "id": "Filemon"
+      },
+      "long": {
+        "en": "The Letter of Paul to Philemon",
+        "id": "Surat Paulus Kepada Filemon"
+      }
+    },
+    "book-php": {
+      "abbr": {
+        "en": "Php",
+        "id": "Flp."
+      },
+      "short": {
+        "en": "Philippians",
+        "id": "Filipi"
+      },
+      "long": {
+        "en": "The Letter of Paul to the Philippians",
+        "id": "Surat Paulus Kepada Jemaat Di Filipi"
+      }
+    },
+    "book-pro": {
+      "abbr": {
+        "en": "Pro",
+        "id": "Ams."
+      },
+      "short": {
+        "en": "Proverbs",
+        "id": "Amsal"
+      },
+      "long": {
+        "en": "The Book of Proverbs",
+        "id": "Amsal"
+      }
+    },
+    "book-psa": {
+      "abbr": {
+        "en": "Psa",
+        "id": "Mzm."
+      },
+      "short": {
+        "en": "Psalms",
+        "id": "Mazmur"
+      },
+      "long": {
+        "en": "The Book of Psalms",
+        "id": "Mazmur"
+      }
+    },
+    "book-rev": {
+      "abbr": {
+        "en": "Rev",
+        "id": "Why."
+      },
+      "short": {
+        "en": "Revelation",
+        "id": "Wahyu"
+      },
+      "long": {
+        "en": "The Book of Revelation",
+        "id": "Wahyu Kepada Yohanes"
+      }
+    },
+    "book-rom": {
+      "abbr": {
+        "en": "Rom",
+        "id": "Rm."
+      },
+      "short": {
+        "en": "Romans",
+        "id": "Roma"
+      },
+      "long": {
+        "en": "The Letter of Paul to the Romans",
+        "id": "Surat Paulus Kepada Jemaat di Roma"
+      }
+    },
+    "book-rut": {
+      "abbr": {
+        "en": "Rut",
+        "id": "Rut"
+      },
+      "short": {
+        "en": "Ruth",
+        "id": "Rut"
+      },
+      "long": {
+        "en": "The Book of Ruth",
+        "id": "Rut"
+      }
+    },
+    "book-sng": {
+      "abbr": {
+        "en": "Sng",
+        "id": "Kid."
+      },
+      "short": {
+        "en": "Song of Songs",
+        "id": "Kidung Agung"
+      },
+      "long": {
+        "en": "The Song of Songs",
+        "id": "Kidung Agung"
+      }
+    },
+    "book-tit": {
+      "abbr": {
+        "en": "Tit",
+        "id": "Tit."
+      },
+      "short": {
+        "en": "Titus",
+        "id": "Titus"
+      },
+      "long": {
+        "en": "The Letter of Paul to Titus",
+        "id": "Surat Paulus Kepada Titus"
+      }
+    },
+    "book-zec": {
+      "abbr": {
+        "en": "Zec",
+        "id": "Za."
+      },
+      "short": {
+        "en": "Zechariah",
+        "id": "Zakharia"
+      },
+      "long": {
+        "en": "The Book of Zechariah",
+        "id": "Zakharia"
+      }
+    },
+    "book-zep": {
+      "abbr": {
+        "en": "Zep",
+        "id": "Zef."
+      },
+      "short": {
+        "en": "Zephaniah",
+        "id": "Zefanya"
+      },
+      "long": {
+        "en": "The Book of Zephaniah",
+        "id": "Zefanya"
+      }
+    }
+  },
+  "ingredients": {
+    "ingredients/1CH.usfm": {
+      "checksum": {
+        "md5": "0a42833577892991f9b708bf92bbe1e6"
+      },
+      "mimeType": "text/plain",
+      "size": 129295,
+      "scope": {
+        "1CH": []
+      }
+    },
+    "ingredients/1CO.usfm": {
+      "checksum": {
+        "md5": "818e702c52e9a2cacdad9650f4313c02"
+      },
+      "mimeType": "text/plain",
+      "size": 69002,
+      "scope": {
+        "1CO": []
+      }
+    },
+    "ingredients/1JN.usfm": {
+      "checksum": {
+        "md5": "40981053958853e71c97936086637b32"
+      },
+      "mimeType": "text/plain",
+      "size": 17809,
+      "scope": {
+        "1JN": []
+      }
+    },
+    "ingredients/1KI.usfm": {
+      "checksum": {
+        "md5": "515dcfbd08c755000a0fc95a39b4ab4c"
+      },
+      "mimeType": "text/plain",
+      "size": 149750,
+      "scope": {
+        "1KI": []
+      }
+    },
+    "ingredients/1PE.usfm": {
+      "checksum": {
+        "md5": "c53c6313f37a90fc19f94ec7d02bdcea"
+      },
+      "mimeType": "text/plain",
+      "size": 18344,
+      "scope": {
+        "1PE": []
+      }
+    },
+    "ingredients/1SA.usfm": {
+      "checksum": {
+        "md5": "c4719f1ad4a3f76649f7c46daf675b75"
+      },
+      "mimeType": "text/plain",
+      "size": 156758,
+      "scope": {
+        "1SA": []
+      }
+    },
+    "ingredients/1TH.usfm": {
+      "checksum": {
+        "md5": "3cba9aa6592514e3544fe61d4bb652e3"
+      },
+      "mimeType": "text/plain",
+      "size": 13633,
+      "scope": {
+        "1TH": []
+      }
+    },
+    "ingredients/1TI.usfm": {
+      "checksum": {
+        "md5": "5d041b78238166191907419133c9895a"
+      },
+      "mimeType": "text/plain",
+      "size": 17522,
+      "scope": {
+        "1TI": []
+      }
+    },
+    "ingredients/2CH.usfm": {
+      "checksum": {
+        "md5": "98c0816dd1b69e0f15bbc9dd76bd196f"
+      },
+      "mimeType": "text/plain",
+      "size": 159438,
+      "scope": {
+        "2CH": []
+      }
+    },
+    "ingredients/2CO.usfm": {
+      "checksum": {
+        "md5": "f14fc160c7a145821138d36392e6ff45"
+      },
+      "mimeType": "text/plain",
+      "size": 44660,
+      "scope": {
+        "2CO": []
+      }
+    },
+    "ingredients/2JN.usfm": {
+      "checksum": {
+        "md5": "86a2ec6225a262b91e8df04f9151aa30"
+      },
+      "mimeType": "text/plain",
+      "size": 2321,
+      "scope": {
+        "2JN": []
+      }
+    },
+    "ingredients/2KI.usfm": {
+      "checksum": {
+        "md5": "99e885a9c1b5a1fca3deb9dc1da01230"
+      },
+      "mimeType": "text/plain",
+      "size": 144459,
+      "scope": {
+        "2KI": []
+      }
+    },
+    "ingredients/2PE.usfm": {
+      "checksum": {
+        "md5": "095d449779fbbc920950d9601e2c2a2f"
+      },
+      "mimeType": "text/plain",
+      "size": 11781,
+      "scope": {
+        "2PE": []
+      }
+    },
+    "ingredients/2SA.usfm": {
+      "checksum": {
+        "md5": "20959cb5f70806faa7b93fd238ec3dd7"
+      },
+      "mimeType": "text/plain",
+      "size": 128213,
+      "scope": {
+        "2SA": []
+      }
+    },
+    "ingredients/2TH.usfm": {
+      "checksum": {
+        "md5": "8e4ec63f0a3587a4a70d9ef2472d229c"
+      },
+      "mimeType": "text/plain",
+      "size": 7420,
+      "scope": {
+        "2TH": []
+      }
+    },
+    "ingredients/2TI.usfm": {
+      "checksum": {
+        "md5": "0917705a7daa8fd4d6b3da9ceb261a8c"
+      },
+      "mimeType": "text/plain",
+      "size": 12475,
+      "scope": {
+        "2TI": []
+      }
+    },
+    "ingredients/3JN.usfm": {
+      "checksum": {
+        "md5": "5de33960f751bef64964e5fbd068d47c"
+      },
+      "mimeType": "text/plain",
+      "size": 2684,
+      "scope": {
+        "3JN": []
+      }
+    },
+    "ingredients/ACT.usfm": {
+      "checksum": {
+        "md5": "f7ccc0c535a32327c19f47dc45d7614c"
+      },
+      "mimeType": "text/plain",
+      "size": 168524,
+      "scope": {
+        "ACT": []
+      }
+    },
+    "ingredients/AMO.usfm": {
+      "checksum": {
+        "md5": "79ad18c134e91a3755a2804b1e7152bb"
+      },
+      "mimeType": "text/plain",
+      "size": 29029,
+      "scope": {
+        "AMO": []
+      }
+    },
+    "ingredients/COL.usfm": {
+      "checksum": {
+        "md5": "2600a9317078c8202acc0bc54758214a"
+      },
+      "mimeType": "text/plain",
+      "size": 14426,
+      "scope": {
+        "COL": []
+      }
+    },
+    "ingredients/DAN.usfm": {
+      "checksum": {
+        "md5": "b71b873f545b30e1aad19d9dcba9f050"
+      },
+      "mimeType": "text/plain",
+      "size": 73115,
+      "scope": {
+        "DAN": []
+      }
+    },
+    "ingredients/DEU.usfm": {
+      "checksum": {
+        "md5": "e4508dd9f62e8a8751bf66b472b08a66"
+      },
+      "mimeType": "text/plain",
+      "size": 177214,
+      "scope": {
+        "DEU": []
+      }
+    },
+    "ingredients/ECC.usfm": {
+      "checksum": {
+        "md5": "e81a51134fa27c66e76da5d5b70b3ee0"
+      },
+      "mimeType": "text/plain",
+      "size": 34621,
+      "scope": {
+        "ECC": []
+      }
+    },
+    "ingredients/EPH.usfm": {
+      "checksum": {
+        "md5": "50ad328fb65e3ee251776229c18b982b"
+      },
+      "mimeType": "text/plain",
+      "size": 21564,
+      "scope": {
+        "EPH": []
+      }
+    },
+    "ingredients/EST.usfm": {
+      "checksum": {
+        "md5": "ecc5aa4945b262fde0cc99d75d9a87b3"
+      },
+      "mimeType": "text/plain",
+      "size": 36458,
+      "scope": {
+        "EST": []
+      }
+    },
+    "ingredients/EXO.usfm": {
+      "checksum": {
+        "md5": "364082786f1ef4e888bd6259849e938d"
+      },
+      "mimeType": "text/plain",
+      "size": 205142,
+      "scope": {
+        "EXO": []
+      }
+    },
+    "ingredients/EZK.usfm": {
+      "checksum": {
+        "md5": "86b80dcf6fdd103f4a744186cbccf037"
+      },
+      "mimeType": "text/plain",
+      "size": 243349,
+      "scope": {
+        "EZK": []
+      }
+    },
+    "ingredients/EZR.usfm": {
+      "checksum": {
+        "md5": "d6ef7026b772dbb932de1c0cce9f75f4"
+      },
+      "mimeType": "text/plain",
+      "size": 46350,
+      "scope": {
+        "EZR": []
+      }
+    },
+    "ingredients/GAL.usfm": {
+      "checksum": {
+        "md5": "62d03b46a5c97b8b841f4f175cb82192"
+      },
+      "mimeType": "text/plain",
+      "size": 23122,
+      "scope": {
+        "GAL": []
+      }
+    },
+    "ingredients/GEN.usfm": {
+      "checksum": {
+        "md5": "80f52d5b103c46f6fcdeb0bf758cb920"
+      },
+      "mimeType": "text/plain",
+      "size": 242027,
+      "scope": {
+        "GEN": []
+      }
+    },
+    "ingredients/HAB.usfm": {
+      "checksum": {
+        "md5": "904cc25ff3324bf55878bae1a2f631a6"
+      },
+      "mimeType": "text/plain",
+      "size": 9959,
+      "scope": {
+        "HAB": []
+      }
+    },
+    "ingredients/HAG.usfm": {
+      "checksum": {
+        "md5": "7e9980a62799a693b0169b82f68aec80"
+      },
+      "mimeType": "text/plain",
+      "size": 7233,
+      "scope": {
+        "HAG": []
+      }
+    },
+    "ingredients/HEB.usfm": {
+      "checksum": {
+        "md5": "2878c8cc75b5140ad58251aa0f2f098d"
+      },
+      "mimeType": "text/plain",
+      "size": 50185,
+      "scope": {
+        "HEB": []
+      }
+    },
+    "ingredients/HOS.usfm": {
+      "checksum": {
+        "md5": "af5fb371ad5aecf9b6cc5574fe76044a"
+      },
+      "mimeType": "text/plain",
+      "size": 36274,
+      "scope": {
+        "HOS": []
+      }
+    },
+    "ingredients/ISA.usfm": {
+      "checksum": {
+        "md5": "1036f182e0077e776f669b3aba56d60d"
+      },
+      "mimeType": "text/plain",
+      "size": 256743,
+      "scope": {
+        "ISA": []
+      }
+    },
+    "ingredients/JAS.usfm": {
+      "checksum": {
+        "md5": "814557a9bb6021c95ab50b6e610a7531"
+      },
+      "mimeType": "text/plain",
+      "size": 17385,
+      "scope": {
+        "JAS": []
+      }
+    },
+    "ingredients/JDG.usfm": {
+      "checksum": {
+        "md5": "4e89ca278d1fa990565490916ebe2bae"
+      },
+      "mimeType": "text/plain",
+      "size": 119148,
+      "scope": {
+        "JDG": []
+      }
+    },
+    "ingredients/JER.usfm": {
+      "checksum": {
+        "md5": "2a2e9d57e3d0eaf0ba1e7b2211da0e30"
+      },
+      "mimeType": "text/plain",
+      "size": 276982,
+      "scope": {
+        "JER": []
+      }
+    },
+    "ingredients/JHN.usfm": {
+      "checksum": {
+        "md5": "d0f2f966322228b8631be08d0246f756"
+      },
+      "mimeType": "text/plain",
+      "size": 130733,
+      "scope": {
+        "JHN": []
+      }
+    },
+    "ingredients/JOB.usfm": {
+      "checksum": {
+        "md5": "b12f32429efc72662a461923720a73ae"
+      },
+      "mimeType": "text/plain",
+      "size": 125274,
+      "scope": {
+        "JOB": []
+      }
+    },
+    "ingredients/JOL.usfm": {
+      "checksum": {
+        "md5": "5853fdb009804e063f40beefe02c33f6"
+      },
+      "mimeType": "text/plain",
+      "size": 13838,
+      "scope": {
+        "JOL": []
+      }
+    },
+    "ingredients/JON.usfm": {
+      "checksum": {
+        "md5": "c77d5043f95403a8095656e2518094fb"
+      },
+      "mimeType": "text/plain",
+      "size": 8600,
+      "scope": {
+        "JON": []
+      }
+    },
+    "ingredients/JOS.usfm": {
+      "checksum": {
+        "md5": "7779130b2c5450cc82d57925f4f24ca0"
+      },
+      "mimeType": "text/plain",
+      "size": 114430,
+      "scope": {
+        "JOS": []
+      }
+    },
+    "ingredients/JUD.usfm": {
+      "checksum": {
+        "md5": "f8cc619936d01ea0cac3f3e1f96efe8a"
+      },
+      "mimeType": "text/plain",
+      "size": 5221,
+      "scope": {
+        "JUD": []
+      }
+    },
+    "ingredients/LAM.usfm": {
+      "checksum": {
+        "md5": "d25fb351c9365eb1b29c236b8d3d7b8e"
+      },
+      "mimeType": "text/plain",
+      "size": 22477,
+      "scope": {
+        "LAM": []
+      }
+    },
+    "ingredients/LEV.usfm": {
+      "checksum": {
+        "md5": "5014d603897159951c27dc31f1cd1b5c"
+      },
+      "mimeType": "text/plain",
+      "size": 150590,
+      "scope": {
+        "LEV": []
+      }
+    },
+    "ingredients/LICENSE.md": {
+      "checksum": {
+        "md5": "de22d39d62050075d9889d431907e7a5"
+      },
+      "mimeType": "text/markdown",
+      "size": 16
+    },
+    "ingredients/LUK.usfm": {
+      "checksum": {
+        "md5": "97d3c593286cdc874a7cb25b3bafc62d"
+      },
+      "mimeType": "text/plain",
+      "size": 173830,
+      "scope": {
+        "LUK": []
+      }
+    },
+    "ingredients/MAL.usfm": {
+      "checksum": {
+        "md5": "4fa82bb129a29e4add63100482e793b5"
+      },
+      "mimeType": "text/plain",
+      "size": 11626,
+      "scope": {
+        "MAL": []
+      }
+    },
+    "ingredients/MAT.usfm": {
+      "checksum": {
+        "md5": "a621b11de0537278c9b6c053ee1a089f"
+      },
+      "mimeType": "text/plain",
+      "size": 159281,
+      "scope": {
+        "MAT": []
+      }
+    },
+    "ingredients/MIC.usfm": {
+      "checksum": {
+        "md5": "e03a1ee91b3c0714eef724482cd2c8f8"
+      },
+      "mimeType": "text/plain",
+      "size": 21328,
+      "scope": {
+        "MIC": []
+      }
+    },
+    "ingredients/MRK.usfm": {
+      "checksum": {
+        "md5": "07af7275d821b1f6f7115e7ee38f0d91"
+      },
+      "mimeType": "text/plain",
+      "size": 103585,
+      "scope": {
+        "MRK": []
+      }
+    },
+    "ingredients/NAM.usfm": {
+      "checksum": {
+        "md5": "85d866065951385949b1342852442d90"
+      },
+      "mimeType": "text/plain",
+      "size": 8915,
+      "scope": {
+        "NAM": []
+      }
+    },
+    "ingredients/NEH.usfm": {
+      "checksum": {
+        "md5": "afb59845657ad47f7c337161ea8406d0"
+      },
+      "mimeType": "text/plain",
+      "size": 65838,
+      "scope": {
+        "NEH": []
+      }
+    },
+    "ingredients/NUM.usfm": {
+      "checksum": {
+        "md5": "9fca8df295631f6428f1538c5e19b4c5"
+      },
+      "mimeType": "text/plain",
+      "size": 202060,
+      "scope": {
+        "NUM": []
+      }
+    },
+    "ingredients/OBA.usfm": {
+      "checksum": {
+        "md5": "92d8194f182e443881f102aa8e29b0d1"
+      },
+      "mimeType": "text/plain",
+      "size": 4500,
+      "scope": {
+        "OBA": []
+      }
+    },
+    "ingredients/PHM.usfm": {
+      "checksum": {
+        "md5": "9bf1cc597f78a80d7d946bc2fb393b5d"
+      },
+      "mimeType": "text/plain",
+      "size": 3305,
+      "scope": {
+        "PHM": []
+      }
+    },
+    "ingredients/PHP.usfm": {
+      "checksum": {
+        "md5": "28ce77de216d14a826f64cb049beff16"
+      },
+      "mimeType": "text/plain",
+      "size": 15418,
+      "scope": {
+        "PHP": []
+      }
+    },
+    "ingredients/PRO.usfm": {
+      "checksum": {
+        "md5": "76f81a0be1dffb7cfb7cff4cac9a2283"
+      },
+      "mimeType": "text/plain",
+      "size": 103096,
+      "scope": {
+        "PRO": []
+      }
+    },
+    "ingredients/PSA.usfm": {
+      "checksum": {
+        "md5": "669ddb96cf8efd17db69265034a1dae5"
+      },
+      "mimeType": "text/plain",
+      "size": 308873,
+      "scope": {
+        "PSA": []
+      }
+    },
+    "ingredients/REV.usfm": {
+      "checksum": {
+        "md5": "b6210d9076cbaa5c1618f4c581750537"
+      },
+      "mimeType": "text/plain",
+      "size": 77393,
+      "scope": {
+        "REV": []
+      }
+    },
+    "ingredients/ROM.usfm": {
+      "checksum": {
+        "md5": "b7d417be0c78f7f80867631f49e0a370"
+      },
+      "mimeType": "text/plain",
+      "size": 68723,
+      "scope": {
+        "ROM": []
+      }
+    },
+    "ingredients/RUT.usfm": {
+      "checksum": {
+        "md5": "f3e09e2df5ec3cbc139deb52c76f3d36"
+      },
+      "mimeType": "text/plain",
+      "size": 16596,
+      "scope": {
+        "RUT": []
+      }
+    },
+    "ingredients/SNG.usfm": {
+      "checksum": {
+        "md5": "ec8e236bd78e8392abe99ca1c5a4d881"
+      },
+      "mimeType": "text/plain",
+      "size": 18272,
+      "scope": {
+        "SNG": []
+      }
+    },
+    "ingredients/TIT.usfm": {
+      "checksum": {
+        "md5": "8ca51502890846f5b71b0b6778377d85"
+      },
+      "mimeType": "text/plain",
+      "size": 7361,
+      "scope": {
+        "TIT": []
+      }
+    },
+    "ingredients/ZEC.usfm": {
+      "checksum": {
+        "md5": "0e1e5b0859576d4c45bfa8ae3539899e"
+      },
+      "mimeType": "text/plain",
+      "size": 39635,
+      "scope": {
+        "ZEC": []
+      }
+    },
+    "ingredients/ZEP.usfm": {
+      "checksum": {
+        "md5": "c3778ffb32aefb9134e92fb42aa0df11"
+      },
+      "mimeType": "text/plain",
+      "size": 10145,
+      "scope": {
+        "ZEP": []
+      }
+    }
+  },
+  "copyright": {
+    "shortStatements": [
+      {
+        "statement": "© Indonesian Bible Society 2025, Public Domain",
+        "mimetype": "text/plain",
+        "lang": "en"
+      }
+    ]
+  }
+}
