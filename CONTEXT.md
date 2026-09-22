@@ -122,6 +122,14 @@ _Avoid_: Publishing, deployment
 Changing an existing Door43 pre-release into a full release without changing its version or contents.
 _Avoid_: Republish, rebuild
 
+**Discard**:
+Abandoning an unreleased release preparation after confirmation. tC Admin deletes its temporary branch; a released preparation cannot be discarded.
+_Avoid_: Cancel, abort, rollback
+
+**Source translation**:
+The Door43 repository and release a translation is made from, recorded in Scripture Burrito metadata as a `source` relationship under the `dcs` id authority. Chosen in the creation wizard.
+_Avoid_: Source resource, base text, original
+
 ## System language
 
 **Operation**:
@@ -175,7 +183,8 @@ The identifier is the only spelling used in code, API payloads, tests, logs, and
 | Health state | `health.state` | `healthy`, `warning`, `failing`, `never_checked`, `checking`, `door43_unavailable`, `health_error`, `unsupported` |
 | Content inclusion state | inclusion | `unreleased`, `released`, `changed_released`, `selected`, `carried_forward`, `excluded`, `administrative`, `unknown` |
 | Candidate group | group | `new`, `changed_released`, `unchanged`, `unknown` |
-| Release preparation state | `preparation.state` | `selecting`, `snapshot_prepared`, `health_checking`, `health_blocked`, `ready_for_release`, `pre_release`, `full_release`, `restart_required`, `retryable_failure` |
+| Release preparation state | `preparation.state` | `selecting`, `snapshot_prepared`, `health_checking`, `health_blocked`, `ready_for_release`, `pre_release`, `full_release`, `restart_required`, `retryable_failure`, `discarded` |
+| Version rule | `version.rule_applied` | `first`, `format_change`, `new_books`, `revisions` |
 | Setup state | `setup.state` | `complete`, `incomplete` |
 | Freshness source | `freshness.source` | `live`, `cache` |
 | Temporary branch | — | `temp-tca-release/<version>` |

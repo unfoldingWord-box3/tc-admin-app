@@ -32,7 +32,7 @@ Recorded in [CONTEXT.md](../CONTEXT.md) and the [ADRs](adr). The ones that shape
 - Former hard dependency, satisfied: the DCS change so `/sb/{ref}.zip` serves a rollup when the ref is already Scripture Burrito shipped and was verified on production and QA on 18 September 2026 for all four formats (evidence E1 to E4). tC Admin uses `/sb/{ref}.zip` for every ref and nothing else.
 - Everything the system can do is a named operation with plan, apply, and receipt; the UI and any later agent client are projections of one catalog ([ADR 0011](adr/0011-one-operation-catalog-with-plan-apply-and-receipt.md)). The shared schema comes before the first route.
 - Tests run against recorded Door43 fixtures; live probes write evidence records ([ADR 0012](adr/0012-recorded-door43-fixtures-and-evidence-records.md)).
-- Open questions that shape Milestone 1 code are numbered in [evidence.md](evidence.md) with owners. Still open and blocking release code: Q8 (which metadata the release starts from) and Q10 (OAuth token permissions); Q1, Q2, Q3 are narrowed to one scripted write probe on QA (E13 to E22, 21 September 2026). Decided 18 September 2026: a `warning` health result does not block release but requires the manager's confirmation (Q6); a release's `currentScope` lists the released books (Q7); Translation Notes, Translation Questions, and Translation Words Links are book package types with the same creation and release flow as Bible (Q11); the portfolio reads catalog metadata, never archives (Q17).
+- Open questions that shape Milestone 1 code are numbered in [evidence.md](evidence.md) with owners. No decision blocks release code any more (Q8, Q10, Q14, Q19 decided 22 September 2026). What remains is one scripted write probe on QA (`scripts/probe/qa-write-probe.mjs`, closing Q1, Q2, Q3, Q5, Q13), one measurement (Q12), and the wizard's reference data (Q20). Decided 18 September 2026: a `warning` health result does not block release but requires the manager's confirmation (Q6); a release's `currentScope` lists the released books (Q7); Translation Notes, Translation Questions, and Translation Words Links are book package types with the same creation and release flow as Bible (Q11); the portfolio reads catalog metadata, never archives (Q17).
 - Door43 runs health checks on every pushed branch. tC Admin polls for the result on the temporary release branch rather than triggering anything.
 - Coverage counts against testament scope: 27, 39, or 66 books; 50 stories.
 - The version is the Door43 release tag. Loose tags such as `v105` are coerced to semver and bumped. A bare year or no release defaults to `v1.0.0`. The manager can edit before release.
@@ -40,7 +40,7 @@ Recorded in [CONTEXT.md](../CONTEXT.md) and the [ADRs](adr). The ones that shape
 ## Milestone 1 — Release
 
 **Due:** Friday 16 October 2026
-**Demo:** live on production Door43 against a real Bahtraku repository, in front of Birch and the Bahtraku team
+**Demo:** live on production Door43 against `bahtraku/Perjanjian-Baru-Pendau` (Scripture Burrito, baseline `v1.2`), in front of Birch and the Bahtraku team; the Resource Container path is rehearsed on QA with `bahtraku/id_tb1` (decided 22 September 2026)
 **Development host:** QA Door43
 **Acceptance owner:** Birch, using the `birch` account
 **Scope:** Bible projects only. Release any of the four metadata formats. Create Scripture Burrito only.
@@ -58,7 +58,7 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 ### Epics
 
 **EPIC: Environments and Door43 setup** ([#6](https://github.com/unfoldingWord-box3/tc-admin-app/issues/6)) (week one)
-- Create the `tc-admin-qa` organization on production Door43 so it survives QA resets. Seed repositories may hold files there but never releases.
+- The `tc-admin-qa-org` organization and the `tc-admin-qa` user exist on production so they survive QA resets (22 September 2026, E23); the user also exists on QA. Seed repositories may hold files there but never releases.
 - Register one confidential OAuth application per host at site-admin or unfoldingWord org level, with production, QA, and local redirect URIs.
 - Write a seed script that copies one RC Bible (`bahtraku/id_tb1`) and one SB Bible (`bahtraku/Perjanjian-Baru-Pendau`) into `tc-admin-qa` on QA after each reset.
 - Confirm the OAuth secret copied to QA by a reset still works, or document the manual step.
@@ -93,7 +93,7 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 - Setup-incomplete state with a retry link when repository creation succeeds but the first commit fails.
 
 **EPIC: Selective release** ([#41](https://github.com/unfoldingWord-box3/tc-admin-app/issues/41))
-- Built as the operations `release.plan`, `release.prepare`, `preparation.read`, `release.create`, `release.lookup`, and `release.promote`; the preparation is an addressable resource that survives a lost session.
+- Built as the operations `release.plan`, `release.prepare`, `preparation.read`, `release.create`, `release.lookup`, `release.promote`, and `preparation.discard` ([#58](https://github.com/unfoldingWord-box3/tc-admin-app/issues/58)); the preparation is an addressable resource that survives a lost session.
 - Candidate detection: new, changed released, unchanged, unknown, grouped for selection.
 - Snapshot on `temp-tca-release/<version>` started from the previous release tag, one commit assembled from the release-tag and default-branch archives, bound to the default-branch SHA.
 - Metadata merge: previous release metadata plus selected books, refreshed administrative entries, size and md5 for every file, scope set to released books. Nothing preselected; first release needs at least one book; released books are never removed.

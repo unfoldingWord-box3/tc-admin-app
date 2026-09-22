@@ -60,8 +60,8 @@ Keep this file current: an issue's Traceability section and its row here say the
 
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [#28](https://github.com/unfoldingWord-box3/tc-admin-app/issues/28) Creation wizard | §6 | 0006 | W3, A2 | — | `project.create.plan` | web, operations | S1 |
-| [#29](https://github.com/unfoldingWord-box3/tc-admin-app/issues/29) Generate metadata.json | §6, §7; domain §8 | 0008 | W1, R10 | Q4 | `project.create.plan` | model/burrito | S1 |
+| [#28](https://github.com/unfoldingWord-box3/tc-admin-app/issues/28) Creation wizard | §6 | 0006 | W3, A2 | E24, Q20 | `project.create.plan` | web, operations | S1 |
+| [#29](https://github.com/unfoldingWord-box3/tc-admin-app/issues/29) Generate metadata.json | §6, §7; domain §8 | 0008 | W1, R10 | E24, Q4, Q20 | `project.create.plan` | model/burrito | S1 |
 | [#30](https://github.com/unfoldingWord-box3/tc-admin-app/issues/30) Create repository and first commit | §6 | 0004 | A2, A3, W5 | Q3, Q10 | `project.create.apply` | door43/api, operations | S1 |
 | [#31](https://github.com/unfoldingWord-box3/tc-admin-app/issues/31) Setup incomplete | §6; §11 `setup_incomplete` | — | W4, X2 | — | `project.create.retry` | operations, web | — |
 
@@ -77,6 +77,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | [#38](https://github.com/unfoldingWord-box3/tc-admin-app/issues/38) Release notes | §10 | — | — | — | `release.plan`, `release.create` | operations, web | S4, S5 |
 | [#39](https://github.com/unfoldingWord-box3/tc-admin-app/issues/39) Create, pre-release, promote | §10 | 0003 | R3, R7, R8, A2 | Q3, Q5 | `release.create`, `release.promote` | door43/api, operations | S7 |
 | [#40](https://github.com/unfoldingWord-box3/tc-admin-app/issues/40) Stale source and lost response | §10, §11; arch §6 | — | R5, R6, X1, X2 | — | `release.lookup`, error catalog | operations | S6 |
+| [#58](https://github.com/unfoldingWord-box3/tc-admin-app/issues/58) Discard a preparation | §10 | 0003 | R7, A2 | Q14 | `preparation.discard` | operations, door43/api | — |
 
 ### EPIC: Demo readiness ([#44](https://github.com/unfoldingWord-box3/tc-admin-app/issues/44))
 
@@ -107,4 +108,4 @@ Keep this file current: an issue's Traceability section and its row here say the
 
 ## Coverage check
 
-Every invariant in [invariants.md](invariants.md) appears in at least one Milestone 1 or Milestone 2 row above except W6 and W7, which are Milestone 2 only. Every Milestone 1 operation in [operations.md](operations.md) §3 appears in at least one row except `preparation.discard`, which waits on Q14. Every question in [evidence.md](evidence.md) appears in at least one row except Q14 and Q18. Closed questions (Q6, Q7, Q11, Q17) stay cited where they were decided, so a row still shows what its issue rests on.
+Every invariant in [invariants.md](invariants.md) appears in at least one Milestone 1 or Milestone 2 row above except W6 and W7, which are Milestone 2 only. Every Milestone 1 operation in [operations.md](operations.md) §3 appears in at least one row. Every question in [evidence.md](evidence.md) appears in at least one row except Q18, which waits on the Milestone 1 re-plan. Closed questions stay cited where they were decided, so a row still shows what its issue rests on.

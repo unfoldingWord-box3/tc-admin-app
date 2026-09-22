@@ -133,9 +133,10 @@ A release preparation is an addressable resource (see the [operation catalog](op
 | `retryable_failure` | manager retries | — | the step that failed |
 | any state before release | sha moved | — | `restart_required` |
 | `restart_required` | `release.plan` | — | new preparation in `selecting` |
+| any state before release | `preparation.discard` | manager confirmed, permission | `discarded` |
 | `pre_release` | `release.promote` | permission | `full_release` |
 
-The temporary branch exists from `snapshot_prepared` until `release.create` succeeds, and is retained in every failure state (R7).
+The temporary branch exists from `snapshot_prepared` until `release.create` succeeds or the manager discards the preparation, and is retained in every failure state (R7). `discarded` is terminal: its branch is deleted and nothing further happens to it.
 
 ### State definitions
 
@@ -166,15 +167,18 @@ The health checker is unavailable or returned an unexpected error. No release mu
 **Retryable failure**:
 A release mutation failed or its response was lost. tC Admin checks Door43 for an existing expected release before retrying.
 
+**Discarded**:
+The manager abandoned an unreleased preparation after confirmation; its temporary branch is deleted (Q14).
+
 ## 7. Version rules
 
 The version is project-level and release-event-level:
 
-- First release: `v1.0.0`.
+- First release, or a bare-year baseline such as `1974`: `v1.0.0`, and semantic versions from then on (Q19).
+- Baseline is the latest full release on Door43 regardless of creator. Loose tags are coerced to semver.
+- Baseline release not in Scripture Burrito format (`rc`, `ts`, `tc`, read from the release tag's catalog entry): increment major, because the format change breaks consumers (Q19).
 - New book/story: increment minor.
 - Revision or metadata-only change: increment patch.
-- Baseline is the latest full release on Door43 regardless of creator. Loose tags are coerced to semver; a bare year or no release defaults to `v1.0.0`.
-- Fundamental format change: increment major.
 - Multiple categories use the highest-impact increment.
 - Manager edits are allowed after calculation, but the final version must be valid and greater than the latest release.
 - Pre-release promotion does not increment the version.
