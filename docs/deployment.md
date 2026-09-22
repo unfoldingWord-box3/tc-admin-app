@@ -9,10 +9,10 @@ One Wrangler configuration at the repository root with two environments, which C
 
 | Worker | Wrangler environment | Door43 host | URL | Deploys when |
 | --- | --- | --- | --- | --- |
-| `tc-admin-qa` | `qa` | `https://qa.door43.org` | `tc-admin-qa.<subdomain>.workers.dev` | a commit lands on `main` |
-| `tc-admin` | `production` | `https://git.door43.org` | `tc-admin.<subdomain>.workers.dev`, later the custom domain (#53) | a commit lands on the protected `production` branch |
+| `tc-admin-qa` | `qa` | `https://qa.door43.org` | `https://tc-admin-qa.unfoldingword.workers.dev` | a commit lands on `main` |
+| `tc-admin` | `production` | `https://git.door43.org` | `https://tc-admin.unfoldingword.workers.dev`, later the custom domain (#53) | a commit lands on the protected `production` branch |
 
-`<subdomain>` is the account's existing `workers.dev` subdomain; every Worker in the account shares it, so it is already visible in the URLs of the account's other Workers. A URL of exactly `tc-admin.workers.dev` is not possible; the pattern is always `<worker-name>.<subdomain>.workers.dev`.
+The account's `workers.dev` subdomain is `unfoldingword` (confirmed by Rich, 22 September 2026). The account already runs this shape for translationCore mobile: `tc-mobile-staging.unfoldingword.workers.dev` and `tc-mobile.unfoldingword.workers.dev`, both connected to `unfoldingWord/tc-mobile`; tC Admin mirrors it. The OAuth callback path is `/auth/callback` on each URL (#2).
 
 Each Worker has its own KV namespaces (`SESSIONS`, `PLANS`) and its own runtime secrets (`DOOR43_CLIENT_ID`, `DOOR43_CLIENT_SECRET`, `SESSION_SIGNING_KEY`). The Door43 OAuth applications (#2) register each Worker's URL as a redirect URI.
 
@@ -37,7 +37,7 @@ Nothing here can happen before #7 merges a Wrangler configuration and a minimal 
 
 **Now (Rich, five minutes):**
 
-1. **Find the subdomain.** Open any existing Worker in Workers & Pages; its URL is `<name>.<subdomain>.workers.dev`. Tell the agent the `<subdomain>` part; it goes into #2's redirect URIs and section 1 above.
+1. **Find the subdomain.** Done: `unfoldingword`, recorded in section 1.
 2. **Create four KV namespaces.** Storage & Databases → KV → Create: `tc-admin-qa-sessions`, `tc-admin-qa-plans`, `tc-admin-sessions`, `tc-admin-plans`. Each gets an id; send the four ids to the agent (they are identifiers, not secrets) for the Wrangler configuration in #7.
 
 **After #7 merges (Rich, from a clone of the repository, once):**
