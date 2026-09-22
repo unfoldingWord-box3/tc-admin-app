@@ -60,7 +60,7 @@ node scripts/check-docs.mjs          # relative links; every R/H/A/W/P/X, E/Q, a
 npm test --prefix prototypes/tc-admin
 ```
 
-The live Door43 write probe is `node scripts/probe/qa-write-probe.mjs`; it needs `TEST_TOKEN` and refuses production. Planned once `web/` and `worker/` exist (#7, #10): `npm run check` (typecheck, lint, unit and contract tests) and `npm run e2e` (one Playwright sign-in on QA).
+The live Door43 write probe is `node --env-file=.env scripts/probe/qa-write-probe.mjs`; it needs a `TEST_TOKEN` issued by the QA host and refuses production. It prints the server's message on any failing step. Planned once `web/` and `worker/` exist (#7, #10): `npm run check` (typecheck, lint, unit and contract tests) and `npm run e2e` (one Playwright sign-in on QA).
 
 ## Hosts and credentials
 
