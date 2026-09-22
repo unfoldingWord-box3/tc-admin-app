@@ -125,8 +125,8 @@ These are asserted in the specification or architecture and shape the build. Eac
 
 Each question names an owner. An agent does not decide an open question; it records a proposal here, builds behind the current text, and asks the owner. Owners: Rich (DCS and Worker), Birch (product and acceptance).
 
-### Q1 — Does the health check verify md5 as well as size, and on which refs? (closed)
-**Verified 22 September 2026 (E28):** md5 is verified on tags and reported as `sb_ingredient_mismatch`, severity `warning`; size is verified on branches and tags (E16). Whether the branch result also names md5 is in Rich's recording `10-health-branch.json`; R10 recomputes both regardless.
+### Q1 — Does the health check verify md5 as well as size, and on which refs? (closed for tags)
+**Verified 22 September 2026 (E28):** md5 is verified on tags and reported as `sb_ingredient_mismatch`, severity `warning`; size is verified on branches and tags (E16). On the branch the same commit reported `success` 110 ms after the commit, which is either "md5 is not verified on branches" or a result for the previous commit. R10 recomputes both regardless, so nothing in Milestone 1 depends on the answer; the probe's `health-branch-recheck` step (a second poll after 8 seconds) settles it on the next run.
 
 ### Q2 — Health-check latency after a push, and whether API-created branches are checked (closed)
 **Verified 22 September 2026 (E28):** API-created branches and tags are checked; the first result on a brand-new repository arrived within 5.6 seconds, later refs on the first poll. The poll constants (5 seconds, 3 minutes) stay as a ceiling. The intermediate response while a check runs was not observed in this run; the poll still maps a 422 "no metadata found" inside the window to `checking` (E15).
@@ -186,6 +186,12 @@ A 66-book unaligned Bible is 1.5 MB zipped and 5.2 MB unpacked (E17), well insid
 Blocks: #34; Milestone 3 #52. Owner: Rich.
 Close by: measuring one aligned Bible archive on QA and recording the account plan.
 
+### Q21 — How is a Door43 severity of `info` shown, and does it block release?
+Observed 22 September 2026 (E28): a repository with no release reports `overall_severity_level: info` with a `release_needed` note. tC Admin's health states (domain model §5) map `success`, `warning`, and `error` but had no state for `info`; the prototype showed it as "Information". H1 forbids folding it into `healthy` silently.
+Blocks: #25, #36. Owner: Rich (severity meaning), Birch (display).
+Proposal (labeled): add health state `info`, shown as "Information" with the notes visible; it does not block release and needs no acknowledgement, since Door43 itself treats it as below `warning`.
+Close by: Rich confirms `info` is advisory only; then `info` joins the identifiers in CONTEXT.md, domain model §5, and the operation catalog §5, with H2 unchanged.
+
 ### Q13 — Multi-file commit limits
 Maximum files and bytes per request for the multi-file contents endpoint, against a 66-book snapshot (5.2 MB raw, about 7 MB base64). The first attempt on 22 September 2026 failed for a probe bug (`create` on files the branch already had), not for size.
 Blocks: #34. Owner: Rich.
@@ -237,8 +243,8 @@ Rich's probe run on 22 September 2026 (repository `tc-admin-qa-org/tca-probe-202
 Host: qa.door43.org. Date: 22 September 2026. Method: `scripts/probe/qa-write-probe.mjs` (recordings in Rich's clone under `fixtures/door43/qa.door43.org/2026-09-22/probe-write/`, to be committed). Status: verified. Closes Q3 except the size question (Q13). Consequence: `release.prepare` needs no blob SHAs (use `upload`), and `release.create` targets the snapshot commit SHA directly.
 
 ### E28 — Health check latency, coverage of API-created refs, and md5 verification
-After the first commit to a new repository the default-branch result was available within 5.6 seconds. The result for a new tag, for a branch created through the API and committed to through the API, and for a second tag was available on the first poll, about 0.1 seconds after creation. On tag `v1.1.0`, whose `metadata.json` carries a deliberately wrong md5 for `EXO.usfm` with a correct size, the check reports `sb_ingredient_mismatch`: "has an MD5 checksum in metadata.json that does not match the file", severity `warning`; the tag's catalog entry is still `is_valid: true` with `healthcheck_severity: warning`. Master and `v1.0.0` (correct checksums) report `success`.
-Host: qa.door43.org. Date: 22 September 2026. Method: probe run (steps 05, 07, 10, 12) and public re-reads. Status: verified for tags; whether the branch result also named the md5 mismatch is in Rich's recording `10-health-branch.json`, not yet read. Closes Q1 for tags and the latency part of Q2. Consequence: the 5-second poll is generous; the 422 case (E15) was not observed in this run.
+After the first commit to a new repository, the poll at 0.2 s answered 422 "no metadata found for repo […] and ref [master]" (the E15 intermediate response) and the poll at 5.6 s answered 200 with severity `info` and one `release_needed` note, the only issue on a repository that has no release yet. The result for a new tag, for a branch created through the API and committed to through the API, and for a second tag was available on the first poll, about 0.1 seconds after creation. On tag `v1.1.0`, whose `metadata.json` carries a deliberately wrong md5 for `EXO.usfm` with a correct size, the check reports `sb_ingredient_mismatch`: "has an MD5 checksum in metadata.json that does not match the file", severity `warning`; the tag's catalog entry is still `is_valid: true` with `healthcheck_severity: warning`. The branch `temp-tca-release/v1.1.0`, on the same commit, reported `success` with no issues 110 ms after the commit: either md5 is not verified on branches (product spec §7 says checksums are verified on tags) or that result still described the branch's previous commit. After releases existed, `master` and `v1.0.0` (correct checksums) report `success`.
+Host: qa.door43.org. Date: 22 September 2026. Method: probe run (steps 05, 07, 10, 12), recordings in `fixtures/door43/qa.door43.org/2026-09-22/probe-write/`, and public re-reads. Status: verified. Closes Q1 for tags and Q2. Consequence: the poll maps the 422 to `checking` as designed; the `info` severity needs a health state (Q21); the probe now re-polls a branch after a pause to settle the branch md5 question (Q1, branch part).
 
 ### E29 — A release and its archive survive deletion of the temporary branch
 After `DELETE /branches/temp-tca-release/v1.1.0`, `GET /releases/tags/v1.1.0` returned 200 and `GET /{owner}/{repo}/sb/v1.1.0.zip` returned 200 with `metadata.json`, `README.md`, and all three ingredients.
