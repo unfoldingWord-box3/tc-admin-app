@@ -1,0 +1,53 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921/branches",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]",
+      "content-type": "application/json"
+    },
+    "body": "{\"new_branch_name\":\"probe-size\",\"old_ref_name\":\"master\"}"
+  },
+  "response": {
+    "status": 201,
+    "ms": 511,
+    "json": {
+      "name": "probe-size",
+      "commit": {
+        "id": "29837149cfb365960af59d033abd1ff5929bcffe",
+        "message": "Probe: first commit\n",
+        "url": "https://qa.door43.org/tc-admin-qa-org/tca-probe-20260922194921/commit/29837149cfb365960af59d033abd1ff5929bcffe",
+        "author": {
+          "name": "tc-admin-qa",
+          "email": "53533+tc-admin-qa@noreply.door43.org",
+          "username": "tc-admin-qa"
+        },
+        "committer": {
+          "name": "tc-admin-qa",
+          "email": "53533+tc-admin-qa@noreply.door43.org",
+          "username": "tc-admin-qa"
+        },
+        "verification": {
+          "verified": false,
+          "reason": "gpg.error.not_signed_commit",
+          "signature": "",
+          "signer": null,
+          "payload": ""
+        },
+        "timestamp": "2026-09-22T19:49:22Z",
+        "added": null,
+        "removed": null,
+        "modified": null
+      },
+      "protected": false,
+      "required_approvals": 0,
+      "enable_status_check": false,
+      "status_check_contexts": [],
+      "user_can_push": true,
+      "user_can_merge": true,
+      "effective_branch_protection_name": ""
+    },
+    "bytes": 815
+  }
+}

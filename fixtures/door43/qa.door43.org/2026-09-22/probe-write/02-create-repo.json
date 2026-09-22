@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://qa.door43.org/api/v1/user/repos",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]",
+      "content-type": "application/json"
+    },
+    "body": "{\"name\":\"tca-probe-20260922194300\",\"private\":false,\"auto_init\":false,\"description\":\"tC Admin write probe; safe to delete\",\"default_branch\":\"master\"}"
+  },
+  "response": {
+    "status": 403,
+    "ms": 139,
+    "json": {
+      "message": "token does not have at least one of required scope(s), required=[write:user], token scope=write:activitypub,write:misc,write:notification,write:organization,write:package,write:issue,write:repository,read:user",
+      "url": "https://qa.door43.org/api/swagger"
+    },
+    "bytes": 265
+  }
+}

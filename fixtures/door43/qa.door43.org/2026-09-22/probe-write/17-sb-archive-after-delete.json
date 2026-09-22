@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/tc-admin-qa-org/tca-probe-20260922194921/sb/v1.1.0.zip",
+    "headers": {
+      "accept": "*/*"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 138,
+    "json": null,
+    "bytes": 0
+  }
+}

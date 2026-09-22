@@ -1,0 +1,178 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-09-22T19:49:20.279Z",
+  "steps": [
+    {
+      "step": 1,
+      "name": "user",
+      "status": 200,
+      "ms": 655
+    },
+    {
+      "step": 2,
+      "name": "org-lookup",
+      "status": 200,
+      "ms": 152
+    },
+    {
+      "step": 3,
+      "name": "create-repo",
+      "status": 201,
+      "ms": 554
+    },
+    {
+      "step": 4,
+      "name": "first-commit",
+      "status": 201,
+      "ms": 1580
+    },
+    {
+      "step": 5,
+      "name": "health-master",
+      "status": 200,
+      "ms": 5564,
+      "sequence": [
+        {
+          "t_ms": 193,
+          "status": 422,
+          "level": null,
+          "error": "no metadata found for repo [tc-admin-qa-org/tca-probe-20260922194921] and ref [master]",
+          "issues": null
+        },
+        {
+          "t_ms": 5563,
+          "status": 200,
+          "level": "info",
+          "error": null,
+          "issues": {
+            "release_needed": 1
+          }
+        }
+      ],
+      "latency_ms": 5564
+    },
+    {
+      "step": 6,
+      "name": "release-v1.0.0-by-sha",
+      "status": 201,
+      "ms": 816
+    },
+    {
+      "step": 7,
+      "name": "health-tag-v1.0.0",
+      "status": 200,
+      "ms": 113,
+      "sequence": [
+        {
+          "t_ms": 113,
+          "status": 200,
+          "level": "success",
+          "error": null,
+          "issues": {}
+        }
+      ],
+      "latency_ms": 113
+    },
+    {
+      "step": 8,
+      "name": "branch-from-tag",
+      "status": 201,
+      "ms": 624
+    },
+    {
+      "step": 9,
+      "name": "branch-commit-upload",
+      "status": 201,
+      "ms": 1340,
+      "note": "operation upload for an existing file without sha"
+    },
+    {
+      "step": 10,
+      "name": "health-branch",
+      "status": 200,
+      "ms": 110,
+      "sequence": [
+        {
+          "t_ms": 110,
+          "status": 200,
+          "level": "success",
+          "error": null,
+          "issues": {}
+        }
+      ],
+      "latency_ms": 110
+    },
+    {
+      "step": 11,
+      "name": "prerelease-v1.1.0",
+      "status": 201,
+      "ms": 727
+    },
+    {
+      "step": 12,
+      "name": "health-tag-v1.1.0",
+      "status": 200,
+      "ms": 114,
+      "sequence": [
+        {
+          "t_ms": 114,
+          "status": 200,
+          "level": "warning",
+          "error": null,
+          "issues": {
+            "sb_ingredient_mismatch": 1
+          }
+        }
+      ],
+      "latency_ms": 114
+    },
+    {
+      "step": 13,
+      "name": "promote",
+      "status": 200,
+      "ms": 404
+    },
+    {
+      "step": 14,
+      "name": "lookup-by-tag",
+      "status": 200,
+      "ms": 133
+    },
+    {
+      "step": 15,
+      "name": "delete-branch",
+      "status": 204,
+      "ms": 140
+    },
+    {
+      "step": 16,
+      "name": "lookup-after-delete",
+      "status": 200,
+      "ms": 137
+    },
+    {
+      "step": 17,
+      "name": "sb-archive-after-delete",
+      "status": 200,
+      "ms": 138
+    },
+    {
+      "step": 18,
+      "name": "branch-size",
+      "status": 201,
+      "ms": 511
+    },
+    {
+      "step": 19,
+      "name": "size-commit",
+      "status": 422,
+      "ms": 2803,
+      "files": 66,
+      "raw_bytes": 5165357,
+      "books_expected": 66
+    }
+  ],
+  "repository": "tc-admin-qa-org/tca-probe-20260922194921",
+  "first_commit_sha": "29837149cfb365960af59d033abd1ff5929bcffe",
+  "branch_commit_sha": "1c1db84a847f000ca1da672081a8a1c951504b1a"
+}

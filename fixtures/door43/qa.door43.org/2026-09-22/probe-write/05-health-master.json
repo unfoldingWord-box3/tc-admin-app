@@ -1,0 +1,66 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "healthcheck?ref=master",
+    "headers": {}
+  },
+  "response": {
+    "status": 200,
+    "ms": 5564,
+    "json": {
+      "ok": true,
+      "data": {
+        "issues": {
+          "ingredient_missing": [],
+          "sb_ingredient_missing": [],
+          "usfm_invalid": [],
+          "usfm_no_alignment": [],
+          "no_metadata": [],
+          "title_has_uw": [],
+          "ingredient_title_is_en": [],
+          "ingredient_empty": [],
+          "release_needed": [
+            {
+              "issue_code": "release_needed",
+              "severity_level": "info",
+              "positive_title": "An error-free release has been published",
+              "negative_title": "An error-free release needs to be published for the resource",
+              "details": "An error-free release needs to be published for the resource.",
+              "suggestion": "No release exists for this resource. Make a release with <a href=\"https://gateway-admin.netlify.app/\" target=\"_blank\">gatewayAdmin</a>."
+            }
+          ],
+          "repo_name_lang_mismatch": [],
+          "sb_ingredient_mismatch": [],
+          "metadata_invalid": [],
+          "language_is_en": []
+        },
+        "overall_severity_level": "info",
+        "severity_level_count": {
+          "error": 0,
+          "success": 0,
+          "info": 1,
+          "warning": 0
+        }
+      }
+    }
+  },
+  "sequence": [
+    {
+      "t_ms": 193,
+      "status": 422,
+      "level": null,
+      "error": "no metadata found for repo [tc-admin-qa-org/tca-probe-20260922194921] and ref [master]",
+      "issues": null
+    },
+    {
+      "t_ms": 5563,
+      "status": 200,
+      "level": "info",
+      "error": null,
+      "issues": {
+        "release_needed": 1
+      }
+    }
+  ],
+  "latency_ms": 5564
+}

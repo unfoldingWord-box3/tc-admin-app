@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/orgs/tc-admin-qa-org",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 152,
+    "json": {
+      "id": 53535,
+      "name": "tc-admin-qa-org",
+      "full_name": "",
+      "email": "",
+      "avatar_url": "https://qa.door43.org/avatars/88aa03889f005577f41f98bd8e2e04ed",
+      "description": "",
+      "website": "",
+      "location": "",
+      "visibility": "public",
+      "repo_admin_change_team_access": true,
+      "username": "tc-admin-qa-org",
+      "repo_languages": null,
+      "repo_subjects": null,
+      "repo_metadata_types": null
+    },
+    "bytes": 343
+  }
+}

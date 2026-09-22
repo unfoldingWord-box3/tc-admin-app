@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "healthcheck?ref=temp-tca-release/v1.1.0",
+    "headers": {}
+  },
+  "response": {
+    "status": 200,
+    "ms": 110,
+    "json": {
+      "ok": true,
+      "data": {
+        "issues": {
+          "ingredient_title_is_en": [],
+          "ingredient_missing": [],
+          "sb_ingredient_missing": [],
+          "usfm_no_alignment": [],
+          "metadata_invalid": [],
+          "title_has_uw": [],
+          "language_is_en": [],
+          "ingredient_empty": [],
+          "release_needed": [],
+          "repo_name_lang_mismatch": [],
+          "sb_ingredient_mismatch": [],
+          "usfm_invalid": [],
+          "no_metadata": []
+        },
+        "overall_severity_level": "success",
+        "severity_level_count": {
+          "error": 0,
+          "success": 0,
+          "info": 0,
+          "warning": 0
+        }
+      }
+    }
+  },
+  "sequence": [
+    {
+      "t_ms": 110,
+      "status": 200,
+      "level": "success",
+      "error": null,
+      "issues": {}
+    }
+  ],
+  "latency_ms": 110
+}

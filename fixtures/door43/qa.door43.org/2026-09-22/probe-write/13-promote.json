@@ -1,0 +1,141 @@
+{
+  "request": {
+    "method": "PATCH",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921/releases/10987812",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]",
+      "content-type": "application/json"
+    },
+    "body": "{\"prerelease\":false}"
+  },
+  "response": {
+    "status": 200,
+    "ms": 404,
+    "json": {
+      "id": 10987812,
+      "tag_name": "v1.1.0",
+      "target_commitish": "1c1db84a847f000ca1da672081a8a1c951504b1a",
+      "name": "v1.1.0",
+      "body": "Probe pre-release",
+      "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921/releases/10987812",
+      "html_url": "https://qa.door43.org/tc-admin-qa-org/tca-probe-20260922194921/releases/tag/v1.1.0",
+      "tarball_url": "https://qa.door43.org/tc-admin-qa-org/tca-probe-20260922194921/archive/v1.1.0.tar.gz",
+      "zipball_url": "https://qa.door43.org/tc-admin-qa-org/tca-probe-20260922194921/archive/v1.1.0.zip",
+      "upload_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921/releases/10987812/assets",
+      "draft": false,
+      "prerelease": false,
+      "created_at": "2026-09-22T19:49:33Z",
+      "published_at": "2026-09-22T19:49:33Z",
+      "author": {
+        "id": 53533,
+        "login": "tc-admin-qa",
+        "login_name": "",
+        "source_id": 0,
+        "full_name": "",
+        "email": "53533+tc-admin-qa@noreply.door43.org",
+        "avatar_url": "https://qa.door43.org/avatar/f6669e35fef39938d76a754b39922ed5",
+        "html_url": "https://qa.door43.org/tc-admin-qa",
+        "language": "",
+        "is_admin": false,
+        "last_login": "0001-01-01T00:00:00Z",
+        "created": "2026-09-22T17:13:24Z",
+        "restricted": false,
+        "active": false,
+        "prohibit_login": false,
+        "location": "",
+        "website": "",
+        "description": "",
+        "visibility": "public",
+        "followers_count": 0,
+        "following_count": 0,
+        "starred_repos_count": 0,
+        "repo_languages": null,
+        "repo_subjects": null,
+        "repo_metadata_types": null,
+        "username": "tc-admin-qa"
+      },
+      "assets": [],
+      "door43_metadata": {
+        "id": 72190,
+        "url": "https://qa.door43.org/api/v1/catalog/entry/tc-admin-qa-org/tca-probe-20260922194921/v1.1.0",
+        "name": "tca-probe-20260922194921",
+        "owner": "tc-admin-qa-org",
+        "full_name": "tc-admin-qa-org/tca-probe-20260922194921",
+        "tarbar_url": "https://qa.door43.org/tc-admin-qa-org/tca-probe-20260922194921/archive/v1.1.0.tar.gz",
+        "zipball_url": "https://qa.door43.org/tc-admin-qa-org/tca-probe-20260922194921/archive/v1.1.0.zip",
+        "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921/git/trees/v1.1.0?recursive=1&per_page=99999",
+        "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921/contents?ref=v1.1.0",
+        "language": "id",
+        "language_title": "Bahasa Indonesia",
+        "language_direction": "ltr",
+        "language_is_gl": true,
+        "subject": "Bible",
+        "flavor_type": "scripture",
+        "flavor": "textTranslation",
+        "abbreviation": "tcap",
+        "title": "tC Admin probe",
+        "branch_or_tag_name": "v1.1.0",
+        "ref_type": "tag",
+        "commit_sha": "1c1db84a847f000ca1da672081a8a1c951504b1a",
+        "stage": "prod",
+        "metadata_url": "https://qa.door43.org/tc-admin-qa-org/tca-probe-20260922194921/raw/commit/1c1db84a847f000ca1da672081a8a1c951504b1a/metadata.json",
+        "metadata_json_url": "https://qa.door43.org/api/v1/catalog/metadata/tc-admin-qa-org/tca-probe-20260922194921/v1.1.0",
+        "metadata_api_contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921/contents/metadata.json?ref=v1.1.0",
+        "metadata_type": "sb",
+        "metadata_version": "1.0.0",
+        "content_format": "usfm",
+        "released": "2026-09-22T19:49:33Z",
+        "ingredients": [
+          {
+            "categories": [
+              "bible-ot"
+            ],
+            "identifier": "gen",
+            "path": "./ingredients/GEN.usfm",
+            "sort": 1,
+            "title": "Genesis",
+            "versification": "ufw",
+            "alignment_count": 0,
+            "exists": true,
+            "is_dir": false,
+            "size": 242027
+          },
+          {
+            "categories": [
+              "bible-ot"
+            ],
+            "identifier": "exo",
+            "path": "./ingredients/EXO.usfm",
+            "sort": 2,
+            "title": "Exodus",
+            "versification": "ufw",
+            "alignment_count": 0,
+            "exists": true,
+            "is_dir": false,
+            "size": 205142
+          }
+        ],
+        "books": [
+          "gen",
+          "exo"
+        ],
+        "relations": null,
+        "attachment_types": {
+          "pdf": false,
+          "audio": false,
+          "video": false,
+          "stream": false,
+          "other": false
+        },
+        "is_valid": true,
+        "validation_errors_url": "https://qa.door43.org/api/v1/catalog/validation/tc-admin-qa-org/tca-probe-20260922194921/v1.1.0",
+        "healthcheck_severity": "warning",
+        "is_healthy": true,
+        "is_healthy_without_warnings": false,
+        "healthcheck_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921/healthcheck?ref=v1.1.0"
+      }
+    },
+    "bytes": 3823
+  }
+}

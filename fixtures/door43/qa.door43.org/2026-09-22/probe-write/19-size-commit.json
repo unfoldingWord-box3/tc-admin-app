@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921/contents",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]",
+      "content-type": "application/json"
+    },
+    "body": "[6891675 bytes omitted]"
+  },
+  "response": {
+    "status": 422,
+    "ms": 2803,
+    "json": {
+      "message": "repository file already exists [path: ingredients/GEN.usfm]",
+      "url": "https://qa.door43.org/api/swagger"
+    },
+    "bytes": 115
+  },
+  "files": 66,
+  "raw_bytes": 5165357,
+  "books_expected": 66
+}

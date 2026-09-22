@@ -1,0 +1,43 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/user",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 655,
+    "json": {
+      "id": 53533,
+      "login": "tc-admin-qa",
+      "login_name": "",
+      "source_id": 0,
+      "full_name": "",
+      "email": "richmahn+tc-admin-qa@gmail.com",
+      "avatar_url": "https://qa.door43.org/avatar/f6669e35fef39938d76a754b39922ed5",
+      "html_url": "https://qa.door43.org/tc-admin-qa",
+      "language": "en-US",
+      "is_admin": false,
+      "last_login": "2026-09-22T17:13:39Z",
+      "created": "2026-09-22T17:13:24Z",
+      "restricted": false,
+      "active": true,
+      "prohibit_login": false,
+      "location": "",
+      "website": "",
+      "description": "",
+      "visibility": "public",
+      "followers_count": 0,
+      "following_count": 0,
+      "starred_repos_count": 0,
+      "repo_languages": null,
+      "repo_subjects": null,
+      "repo_metadata_types": null,
+      "username": "tc-admin-qa"
+    },
+    "bytes": 630
+  }
+}

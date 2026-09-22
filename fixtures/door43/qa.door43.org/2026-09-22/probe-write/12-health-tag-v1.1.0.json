@@ -1,0 +1,60 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "healthcheck?ref=v1.1.0",
+    "headers": {}
+  },
+  "response": {
+    "status": 200,
+    "ms": 114,
+    "json": {
+      "data": {
+        "issues": {
+          "ingredient_title_is_en": [],
+          "release_needed": [],
+          "repo_name_lang_mismatch": [],
+          "usfm_invalid": [],
+          "no_metadata": [],
+          "title_has_uw": [],
+          "language_is_en": [],
+          "ingredient_missing": [],
+          "ingredient_empty": [],
+          "sb_ingredient_missing": [],
+          "sb_ingredient_mismatch": [
+            {
+              "issue_code": "sb_ingredient_mismatch",
+              "rule": "META-015",
+              "severity_level": "warning",
+              "positive_title": "Ingredient sizes and checksums match the files in the repo",
+              "negative_title": "Ingredient sizes or checksums do not match the files in the repo",
+              "details": "The ingredient **`ingredients/EXO.usfm`** has an MD5 checksum in metadata.json that does not match the file.",
+              "suggestion": "Update the <a href=\"/tc-admin-qa-org/tca-probe-20260922194921/src/branch/v1.1.0/metadata.json\" target=\"_blank\">metadata.json</a> file so the **`ingredients`** entries match the files in the repository, or update the files themselves."
+            }
+          ],
+          "usfm_no_alignment": [],
+          "metadata_invalid": []
+        },
+        "overall_severity_level": "warning",
+        "severity_level_count": {
+          "success": 0,
+          "info": 0,
+          "warning": 1,
+          "error": 0
+        }
+      },
+      "ok": true
+    }
+  },
+  "sequence": [
+    {
+      "t_ms": 114,
+      "status": 200,
+      "level": "warning",
+      "error": null,
+      "issues": {
+        "sb_ingredient_mismatch": 1
+      }
+    }
+  ],
+  "latency_ms": 114
+}

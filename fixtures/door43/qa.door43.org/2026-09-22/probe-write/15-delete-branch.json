@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "DELETE",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921/branches/temp-tca-release%2Fv1.1.0",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 204,
+    "ms": 140,
+    "json": null,
+    "bytes": 0
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "healthcheck?ref=v1.0.0",
+    "headers": {}
+  },
+  "response": {
+    "status": 200,
+    "ms": 113,
+    "json": {
+      "ok": true,
+      "data": {
+        "issues": {
+          "ingredient_missing": [],
+          "ingredient_empty": [],
+          "sb_ingredient_missing": [],
+          "usfm_no_alignment": [],
+          "no_metadata": [],
+          "ingredient_title_is_en": [],
+          "release_needed": [],
+          "repo_name_lang_mismatch": [],
+          "sb_ingredient_mismatch": [],
+          "usfm_invalid": [],
+          "metadata_invalid": [],
+          "title_has_uw": [],
+          "language_is_en": []
+        },
+        "overall_severity_level": "success",
+        "severity_level_count": {
+          "error": 0,
+          "success": 0,
+          "info": 0,
+          "warning": 0
+        }
+      }
+    }
+  },
+  "sequence": [
+    {
+      "t_ms": 113,
+      "status": 200,
+      "level": "success",
+      "error": null,
+      "issues": {}
+    }
+  ],
+  "latency_ms": 113
+}
