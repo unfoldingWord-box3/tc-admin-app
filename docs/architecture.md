@@ -1,6 +1,6 @@
 # tC Admin Architecture
 
-Status: Accepted planning baseline
+Status: Accepted planning baseline. Amended 18 September 2026 (proposed) with the layer tower, the operation layer, and the module map (ADR 0011, ADR 0012); accepted when that pull request merges.
 
 ## 1. System shape
 
@@ -25,6 +25,24 @@ Cloudflare Worker (tC Admin backend-for-frontend)
 ```
 
 The frontend is a hosted web application. The Worker is the trust boundary for Door43 credentials and all mutations. The implementation should follow the newer unfoldingWord application pattern: a web frontend plus a server-side Worker rather than browser-held DCS tokens.
+
+### Layers
+
+The system is a tower of five layers. Each layer speaks only to the one below it, and each has one vocabulary.
+
+| Layer | Owns | Vocabulary | Never |
+| --- | --- | --- | --- |
+| 5 Presentation (`web/`) | portfolio, wizard, stepper, copy | glossary terms | decides permission, health, or release contents |
+| 4 Operations (`worker/src/operations/`) | the [operation catalog](operations.md): reads, plans, applies, receipts, errors, preconditions | glossary identifiers | calls Door43 except through the adapter |
+| 3 Domain model (`worker/src/model/`) | Scripture Burrito reader and writer, project classification, coverage, candidates, version rules, state machines | glossary identifiers | performs I/O |
+| 2 Door43 adapter (`worker/src/door43/`) | OAuth, API client, pagination, archive download, health read | Door43's own shapes, which stop here | interprets health or permission |
+| 1 Door43 | identity, permissions, files, history, releases, health | Gitea and DCS | — |
+
+A sixth surface, an MCP server for agent clients, is deferred; it would be another consumer of layer 4 with no logic of its own. Types cross layers through one shared schema package (`shared/schema`), which is the executable form of the catalog and the only source of API types for `web/`, `worker/`, and tests.
+
+### Principle: one catalog, many surfaces
+
+Everything tC Admin can do is a named operation (ADR 0011). A read returns a complete situation with provenance and age on every derived fact. A mutation is a plan that announces its writes without writing, and an apply that performs exactly those writes and returns a receipt. The UI is one projection of the catalog; tests exercise the catalog directly against recorded fixtures (ADR 0012). The invariants in [invariants.md](invariants.md) are enforced in layers 3 and 4, once.
 
 ## 2. Frontend responsibilities
 
@@ -84,9 +102,19 @@ Provide a narrow internal interface over the Door43 API for:
 
 Keep the Swagger-generated/API-specific shapes at the adapter boundary. The product and domain layers should use tC Admin concepts such as `Project`, `ProjectMetadata`, `Ingredient`, `Book`, `Story`, `ReleaseSnapshot`, and `ProjectVersion`.
 
+### Operation layer
+
+The operation layer is the catalog in [operations.md](operations.md), one module per operation. Shared preconditions run first for every apply: session valid, CSRF token present (A4), permission re-read from Door43 and failing closed (A2), plan not expired, and the plan's `bound_to` SHAs unchanged (R5). Every apply performs only the writes its plan announced and returns a receipt listing them (R3, W5). Every error thrown anywhere below is mapped to one code from the error catalog with the specification's message, `retryable`, `next_action`, and a request id (X2).
+
+Three resources carry state across calls:
+
+- The **project report** (`project.read`) is the complete situation of one project: type, format, editability with reason, coverage with basis, health with provenance, latest full release, default-branch head, active preparation, setup state, permissions, freshness. Type, coverage, and health come from the catalog metadata in Door43's repository search, which is the same for every project type (E12, Q17); no archive is downloaded for a portfolio or a project report.
+- A **plan** is bound to the source SHAs it was computed from, lists `would_write`, expires, and is the idempotency key of its apply. Plans live in Workers KV for their lifetime; a release plan is small because it holds tree comparisons, not archives, which `release.prepare` downloads when it needs the bytes (E17: about one second and 1.5 MB for a 66-book Bible).
+- A **preparation** is the release state machine in [domain-model.md](domain-model.md) §6 as an addressable record: state, binding, selection, snapshot, health, version, notes, release, last error, history. `preparation.read` is how the UI polls and how a lost session, a support engineer, or an agent resumes.
+
 ### Health adapter
 
-Door43 runs the health check automatically on every branch push and tag; there is no trigger endpoint. The adapter reads `GET /repos/{owner}/{repo}/healthcheck?ref=` and polls after a push: every 5 seconds for up to 3 minutes, then returns a running state and lets the manager refresh.
+Door43 runs the health check automatically on every branch push and tag; there is no trigger endpoint. The adapter reads `GET /repos/{owner}/{repo}/healthcheck?ref=` and polls after a push: every 5 seconds for up to 3 minutes, then returns a running state and lets the manager refresh. The response shape, the severity vocabulary (`error`, `warning`, `info`, `success`), and the 422 answer for a ref without a result are recorded as E15; the rule sets differ by metadata format.
 
 The health adapter accepts a repository/ref target and returns:
 
@@ -103,8 +131,8 @@ The UI should receive normalized data, while the raw service response remains av
 The orchestrator must:
 
 1. Read the latest full release tag and the current default branch head; bind preparation to the default-branch commit SHA.
-2. Download the Scripture Burrito archive for the default branch and, when a release exists, for the latest full release tag. Door43 converts non-SB refs and rolls up SB refs.
-3. Detect new, changed released, unchanged, administrative, and unknown files by comparing the two trees.
+2. Detect new, changed released, unchanged, administrative, and unknown files by comparing the recursive git trees of the two refs book by book (E19), mapping book code to path through each ref's catalog entry (E20). Blob SHAs are comparable across layouts because conversion preserves bytes (E18). This is the plan; nothing is downloaded yet.
+3. On prepare, download the Scripture Burrito archive for the default branch and, when a release exists, for the latest full release tag (E17). Door43 converts non-SB refs and rolls up SB refs; the archive is the only source of file bytes (ADR 0008).
 4. Create `temp-tca-release/<version>` from the latest full release tag, or from the default branch head for a first release (ADR 0010).
 5. Assemble one commit: root files and administrative ingredients from the default branch archive, released books from the tag archive, selected books from the default branch archive, and `metadata.json` merged from the previous release's metadata with size and md5 recomputed for every file and scope set to the released books.
 6. Push the commit with the multi-file contents endpoint.
@@ -165,7 +193,7 @@ When release creation returns an ambiguous network result, the Worker queries Do
 
 ## 7. Failure model
 
-All mutations should return normalized, user-actionable errors with an internal request ID. Never silently retry a mutation whose outcome is unknown.
+All mutations return normalized, user-actionable errors with an internal request ID. Never silently retry a mutation whose outcome is unknown (X1). The complete list of codes, messages, and next actions is the error catalog in [operations.md](operations.md) §6; product spec §11 maps each required behavior to its code.
 
 Required user-visible behaviors:
 
@@ -198,7 +226,34 @@ Diagnostics may include request ID, project, commit SHA, version, target ref, he
 - Production Door43 is the normal deployment target; QA hosts are deployment configuration for testing.
 - Architect for future interface localization; English is the initial interface language.
 
-## 10. External implementation references
+## 10. Repository layout and module map (proposed)
+
+Proposed for [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7); the invariants and traceability documents cite these paths, so update them there when #7 fixes the layout. One module per operation and per model concept keeps each change small enough to read whole.
+
+```text
+shared/
+  schema/            operation inputs, outputs, states, errors: the catalog as types (zod or equivalent)
+worker/
+  src/door43/        auth, api, pages, archive, health: Door43 shapes stop here
+  src/model/         burrito, books, project, classify, candidates, version, health, states
+  src/operations/    one module per catalog operation, plus shared preconditions
+  src/http/          router, session, csrf, errors: routes are a projection of operations
+  test/              unit tests (model) and contract tests (operations against fixtures)
+web/
+  src/api/           typed client generated from shared/schema
+  src/               portfolio, wizard, stepper, design system
+fixtures/
+  door43/            recorded responses and archives, each with host, ref, and date (ADR 0012)
+scripts/
+  seed-qa            copies the seed repositories into tc-admin-qa after a reset (#3)
+  probe              live Door43 probes that write to docs/evidence.md
+docs/                this tower
+prototypes/          retired by #7; tests and the book id set move to worker/
+```
+
+Rule of placement: if a module imports a Door43 shape, it belongs in `door43/`. If it has no I/O, it belongs in `model/`. If it decides preconditions or writes, it belongs in `operations/`. If it renders, it belongs in `web/`.
+
+## 11. External implementation references
 
 - [Door43 API Swagger](https://git.door43.org/swagger.v1.json)
 - [Scripture Burrito specification](https://docs.burrito.bible/)

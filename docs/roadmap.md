@@ -1,8 +1,8 @@
 # tC Admin Roadmap
 
-Status: Accepted, 17 September 2026
-Audience: the engineering team building tC Admin
-Tracking: [GitHub milestones](https://github.com/unfoldingWord-box3/tc-admin-app/milestones) and `EPIC:` issues in `unfoldingWord-box3/tc-admin-app`
+Status: Accepted, 17 September 2026. Amended 18 September 2026 (proposed) for the operation catalog and fixture decisions (ADR 0011, ADR 0012) and the satisfied Door43 dependency; accepted when that pull request merges.
+Audience: the engineering team building tC Admin, and the agents assisting it
+Tracking: [GitHub milestones](https://github.com/unfoldingWord-box3/tc-admin-app/milestones) and `EPIC:` issues in `unfoldingWord-box3/tc-admin-app`; [traceability.md](traceability.md) links every issue to the specification, decisions, invariants, evidence, and operations it depends on; [AGENTS.md](../AGENTS.md) says how to work an issue
 
 ## How this roadmap works
 
@@ -13,6 +13,8 @@ An **epic** is one GitHub issue titled `EPIC: …` with the `epic` label and a t
 Only Milestone 1 carries a date. Milestones 2 and 3 carry a target month and are re-planned after the Milestone 1 demo.
 
 Capacity assumption: one primary engineer working part time with agent assistance, with product and design support from Birch. If capacity changes, dates move; scope inside Milestone 1 does not grow.
+
+The agent assistance is a design input, not a footnote. The build is organized so that an agent can orient from one file ([AGENTS.md](../AGENTS.md)), check any change against a numbered list of what must never break ([invariants.md](invariants.md)), implement against a catalog of named operations with typed errors ([operations.md](operations.md)), test against recorded Door43 fixtures without credentials (ADR 0012), and never re-probe a fact already recorded ([evidence.md](evidence.md)). Each of these costs a document now and saves a cycle every week until the demo.
 
 ## Version one outcome
 
@@ -27,7 +29,10 @@ Recorded in [CONTEXT.md](../CONTEXT.md) and the [ADRs](adr). The ones that shape
 - Scripture Burrito is the internal model, the only format tC Admin creates, and the format of every release. Door43's Scripture Burrito archive supplies repository content for release, converting Resource Container, translationStudio, and translationCore refs on the way ([ADR 0008](adr/0008-scripture-burrito-is-the-internal-model.md)).
 - Any valid repository can be released; only Scripture Burrito repositories can be edited. Others are release-only until converted ([ADR 0009](adr/0009-release-any-valid-repository-edit-only-scripture-burrito.md)).
 - Each release is one commit on top of the previous release tag, on a lineage separate from the default branch ([ADR 0010](adr/0010-release-lineage-from-the-previous-release-tag.md)). Releases add and update books, never remove them.
-- Hard dependency: Rich's DCS change so `/sb/{ref}.zip` serves a rollup when the ref is already Scripture Burrito, deciding by the ref's own metadata type. tC Admin uses `/sb/{ref}.zip` for every ref and nothing else.
+- Former hard dependency, satisfied: the DCS change so `/sb/{ref}.zip` serves a rollup when the ref is already Scripture Burrito shipped and was verified on production and QA on 18 September 2026 for all four formats (evidence E1 to E4). tC Admin uses `/sb/{ref}.zip` for every ref and nothing else.
+- Everything the system can do is a named operation with plan, apply, and receipt; the UI and any later agent client are projections of one catalog ([ADR 0011](adr/0011-one-operation-catalog-with-plan-apply-and-receipt.md)). The shared schema comes before the first route.
+- Tests run against recorded Door43 fixtures; live probes write evidence records ([ADR 0012](adr/0012-recorded-door43-fixtures-and-evidence-records.md)).
+- Open questions that shape Milestone 1 code are numbered in [evidence.md](evidence.md) with owners. Still open and blocking release code: Q8 (which metadata the release starts from) and Q10 (OAuth token permissions); Q1, Q2, Q3 are narrowed to one scripted write probe on QA (E13 to E22, 21 September 2026). Decided 18 September 2026: a `warning` health result does not block release but requires the manager's confirmation (Q6); a release's `currentScope` lists the released books (Q7); Translation Notes, Translation Questions, and Translation Words Links are book package types with the same creation and release flow as Bible (Q11); the portfolio reads catalog metadata, never archives (Q17).
 - Door43 runs health checks on every pushed branch. tC Admin polls for the result on the temporary release branch rather than triggering anything.
 - Coverage counts against testament scope: 27, 39, or 66 books; 50 stories.
 - The version is the Door43 release tag. Loose tags such as `v105` are coerced to semver and bumped. A bare year or no release defaults to `v1.0.0`. The manager can edit before release.
@@ -60,10 +65,10 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 - Measure health-check latency on QA after a branch push and record the number.
 
 **EPIC: Application foundation** ([#11](https://github.com/unfoldingWord-box3/tc-admin-app/issues/11))
-- Replace `prototypes/tc-admin` with `web/` (Vite, React, TypeScript) and `worker/` (Cloudflare Worker, small router, Workers KV sessions, Wrangler).
+- Replace `prototypes/tc-admin` with `web/` (Vite, React, TypeScript), `worker/` (Cloudflare Worker, small router, Workers KV sessions, Wrangler), and `shared/schema/` (the operation catalog as types, the only source of API types), laid out per the module map in [architecture.md](architecture.md) §10.
 - Copy the translationCore 4 design system tokens and components into `web/`.
 - Deploy to a `workers.dev` URL with QA and production environment configuration.
-- Vitest for units. One Playwright smoke test that signs in on QA and loads the portfolio.
+- Vitest for units and for contract tests of operations against `fixtures/door43/`; the first recordings are the seed repositories in all four formats (ADR 0012). One Playwright smoke test that signs in on QA and loads the portfolio.
 
 **EPIC: Sign-in and session** ([#16](https://github.com/unfoldingWord-box3/tc-admin-app/issues/16))
 - Authorization-code exchange in the Worker, HttpOnly SameSite session cookie, CSRF protection on mutations.
@@ -88,6 +93,7 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 - Setup-incomplete state with a retry link when repository creation succeeds but the first commit fails.
 
 **EPIC: Selective release** ([#41](https://github.com/unfoldingWord-box3/tc-admin-app/issues/41))
+- Built as the operations `release.plan`, `release.prepare`, `preparation.read`, `release.create`, `release.lookup`, and `release.promote`; the preparation is an addressable resource that survives a lost session.
 - Candidate detection: new, changed released, unchanged, unknown, grouped for selection.
 - Snapshot on `temp-tca-release/<version>` started from the previous release tag, one commit assembled from the release-tag and default-branch archives, bound to the default-branch SHA.
 - Metadata merge: previous release metadata plus selected books, refreshed administrative entries, size and md5 for every file, scope set to released books. Nothing preselected; first release needs at least one book; released books are never removed.
@@ -128,9 +134,9 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 
 ## Deferred
 
-- Release support for other book package repositories: Translation Notes, Translation Questions, Translation Words Links.
+- Creation and release of the other book package types, Translation Notes, Translation Questions, and Translation Words Links: the same operations as Bible, parameterized by flavor and book file pattern (Q11 decided; Q18 records the flavor and pattern). Not in Milestone 1; scheduled at the Milestone 1 re-plan.
 - Release support for subjects without book or story structure, such as Translation Words and Translation Academy, released whole.
-- A tC Admin MCP server exposing Worker operations to Claude clients.
+- A tC Admin MCP server exposing Worker operations to Claude clients. After ADR 0011 this is a projection of the operation catalog, one tool per operation with the same schemas, errors, and plan-before-apply rule, so it is a small epic rather than a redesign; it stays deferred because no partner has asked for it yet.
 - Bible Passage Sets.
 - Deeper file-content validation beyond Door43's health check.
 - Translation editing and suggestions.
@@ -139,6 +145,10 @@ Uploads, the metadata editor, Open Bible Stories, RC-to-SB conversion, Setup-inc
 - Pull requests and merge resolution for translation content.
 - Rich progress metrics and user-configurable progress definitions.
 - Interface localization (architecture allows it; English first).
+
+## Working this roadmap
+
+An issue is done when its acceptance criteria hold on QA, its tests are green and named with the invariants they prove, the documents it touches are updated, and its evidence is recorded; not when code is pushed. Every issue carries a Traceability section that matches its row in [traceability.md](traceability.md). Nobody decides an open question by building an answer; the owner named in [evidence.md](evidence.md) decides, and the build proceeds behind the current text with the assumption stated.
 
 ## Related experiments
 

@@ -1,12 +1,14 @@
 # tC Admin Product Specification
 
-Status: Accepted planning baseline. Amended 17 September 2026 for Scripture Burrito as the internal model (ADR 0008) and read-only unsupported projects (ADR 0009).
+Status: Accepted planning baseline. Amended 17 September 2026 for Scripture Burrito as the internal model (ADR 0008) and read-only unsupported projects (ADR 0009). Amended 18 September 2026 (proposed) with scenario and error identifiers and the operation mapping (ADR 0011); accepted when that pull request merges.
+
+Related: [invariants](invariants.md) (what must never break), [operation catalog](operations.md) (what the system can do), [evidence register](evidence.md) (what is verified and what is open), [traceability](traceability.md) (how issues connect to this document).
 
 ## 1. Product summary
 
 tC Admin is a hosted, desktop-first web application for Bible translation team leaders and project managers. It manages writable Door43 repositories from creation through project metadata maintenance, health checking, selective release preparation, release creation, and pre-release promotion.
 
-The first release supports Bible translation projects and Open Bible Stories projects. Bible Passage Sets are deferred.
+Version one supports Bible translation projects and Open Bible Stories projects. Milestone 1 delivers Bible projects; Open Bible Stories follows in Milestone 2 ([roadmap](roadmap.md)). Bible Passage Sets are deferred.
 
 ## 2. Users and access
 
@@ -137,7 +139,7 @@ All accepted additions and overwrites commit together as one operation. Door43 r
 
 ### Metadata inference
 
-When a recognized new book or OBS story is uploaded, tC Admin proposes the corresponding ingredient entry. The manager reviews the proposed diff. If accepted, the content files and manifest update are committed together.
+When a recognized new book or OBS story is uploaded, tC Admin proposes the corresponding ingredient entry. The manager reviews the proposed diff. If accepted, the content files and metadata update are committed together.
 
 Files listed in metadata without a book or story scope are administrative files and are carried forward without confirmation. Unrecognized files that are not listed in metadata appear in an **Unknown files** section. They may be included only after explicit confirmation, remain prominent in release review, and are identified in release notes.
 
@@ -153,6 +155,8 @@ Door43 runs the health check itself on every pushed branch and tag; tC Admin rea
 - Before release creation
 
 Health analysis is asynchronous. A health-check error or unavailable service blocks release creation. The UI shows the exact actionable state and allows retry.
+
+A health result of severity `warning` on the release snapshot does not block release creation. tC Admin shows the warnings and asks the manager to confirm they want to proceed; the release is created only after that confirmation (decided 18 September 2026).
 
 ## 10. Release preparation and release
 
@@ -194,6 +198,8 @@ Unselected changes on the default branch must not enter the release. A released 
 7. Create the Door43 release.
 8. Promote the same release later if it was a pre-release.
 
+Each step is one operation in the [operation catalog](operations.md): steps 1 and 2 are `release.plan` and `release.prepare`, step 3 is `preparation.read`, steps 4 to 7 are `release.create` with the confirmed notes, version, and pre-release choice, and step 8 is `release.promote`. Nothing is written to Door43 before step 2, and nothing outside the plan's announced writes is written after it.
+
 The temporary branch is deleted only after release creation succeeds. It remains available for inspection and retry after a release failure.
 
 If the project changes during preparation, tC Admin shows:
@@ -230,19 +236,22 @@ The manager must review and confirm the notes before release creation.
 
 ## 11. Failure and retry requirements
 
-| Situation | Required behavior |
-| --- | --- |
-| Door43 unavailable | Show “Door43 is unavailable currently. Please refresh later.” Do not mutate. |
-| Door43 session expired | Ask the user to sign in again and preserve unsaved form state where safe. |
-| User loses write access | Re-evaluate access and remove the project from the writable portfolio. |
-| Concurrent project edit | Show the restart message, discard the candidate, and rerun preparation. |
-| Commit failure | Show `Commit failed: <error message>`. |
-| Health-check error | Show the health-check error, block release, and offer retry. |
-| Release creation failure | Keep the temporary branch and offer retry. |
-| Lost release response | Query Door43 for the expected tag/release before retrying. |
-| Existing expected release found | Show the existing release; do not create a duplicate. |
-| Pre-release promotion failure | Show `Pre-release promotion failed. <error message>`. |
-| Partial creation | Show Setup incomplete with retry; do not auto-delete the repository. |
+Each situation is an error code in the [operation catalog](operations.md) §6, which fixes the message, whether it is retryable, and the next action. The code is the identifier used in code, tests, and logs; the behavior column here is the product requirement.
+
+| Situation | Code | Required behavior |
+| --- | --- | --- |
+| Door43 unavailable | `door43_unavailable` | Show “Door43 is unavailable currently. Please refresh later.” Do not mutate. |
+| Door43 session expired | `session_expired` | Ask the user to sign in again and preserve unsaved form state where safe. |
+| User loses write access | `permission_denied` | Re-evaluate access and remove the project from the writable portfolio. |
+| Concurrent project edit | `source_changed` | Show the restart message, discard the candidate, and rerun preparation. |
+| Commit failure | `commit_failed` | Show `Commit failed: <error message>`. |
+| Health-check error | `health_blocked` | Show the health-check error, block release, and offer retry. |
+| Health-check warning | `warning_not_acknowledged` | Show the warnings; create the release only after the manager confirms they want to proceed. |
+| Release creation failure | `release_failed` | Keep the temporary branch and offer retry. |
+| Lost release response | `release_outcome_unknown` | Query Door43 for the expected tag/release before retrying. |
+| Existing expected release found | `release_exists` | Show the existing release; do not create a duplicate. |
+| Pre-release promotion failure | `promotion_failed` | Show `Pre-release promotion failed. <error message>`. |
+| Partial creation | `setup_incomplete` | Show Setup incomplete with retry; do not auto-delete the repository. |
 
 ## 12. Success measures
 
@@ -254,41 +263,45 @@ The manager must review and confirm the notes before release creation.
 
 ## 13. Acceptance scenarios
 
-### Create a project
+Scenario identifiers (`S1` to `S7`) are cited by issues, tests, and [traceability.md](traceability.md).
+
+### S1 — Create a project
 
 Given a manager has repository-creation permission in an organization, when they complete the Bible or OBS wizard, then tC Admin creates the repository and valid Scripture Burrito metadata, and the project appears in the portfolio.
 
-### Upload and overwrite
+### S2 — Upload and overwrite
 
 Given a project contains `08-RUT.usfm`, when the manager selects a replacement file, then tC Admin shows an overwrite warning, presents the final batch summary, and commits the accepted changes together under the manager's Door43 identity.
 
-### Selective release
+### S3 — Selective release
 
 Given Ruth was previously released and Jonah is ready on the default branch, when the manager selects Jonah only, then the release snapshot carries forward the released Ruth version, includes Jonah, excludes unselected changes, and creates a new repository version.
 
-### Revision release
+### S4 — Revision release
 
 Given Ruth was previously released and a new approved Ruth revision exists, when the manager selects Ruth, then the snapshot includes the revision and the release notes identify Ruth as updated.
 
-### Unknown file
+### S5 — Unknown file
 
 Given a repository contains an unmapped file, when the manager prepares a release, then the file appears under Unknown files and is included only after explicit confirmation.
 
-### Stale release preparation
+### S6 — Stale release preparation
 
 Given a release stepper has already passed health checking, when the project changes, then tC Admin discards the candidate and requires a fresh health check.
 
-### Pre-release promotion
+### S7 — Pre-release promotion
 
 Given a pre-release exists, when the manager promotes it, then Door43 changes only its release status; version and contents remain unchanged.
 
 ## 14. Open implementation checks
 
-These are facts to verify during implementation, not product decisions:
+These are facts to verify during implementation, not product decisions. Each is tracked as an open question in the [evidence register](evidence.md), which names its owner, what it blocks, and how it closes; verified results become facts there.
 
-- Exact Door43 Swagger v1 operations for OAuth, writable-repository discovery, repository creation, file commits, branch/ref operations, release creation, release editing, and promotion.
-- Exact Door43 health-check endpoint and asynchronous result shape.
-- Required Scripture Burrito metadata for Bible (`scripture/textTranslation`) and OBS (`gloss/textStories`) projects.
-- Health-check latency after a branch push on QA Door43.
-- How DCS represents tags and release targets for temporary branches.
-- Safe upload byte limits for the Worker and Door43 API.
+- Exact Door43 Swagger v1 operations for OAuth, writable-repository discovery, repository creation, file commits, branch/ref operations, release creation, release editing, and promotion (Q3, Q10).
+- Exact Door43 health-check endpoint and asynchronous result shape (Q1, Q2).
+- Required Scripture Burrito metadata for Bible (`scripture/textTranslation`) and OBS (`gloss/textStories`) projects (Q4).
+- Health-check latency after a branch push on QA Door43 (Q2).
+- How DCS represents tags and release targets for temporary branches (Q5).
+- Safe upload byte limits for the Worker and Door43 API (Q15).
+
+Product decisions still open: whether a manager can discard a preparation (Q14). Decided on 18 September 2026 and recorded in the evidence register: a `warning` does not block release but requires confirmation (Q6); Translation Notes, Translation Questions, and Translation Words Links are book package types created and released like Bible (Q11); the portfolio reads catalog metadata, not archives (Q17); a release's `currentScope` lists the released books (Q7).
