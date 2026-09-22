@@ -9,7 +9,8 @@
 //         DOOR43_ORIGIN host. On QA the tc-admin-qa-org organization may not exist yet; the probe then
 //         creates the repository under the token's user, which needs "may create repositories" on QA.
 // Env:    DOOR43_ORIGIN (default https://qa.door43.org; production is refused),
-//         TEST_TOKEN (required), TEST_ORG (used when it exists on the host), TEST_USER.
+//         TEST_TOKEN (required), TEST_ORG (default tc-admin-qa-org; used when it exists on the host,
+//         needs write:organization), TEST_USER. Falling back to the user namespace needs write:user (E26).
 // Output: fixtures/door43/<host>/<date>/probe-write/NN-<step>.json (Authorization redacted)
 //         and a summary.json; nothing secret is written.
 // Effect: creates one public repository named tca-probe-<timestamp> under the org or the
@@ -109,7 +110,10 @@ function metadataFor(base, owner, repo, ingredients, books) {
   r = await call('GET', '/user'); record('user', r.req, r.res); if (r.res.status !== 200) throw new Error('token rejected');
   const login = r.res.json.login;
   let owner = login, viaOrg = false;
-  if (process.env.TEST_ORG) { r = await call('GET', `/orgs/${process.env.TEST_ORG}`); record('org-lookup', r.req, r.res); if (r.res.status === 200) { owner = process.env.TEST_ORG; viaOrg = true; } }
+  const org = process.env.TEST_ORG || 'tc-admin-qa-org';
+  r = await call('GET', `/orgs/${org}`); record('org-lookup', r.req, r.res);
+  if (r.res.status === 200) { owner = org; viaOrg = true; }
+  else console.warn(`Organization ${org} not found on ${HOST}; creating under user ${login}, which needs the write:user scope (E26).`);
   const repo = `tca-probe-${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}`;
   summary.repository = `${owner}/${repo}`;
   r = await call('POST', viaOrg ? `/orgs/${owner}/repos` : '/user/repos', { name: repo, private: false, auto_init: false, description: 'tC Admin write probe; safe to delete', default_branch: 'master' }); record('create-repo', r.req, r.res);
