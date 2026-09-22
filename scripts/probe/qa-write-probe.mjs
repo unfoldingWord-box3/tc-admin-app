@@ -4,7 +4,10 @@
 // Q3 (each write with a token, target_commitish as a commit SHA, `upload` without blob sha),
 // Q5 (release readable after branch deletion), Q13 (66-book commit size) in docs/evidence.md.
 //
-// Usage:  TEST_TOKEN=… node scripts/probe/qa-write-probe.mjs [--plan] [--skip-size] [--cleanup]
+// Usage:  node --env-file=.env scripts/probe/qa-write-probe.mjs [--plan] [--skip-size] [--cleanup]
+//         (or TEST_TOKEN=… node scripts/probe/qa-write-probe.mjs). The token must be issued by the
+//         DOOR43_ORIGIN host. On QA the tc-admin-qa-org organization may not exist yet; the probe then
+//         creates the repository under the token's user, which needs "may create repositories" on QA.
 // Env:    DOOR43_ORIGIN (default https://qa.door43.org; production is refused),
 //         TEST_TOKEN (required), TEST_ORG (used when it exists on the host), TEST_USER.
 // Output: fixtures/door43/<host>/<date>/probe-write/NN-<step>.json (Authorization redacted)
@@ -56,7 +59,8 @@ function record(name, req, res, extra = {}) {
   if (safeReq.body && safeReq.body.length > 4000) safeReq.body = `[${safeReq.body.length} bytes omitted]`;
   writeFileSync(file, JSON.stringify({ request: safeReq, response: res, ...extra }, null, 2));
   summary.steps.push({ step, name, status: res.status, ms: res.ms, ...extra });
-  console.log(`${String(step).padStart(2, '0')} ${name}: ${res.status} (${res.ms} ms)`);
+  const detail = typeof res.status === 'number' && res.status >= 400 && res.json ? `  ← ${res.json.message || res.json.error || JSON.stringify(res.json).slice(0, 300)}` : '';
+  console.log(`${String(step).padStart(2, '0')} ${name}: ${res.status} (${res.ms} ms)${detail}`);
 }
 async function call(method, path, body, { raw = false, auth = true } = {}) {
   const url = path.startsWith('http') ? path : `${ORIGIN}/api/v1${path}`;

@@ -221,15 +221,20 @@ Close by: downloading the `/sb/` archive of one repository of each type on QA, r
 ### Q19 — Version bump when the latest release is not Scripture Burrito, and bare-year baselines (closed)
 **Decided 22 September 2026 by Rich:** when the latest full release's metadata format is not Scripture Burrito (`rc`, `ts`, `tc`, read from the release tag's catalog entry, E20), the first tC Admin release is a major bump, because the format change is breaking for consumers. A bare-year tag such as `1974` has no semantic baseline: the release is `v1.0.0` and the project uses semantic versions from then on. For id_tb1 both apply and the result is `v1.0.0`; the `1974` archive is still the content baseline for carried-forward books. Recorded in product spec §10, domain model §7, R9, #37.
 
-### Q20 — Where do the wizard's language list and license choices come from?
-The creation wizard asks for a target language and writes a license ingredient. Neither the source of the language list nor the set of licenses offered is decided.
-Blocks: #28, #29. Owner: Rich for the data source, Birch for the license choices.
-Proposal (labeled): languages from `GET /api/v1/catalog/list/languages` (present in the swagger, E21), with a free-text tag allowed when a language is not listed; licenses CC BY-SA 4.0 (default), CC BY 4.0, CC0 1.0, and public domain, each writing its text to `ingredients/license.md` and a `copyright.licenses` entry that names the ingredient.
-Close by: Rich confirms the endpoint returns a tag and a name for every language DCS knows; Birch confirms the license list.
+### Q20 — Where do the wizard's language list and license choices come from? (languages closed)
+**Languages, decided 22 September 2026 by Rich:** any language may be chosen. The full list is `GET /api/v1/languages/langnames.json` (E25: 9,165 entries), so the wizard offers it with search rather than a plain dropdown. For narrowing to languages an owner already has repositories in, `GET /api/v1/catalog/list/languages?owner=<owner>&stage=latest`, optionally `&flavor=textTranslation` for Bibles or `&flavor=textStories` for Open Bible Stories; the same endpoint can feed the portfolio's language filter.
+**Licenses, still open.** Owner: Birch.
+Proposal (labeled): CC BY-SA 4.0 (default), CC BY 4.0, CC0 1.0, and public domain, each writing its text to `ingredients/license.md` and a `copyright.licenses` entry that names the ingredient.
+Blocks: #28, #29 (license part only).
+Close by: Birch confirms the license list.
 
 ### E23 — The QA organization and test user, and where they live
 `tc-admin-qa-org` exists on production (id 53536, public, no repositories yet) and not yet on QA (404 on 22 September 2026). The user `tc-admin-qa` exists on production (id 53535) and on QA (id 53533). Its password and a full-write API token are held in Rich's local `.env` as `TEST_ORG`, `TEST_USER`, `TEST_PASSWORD`, and `TEST_TOKEN`; they are not present in the agent environment and are never committed.
 Hosts: both. Date: 22 September 2026. Method: public organization and user endpoints. Status: verified. Consequence: until a QA reset copies the organization, a QA probe creates repositories under the `tc-admin-qa` user; production holds seed files only, never releases (#1). A token is valid on the host that issued it only.
+
+### E25 — Door43 language lists
+`GET /api/v1/languages/langnames.json` (public, 1.5 MB) returns 9,165 entries with `lc` (tag), `ln` (native name), `ang` (English name), `ld` (direction), `gw` (gateway language), `hc` (home country), `cc` (countries), `lr` (region), `alt` (alternate names), `pk`. `GET /api/v1/catalog/list/languages?owner=<owner>&stage=latest[&flavor=textTranslation|textStories]` returns the same shape for languages the owner has repositories in (unfoldingword: 5, of which 4 textTranslation; bahtraku: 7, including `ums` Pendau).
+Host: qa.door43.org. Date: 22 September 2026. Method: public probes; endpoints named by Rich. Status: verified. Consequence: the wizard's language field searches the full list (Q20); the portfolio language filter uses the owner-scoped list.
 
 ### E24 — Scripture Burrito relationship schema
 A `relationships[]` entry has `relationType` (`source`, `target`, `expression`, `parascriptural`, `peripheral`), `flavor` (for `source`: `textTranslation` or `audioTranslation`), `id` (a prefixed id such as `dcs::unfoldingWord/en_ult`, whose prefix names an entry in `idAuthorities`), `revision` (a revision string such as `v90`), and an optional `variant`. translationCore 4 records a translation's source this way, with `idAuthorities.dcs = { id: "https://git.door43.org/", name: { en: "Door43 Content Service" } }`.
