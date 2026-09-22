@@ -5,6 +5,7 @@
 // Q5 (release readable after branch deletion), Q13 (66-book commit size) in docs/evidence.md.
 //
 // Usage:  node --env-file=.env scripts/probe/qa-write-probe.mjs [--plan] [--skip-size] [--cleanup]
+//         node --env-file=.env scripts/probe/qa-write-probe.mjs --size-only tc-admin-qa-org/tca-probe-…   (Q13 only, on an existing probe repo)
 //         (or TEST_TOKEN=… node scripts/probe/qa-write-probe.mjs). The token must be issued by the
 //         DOOR43_ORIGIN host. On QA the tc-admin-qa-org organization may not exist yet; the probe then
 //         creates the repository under the token's user, which needs "may create repositories" on QA.
@@ -48,6 +49,8 @@ const plan = [
   '15 with --cleanup: DELETE /repos/{o}/{r}',
 ];
 if (args.has('--plan')) { console.log(plan.join('\n')); process.exit(0); }
+const sizeOnlyIndex = process.argv.indexOf('--size-only');
+const sizeOnlyRepo = sizeOnlyIndex > -1 ? process.argv[sizeOnlyIndex + 1] : null;
 if (!TOKEN) { console.error('TEST_TOKEN is required (see docs/evidence.md E23). Use --plan to print the steps.'); process.exit(2); }
 
 mkdirSync(outDir, { recursive: true });
@@ -104,9 +107,27 @@ function metadataFor(base, owner, repo, ingredients, books) {
   return m;
 }
 
+async function sizeTest(owner, repo, baseMeta) {
+  const branch = `probe-size-${Date.now()}`;
+  let r = await call('POST', `/repos/${owner}/${repo}/branches`, { new_branch_name: branch, old_ref_name: 'master' }); record('branch-size', r.req, r.res);
+  const books = Object.keys(baseMeta.ingredients || {}).filter(k => k.endsWith('.usfm'));
+  const tree = await (await fetch(`${ORIGIN}/api/v1/repos/bahtraku/id_tb1/git/trees/master?recursive=true&per_page=1000`)).json();
+  const files = []; let total = 0;
+  for (const e of tree.tree.filter(e => e.type === 'blob' && e.path.endsWith('.usfm'))) { const buf = await rawFile('bahtraku', 'id_tb1', e.path); total += buf.length; files.push({ operation: 'upload', path: `ingredients/${e.path.replace(/^\d+-/, '')}`, content: b64(buf) }); }
+  r = await call('POST', `/repos/${owner}/${repo}/contents`, { branch, message: `Probe: ${files.length} books in one commit`, files });
+  record('size-commit', r.req, r.res, { files: files.length, raw_bytes: total, base64_bytes: files.reduce((n, f) => n + f.content.length, 0), books_expected: books.length });
+}
+
 (async () => {
   const baseMeta = JSON.parse(readFileSync(join(fixtureDir, 'sb-archives/bahtraku__id_tb1__master.metadata.json'), 'utf8'));
   let r;
+  if (sizeOnlyRepo) {
+    const [owner, repo] = sizeOnlyRepo.split('/'); summary.repository = sizeOnlyRepo;
+    r = await call('GET', '/user'); record('user', r.req, r.res); if (r.res.status !== 200) throw new Error('token rejected');
+    await sizeTest(owner, repo, baseMeta);
+    writeFileSync(join(outDir, 'summary-size.json'), JSON.stringify(summary, null, 2));
+    console.log(`\nDone. Recordings in ${outDir}. Add the Q13 result to docs/evidence.md.`); return;
+  }
   r = await call('GET', '/user'); record('user', r.req, r.res); if (r.res.status !== 200) throw new Error('token rejected');
   const login = r.res.json.login;
   let owner = login, viaOrg = false;
@@ -154,14 +175,7 @@ function metadataFor(base, owner, repo, ingredients, books) {
   r = await call('GET', `/repos/${owner}/${repo}/releases/tags/v1.1.0`); record('lookup-after-delete', r.req, r.res);
   r = await call('GET', `${ORIGIN}/${owner}/${repo}/sb/v1.1.0.zip`, undefined, { raw: true, auth: false }); record('sb-archive-after-delete', r.req, r.res);
 
-  if (!args.has('--skip-size')) {
-    r = await call('POST', `/repos/${owner}/${repo}/branches`, { new_branch_name: 'probe-size', old_ref_name: 'master' }); record('branch-size', r.req, r.res);
-    const books = baseMeta.ingredients ? Object.keys(baseMeta.ingredients).filter(k => k.endsWith('.usfm')).map(k => k.replace('ingredients/', '').replace('.usfm', '')) : [];
-    const tree = await (await fetch(`${ORIGIN}/api/v1/repos/bahtraku/id_tb1/git/trees/master?recursive=true&per_page=1000`)).json();
-    const files = []; let total = 0;
-    for (const e of tree.tree.filter(e => e.type === 'blob' && e.path.endsWith('.usfm'))) { const buf = await rawFile('bahtraku', 'id_tb1', e.path); total += buf.length; files.push({ operation: 'create', path: `ingredients/${e.path.replace(/^\d+-/, '')}`, content: b64(buf) }); }
-    r = await call('POST', `/repos/${owner}/${repo}/contents`, { branch: 'probe-size', message: `Probe: ${files.length} books in one commit`, files }); record('size-commit', r.req, r.res, { files: files.length, raw_bytes: total, books_expected: books.length });
-  }
+  if (!args.has('--skip-size')) await sizeTest(owner, repo, baseMeta);
   if (args.has('--cleanup')) { r = await call('DELETE', `/repos/${owner}/${repo}`); record('cleanup', r.req, r.res); }
   writeFileSync(join(outDir, 'summary.json'), JSON.stringify(summary, null, 2));
   console.log(`\nDone. Repository ${summary.repository}. Recordings in ${outDir}. Now add the facts to docs/evidence.md (Q1, Q2, Q3, Q5, Q13).`);
