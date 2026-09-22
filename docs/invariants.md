@@ -60,11 +60,11 @@ Verified by: simulated lost response followed by a fixture where the tag exists;
 Issues: #40.
 
 ### R7 — The temporary branch outlives failure
-The temporary branch is deleted only after release creation succeeds. On health failure, commit failure, or release failure it is retained for inspection and retry.
+The temporary branch is deleted only after release creation succeeds, or when the manager explicitly discards an unreleased preparation (`preparation.discard`, Q14). On health failure, commit failure, or release failure it is retained for inspection and retry.
 Source: ADR 0003; architecture §6 branch lifecycle.
 Enforced in: `worker/src/operations/release-create` (delete branch is the last step and runs only on success).
-Verified by: failed release fixture leaves the branch; successful release fixture deletes it; deletion failure after success is reported as a warning in the receipt, not as a release failure.
-Issues: #34, #39.
+Verified by: failed release fixture leaves the branch; successful release fixture deletes it; deletion failure after success is reported as a warning in the receipt, not as a release failure; discard of a released preparation returns `already_released` and writes nothing.
+Issues: #34, #39, #58.
 
 ### R8 — Promotion changes only status
 Promoting a pre-release changes the Door43 release's pre-release flag and nothing else: not the tag, not the version, not the contents.
@@ -74,7 +74,7 @@ Verified by: recorded-request test asserting the PATCH body contains only the pr
 Issues: #39.
 
 ### R9 — The version is valid and moves forward
-The final version is valid semver and greater than the latest full release on Door43, whichever tool created that release. Loose tags are coerced before comparison; a bare year or no release baselines at `v1.0.0`.
+The final version is valid semver and greater than the latest full release on Door43, whichever tool created that release. Loose tags are coerced before comparison; a bare year or no release yields `v1.0.0`; a baseline release that is not Scripture Burrito forces a major increment (Q19).
 Source: product spec §10 versioning; domain model §7.
 Enforced in: `worker/src/model/version`; `worker/src/operations/release-create` (precondition).
 Verified by: table-driven tests over the coercion and bump rules; edited version not greater than baseline returns `invalid_version`.

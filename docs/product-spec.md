@@ -84,7 +84,8 @@ The manager provides:
 - Testament scope for Bible projects
 - Repository name
 - Target language
-- Source resource
+- Source translation: the Door43 repository and release this translation is made from, recorded as a Scripture Burrito `source` relationship with the `dcs` id authority (E24)
+- License
 - Project title
 
 The wizard generates complete Scripture Burrito metadata for the selected type, with tC Admin recorded as generator. The manager reviews the generated metadata before creation. Every project tC Admin creates is Scripture Burrito (ADR 0008).
@@ -97,6 +98,7 @@ Book names and abbreviations can be inferred as files are added. The wizard may 
 
 - A repository is created only in an organization where Door43 permits repository creation.
 - The initial `metadata.json` is valid Scripture Burrito for the chosen flavor and lists every ingredient with size and checksum.
+- When a source translation is given, `metadata.json` carries `idAuthorities.dcs` and one `relationships` entry of type `source` naming the repository and revision, with the project's own flavor.
 - If repository creation succeeds but the metadata commit or initial upload fails, the project is shown as **Setup incomplete** with a retry path.
 - tC Admin does not automatically delete a partially created repository.
 
@@ -183,7 +185,7 @@ The branch starts from the latest full release tag, or from the default branch h
 - Previously released books/stories from the release-tag archive, carried forward unchanged unless selected
 - Selected new and revised books/stories from the default branch archive
 - Explicitly included unknown files
-- `metadata.json` based on the previous release's metadata, with selected books added or updated, administrative entries refreshed, ingredient size and md5 correct for every file, and the released books listed as the scope
+- `metadata.json` whose ingredient entries come from the previous release plus the selected books (added or updated) and refreshed administrative entries; whose top-level fields (identification, languages, copyright, localized names, type, relationships) come from the default branch's current metadata; with ingredient size and md5 recomputed for every file and the released books listed as the scope (decided 22 September 2026, Q7 and Q8)
 
 Unselected changes on the default branch must not enter the release. A released book or story is never removed by a later release. These are the central safety properties of selective release. The default branch is never modified by a release.
 
@@ -208,14 +210,16 @@ If the project changes during preparation, tC Admin shows:
 
 The candidate is discarded and the stepper restarts from selection.
 
+A manager may also discard an unreleased preparation. tC Admin asks for confirmation, deletes the temporary branch, and marks the preparation discarded. A preparation that has been released cannot be discarded (decided 22 September 2026, Q14).
+
 ### Versioning
 
 - The baseline is the latest full release on Door43, whichever tool created it.
-- No prior release, or a latest tag that is a bare year such as `1974`: default `v1.0.0`.
+- No prior release, or a latest tag that is a bare year such as `1974`: the release is `v1.0.0`, and the project uses semantic versions from then on (decided 22 September 2026, Q19).
 - A loose tag such as `v105` or `v1.2` is coerced to semver (`v105.0.0`, `v1.2.0`) before the increment.
+- The latest full release is not Scripture Burrito (Resource Container, translationStudio, or translationCore, read from the release tag's metadata format): increment the major component, because the format change is breaking for consumers (Q19).
 - New books/stories: increment the minor component.
 - Revisions or metadata-only changes: increment the patch component.
-- Fundamental format changes: increment the major component.
 - When multiple change categories occur, use the highest-impact category.
 - The manager may edit the calculated version.
 - The final version must be valid and greater than the latest release.
@@ -304,4 +308,4 @@ These are facts to verify during implementation, not product decisions. Each is 
 - How DCS represents tags and release targets for temporary branches (Q5).
 - Safe upload byte limits for the Worker and Door43 API (Q15).
 
-Product decisions still open: whether a manager can discard a preparation (Q14). Decided on 18 September 2026 and recorded in the evidence register: a `warning` does not block release but requires confirmation (Q6); Translation Notes, Translation Questions, and Translation Words Links are book package types created and released like Bible (Q11); the portfolio reads catalog metadata, not archives (Q17); a release's `currentScope` lists the released books (Q7).
+Product decisions still open: the wizard's language list source and license choices (Q20). Decided on 22 September 2026: a manager can discard an unreleased preparation (Q14); the release metadata takes ingredients from the previous release and top-level fields from the default branch (Q8); a non-Scripture-Burrito baseline forces a major version bump and a bare-year baseline yields `v1.0.0` (Q19); the OAuth permissions are `read:user write:repository write:organization` (Q10). Decided on 18 September 2026 and recorded in the evidence register: a `warning` does not block release but requires confirmation (Q6); Translation Notes, Translation Questions, and Translation Words Links are book package types created and released like Bible (Q11); the portfolio reads catalog metadata, not archives (Q17); a release's `currentScope` lists the released books (Q7).

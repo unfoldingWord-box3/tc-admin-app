@@ -161,26 +161,27 @@ In plain terms: the release snapshot's `metadata.json` has a `currentScope` fiel
 Recorded in: product spec §10 snapshot rules, ADR 0010, #35. Coverage on the portfolio still counts against the testament scope (H5); the release scope is a different thing.
 Was blocking: #35.
 
-### Q8 — Which `metadata.json` is the starting point for a release's metadata?
-In plain terms: when tC Admin assembles a release snapshot it writes a new `metadata.json`. There are two files it could start from:
+### Q8 — Which `metadata.json` is the starting point for a release's metadata? (closed)
+**Decided 22 September 2026 by Rich:** the ingredient entries come from the previous release's `metadata.json` plus the selected books, so no released book is lost (R2); every top-level field (identification, languages, copyright, localized names, type, relationships) comes from the default branch's current metadata, where the manager maintains them; sizes and checksums are recomputed from the snapshot files (R10). For a first release everything comes from the default branch. Recorded in ADR 0010 (amended), product spec §10, `release.prepare`, #35.
+
+The question as it was put, kept for the record. In plain terms: when tC Admin assembles a release snapshot it writes a new `metadata.json`. There are two files it could start from:
 
 - **(a)** the previous release's `metadata.json`, taken from the release-tag `/sb/` archive, then adding entries for newly selected books and updating entries for selected revisions; or
 - **(b)** the default branch's `metadata.json`, taken from the default-branch `/sb/` archive, then removing the entries for books that are not in this release.
 
 #35 and ADR 0010 currently say (a). The two differ when a manager has edited the default branch's top-level metadata since the last release (identification, copyright, localized names, language): with (a) the release keeps the previously released values unless tC Admin refreshes those fields from the default branch; with (b) the release picks up the edits automatically. Either way, ingredient size and md5 are recomputed from the files (R10) and administrative ingredients come from the default branch.
-Blocks: #35. Owner: Rich.
-Close by: choosing (a) or (b) here; if (a), naming which top-level fields refresh from the default branch. Then reflect it in #35 and ADR 0010.
+Was blocking: #35. Resolved as (a) for ingredients with every top-level field refreshed from the default branch.
 
 ### Q9 — Does the OAuth registration survive a QA reset?
 Blocks: #4, #12 on QA. Owner: Rich.
 Close by: #4 after the next reset; result recorded here and in the runbook.
 
-### Q10 — Which Door43 OAuth token permissions do the Milestone 1 writes need?
-This is about the OAuth `scope` parameter sent at sign-in (Gitea's token permissions), not the Scripture Burrito `currentScope` field, which is Q7.
+### Q10 — Which Door43 OAuth token permissions do the Milestone 1 writes need? (closed)
+**Decided 22 September 2026 by Rich:** `read:user write:repository write:organization`; these are the permissions a signed-in user has with DCS. The QA write probe (`scripts/probe/qa-write-probe.mjs`) records each operation succeeding with them. Recorded in #2, #12, architecture §8.
+
+The question as it was put, kept for the record. This is about the OAuth `scope` parameter sent at sign-in (Gitea's token permissions), not the Scripture Burrito `currentScope` field, which is Q7.
 In plain terms: the prototype signs in requesting `read:user read:repository read:organization`, which lets it list repositories but would be refused when it tries to create a repository, commit files, create a branch or tag, or create a release. Gitea's OAuth scopes include `write:repository` and `write:organization` (and `write:user`); which of these, at minimum, lets every Milestone 1 write operation succeed is not yet known, and asking for too much would violate least privilege (architecture §8).
-Blocks: #2, #12, #30. Owner: Rich.
-Proposal (labeled, inferred from Gitea's scoped-token model for 1.22 and later, E13): `read:user write:repository write:organization`, where `write:organization` covers `POST /orgs/{org}/repos` and `write:repository` covers contents, branches, tags, and releases. The swagger declares no scopes, so this is not evidence.
-Close by: confirming on QA that each write in the operation catalog succeeds with that set and fails without it; recording the set as a fact.
+Was blocking: #2, #12, #30. The proposal (`read:user write:repository write:organization`, from Gitea's scoped-token model, E13) is what Rich confirmed.
 
 ### Q11 — How does the portfolio show a writable repository with valid metadata whose type is neither Bible nor OBS? (closed)
 **Decided 18 September 2026 by Rich:** a Translation Notes repository is a book package repository like a Bible repository: it has one file per book, `.tsv` instead of `.usfm`. It can be created and released through the same operations as a Bible project. The same holds for Translation Questions and Translation Words Links (CONTEXT.md "Book package repository").
@@ -198,10 +199,8 @@ Maximum files and bytes per request for the multi-file contents endpoint, agains
 Blocks: #34. Owner: Rich.
 Close by: probing on QA with the id_tb1 snapshot; recording the limit or the need to chunk (which would break W5 and needs an ADR).
 
-### Q14 — Is a manager-initiated discard of a preparation in scope?
-The specification retains the temporary branch on failure and deletes it on success, but has no cancel. An agent or a manager who abandons a preparation needs a way to clean up.
-Blocks: nothing in Milestone 1. Owner: Birch.
-Proposal (labeled): `preparation.discard` deletes the temporary branch of an unreleased preparation after confirmation; listed in the operation catalog as pending.
+### Q14 — Is a manager-initiated discard of a preparation in scope? (closed)
+**Decided 22 September 2026 by Rich:** yes. `preparation.discard` is a Milestone 1 operation, built by #58: after confirmation it deletes the temporary branch of an unreleased preparation and marks it `discarded`; a released preparation cannot be discarded. Recorded in the operation catalog §4, product spec §10, domain model §6, R7.
 
 ### Q15 — Safe upload byte limits (Milestone 2)
 Blocks: #45. Owner: Rich. Close by: reading Worker request limits and Door43 contents limits; recording both.
@@ -216,5 +215,22 @@ Was blocking: #18, #19, #24.
 
 ### Q18 — What Scripture Burrito flavor and book file pattern do Translation Notes, Translation Questions, and Translation Words Links use?
 Opened by the Q11 decision. Creating one of these projects needs the flavor and minimum `metadata.json` (as Q4 does for Bible); releasing one needs the file name pattern that identifies a book file in the `/sb/` archive (Bible uses `.usfm` per book; these use `.tsv`).
-Blocks: creation and release for `tn`, `tq`, `twl` (scheduled at the Milestone 1 re-plan). Owner: Rich.
+Blocks: creation and release for `tn`, `tq`, `twl` (scheduled at the Milestone 1 re-plan; Rich confirmed on 22 September 2026 that Milestone 1 stays Bible and OBS only). Owner: Rich.
 Close by: downloading the `/sb/` archive of one repository of each type on QA, recording `metadata.json` and the file list as fixtures, and adding the flavor and pattern here as facts.
+
+### Q19 — Version bump when the latest release is not Scripture Burrito, and bare-year baselines (closed)
+**Decided 22 September 2026 by Rich:** when the latest full release's metadata format is not Scripture Burrito (`rc`, `ts`, `tc`, read from the release tag's catalog entry, E20), the first tC Admin release is a major bump, because the format change is breaking for consumers. A bare-year tag such as `1974` has no semantic baseline: the release is `v1.0.0` and the project uses semantic versions from then on. For id_tb1 both apply and the result is `v1.0.0`; the `1974` archive is still the content baseline for carried-forward books. Recorded in product spec §10, domain model §7, R9, #37.
+
+### Q20 — Where do the wizard's language list and license choices come from?
+The creation wizard asks for a target language and writes a license ingredient. Neither the source of the language list nor the set of licenses offered is decided.
+Blocks: #28, #29. Owner: Rich for the data source, Birch for the license choices.
+Proposal (labeled): languages from `GET /api/v1/catalog/list/languages` (present in the swagger, E21), with a free-text tag allowed when a language is not listed; licenses CC BY-SA 4.0 (default), CC BY 4.0, CC0 1.0, and public domain, each writing its text to `ingredients/license.md` and a `copyright.licenses` entry that names the ingredient.
+Close by: Rich confirms the endpoint returns a tag and a name for every language DCS knows; Birch confirms the license list.
+
+### E23 — The QA organization and test user, and where they live
+`tc-admin-qa-org` exists on production (id 53536, public, no repositories yet) and not yet on QA (404 on 22 September 2026). The user `tc-admin-qa` exists on production (id 53535) and on QA (id 53533). Its password and a full-write API token are held in Rich's local `.env` as `TEST_ORG`, `TEST_USER`, `TEST_PASSWORD`, and `TEST_TOKEN`; they are not present in the agent environment and are never committed.
+Hosts: both. Date: 22 September 2026. Method: public organization and user endpoints. Status: verified. Consequence: until a QA reset copies the organization, a QA probe creates repositories under the `tc-admin-qa` user; production holds seed files only, never releases (#1). A token is valid on the host that issued it only.
+
+### E24 — Scripture Burrito relationship schema
+A `relationships[]` entry has `relationType` (`source`, `target`, `expression`, `parascriptural`, `peripheral`), `flavor` (for `source`: `textTranslation` or `audioTranslation`), `id` (a prefixed id such as `dcs::unfoldingWord/en_ult`, whose prefix names an entry in `idAuthorities`), `revision` (a revision string such as `v90`), and an optional `variant`. translationCore 4 records a translation's source this way, with `idAuthorities.dcs = { id: "https://git.door43.org/", name: { en: "Door43 Content Service" } }`.
+Source: https://docs.burrito.bible/en/v1.0.0/schema_docs/relationship.html, read 22 September 2026; the translationCore 4 shape from Rich, 22 September 2026. Status: verified against the published schema. Consequence: the wizard's source translation writes `idAuthorities.dcs` and one `source` relationship whose `flavor` equals the project's (#29). `go-rc2sb` writes the `dcs` authority id without the trailing slash (E17); #29 settles which spelling tC Admin uses.

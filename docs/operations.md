@@ -132,7 +132,7 @@ error
 | `release.create` | apply | 1 | tag, release, branch delete | R3, R5, R6, R7, R9, H2, A2 | #39, #40 |
 | `release.lookup` | read | 1 | — | R6 | #40 |
 | `release.promote` | apply | 1 | release | R8, A2 | #39 |
-| `preparation.discard` | apply | 1, pending Q14 | branch delete | R7 | — |
+| `preparation.discard` | apply | 1 | branch delete | R7, A2 | #58 |
 | `upload.plan` | plan | 2 | — | W2, W6 | #45 |
 | `upload.apply` | apply | 2 | commit | W2, W5, A2 | #45 |
 | `metadata.plan` | plan | 2 | — | W1, W2, W3, W7 | #46 |
@@ -177,8 +177,8 @@ The orientation call. One request tells a client who is signed in, which host, a
 
 ### `project.create.plan`
 
-- Inputs: `{ organization, project_type: bible, testament_scope: nt | ot | full, repo_name, language: { code, title }, source_resource | null, title }`. Open Bible Stories in Milestone 2.
-- Checks: organization allows repository creation for this account; repository name free and valid; flavor `scripture/textTranslation` (W1); Q4 decides the required metadata fields.
+- Inputs: `{ organization, project_type: bible, testament_scope: nt | ot | full, repo_name, language: { code, title }, source: { owner, repo, revision } | null, license, title }`. Open Bible Stories in Milestone 2. `source` is the Door43 repository and release this translation is made from; it becomes `idAuthorities.dcs` and one `relationships[]` entry `{ id: "dcs::<owner>/<repo>", relationType: "source", flavor: <the project's flavor>, revision }` (E24). `license` is one of the choices Q20 settles.
+- Checks: organization allows repository creation for this account; repository name free and valid; flavor `scripture/textTranslation` (W1); Q4 decides the required metadata fields; when `source` is given, the repository exists on the same host and the revision is one of its releases.
 - Returns: `plan.preview = { metadata_json, files: [{ path, size, md5 }] }`, `would_write = [repo, commit]`.
 - Errors: `validation_failed`, `permission_denied`, `name_taken`, `session_expired`, `door43_unavailable`.
 
@@ -202,8 +202,8 @@ Candidate detection and everything the manager needs to decide, with no writes.
 
 - Inputs: `{ owner, repo }`.
 - Door43 reads: the repository (`catalog.prod` for the baseline tag and commit SHA, `catalog.latest` for the default-branch head); the catalog entry for each of the two refs (E20) to map book code to path in each layout; the recursive git tree for each ref (E19). No archive download.
-- Computes: candidate groups (`new`, `changed_released`, `unchanged`, `unknown`) by comparing blob SHAs book by book across the two trees, which is exact because conversion preserves bytes (E18); administrative ingredients and root files always come from the default branch (R1); the proposed version from the baseline (R9); a draft of the release notes (product spec §10). The merged metadata's `currentScope` will list exactly the released books (Q7).
-- Returns: `plan.preview = { candidates: { new, changed_released, unchanged, unknown }, administrative: [path], version: { baseline_tag, proposed, rule_applied }, notes_draft, selection: {} }` with nothing selected (R4). `would_write = [branch, commit]`.
+- Computes: candidate groups (`new`, `changed_released`, `unchanged`, `unknown`) by comparing blob SHAs book by book across the two trees, which is exact because conversion preserves bytes (E18); administrative ingredients and root files always come from the default branch (R1); the proposed version from the baseline (R9, Q19): `first` when there is no release or the tag is a bare year (`v1.0.0`), `format_change` when the baseline release is not Scripture Burrito (major), else `new_books` (minor) or `revisions` (patch), the highest that applies; a draft of the release notes (product spec §10). The merged metadata's `currentScope` will list exactly the released books (Q7).
+- Returns: `plan.preview = { candidates: { new, changed_released, unchanged, unknown }, administrative: [path], version: { baseline_tag, baseline_format, proposed, rule_applied: first | format_change | new_books | revisions }, notes_draft, selection: {} }` with nothing selected (R4). `would_write = [branch, commit]`.
 - Errors: `not_releasable` (unsupported project), `permission_denied`, `session_expired`, `door43_unavailable`.
 
 ### `release.prepare`
@@ -211,7 +211,7 @@ Candidate detection and everything the manager needs to decide, with no writes.
 - Inputs: `{ plan_id, selection: { new: [unit], revised: [unit], unknown_included: [path] }, version | null }`.
 - Checks: plan not expired; `bound_to` matches Door43 (R5); selection valid: at least one unit on a first release, no released unit omitted (R2, R4); version valid and greater than the baseline when supplied (R9); permission re-read (A2).
 - Door43 reads: the `/sb/` archive for the default branch and, when a release exists, for the release tag (E17), the only place the file bytes come from (ADR 0008).
-- Door43 writes: `POST /branches` creating `temp-tca-release/<version>` with `old_ref_name` set to the release tag, or to the default branch for a first release (ADR 0010); then one `POST /contents` on that branch containing root files and administrative ingredients from the default-branch archive, released units from the tag archive, selected units from the default-branch archive, explicitly included unknown files, and the merged `metadata.json` with size and md5 recomputed for every file (R1, R3, R10, W5; request shapes in E21).
+- Door43 writes: `POST /branches` creating `temp-tca-release/<version>` with `old_ref_name` set to the release tag, or to the default branch for a first release (ADR 0010); then one `POST /contents` on that branch containing root files and administrative ingredients from the default-branch archive, released units from the tag archive, selected units from the default-branch archive, explicitly included unknown files, and the merged `metadata.json`: ingredient entries from the previous release plus the selected books, every top-level field from the default branch's current metadata, `currentScope` equal to the released books, size and md5 recomputed for every file (Q7, Q8; R1, R3, R10, W5; request shapes in E21).
 - Returns: `receipt.result = preparation` in state `snapshot_prepared`, moving to `health_checking` once the push is confirmed.
 - Errors: `plan_expired`, `source_changed`, `invalid_selection`, `invalid_version`, `permission_denied`, `commit_failed`, `door43_unavailable`. On `commit_failed` the branch is retained (R7) and the preparation is `retryable_failure`.
 
@@ -244,10 +244,13 @@ Candidate detection and everything the manager needs to decide, with no writes.
 - Returns: `receipt.result = { tag, url, prerelease: false }`.
 - Errors: `not_found`, `not_prerelease`, `permission_denied`, `promotion_failed`.
 
-### `preparation.discard` (pending Q14)
+### `preparation.discard`
 
 - Inputs: `{ owner, repo, preparation_id }`.
-- Effect: a manager-initiated cancel that deletes the temporary branch of a preparation that has not been released. Not yet in the product specification; Q14 records the decision.
+- Checks: the preparation exists and has no release (`state` is not `pre_release` or `full_release`); permission re-read (A2). The UI asks the manager to confirm first.
+- Door43 writes: delete the temporary branch (E21).
+- Returns: `receipt.result = preparation` in state `discarded`.
+- Errors: `not_found`, `already_released`, `permission_denied`, `door43_unavailable`. A failed deletion leaves the branch and the preparation in `retryable_failure` (R7).
 
 ## 5. State identifiers
 
@@ -264,7 +267,8 @@ Defined in [domain-model.md](domain-model.md) and repeated here so a client can 
 | `health.state` | `healthy`, `warning`, `failing`, `never_checked`, `checking`, `door43_unavailable`, `health_error`, `unsupported` |
 | candidate group | `new`, `changed_released`, `unchanged`, `unknown` |
 | content inclusion | `unreleased`, `released`, `changed_released`, `selected`, `carried_forward`, `excluded`, `administrative`, `unknown` |
-| `preparation.state` | `selecting`, `snapshot_prepared`, `health_checking`, `health_blocked`, `ready_for_release`, `pre_release`, `full_release`, `restart_required`, `retryable_failure` |
+| `preparation.state` | `selecting`, `snapshot_prepared`, `health_checking`, `health_blocked`, `ready_for_release`, `pre_release`, `full_release`, `restart_required`, `retryable_failure`, `discarded` |
+| `version.rule_applied` | `first`, `format_change`, `new_books`, `revisions` |
 | `setup.state` | `complete`, `incomplete` |
 | `freshness.source` | `live`, `cache` |
 
@@ -295,6 +299,7 @@ Defined in [domain-model.md](domain-model.md) and repeated here so a client can 
 | `release_outcome_unknown` | 502 | via lookup | "Door43 did not confirm the release." | run `release.lookup` for the tag before retrying | Lost release response | R6, X1 |
 | `release_exists` | 409 | no | "This release already exists on Door43." | open the existing release | Existing expected release found | R6 |
 | `not_prerelease` | 409 | no | "This release is already a full release." | none | — | R8 |
+| `already_released` | 409 | no | "This preparation has been released and cannot be discarded." | open the release | — | R7 |
 | `promotion_failed` | 502 | yes | "Pre-release promotion failed. <error message>." | retry | Pre-release promotion failure | R8 |
 | `setup_incomplete` | warning | yes | "Setup incomplete. The repository exists but its first commit failed." | retry the first commit | Partial creation | W4 |
 | `preparation_active` | 409 | no | "A release is being prepared for this project. Finish or discard it first." | open the preparation | — | W7 |
@@ -321,5 +326,9 @@ POST /api/projects/{owner}/{repo}/releases/{tag}/promote      release.promote
 ```
 
 **Web client.** Generated or hand-written against `shared/schema`; each wizard and stepper step calls exactly one operation. The stepper in product spec §10 maps as: select → `release.plan` and selection; review snapshot → `release.prepare`; health → `preparation.read`; notes and version → client state; create → `release.create`; promote → `release.promote`.
+
+```
+POST /api/projects/{owner}/{repo}/preparations/{id}/discard  preparation.discard
+```
 
 **MCP (deferred).** One tool per operation with the same input and output schemas, the same error codes, and the same plan-before-apply requirement, so an agent operating tC Admin follows the same safety path as a manager. No new logic in the MCP layer.

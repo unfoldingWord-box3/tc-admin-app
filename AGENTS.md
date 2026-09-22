@@ -22,6 +22,7 @@ Each document answers one question. Read downward for "why", upward for "how".
 | What have we verified, and what is still unknown? | [docs/evidence.md](docs/evidence.md) |
 | In what order, and how do we know it is done? | [docs/roadmap.md](docs/roadmap.md), GitHub milestones and `EPIC:` issues |
 | How does an issue connect to all of the above? | [docs/traceability.md](docs/traceability.md) |
+| How is it built, checked, and deployed? | [docs/deployment.md](docs/deployment.md), `.github/workflows/` |
 
 ## Orient by task
 
@@ -52,19 +53,21 @@ Each document answers one question. Read downward for "why", upward for "how".
 
 ## Checks
 
-Until #7 lands, the only runnable check is the prototype's:
+Two checks run today, locally and in CI on every pull request (`.github/workflows/check.yml`):
 
 ```
+node scripts/check-docs.mjs          # relative links; every R/H/A/W/P/X, E/Q, and S id referenced is defined
 npm test --prefix prototypes/tc-admin
 ```
 
-Planned once `web/` and `worker/` exist (#7, #10): `npm run check` (typecheck, lint, unit and contract tests), `npm run e2e` (one Playwright sign-in on QA), `npm run probe -- <name>` (live Door43 probe that writes to evidence.md; needs credentials).
+The live Door43 write probe is `node scripts/probe/qa-write-probe.mjs`; it needs `TEST_TOKEN` and refuses production. Planned once `web/` and `worker/` exist (#7, #10): `npm run check` (typecheck, lint, unit and contract tests) and `npm run e2e` (one Playwright sign-in on QA).
 
 ## Hosts and credentials
 
 - QA Door43 (`https://qa.door43.org`) is the development target. Production (`https://git.door43.org`) is for sign-in verification, the Milestone 1 demo, and the pilot. Never mutate a production repository outside the demo and pilot plans.
-- Configuration comes from a root `.env` (ignored by Git); see the prototype README. Never commit a client id, secret, or token. Never print one in a log or a test.
-- Seed repositories and their formats are listed in evidence.md (E9). The `tc-admin-qa` organization on production is copied to QA at each reset (#1).
+- Configuration comes from a root `.env` (ignored by Git); see the prototype README. The QA test user's credentials are `TEST_ORG`, `TEST_USER`, `TEST_PASSWORD`, and `TEST_TOKEN` (E23); an agent session has them only when the environment is configured with them. Never commit a client id, secret, or token. Never print one in a log, a test, a fixture, or a chat message.
+- Seed repositories and their formats are listed in evidence.md (E9). The `tc-admin-qa-org` organization on production is copied to QA at each reset (#1); until then QA probes use the `tc-admin-qa` user's own namespace.
+- The translationCore 4 design system lives in https://github.com/unfoldingWord/translationCore4 (#8).
 
 ## Conventions
 
