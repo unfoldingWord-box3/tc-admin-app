@@ -181,7 +181,7 @@ The release is assembled on a temporary branch named:
 
 The branch starts from the latest full release tag, or from the default branch head for a first release (ADR 0010). tC Admin downloads two Door43 Scripture Burrito archives, the latest full release tag and the default branch, and assembles one commit containing:
 
-- Every root file and every administrative ingredient from the default branch archive
+- Every root file and every administrative ingredient from the default branch archive, including `.gitea/` workflow files, so a repository's own validation travels with its releases (decided 22 September 2026)
 - Previously released books/stories from the release-tag archive, carried forward unchanged unless selected
 - Selected new and revised books/stories from the default branch archive
 - Explicitly included unknown files
