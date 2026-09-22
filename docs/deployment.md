@@ -38,14 +38,14 @@ Nothing here can happen before #7 merges a Wrangler configuration and a minimal 
 **Now (Rich, five minutes):**
 
 1. **Find the subdomain.** Done: `unfoldingword`, recorded in section 1.
-2. **Create four KV namespaces.** Storage & Databases → KV → Create. Each gets a 32-character hex id, visible in the namespace's URL after `namespaces/` and on its page as "Namespace ID". The ids are identifiers, not secrets, and go into the Wrangler configuration in #7 as `kv_namespaces` bindings:
+2. **Create four KV namespaces.** Done 22 September 2026. Storage & Databases → KV → Create. Each gets a 32-character hex id, visible in the namespace's URL after `namespaces/` and on its page as "Namespace ID". The ids are identifiers, not secrets, and go into the Wrangler configuration in #7 as `kv_namespaces` bindings:
 
    | Namespace | Worker | Binding | Id |
    | --- | --- | --- | --- |
    | `tc-admin-qa-sessions` | `tc-admin-qa` | `SESSIONS` | `d38d8016088a41468ae07d86e43d8bd0` |
-   | `tc-admin-qa-plans` | `tc-admin-qa` | `PLANS` | pending |
-   | `tc-admin-sessions` | `tc-admin` | `SESSIONS` | pending |
-   | `tc-admin-plans` | `tc-admin` | `PLANS` | pending |
+   | `tc-admin-qa-plans` | `tc-admin-qa` | `PLANS` | `4144422f84394d569ce4717c39568e2f` |
+   | `tc-admin-sessions` | `tc-admin` | `SESSIONS` | `90e3158d46d74a7f9a60f48b11cab246` |
+   | `tc-admin-plans` | `tc-admin` | `PLANS` | `dfb39941f93e43f6826d58bf39709ea9` |
 
 **After #7 merges (Rich, from a clone of the repository, once):**
 
