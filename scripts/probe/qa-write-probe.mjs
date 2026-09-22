@@ -41,7 +41,7 @@ const plan = [
   '07 poll GET /healthcheck?ref=v1.0.0: latency on a tag',
   '08 POST /branches temp-tca-release/v1.1.0 from old_ref_name v1.0.0 (Q3)',
   '09 POST /contents on the branch: add EXO, metadata with correct size but WRONG md5 for EXO; try operation "upload" for metadata.json without sha, fall back to "update" with sha (Q1, Q3)',
-  '10 poll GET /healthcheck?ref=temp-tca-release/v1.1.0: does an API-created branch get checked; 422 sequence; is md5 reported (Q1, Q2)',
+  '10 poll GET /healthcheck?ref=temp-tca-release/v1.1.0, then again after 8 s: does an API-created branch get checked; is md5 reported on a branch (Q1, Q2)',
   '11 POST /releases v1.1.0 prerelease=true with target_commitish = branch commit SHA; poll tag health',
   '12 PATCH /releases/{id} prerelease=false; GET /releases/tags/v1.1.0',
   '13 DELETE /branches/temp-tca-release/v1.1.0; GET /releases/tags/v1.1.0; GET /sb/v1.1.0.zip (Q5)',
@@ -165,6 +165,8 @@ async function sizeTest(owner, repo, baseMeta) {
   }
   const sha2 = r.res.json?.commit?.sha; summary.branch_commit_sha = sha2;
   await pollHealth(owner, repo, 'temp-tca-release/v1.1.0', 'health-branch');
+  await new Promise(res => setTimeout(res, 8000));
+  await pollHealth(owner, repo, 'temp-tca-release/v1.1.0', 'health-branch-recheck'); // Q1: is md5 verified on branches once the checker has caught up?
 
   r = await call('POST', `/repos/${owner}/${repo}/releases`, { tag_name: 'v1.1.0', name: 'v1.1.0', body: 'Probe pre-release', target_commitish: sha2, prerelease: true }); record('prerelease-v1.1.0', r.req, r.res);
   const releaseId = r.res.json?.id;
