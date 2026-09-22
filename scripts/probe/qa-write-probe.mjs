@@ -6,6 +6,7 @@
 //
 // Usage:  node --env-file=.env scripts/probe/qa-write-probe.mjs [--plan] [--skip-size] [--cleanup]
 //         node --env-file=.env scripts/probe/qa-write-probe.mjs --size-only tc-admin-qa-org/tca-probe-…   (Q13 only, on an existing probe repo)
+//         node --env-file=.env scripts/probe/qa-write-probe.mjs --bulk unfoldingWord/en_ult [--ref master]   (whole /sb/ archive as one first commit into a new repo, then release; Q12, Q13)
 //         (or TEST_TOKEN=… node scripts/probe/qa-write-probe.mjs). The token must be issued by the
 //         DOOR43_ORIGIN host. On QA the tc-admin-qa-org organization may not exist yet; the probe then
 //         creates the repository under the token's user, which needs "may create repositories" on QA.
@@ -19,6 +20,7 @@
 //         The repository is left in place for inspection unless --cleanup is given.
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { inflateRawSync } from 'node:zlib';
 import { join, resolve } from 'node:path';
 
 const args = new Set(process.argv.slice(2));
@@ -49,6 +51,10 @@ const plan = [
   '15 with --cleanup: DELETE /repos/{o}/{r}',
 ];
 if (args.has('--plan')) { console.log(plan.join('\n')); process.exit(0); }
+const bulkIndex = process.argv.indexOf('--bulk');
+const bulkSource = bulkIndex > -1 ? process.argv[bulkIndex + 1] : null;
+const refIndex = process.argv.indexOf('--ref');
+const bulkRef = refIndex > -1 ? process.argv[refIndex + 1] : 'master';
 const sizeOnlyIndex = process.argv.indexOf('--size-only');
 const sizeOnlyRepo = sizeOnlyIndex > -1 ? process.argv[sizeOnlyIndex + 1] : null;
 if (!TOKEN) { console.error('TEST_TOKEN is required (see docs/evidence.md E23). Use --plan to print the steps.'); process.exit(2); }
@@ -107,6 +113,55 @@ function metadataFor(base, owner, repo, ingredients, books) {
   return m;
 }
 
+// Minimal zip reader (stored and deflate entries, no zip64) so the probe stays dependency-free.
+function unzip(buf) {
+  let eocd = buf.length - 22;
+  while (eocd >= 0 && buf.readUInt32LE(eocd) !== 0x06054b50) eocd--;
+  if (eocd < 0) throw new Error('zip: end of central directory not found');
+  const count = buf.readUInt16LE(eocd + 10), cdOffset = buf.readUInt32LE(eocd + 16);
+  const out = []; let p = cdOffset;
+  for (let i = 0; i < count; i++) {
+    if (buf.readUInt32LE(p) !== 0x02014b50) throw new Error('zip: bad central directory entry');
+    const method = buf.readUInt16LE(p + 10), csize = buf.readUInt32LE(p + 20), usize = buf.readUInt32LE(p + 24);
+    const nameLen = buf.readUInt16LE(p + 28), extraLen = buf.readUInt16LE(p + 30), commentLen = buf.readUInt16LE(p + 32), local = buf.readUInt32LE(p + 42);
+    const name = buf.subarray(p + 46, p + 46 + nameLen).toString('utf8');
+    p += 46 + nameLen + extraLen + commentLen;
+    if (name.endsWith('/')) continue;
+    const lNameLen = buf.readUInt16LE(local + 26), lExtraLen = buf.readUInt16LE(local + 28);
+    const start = local + 30 + lNameLen + lExtraLen, raw = buf.subarray(start, start + csize);
+    const data = method === 0 ? Buffer.from(raw) : method === 8 ? inflateRawSync(raw) : (() => { throw new Error(`zip: unsupported method ${method} for ${name}`); })();
+    if (data.length !== usize) throw new Error(`zip: size mismatch for ${name}`);
+    out.push({ name, data });
+  }
+  return out;
+}
+
+async function bulkRelease(owner, source, ref) {
+  const [srcOwner, srcRepo] = source.split('/');
+  const started = Date.now();
+  const zipRes = await fetch(`${ORIGIN}/${srcOwner}/${srcRepo}/sb/${encodeURIComponent(ref)}.zip`);
+  if (!zipRes.ok) throw new Error(`archive download failed: ${zipRes.status}`);
+  const zip = Buffer.from(await zipRes.arrayBuffer());
+  const entries = unzip(zip); const root = entries[0].name.split('/')[0];
+  const files = entries.map(e => ({ path: e.name.slice(root.length + 1), data: e.data }));
+  const rawBytes = files.reduce((n, f) => n + f.data.length, 0);
+  record('bulk-archive', { method: 'GET', url: `${srcOwner}/${srcRepo}/sb/${ref}.zip` }, { status: zipRes.status, ms: Date.now() - started, json: null, bytes: zip.length }, { files: files.length, raw_bytes: rawBytes, base64_bytes_estimate: Math.ceil(rawBytes * 4 / 3), largest: files.map(f => [f.path, f.data.length]).sort((a, b) => b[1] - a[1]).slice(0, 3) });
+  console.warn(`  archive: ${files.length} files, ${(rawBytes / 1048576).toFixed(1)} MB raw, about ${(rawBytes * 4 / 3 / 1048576).toFixed(1)} MB as base64 in one request`);
+  const repo = `tca-bulk-${srcRepo.toLowerCase()}-${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}`;
+  summary.repository = `${owner}/${repo}`;
+  let r = await call('POST', `/orgs/${owner}/repos`, { name: repo, private: false, auto_init: false, description: `tC Admin bulk probe: ${source}@${ref}; safe to delete`, default_branch: 'master' }); record('bulk-create-repo', r.req, r.res);
+  if (r.res.status >= 300) throw new Error('repository creation failed');
+  const body = { message: `Release snapshot of ${source}@${ref} as one commit`, files: files.map(f => ({ operation: 'create', path: f.path, content: f.data.toString('base64') })) };
+  const bodyBytes = Buffer.byteLength(JSON.stringify(body));
+  r = await call('POST', `/repos/${owner}/${repo}/contents`, body); record('bulk-commit', r.req, r.res, { files: files.length, raw_bytes: rawBytes, request_bytes: bodyBytes });
+  if (r.res.status >= 300) { console.warn('  the one-commit upload was refused; that status and message are the Q13 answer for this size'); return; }
+  const sha = r.res.json.commit?.sha; summary.bulk_commit_sha = sha;
+  await pollHealth(owner, repo, 'master', 'bulk-health-master');
+  r = await call('POST', `/repos/${owner}/${repo}/releases`, { tag_name: 'v1.0.0', name: 'v1.0.0', body: `Bulk probe release of ${source}@${ref}`, target_commitish: sha, prerelease: false }); record('bulk-release-v1.0.0', r.req, r.res);
+  await pollHealth(owner, repo, 'v1.0.0', 'bulk-health-tag');
+  r = await call('GET', `${ORIGIN}/${owner}/${repo}/sb/v1.0.0.zip`, undefined, { raw: true, auth: false }); record('bulk-sb-archive', r.req, r.res);
+}
+
 async function sizeTest(owner, repo, baseMeta) {
   const branch = `probe-size-${Date.now()}`;
   let r = await call('POST', `/repos/${owner}/${repo}/branches`, { new_branch_name: branch, old_ref_name: 'master' }); record('branch-size', r.req, r.res);
@@ -121,6 +176,14 @@ async function sizeTest(owner, repo, baseMeta) {
 (async () => {
   const baseMeta = JSON.parse(readFileSync(join(fixtureDir, 'sb-archives/bahtraku__id_tb1__master.metadata.json'), 'utf8'));
   let r;
+  if (bulkSource) {
+    r = await call('GET', '/user'); record('user', r.req, r.res); if (r.res.status !== 200) throw new Error('token rejected');
+    const org = process.env.TEST_ORG || 'tc-admin-qa-org';
+    r = await call('GET', `/orgs/${org}`); record('org-lookup', r.req, r.res); if (r.res.status !== 200) throw new Error(`organization ${org} not found on ${HOST}`);
+    await bulkRelease(org, bulkSource, bulkRef);
+    writeFileSync(join(outDir, 'summary-bulk.json'), JSON.stringify(summary, null, 2));
+    console.log(`\nDone. Repository ${summary.repository}. Recordings in ${outDir}. Add the Q12 and Q13 results to docs/evidence.md.`); return;
+  }
   if (sizeOnlyRepo) {
     const [owner, repo] = sizeOnlyRepo.split('/'); summary.repository = sizeOnlyRepo;
     r = await call('GET', '/user'); record('user', r.req, r.res); if (r.res.status !== 200) throw new Error('token rejected');
