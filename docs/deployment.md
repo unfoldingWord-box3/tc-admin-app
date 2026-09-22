@@ -38,7 +38,14 @@ Nothing here can happen before #7 merges a Wrangler configuration and a minimal 
 **Now (Rich, five minutes):**
 
 1. **Find the subdomain.** Done: `unfoldingword`, recorded in section 1.
-2. **Create four KV namespaces.** Storage & Databases → KV → Create: `tc-admin-qa-sessions`, `tc-admin-qa-plans`, `tc-admin-sessions`, `tc-admin-plans`. Each gets an id; send the four ids to the agent (they are identifiers, not secrets) for the Wrangler configuration in #7.
+2. **Create four KV namespaces.** Storage & Databases → KV → Create. Each gets a 32-character hex id, visible in the namespace's URL after `namespaces/` and on its page as "Namespace ID". The ids are identifiers, not secrets, and go into the Wrangler configuration in #7 as `kv_namespaces` bindings:
+
+   | Namespace | Worker | Binding | Id |
+   | --- | --- | --- | --- |
+   | `tc-admin-qa-sessions` | `tc-admin-qa` | `SESSIONS` | `d38d8016088a41468ae07d86e43d8bd0` |
+   | `tc-admin-qa-plans` | `tc-admin-qa` | `PLANS` | pending |
+   | `tc-admin-sessions` | `tc-admin` | `SESSIONS` | pending |
+   | `tc-admin-plans` | `tc-admin` | `PLANS` | pending |
 
 **After #7 merges (Rich, from a clone of the repository, once):**
 
