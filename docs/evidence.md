@@ -181,16 +181,25 @@ Recorded in: CONTEXT.md (project type, book package repository, identifiers `pro
 Opens: Q18 (the Scripture Burrito flavor and book file pattern for each type).
 Was blocking: #19, #21.
 
-### Q12 — Aligned Bible archive size against Worker limits, and the Workers plan
-A 66-book unaligned Bible is 1.5 MB zipped and 5.2 MB unpacked (E17), well inside Worker memory. Still open: the size of an aligned Bible archive (alignment data multiplies USFM size), and whether the Cloudflare account is on the Workers Paid plan, since the free plan's CPU limit would not cover unzipping, hashing, and base64-encoding a snapshot in one request.
-Blocks: #34; Milestone 3 #52. Owner: Rich.
-Close by: measuring one aligned Bible archive on QA and recording the account plan.
+### Q12 — Aligned Bible archive size against Worker limits, and the Workers plan (measured)
+A 66-book unaligned Bible is 1.5 MB zipped and 5.2 MB unpacked (E17). An aligned Bible is 10.8 MB zipped and 106 MB unpacked (E30), which rules out holding a whole snapshot in one Worker request and is answered by Q22. Still open: whether the Cloudflare account is on the Workers Paid plan (Rich said it is a paid company account; confirm that Workers are on the paid tier, since the free plan's CPU limit would not cover inflating and hashing even a few aligned books).
+Blocks: #34. Owner: Rich.
+Close by: confirming the Workers plan in the Cloudflare dashboard.
 
 ### Q21 — How is a Door43 severity of `info` shown, and does it block release?
 Observed 22 September 2026 (E28): a repository with no release reports `overall_severity_level: info` with a `release_needed` note. tC Admin's health states (domain model §5) map `success`, `warning`, and `error` but had no state for `info`; the prototype showed it as "Information". H1 forbids folding it into `healthy` silently.
 Blocks: #25, #36. Owner: Rich (severity meaning), Birch (display).
 Proposal (labeled): add health state `info`, shown as "Information" with the notes visible; it does not block release and needs no acknowledgement, since Door43 itself treats it as below `warning`.
 Close by: Rich confirms `info` is advisory only; then `info` joins the identifiers in CONTEXT.md, domain model §5, and the operation catalog §5, with H2 unchanged.
+
+### Q22 — How is a snapshot assembled when its bytes exceed one Worker request?
+E30: an aligned Bible is 106 MB of files, about 141 MB as one base64 request, beyond a Worker's 128 MB memory and probably beyond Door43's request limit (Q13). The design so far assumed one multi-file commit carrying every file (ADR 0010 "exactly one commit", W5).
+Blocks: #34, and the aligned-Bible case of Milestone 1 (`bahtraku/Perjanjian-Baru-Pendau` and `id_tb1` are unaligned and small, E17). Owner: Rich.
+Proposal (labeled), in three parts that together upload almost nothing:
+1. **Carried-forward books need no upload.** The temporary branch starts from the previous release tag (ADR 0010), so every previously released book is already in the tree; the commit touches only selected books, refreshed administrative files, and `metadata.json`.
+2. **A first release of a Resource Container repository is renames, not uploads.** The branch starts from the default branch, whose USFM files are byte-identical to the converted ingredients (E18), so the commit uses `operation: rename` with `from_path` to move `01-GEN.usfm` to `ingredients/GEN.usfm` for every book and `LICENSE.md` to `ingredients/LICENSE.md`, creates `metadata.json`, and deletes files the `/sb/` archive does not carry (`manifest.yaml`, `media.yaml`). Only `metadata.json` carries content.
+3. **Selected books are uploaded one by one from the default-branch archive**, inflating each entry only when needed (5.4 MB raw, 7 MB base64 at most per book). When the selected set is too large for one request, the snapshot is written as several commits on the temporary branch, which amends ADR 0010's "exactly one commit" to "one release commit, prepared by one or more commits on the temporary branch", and the release still targets the final commit. Whether `.gitea/` and `.gitignore` are carried into a release is decided here too; proposal: carry them, since the archive does.
+Close by: Rich agreeing to the three parts or an alternative (for example a server-side operation in DCS); then ADR 0010 and W5 are amended, and #34's design follows. The `--bulk` probe result (Q13) shows what Door43 accepts in one request regardless.
 
 ### Q13 — Multi-file commit limits
 Maximum files and bytes per request for the multi-file contents endpoint, against a 66-book snapshot (5.2 MB raw, about 7 MB base64). The first attempt on 22 September 2026 failed for a probe bug (`create` on files the branch already had), not for size.
@@ -249,6 +258,10 @@ Host: qa.door43.org. Date: 22 September 2026. Method: probe run (steps 05, 07, 1
 ### E29 — A release and its archive survive deletion of the temporary branch
 After `DELETE /branches/temp-tca-release/v1.1.0`, `GET /releases/tags/v1.1.0` returned 200 and `GET /{owner}/{repo}/sb/v1.1.0.zip` returned 200 with `metadata.json`, `README.md`, and all three ingredients.
 Host: qa.door43.org. Date: 22 September 2026. Method: probe steps 15 to 17 and a public re-read. Status: verified. Closes Q5.
+
+### E30 — An aligned Bible archive is 106 MB unpacked
+`unfoldingWord/en_ult` (Resource Container, Aligned Bible, 66 books, `catalog.prod` `v90`) converts to a `/sb/master.zip` of 10.8 MB that downloads in 3.6 s and unpacks to 105,975,744 bytes across 79 files: `metadata.json`, `README.md`, `.gitignore`, the repository's `.gitea/workflows/` files, and 68 ingredients, the largest books 5.4 MB (`JER`), 5.1 MB (`GEN`, `PSA`). As base64 in one multi-file commit that is about 141 MB of request body.
+Host: qa.door43.org. Date: 22 September 2026. Method: public download and inspection. Status: verified. Closes the measurement part of Q12 and opens Q22: a Cloudflare Worker (128 MB memory) cannot hold that request, so a snapshot of an aligned Bible cannot be one in-memory multi-file commit whatever Door43 accepts. Also: the archive carries every root file of the repository, including CI workflow files, so "every root file" in the snapshot rules needs a decision about `.gitea/` (folded into Q22).
 
 ### E24 — Scripture Burrito relationship schema
 A `relationships[]` entry has `relationType` (`source`, `target`, `expression`, `parascriptural`, `peripheral`), `flavor` (for `source`: `textTranslation` or `audioTranslation`), `id` (a prefixed id such as `dcs::unfoldingWord/en_ult`, whose prefix names an entry in `idAuthorities`), `revision` (a revision string such as `v90`), and an optional `variant`. translationCore 4 records a translation's source this way, with `idAuthorities.dcs = { id: "https://git.door43.org/", name: { en: "Door43 Content Service" } }`.
