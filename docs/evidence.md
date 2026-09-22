@@ -125,30 +125,22 @@ These are asserted in the specification or architecture and shape the build. Eac
 
 Each question names an owner. An agent does not decide an open question; it records a proposal here, builds behind the current text, and asks the owner. Owners: Rich (DCS and Worker), Birch (product and acceptance).
 
-### Q1 — Does the health check verify md5 as well as size, and on which refs?
-Size is verified on branches and tags and reported as `warning` (E16). Whether md5 is verified too, and at what severity, is not yet observed.
-Blocks: #35 (R10 already recomputes both regardless). Owner: Rich.
-Close by: pushing a branch to a `tc-admin-qa` repository with a correct size and a wrong md5 and reading the result for the branch and for a tag on the same commit.
+### Q1 — Does the health check verify md5 as well as size, and on which refs? (closed)
+**Verified 22 September 2026 (E28):** md5 is verified on tags and reported as `sb_ingredient_mismatch`, severity `warning`; size is verified on branches and tags (E16). Whether the branch result also names md5 is in Rich's recording `10-health-branch.json`; R10 recomputes both regardless.
 
-### Q2 — Health-check latency after a push, and whether API-created branches are checked
-Shape and vocabulary are closed (E15). Still open: the time from a branch push to a fresh result on QA, whether a branch created with `POST /branches` plus `POST /contents` triggers the check the same way a git push does, and whether a just-pushed branch answers 422 (no metadata yet) or an empty result while the check runs.
-Blocks: #5, #36. Owner: Rich.
-Close by: #5 pushes a branch through the API on a `tc-admin-qa` repository and records the sequence of responses and their timing; the poll constants and the 422 handling follow from it.
+### Q2 — Health-check latency after a push, and whether API-created branches are checked (closed)
+**Verified 22 September 2026 (E28):** API-created branches and tags are checked; the first result on a brand-new repository arrived within 5.6 seconds, later refs on the first poll. The poll constants (5 seconds, 3 minutes) stay as a ceiling. The intermediate response while a check runs was not observed in this run; the poll still maps a 422 "no metadata found" inside the window to `checking` (E15).
 
-### Q3 — Do the Milestone 1 writes succeed with a tC Admin OAuth token, and does `target_commitish` accept a commit SHA?
-The endpoints and request shapes are closed (E21). Still open: each write exercised with an OAuth token on a `tc-admin-qa` repository, whether `CreateReleaseOption.target_commitish` accepts the snapshot commit SHA (existing releases carry a branch name), whether the `upload` operation removes the need for blob SHAs on existing files, and Q13.
-Blocks: #30, #34, #39. Owner: Rich.
-Close by: one scripted run on QA that creates a repository, commits files, creates a branch from a tag, commits to it, creates a release targeting the commit SHA, edits it, and deletes the branch, recording every request and response as fixtures.
+### Q3 — Do the Milestone 1 writes succeed, and does `target_commitish` accept a commit SHA? (closed)
+**Verified 22 September 2026 (E27):** every write succeeded with an API token holding `write:repository` and `write:organization`; `target_commitish` accepts and records a commit SHA; `operation: upload` updates an existing file without a blob `sha`. The same scopes on an OAuth token are Q10's decided set.
 
 ### Q4 — Required Scripture Burrito metadata for the two flavors
 The minimum valid `metadata.json` for `scripture/textTranslation` and, for Milestone 2, `gloss/textStories`, and whether Door43's health check accepts what the wizard generates.
 Blocks: #29, #48. Owner: Rich.
 Close by: validating a generated file against the Scripture Burrito schema and committing it to a `tc-admin-qa` repository until health is `success`; recording the file as a fixture.
 
-### Q5 — Can a release target a commit whose branch is later deleted?
-The snapshot commit lives on `temp-tca-release/<version>`, which is deleted after the release. The tag must keep the commit reachable.
-Blocks: #39. Owner: Rich.
-Close by: creating a tag and release on a QA branch, deleting the branch, and reading the release and its archive afterwards.
+### Q5 — Can a release target a commit whose branch is later deleted? (closed)
+**Verified 22 September 2026 (E29):** yes; the release and its `/sb/` archive remain readable after the branch is deleted.
 
 ### Q6 — Does a `warning` health result on the snapshot block release? (closed)
 **Decided 18 September 2026 by Rich:** a `warning` result does not block release creation, but the manager must be shown the warnings and asked to confirm they want to proceed. Failing, unavailable, errored, running, and never-run results still block.
@@ -195,9 +187,9 @@ Blocks: #34; Milestone 3 #52. Owner: Rich.
 Close by: measuring one aligned Bible archive on QA and recording the account plan.
 
 ### Q13 — Multi-file commit limits
-Maximum files and bytes per request for the multi-file contents endpoint, against a 66-book snapshot.
+Maximum files and bytes per request for the multi-file contents endpoint, against a 66-book snapshot (5.2 MB raw, about 7 MB base64). The first attempt on 22 September 2026 failed for a probe bug (`create` on files the branch already had), not for size.
 Blocks: #34. Owner: Rich.
-Close by: probing on QA with the id_tb1 snapshot; recording the limit or the need to chunk (which would break W5 and needs an ADR).
+Close by: `node --env-file=.env scripts/probe/qa-write-probe.mjs --size-only tc-admin-qa-org/tca-probe-20260922194921`, which commits all 66 books with `upload` on a fresh branch; record status, time, and sizes.
 
 ### Q14 — Is a manager-initiated discard of a preparation in scope? (closed)
 **Decided 22 September 2026 by Rich:** yes. `preparation.discard` is a Milestone 1 operation, built by #58: after confirmation it deletes the temporary branch of an unreleased preparation and marks it `discarded`; a released preparation cannot be discarded. Recorded in the operation catalog §4, product spec §10, domain model §6, R7.
@@ -239,6 +231,18 @@ Host: qa.door43.org. Date: 22 September 2026. Method: public probes; endpoints n
 ### E26 — Creating a repository under a user needs `write:user`
 `POST /user/repos` on QA with a token holding `write:repository` and `write:organization` but not `write:user` returns 403 with `token does not have at least one of required scope(s), required=[write:user]`. Gitea gates every `/user/…` route by the `user` scope category regardless of what the operation changes; `POST /orgs/{org}/repos` is gated by `write:organization` instead.
 Host: qa.door43.org. Date: 22 September 2026. Method: Rich's probe run, message quoted from the response. Status: verified. Consequence: the probe defaults to `tc-admin-qa-org`; tC Admin creates projects in organizations only, so Q10's three scopes stand.
+
+### E27 — Every Milestone 1 write works with the QA token, including a release targeting a commit SHA
+Rich's probe run on 22 September 2026 (repository `tc-admin-qa-org/tca-probe-20260922194921`, kept for inspection): `POST /orgs/{org}/repos` 201; first multi-file commit to an empty repository 201; `POST /releases` with `target_commitish` set to the commit SHA 201, and the release records that SHA; `POST /branches` with `old_ref_name` = a tag 201; `POST /contents` on that branch using `operation: upload` for the existing `metadata.json` without a blob `sha` 201; pre-release 201; `PATCH /releases/{id}` to promote 200; `GET /releases/tags/{tag}` 200; `DELETE /branches/{branch}` 204. After promotion `catalog.prod` moved to `v1.1.0`.
+Host: qa.door43.org. Date: 22 September 2026. Method: `scripts/probe/qa-write-probe.mjs` (recordings in Rich's clone under `fixtures/door43/qa.door43.org/2026-09-22/probe-write/`, to be committed). Status: verified. Closes Q3 except the size question (Q13). Consequence: `release.prepare` needs no blob SHAs (use `upload`), and `release.create` targets the snapshot commit SHA directly.
+
+### E28 — Health check latency, coverage of API-created refs, and md5 verification
+After the first commit to a new repository the default-branch result was available within 5.6 seconds. The result for a new tag, for a branch created through the API and committed to through the API, and for a second tag was available on the first poll, about 0.1 seconds after creation. On tag `v1.1.0`, whose `metadata.json` carries a deliberately wrong md5 for `EXO.usfm` with a correct size, the check reports `sb_ingredient_mismatch`: "has an MD5 checksum in metadata.json that does not match the file", severity `warning`; the tag's catalog entry is still `is_valid: true` with `healthcheck_severity: warning`. Master and `v1.0.0` (correct checksums) report `success`.
+Host: qa.door43.org. Date: 22 September 2026. Method: probe run (steps 05, 07, 10, 12) and public re-reads. Status: verified for tags; whether the branch result also named the md5 mismatch is in Rich's recording `10-health-branch.json`, not yet read. Closes Q1 for tags and the latency part of Q2. Consequence: the 5-second poll is generous; the 422 case (E15) was not observed in this run.
+
+### E29 — A release and its archive survive deletion of the temporary branch
+After `DELETE /branches/temp-tca-release/v1.1.0`, `GET /releases/tags/v1.1.0` returned 200 and `GET /{owner}/{repo}/sb/v1.1.0.zip` returned 200 with `metadata.json`, `README.md`, and all three ingredients.
+Host: qa.door43.org. Date: 22 September 2026. Method: probe steps 15 to 17 and a public re-read. Status: verified. Closes Q5.
 
 ### E24 — Scripture Burrito relationship schema
 A `relationships[]` entry has `relationType` (`source`, `target`, `expression`, `parascriptural`, `peripheral`), `flavor` (for `source`: `textTranslation` or `audioTranslation`), `id` (a prefixed id such as `dcs::unfoldingWord/en_ult`, whose prefix names an entry in `idAuthorities`), `revision` (a revision string such as `v90`), and an optional `variant`. translationCore 4 records a translation's source this way, with `idAuthorities.dcs = { id: "https://git.door43.org/", name: { en: "Door43 Content Service" } }`.
