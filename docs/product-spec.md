@@ -63,6 +63,7 @@ Each project pill displays a colored pill or eyebrow plus a small issue-count ba
 The model includes distinct states for:
 
 - Healthy
+- Information (the check passed with notes; does not block release)
 - Warning
 - Failing
 - Never checked
@@ -187,7 +188,7 @@ The branch starts from the latest full release tag, or from the default branch h
 - Explicitly included unknown files
 - `metadata.json` whose ingredient entries come from the previous release plus the selected books (added or updated) and refreshed administrative entries; whose top-level fields (identification, languages, copyright, localized names, type, relationships) come from the default branch's current metadata; with ingredient size and md5 recomputed for every file and the released books listed as the scope (decided 22 September 2026, Q7 and Q8)
 
-Unselected changes on the default branch must not enter the release. A released book or story is never removed by a later release. These are the central safety properties of selective release. The default branch is never modified by a release.
+Unselected changes on the default branch must not enter the release. A released book or story is never removed by a later release. These are the central safety properties of selective release. The default branch is never modified by a release. The snapshot is prepared by one or more commits on the temporary branch: carried-forward books are already there and are not re-uploaded, a first release of a Resource Container repository renames its files into place, and selected books are uploaded one by one (decided 30 September 2026, Q22).
 
 ### Release stepper
 

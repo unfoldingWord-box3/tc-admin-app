@@ -180,7 +180,7 @@ The identifier is the only spelling used in code, API payloads, tests, logs, and
 | Editability | `editability.state` | `editable`, `release_only`, `unsupported` |
 | Testament scope | `coverage.scope` | `nt`, `ot`, `full`, `obs`, `unknown` |
 | Coverage basis | `coverage.basis` | `catalog`, `archive` |
-| Health state | `health.state` | `healthy`, `warning`, `failing`, `never_checked`, `checking`, `door43_unavailable`, `health_error`, `unsupported` |
+| Health state | `health.state` | `healthy`, `info`, `warning`, `failing`, `never_checked`, `checking`, `door43_unavailable`, `health_error`, `unsupported` |
 | Content inclusion state | inclusion | `unreleased`, `released`, `changed_released`, `selected`, `carried_forward`, `excluded`, `administrative`, `unknown` |
 | Candidate group | group | `new`, `changed_released`, `unchanged`, `unknown` |
 | Release preparation state | `preparation.state` | `selecting`, `snapshot_prepared`, `health_checking`, `health_blocked`, `ready_for_release`, `pre_release`, `full_release`, `restart_required`, `retryable_failure`, `discarded` |

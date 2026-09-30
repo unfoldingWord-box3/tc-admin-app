@@ -134,8 +134,8 @@ The orchestrator must:
 2. Detect new, changed released, unchanged, administrative, and unknown files by comparing the recursive git trees of the two refs book by book (E19), mapping book code to path through each ref's catalog entry (E20). Blob SHAs are comparable across layouts because conversion preserves bytes (E18). This is the plan; nothing is downloaded yet.
 3. On prepare, download the Scripture Burrito archive for the default branch and, when a release exists, for the latest full release tag (E17). Door43 converts non-SB refs and rolls up SB refs; the archive is the only source of file bytes (ADR 0008).
 4. Create `temp-tca-release/<version>` from the latest full release tag, or from the default branch head for a first release (ADR 0010).
-5. Assemble one commit: root files and administrative ingredients from the default branch archive, released books from the tag archive, selected books from the default branch archive, and `metadata.json` merged from the previous release's metadata with size and md5 recomputed for every file and scope set to the released books.
-6. Push the commit with the multi-file contents endpoint.
+5. Assemble the snapshot in one or more commits on the temporary branch (Q22): carried-forward books are already present from the tag and are not uploaded; a first release of a Resource Container repository renames its byte-identical files into `ingredients/`; selected books are uploaded one at a time from the default-branch archive, spread over several commits when they exceed one request; refreshed root files and administrative ingredients and the merged `metadata.json` (size and md5 recomputed for every file, scope set to the released books) complete the tree.
+6. Push each commit with the multi-file contents endpoint; the plan announced their number.
 7. Poll the health check for the temporary branch.
 8. Re-check the default-branch SHA before release creation.
 9. Create the tag and Door43 release targeting the snapshot commit.

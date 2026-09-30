@@ -32,10 +32,10 @@ Verified by: selection without a released book returns `invalid_selection`; merg
 Issues: #33, #35.
 
 ### R3 — A release never writes to the default branch
-The only Door43 writes a release performs are: create the temporary branch, one commit on it, the tag, and the Door43 release. Nothing else, and nothing on the default branch.
+The only Door43 writes a release performs are: create the temporary branch, one or more commits on it (Q22), the tag, and the Door43 release. Nothing else, and nothing on the default branch.
 Source: ADR 0008, ADR 0010; architecture §5.
 Enforced in: `worker/src/operations/release-prepare`, `release-create`; the Door43 adapter exposes no write to a default branch from the release operations.
-Verified by: recorded-request test asserting the exact set of write calls for a release; a plan's `would_write` list contains only those four kinds.
+Verified by: recorded-request test asserting the exact set of write calls for a release; a plan's `would_write` list contains only those four kinds, and every commit is on the temporary branch.
 Issues: #34, #39.
 
 ### R4 — Nothing is preselected; a first release needs a book
@@ -185,10 +185,10 @@ Verified by: adapter surface test; setup-incomplete fixture leaves the repositor
 Issues: #31, #49.
 
 ### W5 — One operation, one commit
-The accepted changes of one operation are committed together as one Door43 commit: the first commit of a new project, the single snapshot commit of a release, and, in Milestone 2, an upload batch or a metadata edit with its proposed ingredient entries.
+The accepted changes of one operation are committed together as one Door43 commit: the first commit of a new project and, in Milestone 2, an upload batch or a metadata edit with its proposed ingredient entries. The exception is a release snapshot whose selected books exceed one Worker request, which is prepared by several commits on the temporary branch and is still one release (Q22, ADR 0010).
 Source: product spec §8; ADR 0004; ADR 0010.
 Enforced in: `worker/src/door43` multi-file contents call used by every committing operation.
-Verified by: recorded-request tests assert exactly one contents call per apply.
+Verified by: recorded-request tests assert exactly one contents call per apply, except `release.prepare`, where the number of contents calls equals the plan's announced commit count.
 Issues: #30, #34, #45, #46.
 
 ### W6 — Upload paths are safe (Milestone 2)
