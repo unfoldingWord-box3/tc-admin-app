@@ -108,4 +108,4 @@ Keep this file current: an issue's Traceability section and its row here say the
 
 ## Coverage check
 
-Every invariant in [invariants.md](invariants.md) appears in at least one Milestone 1 or Milestone 2 row above except W6 and W7, which are Milestone 2 only. Every Milestone 1 operation in [operations.md](operations.md) §3 appears in at least one row. Every question in [evidence.md](evidence.md) appears in at least one row except Q18, which waits on the Milestone 1 re-plan. Closed questions stay cited where they were decided, so a row still shows what its issue rests on.
+Every invariant in [invariants.md](invariants.md) appears in at least one Milestone 1 or Milestone 2 row above except W6 and W7, which are Milestone 2 only. Every Milestone 1 operation in [operations.md](operations.md) §3 appears in at least one row. Every question in [evidence.md](evidence.md) appears in at least one row except Q18, closed as not needed when Q11 was re-recorded. Closed questions stay cited where they were decided, so a row still shows what its issue rests on.

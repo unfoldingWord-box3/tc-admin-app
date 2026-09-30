@@ -12,7 +12,7 @@ A Door43 repository that a manager can oversee. A project has one project type, 
 
 ### Book and story
 
-A Bible project is a book package repository: one file per Bible book, so books are the content-selection units for release. An OBS project contains stories, which are its selection units. Translation Notes, Translation Questions, and Translation Words Links repositories are also book package repositories and could be released the same way in a later version. None of these units are separate tC Admin projects.
+A Bible project is a book package repository: one file per Bible book, so books are the content-selection units for release. An OBS project contains stories, which are its selection units. None of these units are separate tC Admin projects.
 
 ### Project version
 
@@ -47,16 +47,15 @@ Door43 account
 
 | Project type | Content units | Version-one target |
 | --- | --- | ---: |
-| Bible translation (including Aligned Bible) | Bible books, one `.usfm` file per book | 27, 39, or 66 by testament scope |
-| Translation Notes, Translation Questions, Translation Words Links | Bible books, one `.tsv` file per book | 27, 39, or 66 by testament scope |
-| Open Bible Stories | Stories | 50 |
+| Bible translation (including Aligned Bible), flavor `scripture/textTranslation` | Bible books, one `.usfm` file per book | 27, 39, or 66 by testament scope |
+| Open Bible Stories, flavor `gloss/textStories` | Stories | 50 |
 | Bible Passage Set | Deferred | Not applicable |
 | Any of the above in Resource Container, translationStudio, or translationCore format | Release-only until converted | As above |
 | No recognized metadata | Unsupported | Not applicable |
 
 Coverage is the number of recognized units present in the repository compared with the type-specific target. It is not a claim that a book/story is translated, complete, or approved (H5). Unknown coverage is `null`, never zero and never complete (H3).
 
-Identifiers: `project_type` is `bible`, `tn`, `tq`, `twl`, `obs`, or `other`; `content_structure`, derived from it, is `book_package` (the first four), `story_package` (`obs`), or `whole` (`other`); `metadata_format` is `sb`, `rc`, `ts`, `tc`, or `none`; `editability` is `editable` (Scripture Burrito), `release_only` (Resource Container, translationStudio, translationCore), or `unsupported` (no recognized metadata, or a project type this version does not manage), always with a one-line reason. Every book package type is created and released through the same operations, parameterized by its flavor and book file pattern (Q11, decided; Q18 records the flavor and pattern for the `.tsv` types). Version one manages `bible` and `obs`; Milestone 1 exercises `bible`; `tn`, `tq`, and `twl` are typed and counted but unsupported until the re-plan. A writable repository whose subject is none of the five (Translation Words, Translation Academy, the grammars, the OBS helps) is `other`: listed, with the reason stated, and neither releasable nor editable in version one (Q23).
+Identifiers: `project_type` is `bible`, `obs`, or `other`; `metadata_format` is `sb`, `rc`, `ts`, `tc`, or `none`; `editability` is `editable` (Scripture Burrito), `release_only` (Resource Container, translationStudio, translationCore), or `unsupported` (no recognized metadata, or a project type tC Admin does not manage), always with a one-line reason. tC Admin manages the two Scripture Burrito flavors translationCore 4 edits; Milestone 1 exercises `bible`. A writable repository of any other subject (Translation Notes, Translation Questions, Translation Words Links, Translation Words, Translation Academy, the Greek and Hebrew Bibles, the OBS helps) is `other`: listed, with the reason stated, and neither releasable nor editable (Q11, Q23).
 
 Type, coverage, and health are read from the catalog metadata Door43 returns in the repository search, which is the same for every type (E12); the `/sb/` archive is read only when planning a release.
 

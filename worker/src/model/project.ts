@@ -7,7 +7,6 @@
 // basis), and carries the editability reason for P1.
 
 import type {
-  ContentStructure,
   Coverage,
   CoverageScope,
   CoverageUnit,
@@ -45,50 +44,21 @@ export interface ProjectCatalog {
 }
 
 /**
- * Subject to project type. The glossary names the types and their subjects
- * (CONTEXT.md "Project type", Q23 decided 30 September 2026); the subjects are
- * Door43's vocabulary (E33). Greek New Testament and Hebrew Old Testament are
- * Bibles that hold one testament; the markdown Translation Notes and Questions
- * are the same types as their TSV successors. Every other subject is `other`.
+ * Subject to project type. tC Admin manages the two Scripture Burrito flavors
+ * translationCore 4 edits; Door43 derives the subject from the flavor, so
+ * `scripture/textTranslation` reads as Bible or Aligned Bible and
+ * `gloss/textStories` as Open Bible Stories (E14, E33). Every other subject,
+ * or none, is `other` (CONTEXT.md "Project type", Q11 and Q23).
  */
 const PROJECT_TYPE_BY_SUBJECT: Readonly<Record<string, ProjectType>> = {
   'Bible': 'bible',
   'Aligned Bible': 'bible',
-  'Greek New Testament': 'bible',
-  'Hebrew Old Testament': 'bible',
-  'TSV Translation Notes': 'tn',
-  'Translation Notes': 'tn',
-  'TSV Translation Questions': 'tq',
-  'Translation Questions': 'tq',
-  'TSV Translation Words Links': 'twl',
   'Open Bible Stories': 'obs',
 };
-
-/**
- * The project types version one manages (CONTEXT.md "Project type"; roadmap):
- * Bible and Open Bible Stories. The `.tsv` book package types are typed and
- * counted but neither released nor edited until the Milestone 1 re-plan adds
- * them here (Q18).
- */
-export const MANAGED_PROJECT_TYPES: ReadonlySet<ProjectType> = new Set<ProjectType>(['bible', 'obs']);
 
 export function projectTypeFromSubject(subject: string | null | undefined): ProjectType {
   if (!subject) return 'other';
   return PROJECT_TYPE_BY_SUBJECT[subject.trim()] ?? 'other';
-}
-
-export function contentStructure(type: ProjectType): ContentStructure {
-  switch (type) {
-    case 'bible':
-    case 'tn':
-    case 'tq':
-    case 'twl':
-      return 'book_package';
-    case 'obs':
-      return 'story_package';
-    case 'other':
-      return 'whole';
-  }
 }
 
 const FORMAT_NAMES: Readonly<Record<Exclude<MetadataFormat, 'none'>, string>> = {
@@ -99,18 +69,18 @@ const FORMAT_NAMES: Readonly<Record<Exclude<MetadataFormat, 'none'>, string>> = 
 };
 
 /**
- * Editability with its one-line reason (ADR 0009, P1). A project whose type
- * version one does not manage is neither releasable nor editable, whatever
- * its format, which the glossary spells `unsupported` (CONTEXT.md "Unsupported
- * project"); for the rest, the format decides.
+ * Editability with its one-line reason (ADR 0009, P1). A project of type
+ * `other` is neither releasable nor editable, whatever its format, which the
+ * glossary spells `unsupported` (CONTEXT.md "Unsupported project"); for a
+ * Bible or Open Bible Stories project, the format decides.
  */
 export function editability(format: MetadataFormat, type: ProjectType, subject: string | null): Editability {
   if (format === 'none') {
     return { state: 'unsupported', reason: 'Door43 found no project metadata it recognizes. Release and editing are not available.' };
   }
-  if (!MANAGED_PROJECT_TYPES.has(type)) {
+  if (type === 'other') {
     const what = subject ? `${subject} projects` : 'projects of this type';
-    return { state: 'unsupported', reason: `tC Admin does not manage ${what} in this version. Release and editing are not available.` };
+    return { state: 'unsupported', reason: `tC Admin does not manage ${what}. Release and editing are not available.` };
   }
   const name = FORMAT_NAMES[format];
   if (format === 'sb') return { state: 'editable', reason: `${name} project. Release and editing are available.` };
@@ -141,8 +111,8 @@ export function testamentScope(books: Iterable<string>): CoverageScope {
 /**
  * File coverage from the catalog (H5, basis `catalog`).
  *
- * Scope: `obs` for a story package; for a book package, the testament scope
- * of the books the catalog lists together with `current_scope` when supplied,
+ * Scope: `obs` for Open Bible Stories; for a Bible, the testament scope of
+ * the books the catalog lists together with `current_scope` when supplied,
  * so a present book is always inside the scope; `unknown` for anything else.
  *
  * Present (H3): `null` when Door43 lists no ingredients, or lists no recognized
@@ -151,10 +121,9 @@ export function testamentScope(books: Iterable<string>): CoverageScope {
  * of distinct recognized units whose file exists.
  */
 export function coverage(catalog: ProjectCatalog, type: ProjectType): Coverage {
-  const structure = contentStructure(type);
-  if (structure === 'whole') return { present: null, target: null, scope: 'unknown', basis: 'catalog', units: [] };
+  if (type === 'other') return { present: null, target: null, scope: 'unknown', basis: 'catalog', units: [] };
 
-  const recognize = structure === 'book_package' ? bookId : storyId;
+  const recognize = type === 'bible' ? bookId : storyId;
   const listed = catalog.ingredients;
   const recognized = (listed ?? []).flatMap(ingredient => {
     const unit = recognize(ingredient.id);
@@ -162,7 +131,7 @@ export function coverage(catalog: ProjectCatalog, type: ProjectType): Coverage {
   });
 
   let scope: CoverageScope;
-  if (structure === 'story_package') {
+  if (type === 'obs') {
     scope = 'obs';
   } else {
     const declared = (catalog.current_scope ?? []).flatMap(value => bookId(value) ?? []);
@@ -183,7 +152,6 @@ export function classifyProject(catalog: ProjectCatalog): ProjectClassification 
   const project_type = projectTypeFromSubject(catalog.subject);
   return {
     project_type,
-    content_structure: contentStructure(project_type),
     metadata_format: catalog.metadata_format,
     editability: editability(catalog.metadata_format, project_type, catalog.subject),
     coverage: coverage(catalog, project_type),

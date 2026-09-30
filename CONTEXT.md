@@ -9,15 +9,15 @@ A Door43 repository managed through tC Admin. A project may contain multiple Bib
 _Avoid_: Workspace, release unit, project file, Bible (as the name for the repository)
 
 **Project type**:
-The kind of content a project holds, derived from its metadata subject. Recognized types and the Door43 subjects that name them (Q23): Bible (subjects Bible, Aligned Bible, Greek New Testament, Hebrew Old Testament), Translation Notes (TSV Translation Notes, Translation Notes), Translation Questions (TSV Translation Questions, Translation Questions), Translation Words Links (TSV Translation Words Links), and Open Bible Stories. The first four are book package types and share one creation and release flow. Version one manages Bible and Open Bible Stories; Milestone 1 exercises Bible. Every other type, including the `.tsv` types until the Milestone 1 re-plan, is listed but neither released nor edited; a subject none of the five cover is the identifier `other`.
+The kind of content a project holds, derived from its metadata subject, which Door43 derives from the Scripture Burrito flavor. Version one manages two types, the two flavors translationCore 4 edits: Bible (including Aligned Bible; flavor `scripture/textTranslation`; subjects Bible and Aligned Bible) and Open Bible Stories (flavor `gloss/textStories`; subject Open Bible Stories). Every other type is unsupported: listed with the reason stated, neither released nor edited; its identifier is `other` (Q11, Q23).
 _Avoid_: Subject (in user-facing copy), resource type
 
 **Book package repository**:
-A repository whose files are organized one per Bible book, so that books can be selected individually for release. Bible and Aligned Bible projects are book package repositories with one `.usfm` file per book; Translation Notes, Translation Questions, and Translation Words Links repositories are too, with one `.tsv` file per book. All are created and released through the same operations (decided 18 September 2026, Q11); the milestone that delivers the `.tsv` types is set at the Milestone 1 re-plan.
+A repository whose files are organized one per Bible book, one `.usfm` file per book, so that books can be selected individually for release. Bible and Aligned Bible projects are book package repositories.
 _Avoid_: Multi-book repo, per-book repo
 
 **Bible project**:
-A book package repository whose content is Scripture. The only book package type version one releases.
+A book package repository whose content is Scripture: flavor `scripture/textTranslation`.
 _Avoid_: Bible (as the name for the repository), scripture repo
 
 **Metadata format**:
@@ -174,8 +174,7 @@ The identifier is the only spelling used in code, API payloads, tests, logs, and
 
 | Term | Identifier | Values |
 | --- | --- | --- |
-| Project type | `project_type` | `bible`, `tn`, `tq`, `twl`, `obs`, `other` |
-| Content structure | `content_structure` | `book_package`, `story_package`, `whole` |
+| Project type | `project_type` | `bible`, `obs`, `other` |
 | Metadata format | `metadata_format` | `sb`, `rc`, `ts`, `tc`, `none` |
 | Editability | `editability.state` | `editable`, `release_only`, `unsupported` |
 | Testament scope | `coverage.scope` | `nt`, `ot`, `full`, `obs`, `unknown` |

@@ -3,11 +3,14 @@
 // by the Worker, the web client, and the tests. #7 decides whether this package
 // grows an executable schema (zod or equivalent); until then these are plain types.
 
-export const PROJECT_TYPES = ['bible', 'tn', 'tq', 'twl', 'obs', 'other'] as const;
+/**
+ * The two Scripture Burrito flavors translationCore 4 edits, `scripture/textTranslation`
+ * (`bible`, which includes Aligned Bible) and `gloss/textStories` (`obs`), and `other`
+ * for every other kind of repository, which tC Admin lists but neither releases nor
+ * edits (CONTEXT.md "Project type", Q11).
+ */
+export const PROJECT_TYPES = ['bible', 'obs', 'other'] as const;
 export type ProjectType = (typeof PROJECT_TYPES)[number];
-
-export const CONTENT_STRUCTURES = ['book_package', 'story_package', 'whole'] as const;
-export type ContentStructure = (typeof CONTENT_STRUCTURES)[number];
 
 export const METADATA_FORMATS = ['sb', 'rc', 'ts', 'tc', 'none'] as const;
 export type MetadataFormat = (typeof METADATA_FORMATS)[number];
@@ -50,7 +53,6 @@ export interface Coverage {
 /** The classification part of the project report (operations.md §2). */
 export interface ProjectClassification {
   project_type: ProjectType;
-  content_structure: ContentStructure;
   metadata_format: MetadataFormat;
   editability: Editability;
   coverage: Coverage;

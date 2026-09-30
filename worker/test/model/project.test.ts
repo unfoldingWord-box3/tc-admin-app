@@ -2,15 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { PROJECT_TYPES } from '../../../shared/schema/project';
 import type { CoverageScope, ProjectType } from '../../../shared/schema/project';
 import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT, STORIES } from '../../src/model/books';
-import {
-  MANAGED_PROJECT_TYPES,
-  classifyProject,
-  contentStructure,
-  coverage,
-  editability,
-  projectTypeFromSubject,
-  testamentScope,
-} from '../../src/model/project';
+import { classifyProject, coverage, editability, projectTypeFromSubject, testamentScope } from '../../src/model/project';
 import type { CatalogIngredient, ProjectCatalog } from '../../src/model/project';
 
 const file = (id: string, exists = true): CatalogIngredient => ({ id, path: `./${id}.usfm`, exists, is_dir: false });
@@ -23,46 +15,30 @@ const bible = (ingredients: CatalogIngredient[] | null, extra: Partial<ProjectCa
 });
 
 describe('project type', () => {
-  test('project_type covers all six values from the catalog subject', () => {
-    const seen = new Map<string, ProjectType>([
-      ['Bible', projectTypeFromSubject('Bible')],
-      ['Aligned Bible', projectTypeFromSubject('Aligned Bible')],
-      ['Greek New Testament', projectTypeFromSubject('Greek New Testament')],
-      ['Hebrew Old Testament', projectTypeFromSubject('Hebrew Old Testament')],
-      ['TSV Translation Notes', projectTypeFromSubject('TSV Translation Notes')],
-      ['Translation Notes', projectTypeFromSubject('Translation Notes')],
-      ['TSV Translation Questions', projectTypeFromSubject('TSV Translation Questions')],
-      ['TSV Translation Words Links', projectTypeFromSubject('TSV Translation Words Links')],
-      ['Open Bible Stories', projectTypeFromSubject('Open Bible Stories')],
-      ['Translation Words', projectTypeFromSubject('Translation Words')],
-    ]);
+  test('project_type covers all three values from the catalog subject: the two flavors tC Admin manages, and other', () => {
+    const seen = new Map<string, ProjectType>(
+      ['Bible', 'Aligned Bible', 'Open Bible Stories', 'Translation Words'].map(subject => [subject, projectTypeFromSubject(subject)]),
+    );
     expect(Object.fromEntries(seen)).toEqual({
       'Bible': 'bible',
       'Aligned Bible': 'bible',
-      'Greek New Testament': 'bible',
-      'Hebrew Old Testament': 'bible',
-      'TSV Translation Notes': 'tn',
-      'Translation Notes': 'tn',
-      'TSV Translation Questions': 'tq',
-      'TSV Translation Words Links': 'twl',
       'Open Bible Stories': 'obs',
       'Translation Words': 'other',
     });
     expect(new Set(seen.values())).toEqual(new Set(PROJECT_TYPES));
   });
 
+  test('every subject outside the two flavors is other, including the helps and the original-language Bibles (Q11)', () => {
+    for (const subject of ['TSV Translation Notes', 'Translation Notes', 'TSV Translation Questions', 'TSV Translation Words Links', 'Translation Academy', 'Greek New Testament', 'Hebrew Old Testament', 'OBS Translation Notes']) {
+      expect(projectTypeFromSubject(subject)).toBe('other');
+    }
+  });
+
   test('a missing, empty, or unlisted subject is other', () => {
     expect(projectTypeFromSubject(null)).toBe('other');
     expect(projectTypeFromSubject(undefined)).toBe('other');
     expect(projectTypeFromSubject('')).toBe('other');
-    expect(projectTypeFromSubject('Translation Academy')).toBe('other');
     expect(projectTypeFromSubject('bible')).toBe('other');
-  });
-
-  test('content_structure derives from project_type', () => {
-    expect(PROJECT_TYPES.map(contentStructure)).toEqual([
-      'book_package', 'book_package', 'book_package', 'book_package', 'story_package', 'whole',
-    ]);
   });
 });
 
@@ -71,21 +47,9 @@ describe('editability', () => {
     for (const format of ['sb', 'rc', 'ts', 'tc'] as const) {
       const result = editability(format, 'other', 'Translation Words');
       expect(result.state).toBe('unsupported');
-      expect(result.reason).toBe('tC Admin does not manage Translation Words projects in this version. Release and editing are not available.');
+      expect(result.reason).toBe('tC Admin does not manage Translation Words projects. Release and editing are not available.');
     }
-    expect(editability('sb', 'other', null).reason).toBe('tC Admin does not manage projects of this type in this version. Release and editing are not available.');
-  });
-
-  test('the book package types version one does not manage are unsupported with the reason stated (Q23)', () => {
-    expect(MANAGED_PROJECT_TYPES).toEqual(new Set(['bible', 'obs']));
-    expect(editability('sb', 'tn', 'TSV Translation Notes')).toEqual({
-      state: 'unsupported',
-      reason: 'tC Admin does not manage TSV Translation Notes projects in this version. Release and editing are not available.',
-    });
-    expect(editability('rc', 'tq', 'Translation Questions').state).toBe('unsupported');
-    expect(editability('rc', 'twl', 'TSV Translation Words Links').state).toBe('unsupported');
-    expect(editability('sb', 'obs', 'Open Bible Stories').state).toBe('editable');
-    expect(editability('rc', 'obs', 'Open Bible Stories').state).toBe('release_only');
+    expect(editability('sb', 'other', null).reason).toBe('tC Admin does not manage projects of this type. Release and editing are not available.');
   });
 
   test('P1: every editability state carries a one-line reason', () => {
@@ -93,6 +57,8 @@ describe('editability', () => {
     expect(editability('rc', 'bible', 'Bible')).toEqual({ state: 'release_only', reason: 'Resource Container project. Release is available; editing needs conversion.' });
     expect(editability('ts', 'bible', 'Bible').state).toBe('release_only');
     expect(editability('tc', 'bible', 'Bible').state).toBe('release_only');
+    expect(editability('sb', 'obs', 'Open Bible Stories').state).toBe('editable');
+    expect(editability('rc', 'obs', 'Open Bible Stories').state).toBe('release_only');
     expect(editability('none', 'other', null)).toEqual({ state: 'unsupported', reason: 'Door43 found no project metadata it recognizes. Release and editing are not available.' });
   });
 });
@@ -157,13 +123,6 @@ describe('coverage by testament scope', () => {
     }
   });
 
-  test('H5: the book package types share the Bible coverage rule', () => {
-    for (const type of ['tn', 'tq', 'twl'] as const) {
-      const result = coverage({ subject: 'TSV Translation Notes', metadata_format: 'rc', ingredients: [{ id: 'tit', path: './tn_TIT.tsv', exists: true, is_dir: false }] }, type);
-      expect(result).toMatchObject({ scope: 'nt', target: 27, present: 1, basis: 'catalog' });
-    }
-  });
-
   test('testamentScope is unknown with no recognized book', () => {
     expect(testamentScope([])).toBe('unknown');
     expect(testamentScope(['notes'])).toBe('unknown');
@@ -215,7 +174,6 @@ describe('classifyProject', () => {
     const result = classifyProject({ subject: 'Aligned Bible', metadata_format: 'rc', ingredients: [file('tit'), file('phm')] });
     expect(result).toEqual({
       project_type: 'bible',
-      content_structure: 'book_package',
       metadata_format: 'rc',
       editability: { state: 'release_only', reason: 'Resource Container project. Release is available; editing needs conversion.' },
       coverage: expect.objectContaining({ scope: 'nt', target: 27, present: 2, basis: 'catalog' }),
@@ -225,8 +183,7 @@ describe('classifyProject', () => {
   test('other is listed with the reason stated and is neither releasable nor editable', () => {
     const result = classifyProject({ subject: 'Translation Academy', metadata_format: 'rc', ingredients: [dir('ta', './translate')] });
     expect(result.project_type).toBe('other');
-    expect(result.content_structure).toBe('whole');
-    expect(result.editability).toEqual({ state: 'unsupported', reason: 'tC Admin does not manage Translation Academy projects in this version. Release and editing are not available.' });
+    expect(result.editability).toEqual({ state: 'unsupported', reason: 'tC Admin does not manage Translation Academy projects. Release and editing are not available.' });
     expect(result.coverage).toMatchObject({ present: null, target: null, scope: 'unknown' });
   });
 });

@@ -45,8 +45,7 @@ project
   ref:               { owner, repo, id, url }
   title, description, default_branch
   language:          { code, title }
-  project_type:      bible | tn | tq | twl | obs | other   (see CONTEXT.md "Identifiers")
-  content_structure: book_package | story_package | whole  (derived from project_type)
+  project_type:      bible | obs | other   (see CONTEXT.md "Identifiers")
   metadata_format:   sb | rc | ts | tc | none
   editability:       { state: editable | release_only | unsupported, reason }
   coverage:          { present | null, target | null, scope: nt | ot | full | obs | unknown, basis: catalog | archive, units: [{ id, present }] }
@@ -166,7 +165,7 @@ The orientation call. One request tells a client who is signed in, which host, a
 
 - Inputs: `{ owner, repo }`.
 - Door43 reads: the repository (E14 supplies `metadata_type`, `subject`, `flavor_type`, `ingredients`, `healthcheck_severity`, and `catalog.prod` as the latest full release with its tag and commit SHA, `catalog.preprod` as the latest pre-release, `catalog.latest` as the default-branch head); the health result for the default branch (E15) for the issue counts. No archive download (Q17); `coverage.basis = catalog`.
-- Classification (`worker/src/model/project`, #19): `project_type` from `subject` (E33, Q23) and `content_structure` from it; `coverage.scope` from the books the catalog lists, `nt` when only New Testament books are listed, `ot` when only Old Testament books are, `full` when both, `obs` for Open Bible Stories, `unknown` otherwise, with `target` 27, 39, 66, 50, or `null` (H5); `coverage.present` is `null` when Door43 lists no ingredients or lists no recognized unit but a directory it does not itemize (H3). The search item carries no `currentScope` (E32); a caller that has read the catalog metadata (E20) may supply it and the scope widens to cover it.
+- Classification (`worker/src/model/project`, #19): `project_type` from `subject` (E33, Q11, Q23), `bible` for Bible and Aligned Bible, `obs` for Open Bible Stories, `other` for anything else; `coverage.scope` from the books the catalog lists, `nt` when only New Testament books are listed, `ot` when only Old Testament books are, `full` when both, `obs` for Open Bible Stories, `unknown` otherwise, with `target` 27, 39, 66, 50, or `null` (H5); `coverage.present` is `null` when Door43 lists no ingredients or lists no recognized unit but a directory it does not itemize (H3). The search item carries no `currentScope` (E32); a caller that has read the catalog metadata (E20) may supply it and the scope widens to cover it.
 - Returns: the project report.
 - Errors: `not_found`, `permission_denied` (the repository is not writable), `session_expired`, `door43_unavailable`.
 
@@ -259,8 +258,7 @@ Defined in [domain-model.md](domain-model.md) and repeated here so a client can 
 
 | Field | Values |
 | --- | --- |
-| `project_type` | `bible`, `tn`, `tq`, `twl`, `obs`, `other` |
-| `content_structure` | `book_package`, `story_package`, `whole` |
+| `project_type` | `bible`, `obs`, `other` |
 | `metadata_format` | `sb`, `rc`, `ts`, `tc`, `none` |
 | `coverage.basis` | `catalog`, `archive` |
 | `editability.state` | `editable`, `release_only`, `unsupported` |

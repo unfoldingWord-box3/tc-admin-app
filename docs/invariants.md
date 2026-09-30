@@ -118,7 +118,7 @@ Verified by: component test that every health state renders a visible label; Mil
 Issues: #8, #25, #50.
 
 ### H5 — Coverage is file coverage
-Coverage counts recognized books or stories present against the testament-scope target (27, 39, 66) for any book package type, or 50 stories. It is never presented as translation completeness. It is computed from catalog metadata (E12), and it is distinct from a release's `currentScope`, which lists only released books (Q7).
+Coverage counts recognized books present against the testament-scope target (27, 39, 66) for a Bible project, or stories against 50 for an Open Bible Stories project. It is never presented as translation completeness. It is computed from catalog metadata (E12), and it is distinct from a release's `currentScope`, which lists only released books (Q7).
 Source: CONTEXT.md "Coverage"; product spec §5.
 Enforced in: `worker/src/model/project` (coverage carries `basis` and `target`); `web` copy uses the glossary wording.
 Verified by: the `H5:` tests in `worker/test/model/project.test.ts` over each scope and in `worker/test/contract/project-catalog.test.ts` over the seed repositories (E32); UI copy review against CONTEXT.md.

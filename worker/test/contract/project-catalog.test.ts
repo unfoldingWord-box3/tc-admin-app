@@ -23,7 +23,6 @@ describe('the seed repositories from the repository search (E32)', () => {
     const result = classifyProject(projectCatalog(searchItem('bahtraku__Perjanjian-Baru-Pendau')));
     expect(result).toMatchObject({
       project_type: 'bible',
-      content_structure: 'book_package',
       metadata_format: 'sb',
       editability: { state: 'editable' },
       coverage: { scope: 'nt', target: 27, present: 27, basis: 'catalog' },
@@ -35,7 +34,6 @@ describe('the seed repositories from the repository search (E32)', () => {
     const result = classifyProject(projectCatalog(searchItem('bahtraku__id_tb1')));
     expect(result).toMatchObject({
       project_type: 'bible',
-      content_structure: 'book_package',
       metadata_format: 'rc',
       editability: { state: 'release_only', reason: 'Resource Container project. Release is available; editing needs conversion.' },
       coverage: { scope: 'full', target: 66, present: 66, basis: 'catalog' },
@@ -58,7 +56,7 @@ describe('the seed repositories from the repository search (E32)', () => {
 });
 
 describe('Door43 vocabularies', () => {
-  test('E33: every subject Door43 lists maps to a project_type (Q23, decided 30 September 2026)', () => {
+  test('E33: every subject Door43 lists maps to a project_type; only the two flavors tC Admin manages are not other (Q11, Q23)', () => {
     const subjects = read<{ ok: boolean; data: string[] }>('2026-09-30/catalog/list__subjects.json');
     expect(subjects.ok).toBe(true);
     const mapping = Object.fromEntries(subjects.data.map(subject => [subject, classifyProject({ subject, metadata_format: 'rc', ingredients: [] }).project_type]));
@@ -67,9 +65,9 @@ describe('Door43 vocabularies', () => {
       'Aramaic Grammar': 'other',
       'Bible': 'bible',
       'Greek Grammar': 'other',
-      'Greek New Testament': 'bible',
+      'Greek New Testament': 'other',
       'Hebrew Grammar': 'other',
-      'Hebrew Old Testament': 'bible',
+      'Hebrew Old Testament': 'other',
       'OBS Study Notes': 'other',
       'OBS Study Questions': 'other',
       'OBS Theological Formation': 'other',
@@ -81,12 +79,12 @@ describe('Door43 vocabularies', () => {
       'TSV OBS Translation Notes': 'other',
       'TSV OBS Translation Questions': 'other',
       'TSV OBS Translation Words Links': 'other',
-      'TSV Translation Notes': 'tn',
-      'TSV Translation Questions': 'tq',
-      'TSV Translation Words Links': 'twl',
+      'TSV Translation Notes': 'other',
+      'TSV Translation Questions': 'other',
+      'TSV Translation Words Links': 'other',
       'Translation Academy': 'other',
-      'Translation Notes': 'tn',
-      'Translation Questions': 'tq',
+      'Translation Notes': 'other',
+      'Translation Questions': 'other',
       'Translation Words': 'other',
     };
     expect(mapping).toEqual(expected);
