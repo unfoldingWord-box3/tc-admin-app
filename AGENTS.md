@@ -4,7 +4,7 @@ This file is the entry point for anyone, human or agent, working in this reposit
 
 ## What this is
 
-tC Admin is a planned hosted web application that lets Bible translation managers see, create, and selectively release their Door43 repositories as Scripture Burrito. The repository holds the product design, the decisions, the plan, and two prototypes. There is no application code yet; the first application issue is [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7). Milestone 1 is due 16 October 2026 and its scope does not grow ([roadmap](docs/roadmap.md)).
+tC Admin is a planned hosted web application that lets Bible translation managers see, create, and selectively release their Door43 repositories as Scripture Burrito. The repository holds the product design, the decisions, the plan, two prototypes, and the first application code: the Worker's project model (`worker/src/model/`, `shared/schema/`, #19), placed per the module map ahead of the full scaffold in [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7). Milestone 1 is due 16 October 2026 and its scope does not grow ([roadmap](docs/roadmap.md)).
 
 ## The tower
 
@@ -53,14 +53,16 @@ Each document answers one question. Read downward for "why", upward for "how".
 
 ## Checks
 
-Two checks run today, locally and in CI on every pull request (`.github/workflows/check.yml`):
+One command runs every check, locally and in CI on every pull request (`.github/workflows/check.yml`):
 
 ```
-node scripts/check-docs.mjs          # relative links; every R/H/A/W/P/X, E/Q, and S id referenced is defined
-npm test --prefix prototypes/tc-admin
+npm ci                               # once, from the repository root (npm workspaces: worker/)
+npm run check                        # docs check, Worker typecheck (TypeScript strict) and tests (Vitest), prototype tests
 ```
 
-The live Door43 write probe is `node --env-file=.env scripts/probe/qa-write-probe.mjs`; it needs a `TEST_TOKEN` issued by the QA host and refuses production. It prints the server's message on any failing step. Planned once `web/` and `worker/` exist (#7, #10): `npm run check` (typecheck, lint, unit and contract tests) and `npm run e2e` (one Playwright sign-in on QA).
+The parts, when one is enough: `node scripts/check-docs.mjs` (relative links; every R/H/A/W/P/X, E/Q, and S id referenced is defined), `npm run check --workspace worker`, `npm test --prefix prototypes/tc-admin`. Unit tests live in `worker/test/model/`, contract tests against `fixtures/door43/` in `worker/test/contract/`; test titles start with the invariant id they prove.
+
+The live Door43 write probe is `node --env-file=.env scripts/probe/qa-write-probe.mjs`; it needs a `TEST_TOKEN` issued by the QA host and refuses production. It prints the server's message on any failing step. Planned with `web/` and the rest of `worker/` (#7, #10): lint in `npm run check`, and `npm run e2e` (one Playwright sign-in on QA).
 
 ## Hosts and credentials
 
