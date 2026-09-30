@@ -107,7 +107,7 @@ Issues: #36, #39.
 Unknown, unavailable, running, or never-checked health is never displayed as healthy. Unknown coverage is never displayed as complete or as zero.
 Source: product spec §5; issues #19, #25.
 Enforced in: `worker/src/model/health`, `worker/src/model/project` (coverage `present` is `null`, not `0`, when unknown); `web` renders each state distinctly.
-Verified by: prototype tests carried over: missing severity maps to `never_checked`; OBS container entry yields `null` coverage.
+Verified by: prototype tests carried over: missing severity maps to `never_checked`; OBS container entry yields `null` coverage. Coverage: the `H3:` tests in `worker/test/model/project.test.ts` and `worker/test/contract/project-catalog.test.ts` (no ingredients, a container directory, and unknown never equal to the target).
 Issues: #19, #25.
 
 ### H4 — Health is never color alone
@@ -121,7 +121,7 @@ Issues: #8, #25, #50.
 Coverage counts recognized books or stories present against the testament-scope target (27, 39, 66) for any book package type, or 50 stories. It is never presented as translation completeness. It is computed from catalog metadata (E12), and it is distinct from a release's `currentScope`, which lists only released books (Q7).
 Source: CONTEXT.md "Coverage"; product spec §5.
 Enforced in: `worker/src/model/project` (coverage carries `basis` and `target`); `web` copy uses the glossary wording.
-Verified by: coverage tests over each scope; UI copy review against CONTEXT.md.
+Verified by: the `H5:` tests in `worker/test/model/project.test.ts` over each scope and in `worker/test/contract/project-catalog.test.ts` over the seed repositories (E32); UI copy review against CONTEXT.md.
 Issues: #19, #24.
 
 ## A — Access and identity
