@@ -210,22 +210,21 @@ Proposal (labeled), in three parts that together upload almost nothing:
 4. **A server-side DCS operation** that writes the converted snapshot of a ref onto a branch would move no bytes through the Worker at all; only Rich can judge whether that is realistic.
 Close by: Rich choosing among parts 1 to 3, part 4, or an alternative; then ADR 0010 and W5 are amended and #34's design follows.
 
-### Q23 — Which catalog subjects map to each `project_type`?
-In plain terms: Door43 lists 25 subjects (E33) and the glossary names five project types by their plain names. #19 built the mapping below behind the current text. The rows marked *proposal* are the agent's reading, not a decision; Rich confirms or amends them.
+### Q23 — Which catalog subjects map to each `project_type`? (closed)
+In plain terms: Door43 lists 25 subjects (E33) and the glossary names five project types by their plain names; #19 needed the mapping for the rows the text did not name.
+**Decided 30 September 2026 by Rich:** the markdown `Translation Notes` and `Translation Questions` are `tn` and `tq`, the same types as their TSV successors without the `TSV ` prefix. `Greek New Testament` and `Hebrew Old Testament` are `bible`: Bibles that hold one testament, named so they are easy to find as alignment sources; no user creates or releases one through tC Admin (they are always `unfoldingWord/hbo_uhb` and `unfoldingWord/el-x-koine_ugnt`), and their editability follows the format rule like any Bible, with no subject-specific exclusion. `other` is the sixth `project_type` value, a subject none of the five types cover, and such a repository is unsupported: listed with the reason, neither released nor edited. Version one manages Bible (including Aligned Bible) and Open Bible Stories, as the original glossary said, so `tn`, `tq`, and `twl` repositories are typed and counted but unsupported until the Milestone 1 re-plan (Q18). `project_type` reads `subject` alone; on creation the wizard's choice is the flavor, `scripture/textTranslation` or `gloss/textStories`, and Door43 derives the subject from it.
 
-| Subject | `project_type` built | Status |
-| --- | --- | --- |
-| Bible, Aligned Bible | `bible` | text (CONTEXT.md "Project type") |
-| TSV Translation Notes, TSV Translation Questions, TSV Translation Words Links | `tn`, `tq`, `twl` | text (Q11: one `.tsv` file per book) |
-| Translation Notes, Translation Questions | `tn`, `tq` | *proposal*: the older markdown Resource Container layout, one folder per book, so type and coverage hold; Q18's file pattern does not apply to them |
-| Open Bible Stories | `obs` | text |
-| Greek New Testament, Hebrew Old Testament | `other` | *proposal*: one `.usfm` per book like a Bible, but the text says Bible (including Aligned Bible) only, so they stay `other` until Rich says otherwise |
-| OBS Translation Notes, OBS Translation Questions, OBS Study Notes, OBS Study Questions, OBS Theological Formation, and the five TSV OBS subjects | `other` | *proposal*: story-structured; the text has no story coverage rule for them |
-| Translation Words, Translation Academy, Aramaic Grammar, Greek Grammar, Hebrew Grammar | `other` | text (domain model §3: no book or story structure) |
+| Subject | `project_type` |
+| --- | --- |
+| Bible, Aligned Bible, Greek New Testament, Hebrew Old Testament | `bible` |
+| TSV Translation Notes, Translation Notes | `tn` |
+| TSV Translation Questions, Translation Questions | `tq` |
+| TSV Translation Words Links | `twl` |
+| Open Bible Stories | `obs` |
+| every other subject, or none | `other` |
 
-Also built behind, stated as assumptions: an `other` project's `editability.state` is `unsupported` with the reason stated, because it is neither releasable nor editable and the identifier has no third value; a missing subject is `other`; `project_type` reads `subject` alone, not `flavor_type`, because Door43 derives the subject from the flavor for Scripture Burrito repositories (E14).
-Blocks: nothing in Milestone 1, which exercises `bible`; the Milestone 1 re-plan for `tn`, `tq`, and `twl` (Q18). Owner: Rich.
-Close by: Rich confirming or amending the proposal rows. Then CONTEXT.md "Project type" names the subjects, the table in `worker/test/contract/project-catalog.test.ts` is updated to match, and this question moves to a fact.
+Recorded in: CONTEXT.md "Project type" and "Unsupported project", domain model §3, `worker/src/model/project.ts` (`PROJECT_TYPE_BY_SUBJECT`, `MANAGED_PROJECT_TYPES`), and the table in `worker/test/contract/project-catalog.test.ts`.
+Was blocking: #19.
 
 ### Q13 — Multi-file commit limits (closed)
 **Verified 22 September 2026 (E31):** one request with 79 files and about 135 MB of base64 (101 MB of files) was accepted and became one commit in 68 seconds. A Milestone 1 snapshot of an unaligned Bible (7 MB, E17) is far inside that. Any limit that exists is above the largest real Bible we have.
@@ -301,7 +300,7 @@ Host: qa.door43.org, DCS `1.27.3+dcs.13-g23ba3c3ef9`. Date: 30 September 2026. M
 
 ### E33 — Door43's subject vocabulary
 `GET /api/v1/catalog/list/subjects` (public) returns 25 subjects: Aligned Bible, Aramaic Grammar, Bible, Greek Grammar, Greek New Testament, Hebrew Grammar, Hebrew Old Testament, OBS Study Notes, OBS Study Questions, OBS Theological Formation, OBS Translation Notes, OBS Translation Questions, Open Bible Stories, TSV OBS Study Notes, TSV OBS Study Questions, TSV OBS Translation Notes, TSV OBS Translation Questions, TSV OBS Translation Words Links, TSV Translation Notes, TSV Translation Questions, TSV Translation Words Links, Translation Academy, Translation Notes, Translation Questions, Translation Words. The `bahtraku` owner's own repositories span 15 of them (`owner.repo_subjects` in the E14 fixture). There is no Bible Passage Set subject.
-Host: qa.door43.org. Date: 30 September 2026. Method: public read. Fixture: `fixtures/door43/qa.door43.org/2026-09-30/catalog/list__subjects.json`. Status: verified. Consequence: `project_type` maps each subject in `worker/src/model/project.ts`; the rows the glossary does not name are recorded in Q23 for Rich; a subject outside this list, or none, is `other`.
+Host: qa.door43.org. Date: 30 September 2026. Method: public read. Fixture: `fixtures/door43/qa.door43.org/2026-09-30/catalog/list__subjects.json`. Status: verified. Consequence: `project_type` maps each subject in `worker/src/model/project.ts` as Q23 decided; a subject outside this list, or none, is `other`.
 
 ### E24 — Scripture Burrito relationship schema
 A `relationships[]` entry has `relationType` (`source`, `target`, `expression`, `parascriptural`, `peripheral`), `flavor` (for `source`: `textTranslation` or `audioTranslation`), `id` (a prefixed id such as `dcs::unfoldingWord/en_ult`, whose prefix names an entry in `idAuthorities`), `revision` (a revision string such as `v90`), and an optional `variant`. translationCore 4 records a translation's source this way, with `idAuthorities.dcs = { id: "https://git.door43.org/", name: { en: "Door43 Content Service" } }`.

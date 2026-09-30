@@ -45,13 +45,17 @@ export interface ProjectCatalog {
 }
 
 /**
- * Subject to project type. The glossary names the types (CONTEXT.md "Project
- * type"); the subjects are Door43's vocabulary (E33). Rows the text does not
- * name are built behind Q23 and are listed there.
+ * Subject to project type. The glossary names the types and their subjects
+ * (CONTEXT.md "Project type", Q23 decided 30 September 2026); the subjects are
+ * Door43's vocabulary (E33). Greek New Testament and Hebrew Old Testament are
+ * Bibles that hold one testament; the markdown Translation Notes and Questions
+ * are the same types as their TSV successors. Every other subject is `other`.
  */
 const PROJECT_TYPE_BY_SUBJECT: Readonly<Record<string, ProjectType>> = {
   'Bible': 'bible',
   'Aligned Bible': 'bible',
+  'Greek New Testament': 'bible',
+  'Hebrew Old Testament': 'bible',
   'TSV Translation Notes': 'tn',
   'Translation Notes': 'tn',
   'TSV Translation Questions': 'tq',
@@ -59,6 +63,14 @@ const PROJECT_TYPE_BY_SUBJECT: Readonly<Record<string, ProjectType>> = {
   'TSV Translation Words Links': 'twl',
   'Open Bible Stories': 'obs',
 };
+
+/**
+ * The project types version one manages (CONTEXT.md "Project type"; roadmap):
+ * Bible and Open Bible Stories. The `.tsv` book package types are typed and
+ * counted but neither released nor edited until the Milestone 1 re-plan adds
+ * them here (Q18).
+ */
+export const MANAGED_PROJECT_TYPES: ReadonlySet<ProjectType> = new Set<ProjectType>(['bible', 'obs']);
 
 export function projectTypeFromSubject(subject: string | null | undefined): ProjectType {
   if (!subject) return 'other';
@@ -87,17 +99,18 @@ const FORMAT_NAMES: Readonly<Record<Exclude<MetadataFormat, 'none'>, string>> = 
 };
 
 /**
- * Editability with its one-line reason (ADR 0009, P1). A project of type
- * `other` is neither releasable nor editable in version one, which the
- * glossary spells `unsupported`, whatever its format (domain model §3).
+ * Editability with its one-line reason (ADR 0009, P1). A project whose type
+ * version one does not manage is neither releasable nor editable, whatever
+ * its format, which the glossary spells `unsupported` (CONTEXT.md "Unsupported
+ * project"); for the rest, the format decides.
  */
 export function editability(format: MetadataFormat, type: ProjectType, subject: string | null): Editability {
   if (format === 'none') {
     return { state: 'unsupported', reason: 'Door43 found no project metadata it recognizes. Release and editing are not available.' };
   }
-  if (type === 'other') {
-    const what = subject ? `${subject} projects` : 'Projects of this type';
-    return { state: 'unsupported', reason: `${what} are not managed in version one. Release and editing are not available.` };
+  if (!MANAGED_PROJECT_TYPES.has(type)) {
+    const what = subject ? `${subject} projects` : 'projects of this type';
+    return { state: 'unsupported', reason: `tC Admin does not manage ${what} in this version. Release and editing are not available.` };
   }
   const name = FORMAT_NAMES[format];
   if (format === 'sb') return { state: 'editable', reason: `${name} project. Release and editing are available.` };

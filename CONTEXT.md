@@ -9,7 +9,7 @@ A Door43 repository managed through tC Admin. A project may contain multiple Bib
 _Avoid_: Workspace, release unit, project file, Bible (as the name for the repository)
 
 **Project type**:
-The kind of content a project holds, derived from its metadata subject. Recognized types: Bible (including Aligned Bible), Translation Notes, Translation Questions, Translation Words Links, and Open Bible Stories. The first four are book package types and share one creation and release flow; Milestone 1 exercises Bible. Any other subject is listed but neither released nor edited in version one.
+The kind of content a project holds, derived from its metadata subject. Recognized types and the Door43 subjects that name them (Q23): Bible (subjects Bible, Aligned Bible, Greek New Testament, Hebrew Old Testament), Translation Notes (TSV Translation Notes, Translation Notes), Translation Questions (TSV Translation Questions, Translation Questions), Translation Words Links (TSV Translation Words Links), and Open Bible Stories. The first four are book package types and share one creation and release flow. Version one manages Bible and Open Bible Stories; Milestone 1 exercises Bible. Every other type, including the `.tsv` types until the Milestone 1 re-plan, is listed but neither released nor edited; a subject none of the five cover is the identifier `other`.
 _Avoid_: Subject (in user-facing copy), resource type
 
 **Book package repository**:
@@ -29,7 +29,7 @@ A writable project whose metadata format is not Scripture Burrito. It can be rel
 _Avoid_: Read-only project, legacy project, unsupported project
 
 **Unsupported project**:
-A writable repository with no metadata Door43 recognizes, such as an empty repository. It appears in the portfolio with the reason stated and cannot be released or edited.
+A writable repository tC Admin cannot manage: one with no metadata Door43 recognizes, such as an empty repository, or one whose project type this version does not manage, such as a Translation Words or Translation Academy repository. It appears in the portfolio with the reason stated and cannot be released or edited.
 _Avoid_: Hidden project, invalid project, broken project
 
 **Scripture Burrito**:
@@ -149,7 +149,7 @@ The complete situation of one project returned by one read: type, format, editab
 _Avoid_: Project detail, summary, dashboard data
 
 **Editability**:
-Whether tC Admin may write to a project's default branch: editable (Scripture Burrito), release-only (other valid formats), or unsupported (no recognized metadata). Always shown with its reason.
+Whether tC Admin may write to a project's default branch: editable (Scripture Burrito), release-only (other valid formats), or unsupported (no recognized metadata, or a project type this version does not manage). Always shown with its reason.
 _Avoid_: Mode, capability, status
 
 **Freshness**:

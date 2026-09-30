@@ -58,7 +58,7 @@ describe('the seed repositories from the repository search (E32)', () => {
 });
 
 describe('Door43 vocabularies', () => {
-  test('E33: every subject Door43 lists maps to a project_type', () => {
+  test('E33: every subject Door43 lists maps to a project_type (Q23, decided 30 September 2026)', () => {
     const subjects = read<{ ok: boolean; data: string[] }>('2026-09-30/catalog/list__subjects.json');
     expect(subjects.ok).toBe(true);
     const mapping = Object.fromEntries(subjects.data.map(subject => [subject, classifyProject({ subject, metadata_format: 'rc', ingredients: [] }).project_type]));
@@ -67,9 +67,9 @@ describe('Door43 vocabularies', () => {
       'Aramaic Grammar': 'other',
       'Bible': 'bible',
       'Greek Grammar': 'other',
-      'Greek New Testament': 'other',
+      'Greek New Testament': 'bible',
       'Hebrew Grammar': 'other',
-      'Hebrew Old Testament': 'other',
+      'Hebrew Old Testament': 'bible',
       'OBS Study Notes': 'other',
       'OBS Study Questions': 'other',
       'OBS Theological Formation': 'other',

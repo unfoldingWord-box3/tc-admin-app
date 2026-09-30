@@ -3,6 +3,7 @@ import { PROJECT_TYPES } from '../../../shared/schema/project';
 import type { CoverageScope, ProjectType } from '../../../shared/schema/project';
 import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT, STORIES } from '../../src/model/books';
 import {
+  MANAGED_PROJECT_TYPES,
   classifyProject,
   contentStructure,
   coverage,
@@ -26,7 +27,10 @@ describe('project type', () => {
     const seen = new Map<string, ProjectType>([
       ['Bible', projectTypeFromSubject('Bible')],
       ['Aligned Bible', projectTypeFromSubject('Aligned Bible')],
+      ['Greek New Testament', projectTypeFromSubject('Greek New Testament')],
+      ['Hebrew Old Testament', projectTypeFromSubject('Hebrew Old Testament')],
       ['TSV Translation Notes', projectTypeFromSubject('TSV Translation Notes')],
+      ['Translation Notes', projectTypeFromSubject('Translation Notes')],
       ['TSV Translation Questions', projectTypeFromSubject('TSV Translation Questions')],
       ['TSV Translation Words Links', projectTypeFromSubject('TSV Translation Words Links')],
       ['Open Bible Stories', projectTypeFromSubject('Open Bible Stories')],
@@ -35,7 +39,10 @@ describe('project type', () => {
     expect(Object.fromEntries(seen)).toEqual({
       'Bible': 'bible',
       'Aligned Bible': 'bible',
+      'Greek New Testament': 'bible',
+      'Hebrew Old Testament': 'bible',
       'TSV Translation Notes': 'tn',
+      'Translation Notes': 'tn',
       'TSV Translation Questions': 'tq',
       'TSV Translation Words Links': 'twl',
       'Open Bible Stories': 'obs',
@@ -64,9 +71,21 @@ describe('editability', () => {
     for (const format of ['sb', 'rc', 'ts', 'tc'] as const) {
       const result = editability(format, 'other', 'Translation Words');
       expect(result.state).toBe('unsupported');
-      expect(result.reason).toBe('Translation Words projects are not managed in version one. Release and editing are not available.');
+      expect(result.reason).toBe('tC Admin does not manage Translation Words projects in this version. Release and editing are not available.');
     }
-    expect(editability('sb', 'other', null).reason).toMatch(/^Projects of this type are not managed in version one\./);
+    expect(editability('sb', 'other', null).reason).toBe('tC Admin does not manage projects of this type in this version. Release and editing are not available.');
+  });
+
+  test('the book package types version one does not manage are unsupported with the reason stated (Q23)', () => {
+    expect(MANAGED_PROJECT_TYPES).toEqual(new Set(['bible', 'obs']));
+    expect(editability('sb', 'tn', 'TSV Translation Notes')).toEqual({
+      state: 'unsupported',
+      reason: 'tC Admin does not manage TSV Translation Notes projects in this version. Release and editing are not available.',
+    });
+    expect(editability('rc', 'tq', 'Translation Questions').state).toBe('unsupported');
+    expect(editability('rc', 'twl', 'TSV Translation Words Links').state).toBe('unsupported');
+    expect(editability('sb', 'obs', 'Open Bible Stories').state).toBe('editable');
+    expect(editability('rc', 'obs', 'Open Bible Stories').state).toBe('release_only');
   });
 
   test('P1: every editability state carries a one-line reason', () => {
@@ -207,7 +226,7 @@ describe('classifyProject', () => {
     const result = classifyProject({ subject: 'Translation Academy', metadata_format: 'rc', ingredients: [dir('ta', './translate')] });
     expect(result.project_type).toBe('other');
     expect(result.content_structure).toBe('whole');
-    expect(result.editability).toEqual({ state: 'unsupported', reason: 'Translation Academy projects are not managed in version one. Release and editing are not available.' });
+    expect(result.editability).toEqual({ state: 'unsupported', reason: 'tC Admin does not manage Translation Academy projects in this version. Release and editing are not available.' });
     expect(result.coverage).toMatchObject({ present: null, target: null, scope: 'unknown' });
   });
 });
