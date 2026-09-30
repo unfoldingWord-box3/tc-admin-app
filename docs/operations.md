@@ -177,7 +177,7 @@ The orientation call. One request tells a client who is signed in, which host, a
 
 ### `project.create.plan`
 
-- Inputs: `{ organization, project_type: bible, testament_scope: nt | ot | full, repo_name, language: { code, title }, source: { owner, repo, revision } | null, license, title }`. Open Bible Stories in Milestone 2. `source` is the Door43 repository and release this translation is made from; it becomes `idAuthorities.dcs` and one `relationships[]` entry `{ id: "dcs::<owner>/<repo>", relationType: "source", flavor: <the project's flavor>, revision }` (E24). `license` is one of the choices Q20 settles.
+- Inputs: `{ organization, project_type: bible, testament_scope: nt | ot | full, repo_name, language: { code, title }, source: { owner, repo, revision } | null, license, title }`. Open Bible Stories in Milestone 2. `source` is the Door43 repository and release this translation is made from; it becomes `idAuthorities.dcs` and one `relationships[]` entry `{ id: "dcs::<owner>/<repo>", relationType: "source", flavor: <the project's flavor>, revision }` (E24). `license` is `cc-by-sa-4.0` in Milestone 1 (Q20).
 - Checks: organization allows repository creation for this account; repository name free and valid; flavor `scripture/textTranslation` (W1); Q4 decides the required metadata fields; when `source` is given, the repository exists on the same host and the revision is one of its releases.
 - Returns: `plan.preview = { metadata_json, files: [{ path, size, md5 }] }`, `would_write = [repo, commit]`.
 - Errors: `validation_failed`, `permission_denied`, `name_taken`, `session_expired`, `door43_unavailable`.
@@ -210,8 +210,8 @@ Candidate detection and everything the manager needs to decide, with no writes.
 
 - Inputs: `{ plan_id, selection: { new: [unit], revised: [unit], unknown_included: [path] }, version | null }`.
 - Checks: plan not expired; `bound_to` matches Door43 (R5); selection valid: at least one unit on a first release, no released unit omitted (R2, R4); version valid and greater than the baseline when supplied (R9); permission re-read (A2).
-- Door43 reads: the `/sb/` archive for the default branch and, when a release exists, for the release tag (E17), the only place the file bytes come from (ADR 0008).
-- Door43 writes: `POST /branches` creating `temp-tca-release/<version>` with `old_ref_name` set to the release tag, or to the default branch for a first release (ADR 0010); then one `POST /contents` on that branch containing root files and administrative ingredients from the default-branch archive, released units from the tag archive, selected units from the default-branch archive, explicitly included unknown files, and the merged `metadata.json`: ingredient entries from the previous release plus the selected books, every top-level field from the default branch's current metadata, `currentScope` equal to the released books, size and md5 recomputed for every file (Q7, Q8; R1, R3, R10, W5; request shapes in E21).
+- Door43 reads: the `/sb/` archive for the default branch (E17), inflating one entry at a time, the only place selected books' bytes come from (ADR 0008). The release-tag archive is read only to recompute size and md5 for the merged metadata; carried-forward books are never uploaded (Q22).
+- Door43 writes: `POST /branches` creating `temp-tca-release/<version>` with `old_ref_name` set to the release tag, or to the default branch for a first release (ADR 0010); then one or more `POST /contents` on that branch (Q22). For a release with a baseline: `upload` for each selected book from the default-branch archive, `upload` for refreshed root files and administrative ingredients, and the merged `metadata.json`. For a first release of a Resource Container repository: `rename` with `from_path` for every book and administrative file into `ingredients/` (bytes are identical, E18), `delete` for files the `/sb/` archive does not carry (`manifest.yaml` and similar), `create` for `metadata.json`. The merged `metadata.json` takes ingredient entries from the previous release plus the selected books, every top-level field from the default branch's current metadata, `currentScope` equal to the released books, size and md5 recomputed for every file (Q7, Q8; R1, R3, R10, W5; request shapes in E21). The plan's `would_write` lists every commit the apply will make.
 - Returns: `receipt.result = preparation` in state `snapshot_prepared`, moving to `health_checking` once the push is confirmed.
 - Errors: `plan_expired`, `source_changed`, `invalid_selection`, `invalid_version`, `permission_denied`, `commit_failed`, `door43_unavailable`. On `commit_failed` the branch is retained (R7) and the preparation is `retryable_failure`.
 
@@ -219,7 +219,7 @@ Candidate detection and everything the manager needs to decide, with no writes.
 
 - Inputs: `{ owner, repo, preparation_id }`.
 - Door43 reads: health for the temporary branch (E15); default-branch head SHA. The Worker polls health every 5 seconds for 3 minutes after the push, then returns `health_checking` and lets the client refresh (Q2 tunes the constants). Inside that window a 422 "no metadata found" for the branch means the check has not run yet and maps to `checking`, not `health_error`.
-- Returns: the preparation. If the default-branch head moved, `state = restart_required` (R5). Health states map per H1. `healthy` and `warning` move the preparation to `ready_for_release`; when the state is `warning`, `preparation.requires_acknowledgement` is true and the health issues are included for the manager to read. Every other state leaves the preparation short of `ready_for_release` (H2).
+- Returns: the preparation. If the default-branch head moved, `state = restart_required` (R5). Health states map per H1. `healthy`, `info`, and `warning` move the preparation to `ready_for_release`; when the state is `warning`, `preparation.requires_acknowledgement` is true and the health issues are included for the manager to read. Every other state leaves the preparation short of `ready_for_release` (H2).
 - Errors: `not_found`, `session_expired`, `door43_unavailable`.
 
 ### `release.create`
@@ -264,7 +264,7 @@ Defined in [domain-model.md](domain-model.md) and repeated here so a client can 
 | `coverage.basis` | `catalog`, `archive` |
 | `editability.state` | `editable`, `release_only`, `unsupported` |
 | `coverage.scope` | `nt`, `ot`, `full`, `obs`, `unknown` |
-| `health.state` | `healthy`, `warning`, `failing`, `never_checked`, `checking`, `door43_unavailable`, `health_error`, `unsupported` |
+| `health.state` | `healthy`, `info`, `warning`, `failing`, `never_checked`, `checking`, `door43_unavailable`, `health_error`, `unsupported` |
 | candidate group | `new`, `changed_released`, `unchanged`, `unknown` |
 | content inclusion | `unreleased`, `released`, `changed_released`, `selected`, `carried_forward`, `excluded`, `administrative`, `unknown` |
 | `preparation.state` | `selecting`, `snapshot_prepared`, `health_checking`, `health_blocked`, `ready_for_release`, `pre_release`, `full_release`, `restart_required`, `retryable_failure`, `discarded` |

@@ -78,6 +78,7 @@ For selection, `release.plan` groups units as `new` (unreleased), `changed_relea
 Health is separate from project lifecycle and release state.
 
 - `healthy`
+- `info` (Door43 severity `info`: the check passed with notes, shown as "Information"; Q21)
 - `warning`
 - `failing`
 - `never_checked`
@@ -86,7 +87,7 @@ Health is separate from project lifecycle and release state.
 - `health_error`
 - `unsupported`
 
-A `healthy` result advances a release candidate toward release creation. A `warning` result also advances it, but release creation then requires the manager to have read the warnings and confirmed (H2, Q6 decided). Every other state blocks (H1, H2). The Door43 health-check service determines the result and severity. Every health value carries the ref it was read for, the time, and the raw severity.
+A `healthy` or `info` result advances a release candidate toward release creation. A `warning` result also advances it, but release creation then requires the manager to have read the warnings and confirmed (H2, Q6 decided). Every other state blocks (H1, H2). The Door43 health-check service determines the result and severity. Every health value carries the ref it was read for, the time, and the raw severity.
 
 ## 6. Release state model
 
@@ -121,7 +122,7 @@ A release preparation is an addressable resource (see the [operation catalog](op
 | `selecting` | `release.prepare` | selection valid (R2, R4), version valid (R9), sha unchanged, permission (A2) | `snapshot_prepared` |
 | `selecting` | `release.prepare` | commit failed | `retryable_failure` |
 | `snapshot_prepared` | push confirmed | — | `health_checking` |
-| `health_checking` | health read | `healthy` | `ready_for_release` |
+| `health_checking` | health read | `healthy` or `info` | `ready_for_release` |
 | `health_checking` | health read | `warning` | `ready_for_release` with `requires_acknowledgement` |
 | `health_checking` | health read | failing, unavailable, error | `health_blocked` |
 | `health_checking` | health read | still running | `health_checking` |
