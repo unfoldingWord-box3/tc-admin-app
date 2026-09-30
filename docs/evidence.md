@@ -210,6 +210,23 @@ Proposal (labeled), in three parts that together upload almost nothing:
 4. **A server-side DCS operation** that writes the converted snapshot of a ref onto a branch would move no bytes through the Worker at all; only Rich can judge whether that is realistic.
 Close by: Rich choosing among parts 1 to 3, part 4, or an alternative; then ADR 0010 and W5 are amended and #34's design follows.
 
+### Q23 — Which catalog subjects map to each `project_type`?
+In plain terms: Door43 lists 25 subjects (E33) and the glossary names five project types by their plain names. #19 built the mapping below behind the current text. The rows marked *proposal* are the agent's reading, not a decision; Rich confirms or amends them.
+
+| Subject | `project_type` built | Status |
+| --- | --- | --- |
+| Bible, Aligned Bible | `bible` | text (CONTEXT.md "Project type") |
+| TSV Translation Notes, TSV Translation Questions, TSV Translation Words Links | `tn`, `tq`, `twl` | text (Q11: one `.tsv` file per book) |
+| Translation Notes, Translation Questions | `tn`, `tq` | *proposal*: the older markdown Resource Container layout, one folder per book, so type and coverage hold; Q18's file pattern does not apply to them |
+| Open Bible Stories | `obs` | text |
+| Greek New Testament, Hebrew Old Testament | `other` | *proposal*: one `.usfm` per book like a Bible, but the text says Bible (including Aligned Bible) only, so they stay `other` until Rich says otherwise |
+| OBS Translation Notes, OBS Translation Questions, OBS Study Notes, OBS Study Questions, OBS Theological Formation, and the five TSV OBS subjects | `other` | *proposal*: story-structured; the text has no story coverage rule for them |
+| Translation Words, Translation Academy, Aramaic Grammar, Greek Grammar, Hebrew Grammar | `other` | text (domain model §3: no book or story structure) |
+
+Also built behind, stated as assumptions: an `other` project's `editability.state` is `unsupported` with the reason stated, because it is neither releasable nor editable and the identifier has no third value; a missing subject is `other`; `project_type` reads `subject` alone, not `flavor_type`, because Door43 derives the subject from the flavor for Scripture Burrito repositories (E14).
+Blocks: nothing in Milestone 1, which exercises `bible`; the Milestone 1 re-plan for `tn`, `tq`, and `twl` (Q18). Owner: Rich.
+Close by: Rich confirming or amending the proposal rows. Then CONTEXT.md "Project type" names the subjects, the table in `worker/test/contract/project-catalog.test.ts` is updated to match, and this question moves to a fact.
+
 ### Q13 — Multi-file commit limits (closed)
 **Verified 22 September 2026 (E31):** one request with 79 files and about 135 MB of base64 (101 MB of files) was accepted and became one commit in 68 seconds. A Milestone 1 snapshot of an unaligned Bible (7 MB, E17) is far inside that. Any limit that exists is above the largest real Bible we have.
 
@@ -221,6 +238,7 @@ Blocks: #45. Owner: Rich. Close by: reading Worker request limits and Door43 con
 
 ### Q16 — Is `ingredients[]` populated for Scripture Burrito repositories? (closed)
 **Verified 21 September 2026 (E14):** yes, with `exists`, `size`, `path`, `identifier`, `categories`, and `sort` for both the Scripture Burrito and the Resource Container seed repository.
+**Search endpoint recorded 30 September 2026 (E32):** the repository search item for the Scripture Burrito seed repository carries the same 27 ingredients with the same fields, which is the recording #19 asked for.
 
 ### Q17 — What is the portfolio's analysis source? (closed)
 **Decided 18 September 2026 by Rich:** the catalog metadata in the repository search response is enough to know about a repository, and its fields are the same for every project type (E12). `portfolio.list` and `project.read` read catalog metadata only; only `release.plan` downloads `/sb/` archives. The project report's `coverage.basis` is `catalog`; a release plan's candidate detection is `archive`.
@@ -276,6 +294,14 @@ Host: qa.door43.org. Date: 22 September 2026. Method: public download and inspec
 ### E31 — Door43 accepts a whole aligned Bible as one multi-file commit
 Rich's `--bulk` run on 22 September 2026 pushed `unfoldingWord/en_ult`'s converted archive into `tc-admin-qa-org/tca-bulk-en_ult-20260922210827` as a single `POST /repos/{owner}/{repo}/contents`: 79 files, 105,975,744 bytes raw, a 141,306,503-byte JSON request body (135 MB of base64 content), accepted with 201 in 68 seconds and recorded as exactly one commit of 79 blobs. The archive download took 10.8 s that time (3.6 s on 21 September). The health result for `master` and for the release tag was available on the first poll; both report `warning` for `title_has_uw` and `language_is_en`, which is expected for an English unfoldingWord resource copied under another owner. The release `v1.0.0` targets the commit SHA; the new repository's `/sb/v1.0.0.zip` is 10.05 MB and downloads in 2.5 s. The repository is Scripture Burrito with 66 ingredients in the catalog.
 Host: qa.door43.org. Date: 22 September 2026. Method: probe run (steps 03 to 09) and public re-reads. Status: verified. Closes Q13: neither `[repository.upload]` `MAX_FILES` nor a proxy body limit applies to this endpoint at this size. Consequence: the constraint on snapshot assembly is the Worker's memory and request handling (Q22), not Door43.
+
+### E32 — The repository search item carries the same catalog view as the repository endpoint
+`GET /api/v1/repos/search?owner=bahtraku&q=Perjanjian-Baru-Pendau&limit=50` (public, no credentials) returns `{ ok, data: [repository] }` whose one item has exactly the key set of the `GET /repos/{owner}/{repo}` response recorded on 21 September (E14): `metadata_type`, `subject`, `flavor_type`, `flavor`, `language`, `title`, `ingredients[]` with `identifier`, `path`, `exists`, `is_dir`, `size`, `categories`, and `sort`, `healthcheck_severity`, and `catalog { prod, preprod, latest }`. The 27 ingredients are identical to the 21 September recording, all `exists: true`, all `categories: ["bible-nt"]`; the same holds for `q=id_tb1` (Resource Container, 66 ingredients, both testaments). Neither item carries the Scripture Burrito `currentScope`, and the search response has no field for it, so the testament scope is derived from the books the catalog lists; `currentScope` is reachable only through the catalog metadata endpoint (E20). The tag and commit SHAs in `catalog.prod` and `catalog.latest` are unchanged since 21 September; the `dcs.13` build adds `sb_zipball_url` and `sb_tarball_url` to each stage, naming the `/sb/{ref}.zip` route (E1) from the API for the first time.
+Host: qa.door43.org, DCS `1.27.3+dcs.13-g23ba3c3ef9`. Date: 30 September 2026. Method: public read. Fixtures: `fixtures/door43/qa.door43.org/2026-09-30/search/`. Status: verified. Confirms E12 for the search endpoint, which is what #19 asked for, and completes Q16. Consequence: `portfolio.list` (search) and `project.read` (repository) feed one classification; `worker/src/door43/catalog.ts` maps either shape and the contract test proves both classify identically.
+
+### E33 — Door43's subject vocabulary
+`GET /api/v1/catalog/list/subjects` (public) returns 25 subjects: Aligned Bible, Aramaic Grammar, Bible, Greek Grammar, Greek New Testament, Hebrew Grammar, Hebrew Old Testament, OBS Study Notes, OBS Study Questions, OBS Theological Formation, OBS Translation Notes, OBS Translation Questions, Open Bible Stories, TSV OBS Study Notes, TSV OBS Study Questions, TSV OBS Translation Notes, TSV OBS Translation Questions, TSV OBS Translation Words Links, TSV Translation Notes, TSV Translation Questions, TSV Translation Words Links, Translation Academy, Translation Notes, Translation Questions, Translation Words. The `bahtraku` owner's own repositories span 15 of them (`owner.repo_subjects` in the E14 fixture). There is no Bible Passage Set subject.
+Host: qa.door43.org. Date: 30 September 2026. Method: public read. Fixture: `fixtures/door43/qa.door43.org/2026-09-30/catalog/list__subjects.json`. Status: verified. Consequence: `project_type` maps each subject in `worker/src/model/project.ts`; the rows the glossary does not name are recorded in Q23 for Rich; a subject outside this list, or none, is `other`.
 
 ### E24 — Scripture Burrito relationship schema
 A `relationships[]` entry has `relationType` (`source`, `target`, `expression`, `parascriptural`, `peripheral`), `flavor` (for `source`: `textTranslation` or `audioTranslation`), `id` (a prefixed id such as `dcs::unfoldingWord/en_ult`, whose prefix names an entry in `idAuthorities`), `revision` (a revision string such as `v90`), and an optional `variant`. translationCore 4 records a translation's source this way, with `idAuthorities.dcs = { id: "https://git.door43.org/", name: { en: "Door43 Content Service" } }`.
