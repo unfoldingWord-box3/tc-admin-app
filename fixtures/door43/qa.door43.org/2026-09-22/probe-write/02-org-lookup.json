@@ -9,7 +9,7 @@
   },
   "response": {
     "status": 200,
-    "ms": 152,
+    "ms": 127,
     "json": {
       "id": 53535,
       "name": "tc-admin-qa-org",
@@ -22,10 +22,16 @@
       "visibility": "public",
       "repo_admin_change_team_access": true,
       "username": "tc-admin-qa-org",
-      "repo_languages": null,
-      "repo_subjects": null,
-      "repo_metadata_types": null
+      "repo_languages": [
+        "id"
+      ],
+      "repo_subjects": [
+        "Bible"
+      ],
+      "repo_metadata_types": [
+        "sb"
+      ]
     },
-    "bytes": 343
+    "bytes": 352
   }
 }

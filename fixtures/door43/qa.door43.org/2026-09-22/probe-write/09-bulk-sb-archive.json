@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/tc-admin-qa-org/tca-bulk-en_ult-20260922210827/sb/v1.0.0.zip",
+    "headers": {
+      "accept": "*/*"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 139,
+    "json": null,
+    "bytes": 0
+  }
+}

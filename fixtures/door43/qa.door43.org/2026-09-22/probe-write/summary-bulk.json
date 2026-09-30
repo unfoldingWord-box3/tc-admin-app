@@ -1,0 +1,109 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-09-22T21:08:15.505Z",
+  "steps": [
+    {
+      "step": 1,
+      "name": "user",
+      "status": 200,
+      "ms": 690
+    },
+    {
+      "step": 2,
+      "name": "org-lookup",
+      "status": 200,
+      "ms": 127
+    },
+    {
+      "step": 3,
+      "name": "bulk-archive",
+      "status": 200,
+      "ms": 10836,
+      "files": 79,
+      "raw_bytes": 105975744,
+      "base64_bytes_estimate": 141300992,
+      "largest": [
+        [
+          "ingredients/JER.usfm",
+          5408071
+        ],
+        [
+          "ingredients/GEN.usfm",
+          5148973
+        ],
+        [
+          "ingredients/PSA.usfm",
+          5143296
+        ]
+      ]
+    },
+    {
+      "step": 4,
+      "name": "bulk-create-repo",
+      "status": 201,
+      "ms": 595
+    },
+    {
+      "step": 5,
+      "name": "bulk-commit",
+      "status": 201,
+      "ms": 68204,
+      "files": 79,
+      "raw_bytes": 105975744,
+      "request_bytes": 141306503
+    },
+    {
+      "step": 6,
+      "name": "bulk-health-master",
+      "status": 200,
+      "ms": 119,
+      "sequence": [
+        {
+          "t_ms": 119,
+          "status": 200,
+          "level": "warning",
+          "error": null,
+          "issues": {
+            "title_has_uw": 1,
+            "language_is_en": 1,
+            "release_needed": 1
+          }
+        }
+      ],
+      "latency_ms": 119
+    },
+    {
+      "step": 7,
+      "name": "bulk-release-v1.0.0",
+      "status": 201,
+      "ms": 3939
+    },
+    {
+      "step": 8,
+      "name": "bulk-health-tag",
+      "status": 200,
+      "ms": 116,
+      "sequence": [
+        {
+          "t_ms": 116,
+          "status": 200,
+          "level": "warning",
+          "error": null,
+          "issues": {
+            "language_is_en": 1,
+            "title_has_uw": 1
+          }
+        }
+      ],
+      "latency_ms": 116
+    },
+    {
+      "step": 9,
+      "name": "bulk-sb-archive",
+      "status": 200,
+      "ms": 139
+    }
+  ],
+  "repository": "tc-admin-qa-org/tca-bulk-en_ult-20260922210827",
+  "bulk_commit_sha": "02ea6a5d0b3a7c3d76dc54bf0e2326d8af07d3ef"
+}
