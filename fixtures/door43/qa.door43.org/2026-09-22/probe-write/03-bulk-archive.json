@@ -1,0 +1,30 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "unfoldingWord/en_ult/sb/master.zip",
+    "headers": {}
+  },
+  "response": {
+    "status": 200,
+    "ms": 10836,
+    "json": null,
+    "bytes": 10800818
+  },
+  "files": 79,
+  "raw_bytes": 105975744,
+  "base64_bytes_estimate": 141300992,
+  "largest": [
+    [
+      "ingredients/JER.usfm",
+      5408071
+    ],
+    [
+      "ingredients/GEN.usfm",
+      5148973
+    ],
+    [
+      "ingredients/PSA.usfm",
+      5143296
+    ]
+  ]
+}

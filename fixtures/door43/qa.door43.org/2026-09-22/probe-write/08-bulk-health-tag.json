@@ -1,0 +1,69 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "healthcheck?ref=v1.0.0",
+    "headers": {}
+  },
+  "response": {
+    "status": 200,
+    "ms": 116,
+    "json": {
+      "ok": true,
+      "data": {
+        "issues": {
+          "ingredient_missing": [],
+          "release_needed": [],
+          "sb_ingredient_missing": [],
+          "sb_ingredient_mismatch": [],
+          "usfm_invalid": [],
+          "no_metadata": [],
+          "language_is_en": [
+            {
+              "issue_code": "language_is_en",
+              "severity_level": "warning",
+              "positive_title": "Language has been set",
+              "negative_title": "Language is still English",
+              "details": "Language in the metadata.json file is still English **`en`**.",
+              "suggestion": "Edit the <a href=\"/tc-admin-qa-org/tca-bulk-en_ult-20260922210827/src/branch/v1.0.0/metadata.json\" target=\"_blank\">metadata.json</a> file and change **`en`** to the correct **`language code`** for your project's language, the **`title`** of the language, and the **`direction`**."
+            }
+          ],
+          "ingredient_title_is_en": [],
+          "ingredient_empty": [],
+          "repo_name_lang_mismatch": [],
+          "usfm_no_alignment": [],
+          "metadata_invalid": [],
+          "title_has_uw": [
+            {
+              "issue_code": "title_has_uw",
+              "severity_level": "warning",
+              "positive_title": "Title has been properly changed",
+              "negative_title": "Title still contains 'unfoldingWord'",
+              "details": "Resource title in the metadata.json file still contains 'unfoldingWord'.",
+              "suggestion": "Edit the <a href=\"/tc-admin-qa-org/tca-bulk-en_ult-20260922210827/src/branch/v1.0.0/metadata.json\" target=\"_blank\">metadata.json</a> file and remove 'unfoldingWord ' from the beginning of **`title`**, such as **`unfoldingWord® Literal Text`** => **`Literal Text`**, or translate into your language."
+            }
+          ]
+        },
+        "overall_severity_level": "warning",
+        "severity_level_count": {
+          "error": 0,
+          "success": 0,
+          "info": 0,
+          "warning": 2
+        }
+      }
+    }
+  },
+  "sequence": [
+    {
+      "t_ms": 116,
+      "status": 200,
+      "level": "warning",
+      "error": null,
+      "issues": {
+        "language_is_en": 1,
+        "title_has_uw": 1
+      }
+    }
+  ],
+  "latency_ms": 116
+}
