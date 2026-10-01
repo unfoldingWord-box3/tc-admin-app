@@ -241,7 +241,7 @@ Issues: #40.
 Every failure returns an error code from the catalog in [operations.md](operations.md), the user-facing message the specification fixes for it, whether it is retryable, the next action, and a request id.
 Source: product spec §11; architecture §7.
 Enforced in: `worker/src/http/errors` maps every thrown error to the catalog; unknown errors become `unexpected` with a request id.
-Verified by: every catalog code has a test producing it; no route returns an uncataloged shape. So far: the `X2:` tests in `shared/test/catalog.test.ts` (the schema's codes, statuses, and messages are the catalog's), `worker/test/http/app.test.ts` (unknown routes, unbuilt operations, invalid input, and an output outside its schema all answer with the error shape), and `web/test/client.test.ts`.
+Verified by: every catalog code has a test producing it; no route returns an uncataloged shape. So far: the `X2:` tests in `shared/test/catalog.test.ts` (the schema's codes, statuses, and messages are the catalog's), `worker/test/http/app.test.ts` (unknown routes and methods, unbuilt operations, invalid input, and an output outside its schema all answer with the error shape), and `web/test/client.test.ts`.
 Issues: #15, #31, #40.
 
 ### X3 — Diagnostics never carry secrets or content

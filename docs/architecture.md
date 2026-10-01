@@ -267,8 +267,7 @@ worker/
     portfolio-list.ts  the writable filter (P1, P2); the operation: #23
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
-    app.ts           validate input, run, validate output, answer
-    router.ts        routes from shared/schema
+    app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)
     errors.ts        every failure to the error shape (X2, X3)
                      planned: session (#12), csrf (#13)
   test/              model/, door43/, operations/, http/, contract/ (against fixtures)

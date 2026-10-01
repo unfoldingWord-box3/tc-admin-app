@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { Env, KVNamespace } from '../../src/env';
 import worker from '../../src/index';
 import { HANDLERS } from '../../src/operations';
-import { matchRoute } from '../../src/http/router';
 
 const kv: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {} };
 const env = (extra: Partial<Env> = {}): Env => ({
@@ -124,15 +123,25 @@ describe('failures', () => {
 });
 
 describe('routing', () => {
-  test('a path segment fills its input field, decoded', () => {
-    expect(matchRoute('GET', '/api/projects/bahtraku/Perjanjian-Baru-Pendau/releases/v1.2')).toEqual({
-      operation: 'release.lookup',
-      params: { owner: 'bahtraku', repo: 'Perjanjian-Baru-Pendau', tag: 'v1.2' },
-    });
-    expect(matchRoute('GET', '/api/projects/a%20b/c')).toEqual({ operation: 'project.read', params: { owner: 'a b', repo: 'c' } });
-    expect(matchRoute('POST', '/api/projects/plan')?.operation).toBe('project.create.plan');
-    expect(matchRoute('GET', '/api/projects/plan')).toBeNull();
-    expect(matchRoute('DELETE', '/api/situation')).toBeNull();
+  test('a path segment fills its input field, decoded', async () => {
+    const seen: unknown[] = [];
+    HANDLERS['release.lookup'] = (async (input: unknown) => (seen.push(input), { found: false, release: null })) as never;
+    try {
+      expect((await call('/api/projects/bahtraku/Perjanjian-Baru-Pendau/releases/v1.2')).status).toBe(200);
+      expect((await call('/api/projects/a%20b/c/releases/v1')).status).toBe(200);
+    } finally {
+      delete HANDLERS['release.lookup'];
+    }
+    expect(seen).toEqual([
+      { owner: 'bahtraku', repo: 'Perjanjian-Baru-Pendau', tag: 'v1.2' },
+      { owner: 'a b', repo: 'c', tag: 'v1' },
+    ]);
+  });
+
+  test('X2: a method the route does not take is no operation', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const body = OperationErrorShape.parse(await (await call('/api/projects/plan')).json());
+    expect(body).toMatchObject({ code: 'unexpected', details: { reason: 'no operation at this route' } });
   });
 
   test('everything outside /api/ is the web app', async () => {

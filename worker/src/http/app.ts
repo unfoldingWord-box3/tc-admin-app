@@ -1,32 +1,40 @@
-// The HTTP projection of the operation catalog (operations.md §7): match the
-// route, validate the input against the shared schema, run the operation,
-// validate its output, and answer with the output or the error shape (X2).
-// Sign-in, sessions, and CSRF (#12, #13) join here.
+// The HTTP projection of the operation catalog (operations.md §7), on Hono:
+// one route per operation, generated from `shared/schema`. Each request's
+// input is validated against the operation's schema, the operation runs, its
+// output is validated, and the answer is the output or the error shape (X2).
+// Everything outside `/api/` is the built web app. Sign-in, sessions, and
+// CSRF (#12, #13) join here as Hono middleware.
 
-import { CatalogError, OPERATIONS } from '@tc-admin/shared/schema';
-import type { OperationDefinition } from '@tc-admin/shared/schema';
+import { CatalogError, OPERATIONS, OPERATION_NAMES } from '@tc-admin/shared/schema';
+import type { OperationDefinition, RoutedOperation } from '@tc-admin/shared/schema';
+import { Hono } from 'hono';
+import type { Context } from 'hono';
 import type { z } from 'zod';
 import type { Env } from '../env';
 import { HANDLERS, operationContext } from '../operations';
 import type { OperationContext } from '../operations';
 import { errorResponse, logFailure } from './errors';
-import { matchRoute } from './router';
+
+type App = { Bindings: Env; Variables: { requestId: string } };
 
 const HEADERS = {
-  'content-type': 'application/json; charset=utf-8',
   'cache-control': 'no-store',
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'no-referrer',
   'x-frame-options': 'DENY',
 };
 
-function json(status: number, body: unknown, requestId: string): Response {
-  return new Response(JSON.stringify(body), { status, headers: { ...HEADERS, 'x-request-id': requestId } });
+function answer(c: Context<App>, status: number, body: unknown): Response {
+  return c.json(body, status as 200, { ...HEADERS, 'x-request-id': c.get('requestId') });
 }
 
-async function readInput(request: Request, url: URL, params: Record<string, string>): Promise<Record<string, unknown>> {
-  if (request.method === 'GET') return { ...Object.fromEntries(url.searchParams), ...params };
-  const text = await request.text();
+/** `{name}` in a catalog route is `:name` in Hono. */
+export const honoPath = (path: string) => path.replace(/\{([a-z_]+)\}/g, ':$1');
+
+async function readInput(c: Context<App>): Promise<Record<string, unknown>> {
+  const params = c.req.param() as Record<string, string>;
+  if (c.req.method === 'GET') return { ...c.req.query(), ...params };
+  const text = await c.req.text();
   let body: unknown = {};
   if (text) {
     try {
@@ -47,26 +55,40 @@ function validationError(error: z.ZodError): CatalogError {
   return new CatalogError('validation_failed', { message, details: { fields } });
 }
 
-export async function handleApi(request: Request, env: Env): Promise<Response> {
-  const requestId = crypto.randomUUID();
-  try {
-    const url = new URL(request.url);
-    const context: OperationContext = operationContext({ door43Origin: env.DOOR43_ORIGIN, door43ClientId: env.DOOR43_CLIENT_ID }, requestId);
-    const match = matchRoute(request.method, url.pathname);
-    // Q26: the catalog has no code for a route that is not an operation, or an operation not built yet.
-    if (!match) throw new CatalogError('unexpected', { details: { reason: 'no operation at this route' } });
-    const handler = HANDLERS[match.operation] as ((input: unknown, context: OperationContext) => Promise<unknown>) | undefined;
-    if (!handler) throw new CatalogError('unexpected', { details: { reason: 'operation not built yet', operation: match.operation } });
-
-    const definition: OperationDefinition = OPERATIONS[match.operation];
-    const parsed = definition.input!.safeParse(await readInput(request, url, match.params));
-    if (!parsed.success) throw validationError(parsed.error);
-    const output = definition.output!.safeParse(await handler(parsed.data, context));
-    if (!output.success) throw new CatalogError('unexpected', { details: { reason: 'output does not match the schema', operation: match.operation } });
-    return json(200, output.data, requestId);
-  } catch (error) {
-    const response = errorResponse(error, requestId);
-    logFailure(error, response);
-    return json(response.status, response.body, requestId);
-  }
+async function runOperation(c: Context<App>, name: RoutedOperation): Promise<Response> {
+  const context: OperationContext = operationContext({ door43Origin: c.env.DOOR43_ORIGIN, door43ClientId: c.env.DOOR43_CLIENT_ID }, c.get('requestId'));
+  const handler = HANDLERS[name] as ((input: unknown, context: OperationContext) => Promise<unknown>) | undefined;
+  // Q26: the catalog has no code for an operation not built yet.
+  if (!handler) throw new CatalogError('unexpected', { details: { reason: 'operation not built yet', operation: name } });
+  const definition: OperationDefinition = OPERATIONS[name];
+  const parsed = definition.input!.safeParse(await readInput(c));
+  if (!parsed.success) throw validationError(parsed.error);
+  const output = definition.output!.safeParse(await handler(parsed.data, context));
+  if (!output.success) throw new CatalogError('unexpected', { details: { reason: 'output does not match the schema', operation: name } });
+  return answer(c, 200, output.data);
 }
+
+export const app = new Hono<App>();
+
+app.use('/api/*', async (c, next) => {
+  c.set('requestId', crypto.randomUUID());
+  await next();
+});
+
+for (const name of OPERATION_NAMES) {
+  const route = (OPERATIONS[name] as OperationDefinition).route;
+  if (route) app.on(route.method, honoPath(route.path), c => runOperation(c, name as RoutedOperation));
+}
+
+// Q26: the catalog has no code for a route that is not an operation.
+app.all('/api/*', () => {
+  throw new CatalogError('unexpected', { details: { reason: 'no operation at this route' } });
+});
+
+app.all('*', c => c.env.ASSETS.fetch(c.req.raw));
+
+app.onError((error, c) => {
+  const response = errorResponse(error, c.get('requestId') ?? crypto.randomUUID());
+  logFailure(error, response);
+  return answer(c, response.status, response.body);
+});

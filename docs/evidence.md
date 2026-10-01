@@ -235,18 +235,16 @@ Recorded in: ADR 0013, roadmap Milestone 1, product spec §1, §2, §5, §6, §8
 Was blocking: #28, #29, #32, #45, #47, #48.
 
 ### Q26 — What does the API answer for a route that is no operation, or an operation not built yet?
-In plain terms: the error catalog (operations.md §6) has no code for a request to `/api/` that matches no route, or that names a catalog operation whose module is not built yet. Every response must carry a catalog code (X2), so #7 has to answer with one of the existing codes.
+In plain terms: the error catalog is the table in operations.md §6 of every error the API may send back, each with a fixed code and message; X2 says every failure uses one of them. The question is what the Worker answers when a browser or agent asks for an `/api/` address it does not serve: a typo such as `/api/projetcs/…`, or a real operation not built yet, such as `GET /api/projects/bahtraku/id_tb1` before `project.read` exists. No code in the table means "there is nothing at that address".
 Built behind the current text (#7, 1 October 2026): both answer `unexpected` (HTTP 500, "Something went wrong. Reference <request_id>.") with `details.reason` saying which case it is and, for an unbuilt operation, `details.operation`. X2 says unknown errors become `unexpected`; `not_found` was not used because its fixed message is about a project or release on Door43. Recorded in `worker/src/http/app.ts` and the `X2:` tests in `worker/test/http/app.test.ts`.
 Blocks: nothing in Milestone 1; an agent or client that mistypes a route sees a server error instead of a not-found. Owner: Rich.
 Proposal (labeled): add one code to the error catalog, `unknown_operation`, HTTP 404, not retryable, "This request is not an operation tC Admin offers.", next action "check the route in the operation catalog". Unbuilt operations stop mattering once Milestone 1 is built; until then they share the code.
 Close by: Rich keeping `unexpected` or accepting the code; if accepted, operations.md §6, `shared/schema/errors.ts`, and the router change together and `shared/test/catalog.test.ts` checks them.
 
-### Q27 — Which router does the Worker use?
-In plain terms: issue #7 lists Hono as the Worker router among the choices "made by the agent unless Rich objects (22 September 2026)". On 17 September 2026 Rich had set the rule "use only what is necessary for this specific app" and named Hono among the things not to use; the roadmap says only "small router". The two disagree.
-Built behind Rich's rule (#7, 1 October 2026): no router dependency. `worker/src/http/router.ts` (about 40 lines) compiles each route in `shared/schema/operations.ts` into a pattern and matches method and path; `worker/src/http/app.ts` validates input and output against the same schema. Of the issue's other choices, Zod (`shared/schema`), npm workspaces, TypeScript strict, Vitest, and Workers KV are used; `fflate` and the MD5 function wait for the issues that need them (#18, #35); the Vitest Workers pool waits for a release that supports Vitest 5 (#10); Node is 24, as CI already ran, not 22.
-Blocks: nothing. Owner: Rich.
-Proposal (labeled): keep the hand-written router, since routes are data in the shared schema and the router only matches them.
-Close by: Rich confirming, or asking for Hono, which would replace `router.ts` and the dispatch in `app.ts` without changing the schema or the operations.
+### Q27 — Which router does the Worker use? (closed)
+**Decided 1 October 2026 by Rich:** use Hono if it suits the rest of the stack. It does: Hono is a small router made for Cloudflare Workers, with no dependencies of its own, and it carries tested helpers for the signed cookies and origin checks that sign-in (#12) and CSRF (#13) need. `worker/src/http/app.ts` registers one Hono route per operation from `shared/schema/operations.ts`; the schema stays the only source of routes.
+The question as it was put: issue #7 chose Hono "unless Rich objects", and an agent's note recorded Rich as having ruled Hono out on 17 September 2026. Rich did not recognize that; the note was wrong. The other choices in #7 stand as built: npm workspaces, Node 24 (confirmed by Rich the same day), TypeScript strict, Zod, Vitest, Workers KV; `fflate` and the MD5 function arrive with #18 and #35; the Vitest Workers pool waits for a release that supports Vitest 5 (#10).
+Recorded in: architecture §10, `worker/src/http/app.ts`.
 
 ### Q13 — Multi-file commit limits (closed)
 **Verified 22 September 2026 (E31):** one request with 79 files and about 135 MB of base64 (101 MB of files) was accepted and became one commit in 68 seconds. A Milestone 1 snapshot of an unaligned Bible (7 MB, E17) is far inside that. Any limit that exists is above the largest real Bible we have.
