@@ -125,6 +125,16 @@ A manager adds books or stories to a project in two ways: by uploading files the
 
 Support individual files, multiple selected files, folder-style selection, and drag-and-drop. Uploads accept regular repository-relative files, including unknown files, subject to safety checks. A Bible project takes one USFM file per book; an Open Bible Stories project takes one markdown file per story.
 
+Reject:
+
+- Absolute paths
+- Path traversal
+- Symlinks
+- Executable behavior
+- Files or batches over configured size limits
+
+The exact byte limits remain an implementation-time decision. Typical operations are expected to contain fewer than 100 files.
+
 ### Identifying the book or story
 
 Each uploaded file is identified before it is committed. For a USFM file, the book comes from the `\id` line in its header, checked against the file name; for a story file, the story number comes from the file name, `01.md` or `1.md` for story 1. For a single file the manager is asked to confirm the book or story; for a batch, every file's identification is shown for confirmation and a file whose header and name disagree, or that identifies nothing, is held back until the manager decides. A confirmed book or story becomes the file's path and ingredient entry in Scripture Burrito form (`ingredients/<BOOK>.usfm`, `ingredients/content/<NN>.md`, E36).
@@ -139,16 +149,6 @@ Any repository in the Door43 catalog, in any metadata format (Scripture Burrito,
 4. Picks all or some of the books or stories the repository has.
 
 tC Admin downloads the archive, takes the chosen files from its `ingredients/` folder (for Open Bible Stories, `ingredients/content/<NN>.md`, E36), and adds them to the project as an upload operation: the same overwrite warnings, the same single commit. The repository and revision are recorded in the project's metadata as a `source` relationship (E24). For a Resource Container Open Bible Stories repository the catalog lists one container ingredient, so the stories are found in the archive, not the catalog (E35, E36).
-
-Reject:
-
-- Absolute paths
-- Path traversal
-- Symlinks
-- Executable behavior
-- Files or batches over configured size limits
-
-The exact byte limits remain an implementation-time decision. Typical operations are expected to contain fewer than 100 files.
 
 ### Overwrites
 
