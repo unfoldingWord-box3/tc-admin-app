@@ -55,6 +55,7 @@ export const ERROR_CATALOG = {
   setup_incomplete: { http: null, retryable: true, message: 'Setup incomplete. The repository exists but its first commit failed.', next_action: 'retry the first commit', invariants: ['W4'] },
   preparation_active: { http: 409, retryable: false, message: 'A release is being prepared for this project. Finish or discard it first.', next_action: 'open the preparation', invariants: ['W7'] },
   portfolio_too_large: { http: 507, retryable: false, message: 'This portfolio exceeds the current read limit. No partial portfolio was substituted.', next_action: 'Milestone 3', invariants: ['P1'] },
+  unknown_operation: { http: 404, retryable: false, message: 'This request is not an operation tC Admin offers.', next_action: 'check the route in the operation catalog', invariants: ['X2'] },
   unexpected: { http: 500, retryable: false, message: 'Something went wrong. Reference <request_id>.', next_action: 'report with the request id', invariants: ['X2'] },
 } as const satisfies Record<string, ErrorEntry>;
 

@@ -56,16 +56,16 @@ describe('failures', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const response = await call('/api/nothing-here');
     const body = OperationErrorShape.parse(await response.json());
-    expect(response.status).toBe(500);
-    expect(body).toMatchObject({ code: 'unexpected', retryable: false, invariant: 'X2', details: { reason: 'no operation at this route' } });
-    expect(body.message).toBe(`Something went wrong. Reference ${body.request_id}.`);
+    expect(response.status).toBe(404);
+    expect(body).toMatchObject({ code: 'unknown_operation', retryable: false, invariant: 'X2', details: { reason: 'no operation at this route' } });
+    expect(body.message).toBe('This request is not an operation tC Admin offers.');
     expect(response.headers.get('x-request-id')).toBe(body.request_id);
   });
 
   test('X2: a catalog operation not built yet answers with the catalog error shape', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const body = OperationErrorShape.parse(await (await call('/api/projects/team/sw_ult')).json());
-    expect(body).toMatchObject({ code: 'unexpected', details: { operation: 'project.read' } });
+    expect(body).toMatchObject({ code: 'unknown_operation', details: { operation: 'project.read' } });
   });
 
   describe('with a stand-in for an operation that is not built yet', () => {
@@ -141,7 +141,7 @@ describe('routing', () => {
   test('X2: a method the route does not take is no operation', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const body = OperationErrorShape.parse(await (await call('/api/projects/plan')).json());
-    expect(body).toMatchObject({ code: 'unexpected', details: { reason: 'no operation at this route' } });
+    expect(body).toMatchObject({ code: 'unknown_operation', details: { reason: 'no operation at this route' } });
   });
 
   test('everything outside /api/ is the web app', async () => {

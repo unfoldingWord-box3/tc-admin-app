@@ -363,6 +363,7 @@ Defined in [domain-model.md](domain-model.md) and repeated here so a client can 
 | `setup_incomplete` | warning | yes | "Setup incomplete. The repository exists but its first commit failed." | retry the first commit | Partial creation | W4 |
 | `preparation_active` | 409 | no | "A release is being prepared for this project. Finish or discard it first." | open the preparation | — | W7 |
 | `portfolio_too_large` | 507 | no | "This portfolio exceeds the current read limit. No partial portfolio was substituted." | Milestone 3 | — | P1 |
+| `unknown_operation` | 404 | no | "This request is not an operation tC Admin offers." | check the route in the operation catalog | — | X2 |
 | `unexpected` | 500 | no | "Something went wrong. Reference <request_id>." | report with the request id | — | X2 |
 
 ## 7. Projections

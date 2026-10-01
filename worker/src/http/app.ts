@@ -58,8 +58,8 @@ function validationError(error: z.ZodError): CatalogError {
 async function runOperation(c: Context<App>, name: RoutedOperation): Promise<Response> {
   const context: OperationContext = operationContext({ door43Origin: c.env.DOOR43_ORIGIN, door43ClientId: c.env.DOOR43_CLIENT_ID }, c.get('requestId'));
   const handler = HANDLERS[name] as ((input: unknown, context: OperationContext) => Promise<unknown>) | undefined;
-  // Q26: the catalog has no code for an operation not built yet.
-  if (!handler) throw new CatalogError('unexpected', { details: { reason: 'operation not built yet', operation: name } });
+  // Until every Milestone 1 operation is built, an unbuilt one answers as no operation (Q26).
+  if (!handler) throw new CatalogError('unknown_operation', { details: { reason: 'operation not built yet', operation: name } });
   const definition: OperationDefinition = OPERATIONS[name];
   const parsed = definition.input!.safeParse(await readInput(c));
   if (!parsed.success) throw validationError(parsed.error);
@@ -80,9 +80,9 @@ for (const name of OPERATION_NAMES) {
   if (route) app.on(route.method, honoPath(route.path), c => runOperation(c, name as RoutedOperation));
 }
 
-// Q26: the catalog has no code for a route that is not an operation.
+// An `/api/` address that is no operation, or an operation with another method (Q26).
 app.all('/api/*', () => {
-  throw new CatalogError('unexpected', { details: { reason: 'no operation at this route' } });
+  throw new CatalogError('unknown_operation', { details: { reason: 'no operation at this route' } });
 });
 
 app.all('*', c => c.env.ASSETS.fetch(c.req.raw));
