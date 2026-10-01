@@ -9,15 +9,15 @@ A Door43 repository managed through tC Admin. A project may contain multiple Bib
 _Avoid_: Workspace, release unit, project file, Bible (as the name for the repository)
 
 **Project type**:
-The kind of content a project holds, derived from its metadata subject. Recognized types: Bible (including Aligned Bible), Translation Notes, Translation Questions, Translation Words Links, and Open Bible Stories. The first four are book package types and share one creation and release flow; Milestone 1 exercises Bible. Any other subject is listed but neither released nor edited in version one.
+The kind of content a project holds, derived from its metadata subject, which Door43 derives from the Scripture Burrito flavor. Version one manages two types, the two flavors translationCore 4 edits: Bible (including Aligned Bible; flavor `scripture/textTranslation`; subjects Bible and Aligned Bible) and Open Bible Stories (flavor `gloss/textStories`; subject Open Bible Stories). Every other type is unsupported: listed with the reason stated, neither released nor edited; its identifier is `other` (Q11, Q23).
 _Avoid_: Subject (in user-facing copy), resource type
 
 **Book package repository**:
-A repository whose files are organized one per Bible book, so that books can be selected individually for release. Bible and Aligned Bible projects are book package repositories with one `.usfm` file per book; Translation Notes, Translation Questions, and Translation Words Links repositories are too, with one `.tsv` file per book. All are created and released through the same operations (decided 18 September 2026, Q11); the milestone that delivers the `.tsv` types is set at the Milestone 1 re-plan.
+A repository whose files are organized one per Bible book, one `.usfm` file per book, so that books can be selected individually for release. Bible and Aligned Bible projects are book package repositories.
 _Avoid_: Multi-book repo, per-book repo
 
 **Bible project**:
-A book package repository whose content is Scripture. The only book package type version one releases.
+A book package repository whose content is Scripture: flavor `scripture/textTranslation`.
 _Avoid_: Bible (as the name for the repository), scripture repo
 
 **Metadata format**:
@@ -29,7 +29,7 @@ A writable project whose metadata format is not Scripture Burrito. It can be rel
 _Avoid_: Read-only project, legacy project, unsupported project
 
 **Unsupported project**:
-A writable repository with no metadata Door43 recognizes, such as an empty repository. It appears in the portfolio with the reason stated and cannot be released or edited.
+A writable repository tC Admin cannot manage: one with no metadata Door43 recognizes, such as an empty repository, or one whose project type this version does not manage, such as a Translation Words or Translation Academy repository. It appears in the portfolio with the reason stated and cannot be released or edited.
 _Avoid_: Hidden project, invalid project, broken project
 
 **Scripture Burrito**:
@@ -149,7 +149,7 @@ The complete situation of one project returned by one read: type, format, editab
 _Avoid_: Project detail, summary, dashboard data
 
 **Editability**:
-Whether tC Admin may write to a project's default branch: editable (Scripture Burrito), release-only (other valid formats), or unsupported (no recognized metadata). Always shown with its reason.
+Whether tC Admin may write to a project's default branch: editable (Scripture Burrito), release-only (other valid formats), or unsupported (no recognized metadata, or a project type this version does not manage). Always shown with its reason.
 _Avoid_: Mode, capability, status
 
 **Freshness**:
@@ -174,8 +174,7 @@ The identifier is the only spelling used in code, API payloads, tests, logs, and
 
 | Term | Identifier | Values |
 | --- | --- | --- |
-| Project type | `project_type` | `bible`, `tn`, `tq`, `twl`, `obs`, `other` |
-| Content structure | `content_structure` | `book_package`, `story_package`, `whole` |
+| Project type | `project_type` | `bible`, `obs`, `other` |
 | Metadata format | `metadata_format` | `sb`, `rc`, `ts`, `tc`, `none` |
 | Editability | `editability.state` | `editable`, `release_only`, `unsupported` |
 | Testament scope | `coverage.scope` | `nt`, `ot`, `full`, `obs`, `unknown` |

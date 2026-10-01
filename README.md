@@ -2,7 +2,7 @@
 
 tC Admin is a planned hosted web application for Bible translation team leaders and project managers. It will help managers oversee writable Door43 repositories, maintain valid Scripture Burrito metadata, understand repository health and coverage, upload files safely, and prepare selective releases without publishing unfinished work.
 
-The project is currently in product-definition and prototyping.
+The project is in product definition and prototyping; application code is beginning in `worker/` and `shared/` under the module map in the [architecture](docs/architecture.md). `npm ci && npm run check` runs every check.
 
 ## Start here
 

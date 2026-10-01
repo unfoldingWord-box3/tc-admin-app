@@ -1,0 +1,12 @@
+{
+  "name": "tc-admin",
+  "private": true,
+  "description": "tC Admin: see, create, and selectively release Door43 repositories as Scripture Burrito",
+  "workspaces": [
+    "worker"
+  ],
+  "scripts": {
+    "check": "node scripts/check-docs.mjs && npm run check --workspace worker && npm test --prefix prototypes/tc-admin",
+    "test": "npm test --workspace worker"
+  }
+}

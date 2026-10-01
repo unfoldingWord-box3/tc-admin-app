@@ -43,7 +43,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#17](https://github.com/unfoldingWord-box3/tc-admin-app/issues/17) Scripture Burrito reader | §7; domain §8 | 0008 | W1, R10 | E2, Q4 | `project.read` | model/burrito | — |
 | [#18](https://github.com/unfoldingWord-box3/tc-admin-app/issues/18) Archive client | arch §3 | 0008, 0010 | R3, R10 | E1–E5, Q12 | `release.plan` | door43/archive | — |
-| [#19](https://github.com/unfoldingWord-box3/tc-admin-app/issues/19) Type and coverage | §5; domain §3 | 0009 | H3, H5 | E7, Q11, Q16, Q17 | `project.read` | model/project | — |
+| [#19](https://github.com/unfoldingWord-box3/tc-admin-app/issues/19) Type and coverage | §5; domain §3 | 0009 | H3, H5 | E7, E12, E14, E32, E33, Q11, Q16, Q17, Q23 | `project.read` | model/project, model/books, door43/catalog, shared/schema | — |
 | [#20](https://github.com/unfoldingWord-box3/tc-admin-app/issues/20) Unknown and administrative files | §8; domain §4 | — | R1 | — | `release.plan` | model/classify | S5 |
 | [#21](https://github.com/unfoldingWord-box3/tc-admin-app/issues/21) Release-only and unsupported | §2; domain §3 | 0009 | P1, W2 | E10, Q11 | `portfolio.list`, `project.read` | model/project | — |
 
@@ -108,4 +108,4 @@ Keep this file current: an issue's Traceability section and its row here say the
 
 ## Coverage check
 
-Every invariant in [invariants.md](invariants.md) appears in at least one Milestone 1 or Milestone 2 row above except W6 and W7, which are Milestone 2 only. Every Milestone 1 operation in [operations.md](operations.md) §3 appears in at least one row. Every question in [evidence.md](evidence.md) appears in at least one row except Q18, which waits on the Milestone 1 re-plan. Closed questions stay cited where they were decided, so a row still shows what its issue rests on.
+Every invariant in [invariants.md](invariants.md) appears in at least one Milestone 1 or Milestone 2 row above except W6 and W7, which are Milestone 2 only. Every Milestone 1 operation in [operations.md](operations.md) §3 appears in at least one row. Every question in [evidence.md](evidence.md) appears in at least one row except Q18, closed as not needed when Q11 was re-recorded. Closed questions stay cited where they were decided, so a row still shows what its issue rests on.
