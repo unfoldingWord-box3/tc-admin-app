@@ -23,7 +23,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7) Scaffold web/ worker/ shared/ | arch §1, §10 | 0011, 0012 | — | — | all (schemas) | every layer | — |
+| [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7) Scaffold web/ worker/ shared/ | arch §1, §10; deployment | 0011, 0012 | — (creates the enforcement points; carries over the prototype's tests for H1, H3, P1, P2, A1, A3; X2, X3 at `http/errors`) | Q26, Q27 | all (schemas); `situation.read` without a session | every layer | — |
 | [#8](https://github.com/unfoldingWord-box3/tc-admin-app/issues/8) Design system | §5 | — | H4 | — | — | web | — |
 | [#9](https://github.com/unfoldingWord-box3/tc-admin-app/issues/9) Deploy to workers.dev | arch §9 | 0001 | A1 | — | — | worker/http, wrangler | — |
 | [#10](https://github.com/unfoldingWord-box3/tc-admin-app/issues/10) Test harness and fixtures | arch §10 | 0012 | all (test naming) | E1–E5, E7 | — | test, fixtures | — |

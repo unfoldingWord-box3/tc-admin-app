@@ -14,7 +14,7 @@ import type {
   MetadataFormat,
   ProjectClassification,
   ProjectType,
-} from '../../../shared/schema/project';
+} from '@tc-admin/shared/schema';
 import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT, STORIES, bookId, storyId, testamentOf } from './books';
 
 /** One ingredient as the catalog lists it, in glossary spelling. */

@@ -2,11 +2,24 @@
   "name": "tc-admin",
   "private": true,
   "description": "tC Admin: see, create, and selectively release Door43 repositories as Scripture Burrito",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "workspaces": [
-    "worker"
+    "shared",
+    "worker",
+    "web"
   ],
   "scripts": {
-    "check": "node scripts/check-docs.mjs && npm run check --workspace worker && npm test --prefix prototypes/tc-admin",
-    "test": "npm test --workspace worker"
+    "check": "node scripts/check-docs.mjs && npm run lint && npm run check --workspaces",
+    "lint": "oxlint --deny-warnings shared worker web",
+    "test": "npm test --workspaces",
+    "build": "npm run build --workspace web",
+    "dev": "npm run build && wrangler dev"
+  },
+  "devDependencies": {
+    "oxlint": "^1.86.0",
+    "wrangler": "^4.146.0"
   }
 }

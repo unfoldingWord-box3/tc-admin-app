@@ -1,7 +1,10 @@
-// The project report's classification fields, as types. Identifiers are the
-// glossary's (CONTEXT.md "Identifiers"); they are spelled here once and imported
-// by the Worker, the web client, and the tests. #7 decides whether this package
-// grows an executable schema (zod or equivalent); until then these are plain types.
+// The project report (operations.md §2) and its classification fields.
+// Identifiers are the glossary's (CONTEXT.md "Identifiers"); they are spelled
+// here once and imported by the Worker, the web client, and the tests.
+
+import { z } from 'zod';
+import { Freshness, ProjectRef } from './common';
+import { HealthState, SetupState, PreparationState } from './states';
 
 /**
  * The two Scripture Burrito flavors translationCore 4 edits, `scripture/textTranslation`
@@ -10,31 +13,38 @@
  * edits (CONTEXT.md "Project type", Q11).
  */
 export const PROJECT_TYPES = ['bible', 'obs', 'other'] as const;
-export type ProjectType = (typeof PROJECT_TYPES)[number];
+export const ProjectType = z.enum(PROJECT_TYPES);
+export type ProjectType = z.infer<typeof ProjectType>;
 
 export const METADATA_FORMATS = ['sb', 'rc', 'ts', 'tc', 'none'] as const;
-export type MetadataFormat = (typeof METADATA_FORMATS)[number];
+export const MetadataFormat = z.enum(METADATA_FORMATS);
+export type MetadataFormat = z.infer<typeof MetadataFormat>;
 
 export const EDITABILITY_STATES = ['editable', 'unsupported'] as const;
-export type EditabilityState = (typeof EDITABILITY_STATES)[number];
+export const EditabilityState = z.enum(EDITABILITY_STATES);
+export type EditabilityState = z.infer<typeof EditabilityState>;
 
-export interface Editability {
-  state: EditabilityState;
+export const Editability = z.object({
+  state: EditabilityState,
   /** One sentence in glossary language, shown next to the state (P1). For a Bible or Open Bible Stories repository in another format it offers an import (ADR 0013). */
-  reason: string;
-}
+  reason: z.string(),
+});
+export type Editability = z.infer<typeof Editability>;
 
 export const COVERAGE_SCOPES = ['nt', 'ot', 'full', 'obs', 'unknown'] as const;
-export type CoverageScope = (typeof COVERAGE_SCOPES)[number];
+export const CoverageScope = z.enum(COVERAGE_SCOPES);
+export type CoverageScope = z.infer<typeof CoverageScope>;
 
 export const COVERAGE_BASES = ['catalog', 'archive'] as const;
-export type CoverageBasis = (typeof COVERAGE_BASES)[number];
+export const CoverageBasis = z.enum(COVERAGE_BASES);
+export type CoverageBasis = z.infer<typeof CoverageBasis>;
 
-export interface CoverageUnit {
+export const CoverageUnit = z.object({
   /** A book id (`gen` … `rev`) or a story id (`01` … `50`). */
-  id: string;
-  present: boolean;
-}
+  id: z.string(),
+  present: z.boolean(),
+});
+export type CoverageUnit = z.infer<typeof CoverageUnit>;
 
 /**
  * File coverage (H5): recognized books or stories present against the target
@@ -42,18 +52,59 @@ export interface CoverageUnit {
  * (H3); `target` is `null` when the scope is unknown. `units` lists every unit
  * in scope with whether it is present, and is empty when `present` is `null`.
  */
-export interface Coverage {
-  present: number | null;
-  target: number | null;
-  scope: CoverageScope;
-  basis: CoverageBasis;
-  units: CoverageUnit[];
-}
+export const Coverage = z.object({
+  present: z.number().int().nonnegative().nullable(),
+  target: z.number().int().positive().nullable(),
+  scope: CoverageScope,
+  basis: CoverageBasis,
+  units: z.array(CoverageUnit),
+});
+export type Coverage = z.infer<typeof Coverage>;
 
 /** The classification part of the project report (operations.md §2). */
-export interface ProjectClassification {
-  project_type: ProjectType;
-  metadata_format: MetadataFormat;
-  editability: Editability;
-  coverage: Coverage;
-}
+export const ProjectClassification = z.object({
+  project_type: ProjectType,
+  metadata_format: MetadataFormat,
+  editability: Editability,
+  coverage: Coverage,
+});
+export type ProjectClassification = z.infer<typeof ProjectClassification>;
+
+/** Health with its provenance (H1): the ref, time, and raw severity it came from. */
+export const Health = z.object({
+  state: HealthState,
+  severity_raw: z.string().nullable(),
+  ref: z.string().nullable(),
+  checked_at: z.string().nullable(),
+  issue_count: z.number().int().nonnegative().nullable(),
+  source: z.literal('door43'),
+});
+export type Health = z.infer<typeof Health>;
+
+/** The complete situation of one project (`project.read`). */
+export const ProjectReport = z.object({
+  ref: ProjectRef,
+  title: z.string(),
+  description: z.string(),
+  default_branch: z.string(),
+  language: z.object({ code: z.string(), title: z.string() }),
+  ...ProjectClassification.shape,
+  health: Health,
+  latest_full_release: z
+    .object({ tag: z.string(), version: z.string(), sha: z.string(), published_at: z.string(), author: z.string() })
+    .nullable(),
+  default_branch_head: z.object({ sha: z.string(), committed_at: z.string() }),
+  active_preparation: z.object({ id: z.string(), state: PreparationState, version: z.string() }).nullable(),
+  setup: z.object({ state: SetupState, failed_step: z.string().nullable() }),
+  permissions: z.object({ push: z.boolean(), admin: z.boolean(), checked_at: z.string() }),
+  freshness: Freshness,
+});
+export type ProjectReport = z.infer<typeof ProjectReport>;
+
+/**
+ * One project in `portfolio.list`. The catalog calls it "a summary of" the
+ * project report without naming its fields; until #23 and #24 trim it, it is
+ * the report itself.
+ */
+export const ProjectSummary = ProjectReport;
+export type ProjectSummary = ProjectReport;

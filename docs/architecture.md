@@ -1,6 +1,6 @@
 # tC Admin Architecture
 
-Status: Accepted planning baseline. Amended 18 September 2026 with the layer tower, the operation layer, and the module map (ADR 0011, ADR 0012). Amended 1 October 2026 (proposed) for import, upload, and the three-state selection (ADR 0013); accepted when that pull request merges.
+Status: Accepted planning baseline. Amended 18 September 2026 with the layer tower, the operation layer, and the module map (ADR 0011, ADR 0012). Amended 1 October 2026 (proposed) for import, upload, and the three-state selection (ADR 0013); accepted when that pull request merges. Section 10 fixed by #7 on 1 October 2026.
 
 ## 1. System shape
 
@@ -227,30 +227,65 @@ Diagnostics may include request ID, project, commit SHA, version, target ref, he
 - Production Door43 is the normal deployment target; QA hosts are deployment configuration for testing.
 - Architect for future interface localization; English is the initial interface language.
 
-## 10. Repository layout and module map (proposed)
+## 10. Repository layout and module map
 
-Proposed for [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7); the invariants and traceability documents cite these paths, so update them there when #7 fixes the layout. One module per operation and per model concept keeps each change small enough to read whole.
+Fixed by [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7) on 1 October 2026; the invariants and traceability documents cite these paths. One module per operation and per model concept keeps each change small enough to read whole. Each file is named for its concept or its operation, with the dots of the operation name as hyphens (`release.prepare` is `operations/release-prepare.ts`). Modules marked *planned* are created by the issue in brackets.
 
 ```text
-shared/
-  schema/            operation inputs, outputs, states, errors: the catalog as types (zod or equivalent)
+package.json         npm workspaces (shared, worker, web); `npm run check`, `build`, `dev`
+wrangler.jsonc       the Worker, its assets (web/dist), and the qa and production environments (deployment.md §1)
+.oxlintrc.json       lint, including the layer rules below as import restrictions
+.env.example         every local variable, no values
+shared/              @tc-admin/shared
+  schema/            the operation catalog as Zod schemas and their types (ADR 0011)
+    operations.ts    every operation: kind, milestone, route, input, output
+    errors.ts        the error catalog, the error shape, CatalogError
+    common.ts        freshness, references, plan, receipt
+    project.ts       project report and classification
+    preparation.ts   release preparation
+    states.ts        the state identifiers of the catalog §5
+  test/              the schema against docs/operations.md and CONTEXT.md
 worker/
-  src/door43/        auth, api, pages, archive, health: Door43 shapes stop here
-  src/model/         burrito, books, project, classify, candidates, version, health, states
+  src/index.ts       the Worker: /api/ to the HTTP projection, everything else to the web assets
+  src/env.ts         bindings and variables
+  src/door43/        Door43 shapes stop here
+    host.ts          the configured host, QA or production only
+    api.ts           reads with the session token, pagination (P1)
+    auth.ts          OAuth with PKCE, code exchange (sessions: #12)
+    repos.ts         repository search and permissions read strictly (P2)
+    catalog.ts       the catalog view of a repository (#19)
+                     planned: archive (#18), health (#36), writes (#30, #34, #39)
+  src/model/         no I/O
+    books.ts         book and story ids (#19)
+    project.ts       type, editability, coverage (#19)
+    health.ts        Door43 severity to health state (H1, H3)
+                     planned: burrito (#17, #29, #35), classify (#20, #45), candidates (#33), version (#37), states
   src/operations/    one module per catalog operation, plus shared preconditions
-  src/http/          router, session, csrf, errors: routes are a projection of operations
-  test/              unit tests (model) and contract tests (operations against fixtures)
+    index.ts         the built operations by name
+    context.ts       what every operation receives
+    situation-read.ts  situation.read without a session (account: #12)
+    portfolio-list.ts  the writable filter (P1, P2); the operation: #23
+                     planned: one module per remaining operation; preconditions (#14)
+  src/http/          the HTTP projection: routes are the catalog's
+    app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)
+    errors.ts        every failure to the error shape (X2, X3)
+                     planned: session (#12), csrf (#13)
+  test/              model/, door43/, operations/, http/, contract/ (against fixtures)
 web/
-  src/api/           typed client generated from shared/schema
-  src/               portfolio, wizard, stepper, design system
+  src/api/client.ts  typed client: one call per operation, from shared/schema
+  src/               the application shell; portfolio, wizard, stepper, design system (#8)
+  test/
 fixtures/
   door43/            recorded responses and archives, each with host, ref, and date (ADR 0012)
 scripts/
-  seed-qa            copies the seed repositories into tc-admin-qa after a reset (#3)
-  probe              live Door43 probes that write to docs/evidence.md
+  check-docs.mjs     the document check
+  probe/             live Door43 probes that write to docs/evidence.md
+                     planned: seed-qa (#3)
 docs/                this tower
-prototypes/          retired by #7; tests and the book id set move to worker/
+prototypes/door43-mcp  a Door43 MCP proof of concept, not a deliverable; prototypes/tc-admin was retired by #7
 ```
+
+The layers of section 1 are enforced by lint: `model/` imports nothing from `door43/`, `operations/`, `http/`, or `node:`; `door43/` nothing from `operations/` or `http/`; `operations/` nothing from `http/`; `http/` nothing from `door43/` or `model/`; `shared/schema/` nothing from `worker/`, `web/`, or `node:`; `web/` nothing from `worker/`. The adapter may read the model's input types, since it produces them.
 
 Rule of placement: if a module imports a Door43 shape, it belongs in `door43/`. If it has no I/O, it belongs in `model/`. If it decides preconditions or writes, it belongs in `operations/`. If it renders, it belongs in `web/`.
 

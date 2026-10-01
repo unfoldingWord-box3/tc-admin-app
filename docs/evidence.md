@@ -234,6 +234,16 @@ In plain terms: Rich's specification of 1 October 2026, after discussing with Bi
 Recorded in: ADR 0013, roadmap Milestone 1, product spec §1, §2, §5, §6, §8, §10, §13 (S8, S9), operation catalog §3 and §4, CONTEXT.md "Import", "Owner", "Abbreviation".
 Was blocking: #28, #29, #32, #45, #47, #48.
 
+### Q26 — What does the API answer for a route that is no operation, or an operation not built yet? (closed)
+**Decided 1 October 2026 by Rich:** a new error code, `unknown_operation`: HTTP 404, not retryable, "This request is not an operation tC Admin offers.", next action "check the route in the operation catalog". It answers an `/api/` address that matches no operation (a typo, or a route asked with the wrong method) and, until Milestone 1 is built, an operation whose module does not exist yet.
+The question as it was put: the error catalog is the table in operations.md §6 of every error the API may send back, each with a fixed code and message, and X2 says every failure uses one of them. No code meant "there is nothing at that address", so #7 first answered `unexpected` (HTTP 500, "Something went wrong."), which reads as a crash.
+Recorded in: operations.md §6, `shared/schema/errors.ts`, `worker/src/http/app.ts`, the `X2:` tests in `worker/test/http/app.test.ts`.
+
+### Q27 — Which router does the Worker use? (closed)
+**Decided 1 October 2026 by Rich:** use Hono if it suits the rest of the stack. It does: Hono is a small router made for Cloudflare Workers, with no dependencies of its own, and it carries tested helpers for the signed cookies and origin checks that sign-in (#12) and CSRF (#13) need. `worker/src/http/app.ts` registers one Hono route per operation from `shared/schema/operations.ts`; the schema stays the only source of routes.
+The question as it was put: issue #7 chose Hono "unless Rich objects", and an agent's note recorded Rich as having ruled Hono out on 17 September 2026. Rich did not recognize that; the note was wrong. The other choices in #7 stand as built: npm workspaces, Node 24 (confirmed by Rich the same day), TypeScript strict, Zod, Vitest, Workers KV; `fflate` and the MD5 function arrive with #18 and #35; the Vitest Workers pool waits for a release that supports Vitest 5 (#10).
+Recorded in: architecture §10, `worker/src/http/app.ts`.
+
 ### Q13 — Multi-file commit limits (closed)
 **Verified 22 September 2026 (E31):** one request with 79 files and about 135 MB of base64 (101 MB of files) was accepted and became one commit in 68 seconds. A Milestone 1 snapshot of an unaligned Bible (7 MB, E17) is far inside that. Any limit that exists is above the largest real Bible we have.
 
