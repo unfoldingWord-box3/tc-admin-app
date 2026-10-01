@@ -2,7 +2,7 @@
 
 tC Admin is a planned hosted web application for Bible translation team leaders and project managers. It will help managers oversee writable Door43 repositories, maintain valid Scripture Burrito metadata, understand repository health and coverage, upload files safely, and prepare selective releases without publishing unfinished work.
 
-The project is in product definition and prototyping; application code is beginning in `worker/` and `shared/` under the module map in the [architecture](docs/architecture.md). `npm ci && npm run check` runs every check.
+The application is being built in `shared/` (the operation catalog as schemas), `worker/` (the Cloudflare Worker), and `web/` (the Vite and React app the Worker serves), under the module map in the [architecture](docs/architecture.md). `npm ci && npm run check` runs every check; `npm run dev` builds the web app and runs the Worker locally against QA Door43 with the values in `.env` (see `.env.example`).
 
 ## Start here
 
@@ -25,10 +25,9 @@ Read downward for why, upward for how.
 
 ## Prototypes
 
-- [`prototypes/tc-admin`](prototypes/tc-admin): read-only QA portfolio and Door43 OAuth prototype
-- [`prototypes/door43-mcp`](prototypes/door43-mcp): prompt-first Door43 MCP field-kit proof of concept
+- [`prototypes/door43-mcp`](prototypes/door43-mcp): prompt-first Door43 MCP field-kit proof of concept, not a tC Admin deliverable
 
-Neither prototype is a production deployment. Follow each prototype's README for its local setup and limitations.
+The read-only portfolio prototype that was in `prototypes/tc-admin` was retired by [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7); its Door43 client, sign-in, and tests moved to `worker/`, and it remains in the Git history.
 
 ## External references
 
