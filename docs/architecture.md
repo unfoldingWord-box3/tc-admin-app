@@ -1,6 +1,6 @@
 # tC Admin Architecture
 
-Status: Accepted planning baseline. Amended 18 September 2026 (proposed) with the layer tower, the operation layer, and the module map (ADR 0011, ADR 0012); accepted when that pull request merges.
+Status: Accepted planning baseline. Amended 18 September 2026 with the layer tower, the operation layer, and the module map (ADR 0011, ADR 0012). Amended 1 October 2026 (proposed) for import, upload, and the three-state selection (ADR 0013); accepted when that pull request merges.
 
 ## 1. System shape
 
@@ -89,7 +89,8 @@ The Worker must treat Door43 as live authority:
 
 Provide a narrow internal interface over the Door43 API for:
 
-- Organization and writable-repository discovery
+- Owner and writable-repository discovery, including the account's own repositories
+- Catalog owner search and catalog search by owner and flavor, for import sources (E35)
 - Repository metadata and default branch
 - File tree and raw file reads
 - File create/update operations
@@ -98,7 +99,7 @@ Provide a narrow internal interface over the Door43 API for:
 - Release and tag reads
 - Release creation and promotion/editing
 - Door43 compare and history links
-- Scripture Burrito archive download for any ref (`/{owner}/{repo}/sb/{ref}.zip`, a web route with no API equivalent)
+- Scripture Burrito archive download for any ref of any repository (`GET /api/v1/repos/{owner}/{repo}/sb/{ref}.zip`, E34, also served as the web route `/{owner}/{repo}/sb/{ref}.zip`), for imports and for a release's included books
 
 Keep the Swagger-generated/API-specific shapes at the adapter boundary. The product and domain layers should use tC Admin concepts such as `Project`, `ProjectMetadata`, `Ingredient`, `Book`, `Story`, `ReleaseSnapshot`, and `ProjectVersion`.
 
@@ -131,10 +132,10 @@ The UI should receive normalized data, while the raw service response remains av
 The orchestrator must:
 
 1. Read the latest full release tag and the current default branch head; bind preparation to the default-branch commit SHA.
-2. Detect new, changed released, unchanged, administrative, and unknown files by comparing the recursive git trees of the two refs book by book (E19), mapping book code to path through each ref's catalog entry (E20). Blob SHAs are comparable across layouts because conversion preserves bytes (E18). This is the plan; nothing is downloaded yet.
-3. On prepare, download the Scripture Burrito archive for the default branch and, when a release exists, for the latest full release tag (E17). Door43 converts non-SB refs and rolls up SB refs; the archive is the only source of file bytes (ADR 0008).
-4. Create `temp-tca-release/<version>` from the latest full release tag, or from the default branch head for a first release (ADR 0010).
-5. Assemble the snapshot in one or more commits on the temporary branch (Q22): carried-forward books are already present from the tag and are not uploaded; a first release of a Resource Container repository renames its byte-identical files into `ingredients/`; selected books are uploaded one at a time from the default-branch archive, spread over several commits when they exceed one request; refreshed root files and administrative ingredients and the merged `metadata.json` (size and md5 recomputed for every file, scope set to the released books) complete the tree.
+2. Detect new, changed released, unchanged, administrative, and unknown files by comparing the recursive git trees of the two refs book by book (E19), mapping book code to path through each ref's catalog entry (E20). Give each book its default selection state (R4). This is the plan; nothing is downloaded yet.
+3. On prepare, download the Scripture Burrito archive for the default branch and, when a release exists, for the latest full release tag (E17); the archive is the source of included books' bytes (ADR 0008).
+4. Create `temp-tca-release/<version>` from the latest full release tag, or from the default branch head for a first release or an Open Bible Stories release (ADR 0010).
+5. Make the branch match the selection in one or more commits (Q22): carried-forward books are already present from the tag and are not touched; included books are uploaded one at a time from the default-branch archive, spread over several commits when they exceed one request; books left out are deleted from the branch and listed as removals (R2); refreshed root files and administrative ingredients and the merged `metadata.json` (exactly the released books, size and md5 recomputed for every file, scope set to the released books) complete the tree. For Open Bible Stories only `metadata.json` is refreshed.
 6. Push each commit with the multi-file contents endpoint; the plan announced their number.
 7. Poll the health check for the temporary branch.
 8. Re-check the default-branch SHA before release creation.
@@ -170,8 +171,8 @@ tC Admin must not become a content database or a second release-history database
 - Build an upload operation plan before writing any file.
 - Require explicit confirmation for overwrites and unknown-file inclusion.
 - Commit accepted file changes together.
-- Generate ingredient-entry proposals from recognized filenames; require manager confirmation.
-- Never write to the default branch of a release-only project; a release touches only the temporary branch, the tag, and the Door43 release.
+- Identify each uploaded or imported file as a book or story from its header and name; require manager confirmation; hold back a file that identifies nothing.
+- Never write to a repository that is not a Scripture Burrito project tC Admin manages; an import reads the source repository's archive and writes only the destination project (W2). A release touches only the temporary branch, the tag, and the Door43 release.
 - Never provide a Scripture/OBS text editor in version one.
 
 ## 6. Release safety and idempotency

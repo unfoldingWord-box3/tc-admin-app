@@ -43,9 +43,9 @@ Keep this file current: an issue's Traceability section and its row here say the
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#17](https://github.com/unfoldingWord-box3/tc-admin-app/issues/17) Scripture Burrito reader | §7; domain §8 | 0008 | W1, R10 | E2, Q4 | `project.read` | model/burrito | — |
 | [#18](https://github.com/unfoldingWord-box3/tc-admin-app/issues/18) Archive client | arch §3 | 0008, 0010 | R3, R10 | E1–E5, Q12 | `release.plan` | door43/archive | — |
-| [#19](https://github.com/unfoldingWord-box3/tc-admin-app/issues/19) Type and coverage | §5; domain §3 | 0009 | H3, H5 | E7, E12, E14, E32, E33, Q11, Q16, Q17, Q23 | `project.read` | model/project, model/books, door43/catalog, shared/schema | — |
+| [#19](https://github.com/unfoldingWord-box3/tc-admin-app/issues/19) Type and coverage | §5; domain §3 | 0013 | H3, H5 | E7, E12, E14, E32, E33, Q11, Q16, Q17, Q23 | `project.read` | model/project, model/books, door43/catalog, shared/schema | — |
 | [#20](https://github.com/unfoldingWord-box3/tc-admin-app/issues/20) Unknown and administrative files | §8; domain §4 | — | R1 | — | `release.plan` | model/classify | S5 |
-| [#21](https://github.com/unfoldingWord-box3/tc-admin-app/issues/21) Release-only and unsupported | §2; domain §3 | 0009 | P1, W2 | E10, Q11 | `portfolio.list`, `project.read` | model/project | — |
+| [#21](https://github.com/unfoldingWord-box3/tc-admin-app/issues/21) Unsupported projects with a reason | §2; domain §3 | 0013 | P1, W2 | E10, Q11, Q25 | `portfolio.list`, `project.read` | model/project | — |
 
 ### EPIC: Portfolio and health ([#27](https://github.com/unfoldingWord-box3/tc-admin-app/issues/27))
 
@@ -56,12 +56,12 @@ Keep this file current: an issue's Traceability section and its row here say the
 | [#25](https://github.com/unfoldingWord-box3/tc-admin-app/issues/25) Health states | §5, §9; domain §5 | 0007 | H1, H3, H4 | E7, Q2 | `project.read` | model/health, web | — |
 | [#26](https://github.com/unfoldingWord-box3/tc-admin-app/issues/26) Refresh and freshness | §9; arch §4 | 0002 | P3 | — | `project.refresh` | operations, web | — |
 
-### EPIC: Create a Bible project ([#32](https://github.com/unfoldingWord-box3/tc-admin-app/issues/32))
+### EPIC: Create a project ([#32](https://github.com/unfoldingWord-box3/tc-admin-app/issues/32))
 
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [#28](https://github.com/unfoldingWord-box3/tc-admin-app/issues/28) Creation wizard | §6 | 0006 | W3, A2 | E24, Q20 | `project.create.plan` | web, operations | S1 |
-| [#29](https://github.com/unfoldingWord-box3/tc-admin-app/issues/29) Generate metadata.json | §6, §7; domain §8 | 0008 | W1, R10 | E24, Q4, Q20 | `project.create.plan` | model/burrito | S1 |
+| [#28](https://github.com/unfoldingWord-box3/tc-admin-app/issues/28) Creation wizard | §6 | 0006, 0013 | W3, A2 | E37, Q20, Q25 | `project.create.plan` | web, operations | S1 |
+| [#29](https://github.com/unfoldingWord-box3/tc-admin-app/issues/29) Generate metadata.json | §6, §7; domain §8 | 0008 | W1, R10 | E37, Q4, Q20 | `project.create.plan` | model/burrito | S1 |
 | [#30](https://github.com/unfoldingWord-box3/tc-admin-app/issues/30) Create repository and first commit | §6 | 0004 | A2, A3, W5 | Q3, Q10 | `project.create.apply` | door43/api, operations | S1 |
 | [#31](https://github.com/unfoldingWord-box3/tc-admin-app/issues/31) Setup incomplete | §6; §11 `setup_incomplete` | — | W4, X2 | — | `project.create.retry` | operations, web | — |
 
@@ -69,32 +69,48 @@ Keep this file current: an issue's Traceability section and its row here say the
 
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [#33](https://github.com/unfoldingWord-box3/tc-admin-app/issues/33) Candidate detection | §10; domain §4 | 0005, 0010 | R1, R2, R4 | E1–E4 | `release.plan` | model/candidates | S3, S4, S5 |
-| [#34](https://github.com/unfoldingWord-box3/tc-admin-app/issues/34) Snapshot assembly | §10; arch §3 | 0003, 0010 | R1, R3, R5, R7, W5 | E4, Q3, Q12, Q13 | `release.prepare` | operations/release-prepare | S3 |
-| [#35](https://github.com/unfoldingWord-box3/tc-admin-app/issues/35) Metadata merge | §7, §10 | 0008, 0010 | R2, R10 | E5, Q1, Q7, Q8 | `release.prepare` | model/burrito | S3, S4 |
+| [#33](https://github.com/unfoldingWord-box3/tc-admin-app/issues/33) Candidate detection and selection states | §10; domain §4 | 0005, 0010, 0013 | R1, R2, R4 | E18, E19, Q24 | `release.plan` | model/candidates | S3, S4, S5, S8 |
+| [#34](https://github.com/unfoldingWord-box3/tc-admin-app/issues/34) Snapshot assembly | §10; arch §3 | 0003, 0010, 0013 | R1, R2, R3, R5, R7, W2, W5 | E4, Q3, Q12, Q13, Q22, Q24 | `release.prepare` | operations/release-prepare | S3, S8 |
+| [#35](https://github.com/unfoldingWord-box3/tc-admin-app/issues/35) Metadata merge | §7, §10 | 0008, 0010, 0013 | R2, R10 | E5, Q1, Q7, Q8, Q24 | `release.prepare` | model/burrito | S3, S4, S8 |
 | [#36](https://github.com/unfoldingWord-box3/tc-admin-app/issues/36) Health poll | §9; arch §3 | 0007 | H1, H2 | Q2, Q6 | `preparation.read` | door43/health, operations | S6 |
-| [#37](https://github.com/unfoldingWord-box3/tc-admin-app/issues/37) Version calculation | §10; domain §7 | — | R9 | E9 | `release.plan`, `release.create` | model/version | — |
-| [#38](https://github.com/unfoldingWord-box3/tc-admin-app/issues/38) Release notes | §10 | — | — | — | `release.plan`, `release.create` | operations, web | S4, S5 |
+| [#37](https://github.com/unfoldingWord-box3/tc-admin-app/issues/37) Version calculation | §10; domain §7 | 0013 | R9 | E9, Q19, Q24 | `release.plan`, `release.create` | model/version | S8 |
+| [#38](https://github.com/unfoldingWord-box3/tc-admin-app/issues/38) Release notes | §10 | 0013 | R2 | Q24 | `release.plan`, `release.create` | operations, web | S4, S5, S8 |
 | [#39](https://github.com/unfoldingWord-box3/tc-admin-app/issues/39) Create, pre-release, promote | §10 | 0003 | R3, R7, R8, A2 | Q3, Q5 | `release.create`, `release.promote` | door43/api, operations | S7 |
 | [#40](https://github.com/unfoldingWord-box3/tc-admin-app/issues/40) Stale source and lost response | §10, §11; arch §6 | — | R5, R6, X1, X2 | — | `release.lookup`, error catalog | operations | S6 |
 | [#58](https://github.com/unfoldingWord-box3/tc-admin-app/issues/58) Discard a preparation | §10 | 0003 | R7, A2 | Q14 | `preparation.discard` | operations, door43/api | — |
+
+### EPIC: Add books: upload and import ([#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45), [#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47))
+
+Moved into Milestone 1 on 1 October 2026 (Q25). #47 is re-scoped from conversion to import; child issues are created when Rich confirms.
+
+| Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| [#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45) Uploads with book and story identification | §8 | 0004, 0013 | W2, W5, W6, A2, R10 | E36, Q15, Q25 | `upload.plan`, `upload.apply` | operations/upload, model/classify | S2 |
+| [#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47) Import from an existing repository | §8 | 0008, 0013 | W1, W2, W5, A2, R10 | E1, E17, E24, E34, E35, E36, Q25 | `owner.search`, `source.search`, `import.plan`, `import.apply` | door43/catalog, door43/archive, operations/import | S9 |
+
+### EPIC: Open Bible Stories ([#48](https://github.com/unfoldingWord-box3/tc-admin-app/issues/48))
+
+Moved into Milestone 1 on 1 October 2026 (Q25).
+
+| Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| [#48](https://github.com/unfoldingWord-box3/tc-admin-app/issues/48) Open Bible Stories | §5, §6, §8, §10 | 0008, 0013 | H5, W1, R10 | E36, E37, Q4, Q24 | every project operation with `obs`; `release.plan` with no selection | model, operations, web | S1, S9 |
 
 ### EPIC: Demo readiness ([#44](https://github.com/unfoldingWord-box3/tc-admin-app/issues/44))
 
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [#42](https://github.com/unfoldingWord-box3/tc-admin-app/issues/42) Demo script | §13 | — | — | E9 | the Milestone 1 catalog | — | S1, S3, S7 |
-| [#43](https://github.com/unfoldingWord-box3/tc-admin-app/issues/43) Rehearsals | §13 | — | — | — | the Milestone 1 catalog | — | S1, S3, S7 |
+| [#42](https://github.com/unfoldingWord-box3/tc-admin-app/issues/42) Demo script | §13 | — | — | E9 | the Milestone 1 catalog | — | S1, S3, S7, S9 |
+| [#43](https://github.com/unfoldingWord-box3/tc-admin-app/issues/43) Rehearsals | §13 | — | — | — | the Milestone 1 catalog | — | S1, S3, S7, S9 |
 
 ## Milestone 2 — Manage
 
 | Epic | Spec | ADR | Invariants | Evidence / questions | Operations | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- |
-| [#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45) Uploads | §8 | 0004, 0009 | W2, W5, W6, A2 | Q15 | `upload.plan`, `upload.apply` | S2 |
-| [#46](https://github.com/unfoldingWord-box3/tc-admin-app/issues/46) Metadata editing | §7 | 0004, 0006, 0009 | W1, W2, W3, W5, W7 | Q4 | `metadata.plan`, `metadata.apply` | — |
-| [#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47) Convert to Scripture Burrito | §7 | 0008, 0009 | W1, W5 | E2, E3 | `convert.plan`, `convert.apply` | — |
-| [#48](https://github.com/unfoldingWord-box3/tc-admin-app/issues/48) Open Bible Stories | §5, §6, §10 | 0008 | H5, W1 | Q4 | every Bible operation with `obs` | S1, S3 |
+| [#46](https://github.com/unfoldingWord-box3/tc-admin-app/issues/46) Metadata editing | §7 | 0004, 0006, 0013 | W1, W2, W3, W5, W7 | Q4 | `metadata.plan`, `metadata.apply` | — |
 | [#49](https://github.com/unfoldingWord-box3/tc-admin-app/issues/49) Setup-incomplete recovery | §6, §11 | — | W4 | E10 | `project.create.resume` | — |
+
+Uploads (#45), import (#47), and Open Bible Stories (#48) moved to Milestone 1 on 1 October 2026 and appear above.
 
 ## Milestone 3 — Pilot
 
@@ -108,4 +124,4 @@ Keep this file current: an issue's Traceability section and its row here say the
 
 ## Coverage check
 
-Every invariant in [invariants.md](invariants.md) appears in at least one Milestone 1 or Milestone 2 row above except W6 and W7, which are Milestone 2 only. Every Milestone 1 operation in [operations.md](operations.md) §3 appears in at least one row. Every question in [evidence.md](evidence.md) appears in at least one row except Q18, closed as not needed when Q11 was re-recorded. Closed questions stay cited where they were decided, so a row still shows what its issue rests on.
+Every invariant in [invariants.md](invariants.md) appears in at least one Milestone 1 or Milestone 2 row above except W7, which is Milestone 2 only. Every Milestone 1 operation in [operations.md](operations.md) §3 appears in at least one row. Every question in [evidence.md](evidence.md) appears in at least one row except Q18, closed as not needed when Q11 was re-recorded. Closed questions stay cited where they were decided, so a row still shows what its issue rests on.

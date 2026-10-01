@@ -1,0 +1,1184 @@
+{
+  "format": "scripture burrito",
+  "meta": {
+    "version": "1.0.0",
+    "category": "source",
+    "generator": {
+      "softwareName": "go-rc2sb",
+      "softwareVersion": "v0.5.0",
+      "userName": ""
+    },
+    "defaultLocale": "en",
+    "dateCreated": "2026-10-01T16:28:34.503Z",
+    "normalization": "NFC"
+  },
+  "idAuthorities": {
+    "dcs": {
+      "id": "https://git.door43.org",
+      "name": {
+        "en": "Door43 Content Service"
+      }
+    }
+  },
+  "identification": {
+    "primary": {
+      "dcs": {
+        "unfoldingWord/en_obs": {
+          "revision": "d39a1dc7a7557ac54e4a8fecc3462147fe7eec3b",
+          "timestamp": "2026-10-01T16:28:34.503Z"
+        }
+      }
+    },
+    "name": {
+      "en": "unfoldingWord® Open Bible Stories"
+    },
+    "description": {
+      "en": "unfoldingWord® Open Bible Stories"
+    },
+    "abbreviation": {
+      "en": "OBS"
+    }
+  },
+  "languages": [
+    {
+      "tag": "en",
+      "name": {
+        "en": "English"
+      },
+      "scriptDirection": "ltr"
+    }
+  ],
+  "type": {
+    "flavorType": {
+      "name": "gloss",
+      "flavor": {
+        "name": "textStories"
+      },
+      "currentScope": {
+        "1JN": [
+          "1:5-10"
+        ],
+        "1KI": [
+          "1-6",
+          "11-12",
+          "16-18"
+        ],
+        "1SA": [
+          "1-10",
+          "10",
+          "15-19",
+          "24",
+          "31"
+        ],
+        "1TH": [
+          "4:13-5:11"
+        ],
+        "2CH": [
+          "36"
+        ],
+        "2CO": [
+          "5:17-21"
+        ],
+        "2KI": [
+          "5",
+          "17",
+          "24-25"
+        ],
+        "2SA": [
+          "5",
+          "7",
+          "11-12"
+        ],
+        "ACT": [
+          "1:1-11",
+          "2",
+          "3:1-4:22",
+          "6:8-8:5",
+          "8:26-40",
+          "8:3",
+          "9:1-31",
+          "11:19-26",
+          "13:1-3",
+          "16:11-40"
+        ],
+        "COL": [
+          "1:13-14"
+        ],
+        "DAN": [
+          "7"
+        ],
+        "DEU": [
+          "34",
+          "18:15"
+        ],
+        "EXO": [
+          "1-4",
+          "5-10",
+          "11:1-12:32",
+          "12:33-15:21",
+          "19-34",
+          "16-17",
+          "12",
+          "20"
+        ],
+        "EZR": [
+          "1-10"
+        ],
+        "GEN": [
+          "1-2",
+          "3",
+          "6-8",
+          "11-15",
+          "16-22",
+          "24:1-25:26",
+          "25:27-35:29",
+          "37-50",
+          "3:15",
+          "12:1-3",
+          "1-3",
+          "6",
+          "14",
+          "22"
+        ],
+        "HEB": [
+          "3:1-6",
+          "4:14-5:10",
+          "7:1-8:13",
+          "9:11-10:18"
+        ],
+        "ISA": [
+          "59:16",
+          "7:14",
+          "9:1-7",
+          "35:3-5",
+          "61",
+          "53",
+          "50:6"
+        ],
+        "JAS": [
+          "1:12"
+        ],
+        "JDG": [
+          "1-3",
+          "6-8"
+        ],
+        "JER": [
+          "38",
+          "31"
+        ],
+        "JHN": [
+          "6:5-15",
+          "6:16-21",
+          "11:1-46",
+          "12:6",
+          "18:1-11",
+          "18:12-19:16",
+          "19:17-42",
+          "20:1-18",
+          "20:19-23",
+          "3:16",
+          "15:20",
+          "16:33"
+        ],
+        "JOS": [
+          "1-24"
+        ],
+        "LUK": [
+          "1",
+          "2",
+          "3:1-23",
+          "4:1-13",
+          "4:14-30",
+          "38-44",
+          "10:25-37",
+          "18:18-30",
+          "9:10-17",
+          "8:26-39",
+          "8:42-48",
+          "8:4-15",
+          "13:18-21",
+          "18:9-14",
+          "15:11-32",
+          "9:28-36",
+          "22:1-53",
+          "22:54-23:25",
+          "23:26-56",
+          "24:1-12",
+          "24:13-53"
+        ],
+        "MAL": [
+          "4:5"
+        ],
+        "MAT": [
+          "1",
+          "3",
+          "4:1-11",
+          "4:12-25",
+          "19:16-30",
+          "18:21-35",
+          "14:13-21",
+          "14:22-33",
+          "8:28-34",
+          "9:20-22",
+          "13:1-8",
+          "18-23",
+          "13:31-33",
+          "44-46",
+          "17:1-9",
+          "26:14-56",
+          "26:57-27:26",
+          "27:27-61",
+          "27:62-28:15",
+          "28:16-20",
+          "24:14",
+          "28:18",
+          "13:24-30",
+          "13:36-42",
+          "22:13"
+        ],
+        "MIC": [
+          "5:2"
+        ],
+        "MRK": [
+          "1:9-11",
+          "1:12-13",
+          "1:14-15",
+          "35-39",
+          "3:13-21",
+          "10:17-31",
+          "6:31-44",
+          "6:45-52",
+          "5:1-20",
+          "5:24-34",
+          "4:1-8",
+          "13-20",
+          "4:30-32",
+          "9:2-8",
+          "14:10-50",
+          "14:53-15:15",
+          "15:16-47",
+          "16:1-11",
+          "16:12-20",
+          "16:16"
+        ],
+        "NEH": [
+          "1-13"
+        ],
+        "NUM": [
+          "10-14",
+          "20",
+          "27"
+        ],
+        "PSA": [
+          "22:18",
+          "35:19",
+          "69:4",
+          "41:9",
+          "16:10-11"
+        ],
+        "REV": [
+          "21",
+          "2:10",
+          "20:10",
+          "21:1-22:21"
+        ],
+        "ROM": [
+          "3:21-26",
+          "5:1-11"
+        ],
+        "ZEC": [
+          "11:12-13"
+        ]
+      }
+    }
+  },
+  "confidential": false,
+  "ingredients": {
+    "ingredients/LICENSE.md": {
+      "checksum": {
+        "md5": "48f42fb1e69970879c5aeb4d1f8448ea"
+      },
+      "mimeType": "text/markdown",
+      "size": 1659
+    },
+    "ingredients/content/01.md": {
+      "checksum": {
+        "md5": "eeaabe633a42492a6cf80c2f4223b116"
+      },
+      "mimeType": "text/markdown",
+      "size": 4396,
+      "scope": {
+        "GEN": [
+          "1-2"
+        ]
+      }
+    },
+    "ingredients/content/02.md": {
+      "checksum": {
+        "md5": "f5ab8b4af3e6f99201219ee0e412bc8f"
+      },
+      "mimeType": "text/markdown",
+      "size": 3680,
+      "scope": {
+        "GEN": [
+          "3"
+        ]
+      }
+    },
+    "ingredients/content/03.md": {
+      "checksum": {
+        "md5": "a6f8307d019ff321c07430c1520d5ad6"
+      },
+      "mimeType": "text/markdown",
+      "size": 4642,
+      "scope": {
+        "GEN": [
+          "6-8"
+        ]
+      }
+    },
+    "ingredients/content/04.md": {
+      "checksum": {
+        "md5": "9b7a010bc5118c60568d86a74028366d"
+      },
+      "mimeType": "text/markdown",
+      "size": 3051,
+      "scope": {
+        "GEN": [
+          "11-15"
+        ]
+      }
+    },
+    "ingredients/content/05.md": {
+      "checksum": {
+        "md5": "d9f8f6eb40150a17929b7ca9b10a2a95"
+      },
+      "mimeType": "text/markdown",
+      "size": 3244,
+      "scope": {
+        "GEN": [
+          "16-22"
+        ]
+      }
+    },
+    "ingredients/content/06.md": {
+      "checksum": {
+        "md5": "47d9e61da498a7806723bffcfd398ff6"
+      },
+      "mimeType": "text/markdown",
+      "size": 1921,
+      "scope": {
+        "GEN": [
+          "24:1-25:26"
+        ]
+      }
+    },
+    "ingredients/content/07.md": {
+      "checksum": {
+        "md5": "1e52a97a60bd71772d0cb8c9b8117085"
+      },
+      "mimeType": "text/markdown",
+      "size": 2687,
+      "scope": {
+        "GEN": [
+          "25:27-35:29"
+        ]
+      }
+    },
+    "ingredients/content/08.md": {
+      "checksum": {
+        "md5": "4fe31592b0b9f7aeee148ba1dc7fc37e"
+      },
+      "mimeType": "text/markdown",
+      "size": 4008,
+      "scope": {
+        "GEN": [
+          "37-50"
+        ]
+      }
+    },
+    "ingredients/content/09.md": {
+      "checksum": {
+        "md5": "2ef8dba6b8ae6b8067f4d1a9a8e5644f"
+      },
+      "mimeType": "text/markdown",
+      "size": 4068,
+      "scope": {
+        "EXO": [
+          "1-4"
+        ]
+      }
+    },
+    "ingredients/content/10.md": {
+      "checksum": {
+        "md5": "782341e9c6d0bb6600e0fdce8473641b"
+      },
+      "mimeType": "text/markdown",
+      "size": 3145,
+      "scope": {
+        "EXO": [
+          "5-10"
+        ]
+      }
+    },
+    "ingredients/content/11.md": {
+      "checksum": {
+        "md5": "f00a35b925feaa338b1d49004855fa58"
+      },
+      "mimeType": "text/markdown",
+      "size": 2113,
+      "scope": {
+        "EXO": [
+          "11:1-12:32"
+        ]
+      }
+    },
+    "ingredients/content/12.md": {
+      "checksum": {
+        "md5": "10796c1974379e86381beb661d26174e"
+      },
+      "mimeType": "text/markdown",
+      "size": 4031,
+      "scope": {
+        "EXO": [
+          "12:33-15:21"
+        ]
+      }
+    },
+    "ingredients/content/13.md": {
+      "checksum": {
+        "md5": "3257d354bf0756cd1b644262c626852a"
+      },
+      "mimeType": "text/markdown",
+      "size": 5021,
+      "scope": {
+        "EXO": [
+          "19-34"
+        ]
+      }
+    },
+    "ingredients/content/14.md": {
+      "checksum": {
+        "md5": "d54af03b86ca2d6c7df3b65f5e436116"
+      },
+      "mimeType": "text/markdown",
+      "size": 5533,
+      "scope": {
+        "DEU": [
+          "34"
+        ],
+        "EXO": [
+          "16-17"
+        ],
+        "NUM": [
+          "10-14",
+          "20",
+          "27"
+        ]
+      }
+    },
+    "ingredients/content/15.md": {
+      "checksum": {
+        "md5": "0fec56704d2b8247897f2e0f75d24f84"
+      },
+      "mimeType": "text/markdown",
+      "size": 4507,
+      "scope": {
+        "JOS": [
+          "1-24"
+        ]
+      }
+    },
+    "ingredients/content/16.md": {
+      "checksum": {
+        "md5": "343c27b83b29db9a2d44c17b29fd3d8c"
+      },
+      "mimeType": "text/markdown",
+      "size": 6805,
+      "scope": {
+        "1SA": [
+          "1-10"
+        ],
+        "JDG": [
+          "1-3",
+          "6-8"
+        ]
+      }
+    },
+    "ingredients/content/17.md": {
+      "checksum": {
+        "md5": "11428817b7026a895929e6cc58796a31"
+      },
+      "mimeType": "text/markdown",
+      "size": 5651,
+      "scope": {
+        "1SA": [
+          "10",
+          "15-19",
+          "24",
+          "31"
+        ],
+        "2SA": [
+          "5",
+          "7",
+          "11-12"
+        ]
+      }
+    },
+    "ingredients/content/18.md": {
+      "checksum": {
+        "md5": "fb9703df4eacd4097e931a231ceded4c"
+      },
+      "mimeType": "text/markdown",
+      "size": 3872,
+      "scope": {
+        "1KI": [
+          "1-6",
+          "11-12"
+        ]
+      }
+    },
+    "ingredients/content/19.md": {
+      "checksum": {
+        "md5": "9c970ea0734042b37645dc99183adf7b"
+      },
+      "mimeType": "text/markdown",
+      "size": 6634,
+      "scope": {
+        "1KI": [
+          "16-18"
+        ],
+        "2KI": [
+          "5"
+        ],
+        "JER": [
+          "38"
+        ]
+      }
+    },
+    "ingredients/content/20.md": {
+      "checksum": {
+        "md5": "b86a1e70956946a8e1bbe8775c262a5e"
+      },
+      "mimeType": "text/markdown",
+      "size": 4430,
+      "scope": {
+        "2CH": [
+          "36"
+        ],
+        "2KI": [
+          "17",
+          "24-25"
+        ],
+        "EZR": [
+          "1-10"
+        ],
+        "NEH": [
+          "1-13"
+        ]
+      }
+    },
+    "ingredients/content/21.md": {
+      "checksum": {
+        "md5": "7f57e96ffc75dfa2c43ef29e16d48184"
+      },
+      "mimeType": "text/markdown",
+      "size": 5752,
+      "scope": {
+        "2SA": [
+          "7"
+        ],
+        "DAN": [
+          "7"
+        ],
+        "DEU": [
+          "18:15"
+        ],
+        "GEN": [
+          "3:15",
+          "12:1-3"
+        ],
+        "ISA": [
+          "59:16",
+          "7:14",
+          "9:1-7",
+          "35:3-5",
+          "61",
+          "53",
+          "50:6"
+        ],
+        "JER": [
+          "31"
+        ],
+        "MAL": [
+          "4:5"
+        ],
+        "MIC": [
+          "5:2"
+        ],
+        "PSA": [
+          "22:18",
+          "35:19",
+          "69:4",
+          "41:9",
+          "16:10-11"
+        ],
+        "ZEC": [
+          "11:12-13"
+        ]
+      }
+    },
+    "ingredients/content/22.md": {
+      "checksum": {
+        "md5": "44d037b519826c7795dd17526dc71ce9"
+      },
+      "mimeType": "text/markdown",
+      "size": 2695,
+      "scope": {
+        "LUK": [
+          "1"
+        ]
+      }
+    },
+    "ingredients/content/23.md": {
+      "checksum": {
+        "md5": "ff82909ea6e7fb4c41eafdee09b2e223"
+      },
+      "mimeType": "text/markdown",
+      "size": 3461,
+      "scope": {
+        "LUK": [
+          "2"
+        ],
+        "MAT": [
+          "1"
+        ]
+      }
+    },
+    "ingredients/content/24.md": {
+      "checksum": {
+        "md5": "31aaaadb7b60daf8b3203d6c4ceb00ca"
+      },
+      "mimeType": "text/markdown",
+      "size": 2623,
+      "scope": {
+        "LUK": [
+          "3:1-23"
+        ],
+        "MAT": [
+          "3"
+        ],
+        "MRK": [
+          "1:9-11"
+        ]
+      }
+    },
+    "ingredients/content/25.md": {
+      "checksum": {
+        "md5": "8478c4cc36fb70ec2f7bc7fe41027dc2"
+      },
+      "mimeType": "text/markdown",
+      "size": 1945,
+      "scope": {
+        "LUK": [
+          "4:1-13"
+        ],
+        "MAT": [
+          "4:1-11"
+        ],
+        "MRK": [
+          "1:12-13"
+        ]
+      }
+    },
+    "ingredients/content/26.md": {
+      "checksum": {
+        "md5": "f2279df7b2e024dd740e2546d7d33f2d"
+      },
+      "mimeType": "text/markdown",
+      "size": 3481,
+      "scope": {
+        "LUK": [
+          "4:14-30",
+          "38-44"
+        ],
+        "MAT": [
+          "4:12-25"
+        ],
+        "MRK": [
+          "1:14-15",
+          "35-39",
+          "3:13-21"
+        ]
+      }
+    },
+    "ingredients/content/27.md": {
+      "checksum": {
+        "md5": "51a778a248706b7749261b873a30e0a0"
+      },
+      "mimeType": "text/markdown",
+      "size": 3035,
+      "scope": {
+        "LUK": [
+          "10:25-37"
+        ]
+      }
+    },
+    "ingredients/content/28.md": {
+      "checksum": {
+        "md5": "e1e413bc1675526e158d042955c9640c"
+      },
+      "mimeType": "text/markdown",
+      "size": 2653,
+      "scope": {
+        "LUK": [
+          "18:18-30"
+        ],
+        "MAT": [
+          "19:16-30"
+        ],
+        "MRK": [
+          "10:17-31"
+        ]
+      }
+    },
+    "ingredients/content/29.md": {
+      "checksum": {
+        "md5": "2d121b3ffe74cdde6444fecdd2520ae7"
+      },
+      "mimeType": "text/markdown",
+      "size": 2443,
+      "scope": {
+        "MAT": [
+          "18:21-35"
+        ]
+      }
+    },
+    "ingredients/content/30.md": {
+      "checksum": {
+        "md5": "fc6ee66e71c60f76562cb63300797ac0"
+      },
+      "mimeType": "text/markdown",
+      "size": 2490,
+      "scope": {
+        "JHN": [
+          "6:5-15"
+        ],
+        "LUK": [
+          "9:10-17"
+        ],
+        "MAT": [
+          "14:13-21"
+        ],
+        "MRK": [
+          "6:31-44"
+        ]
+      }
+    },
+    "ingredients/content/31.md": {
+      "checksum": {
+        "md5": "19c2229aebfe2dd8680ec81b2f678f89"
+      },
+      "mimeType": "text/markdown",
+      "size": 2302,
+      "scope": {
+        "JHN": [
+          "6:16-21"
+        ],
+        "MAT": [
+          "14:22-33"
+        ],
+        "MRK": [
+          "6:45-52"
+        ]
+      }
+    },
+    "ingredients/content/32.md": {
+      "checksum": {
+        "md5": "1c51c8256d2a420a9d13905f6f38d402"
+      },
+      "mimeType": "text/markdown",
+      "size": 4186,
+      "scope": {
+        "LUK": [
+          "8:26-39",
+          "8:42-48"
+        ],
+        "MAT": [
+          "8:28-34",
+          "9:20-22"
+        ],
+        "MRK": [
+          "5:1-20",
+          "5:24-34"
+        ]
+      }
+    },
+    "ingredients/content/33.md": {
+      "checksum": {
+        "md5": "d3f4a53ce50955a1203079956dc210c9"
+      },
+      "mimeType": "text/markdown",
+      "size": 2756,
+      "scope": {
+        "LUK": [
+          "8:4-15"
+        ],
+        "MAT": [
+          "13:1-8",
+          "18-23"
+        ],
+        "MRK": [
+          "4:1-8",
+          "13-20"
+        ]
+      }
+    },
+    "ingredients/content/34.md": {
+      "checksum": {
+        "md5": "433bcbaac4130c9823f235ad46e184ec"
+      },
+      "mimeType": "text/markdown",
+      "size": 2848,
+      "scope": {
+        "LUK": [
+          "13:18-21",
+          "18:9-14"
+        ],
+        "MAT": [
+          "13:31-33",
+          "44-46"
+        ],
+        "MRK": [
+          "4:30-32"
+        ]
+      }
+    },
+    "ingredients/content/35.md": {
+      "checksum": {
+        "md5": "d967e33c28e8817589f0ce99ad29f404"
+      },
+      "mimeType": "text/markdown",
+      "size": 3628,
+      "scope": {
+        "LUK": [
+          "15:11-32"
+        ]
+      }
+    },
+    "ingredients/content/36.md": {
+      "checksum": {
+        "md5": "d981f3aa3b4ae51a3250240ce908c653"
+      },
+      "mimeType": "text/markdown",
+      "size": 1933,
+      "scope": {
+        "LUK": [
+          "9:28-36"
+        ],
+        "MAT": [
+          "17:1-9"
+        ],
+        "MRK": [
+          "9:2-8"
+        ]
+      }
+    },
+    "ingredients/content/37.md": {
+      "checksum": {
+        "md5": "833a89c451ebd645a952a62c7994c4ed"
+      },
+      "mimeType": "text/markdown",
+      "size": 3379,
+      "scope": {
+        "JHN": [
+          "11:1-46"
+        ]
+      }
+    },
+    "ingredients/content/38.md": {
+      "checksum": {
+        "md5": "25c756bd4bbc34a7b81a022245687512"
+      },
+      "mimeType": "text/markdown",
+      "size": 5001,
+      "scope": {
+        "JHN": [
+          "12:6",
+          "18:1-11"
+        ],
+        "LUK": [
+          "22:1-53"
+        ],
+        "MAT": [
+          "26:14-56"
+        ],
+        "MRK": [
+          "14:10-50"
+        ]
+      }
+    },
+    "ingredients/content/39.md": {
+      "checksum": {
+        "md5": "82417106217cc42f9b28d78a15e340bc"
+      },
+      "mimeType": "text/markdown",
+      "size": 3855,
+      "scope": {
+        "JHN": [
+          "18:12-19:16"
+        ],
+        "LUK": [
+          "22:54-23:25"
+        ],
+        "MAT": [
+          "26:57-27:26"
+        ],
+        "MRK": [
+          "14:53-15:15"
+        ]
+      }
+    },
+    "ingredients/content/40.md": {
+      "checksum": {
+        "md5": "abd3f20755aa76ee9b6176a0b767be73"
+      },
+      "mimeType": "text/markdown",
+      "size": 2946,
+      "scope": {
+        "JHN": [
+          "19:17-42"
+        ],
+        "LUK": [
+          "23:26-56"
+        ],
+        "MAT": [
+          "27:27-61"
+        ],
+        "MRK": [
+          "15:16-47"
+        ]
+      }
+    },
+    "ingredients/content/41.md": {
+      "checksum": {
+        "md5": "10962702e8421cc15acebdb1bbdf6a39"
+      },
+      "mimeType": "text/markdown",
+      "size": 2515,
+      "scope": {
+        "JHN": [
+          "20:1-18"
+        ],
+        "LUK": [
+          "24:1-12"
+        ],
+        "MAT": [
+          "27:62-28:15"
+        ],
+        "MRK": [
+          "16:1-11"
+        ]
+      }
+    },
+    "ingredients/content/42.md": {
+      "checksum": {
+        "md5": "4f1ce7f407167cbc2b8b0632ae36e1fe"
+      },
+      "mimeType": "text/markdown",
+      "size": 4351,
+      "scope": {
+        "ACT": [
+          "1:1-11"
+        ],
+        "JHN": [
+          "20:19-23"
+        ],
+        "LUK": [
+          "24:13-53"
+        ],
+        "MAT": [
+          "28:16-20"
+        ],
+        "MRK": [
+          "16:12-20"
+        ]
+      }
+    },
+    "ingredients/content/43.md": {
+      "checksum": {
+        "md5": "cf3c10f3973441c9d3f9719509cfb394"
+      },
+      "mimeType": "text/markdown",
+      "size": 4157,
+      "scope": {
+        "ACT": [
+          "2"
+        ]
+      }
+    },
+    "ingredients/content/44.md": {
+      "checksum": {
+        "md5": "134fc75d5938bc662a47491cd4d3591b"
+      },
+      "mimeType": "text/markdown",
+      "size": 2884,
+      "scope": {
+        "ACT": [
+          "3:1-4:22"
+        ]
+      }
+    },
+    "ingredients/content/45.md": {
+      "checksum": {
+        "md5": "8e0132cc8dcd333ba2d39602f3a84c75"
+      },
+      "mimeType": "text/markdown",
+      "size": 4590,
+      "scope": {
+        "ACT": [
+          "6:8-8:5",
+          "8:26-40"
+        ]
+      }
+    },
+    "ingredients/content/46.md": {
+      "checksum": {
+        "md5": "80e6a4d9c8e68c7561bf00de1723b311"
+      },
+      "mimeType": "text/markdown",
+      "size": 4048,
+      "scope": {
+        "ACT": [
+          "8:3",
+          "9:1-31",
+          "11:19-26",
+          "13:1-3"
+        ]
+      }
+    },
+    "ingredients/content/47.md": {
+      "checksum": {
+        "md5": "c7b2d3322e3583cdd7553a477fe0ade0"
+      },
+      "mimeType": "text/markdown",
+      "size": 4222,
+      "scope": {
+        "ACT": [
+          "16:11-40"
+        ]
+      }
+    },
+    "ingredients/content/48.md": {
+      "checksum": {
+        "md5": "1ee794a0f43c767dae803da956b7d383"
+      },
+      "mimeType": "text/markdown",
+      "size": 4884,
+      "scope": {
+        "2SA": [
+          "7"
+        ],
+        "EXO": [
+          "12",
+          "20"
+        ],
+        "GEN": [
+          "1-3",
+          "6",
+          "14",
+          "22"
+        ],
+        "HEB": [
+          "3:1-6",
+          "4:14-5:10",
+          "7:1-8:13",
+          "9:11-10:18"
+        ],
+        "REV": [
+          "21"
+        ]
+      }
+    },
+    "ingredients/content/49.md": {
+      "checksum": {
+        "md5": "292263e9643ecd2488f965914b0f722b"
+      },
+      "mimeType": "text/markdown",
+      "size": 5857,
+      "scope": {
+        "1JN": [
+          "1:5-10"
+        ],
+        "2CO": [
+          "5:17-21"
+        ],
+        "COL": [
+          "1:13-14"
+        ],
+        "JHN": [
+          "3:16"
+        ],
+        "MRK": [
+          "16:16"
+        ],
+        "ROM": [
+          "3:21-26",
+          "5:1-11"
+        ]
+      }
+    },
+    "ingredients/content/50.md": {
+      "checksum": {
+        "md5": "a6c98fc4f1d21eacb1a9d97d3b20d2c3"
+      },
+      "mimeType": "text/markdown",
+      "size": 5934,
+      "scope": {
+        "1TH": [
+          "4:13-5:11"
+        ],
+        "JAS": [
+          "1:12"
+        ],
+        "JHN": [
+          "15:20",
+          "16:33"
+        ],
+        "MAT": [
+          "24:14",
+          "28:18",
+          "13:24-30",
+          "13:36-42",
+          "22:13"
+        ],
+        "REV": [
+          "2:10",
+          "20:10",
+          "21:1-22:21"
+        ]
+      }
+    },
+    "ingredients/content/back.md": {
+      "checksum": {
+        "md5": "591705d71f222da55287962532b76f43"
+      },
+      "mimeType": "text/markdown",
+      "size": 911
+    },
+    "ingredients/content/front.md": {
+      "checksum": {
+        "md5": "dd03aa14315c06b1c417dd46e0c1927d"
+      },
+      "mimeType": "text/markdown",
+      "size": 2146
+    }
+  },
+  "copyright": {
+    "shortStatements": [
+      {
+        "statement": "Copyright © 2023 by unfoldingWord"
+      }
+    ]
+  }
+}

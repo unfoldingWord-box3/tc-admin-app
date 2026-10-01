@@ -5,7 +5,7 @@ tC Admin manages Door43 translation repositories for Bible translation team lead
 ## Product language
 
 **Project**:
-A Door43 repository managed through tC Admin. A project may contain multiple Bible books or OBS stories. tC Admin says "project" where the translationCore 4 design system says "Bible", because tC Admin also manages OBS and lists repositories it cannot manage.
+A Door43 repository managed through tC Admin, presented so that a manager never has to think in terms of git, branches, or repository releases. A project may contain multiple Bible books or OBS stories. tC Admin says "project" where the translationCore 4 design system says "Bible", because tC Admin also manages OBS and lists repositories it cannot manage.
 _Avoid_: Workspace, release unit, project file, Bible (as the name for the repository)
 
 **Project type**:
@@ -21,27 +21,23 @@ A book package repository whose content is Scripture: flavor `scripture/textTran
 _Avoid_: Bible (as the name for the repository), scripture repo
 
 **Metadata format**:
-How a repository describes itself on its default branch: Scripture Burrito, Resource Container, translationStudio, or translationCore. Any valid format can be released; only Scripture Burrito can be edited.
+How a repository describes itself on its default branch: Scripture Burrito, Resource Container, translationStudio, or translationCore. Only Scripture Burrito repositories are projects tC Admin manages; a repository in any other format is unsupported and can be imported from (ADR 0013).
 _Avoid_: Metadata type (in user-facing copy), repo type
 
-**Release-only project**:
-A writable project whose metadata format is not Scripture Burrito. It can be released through tC Admin but not edited until it is converted.
-_Avoid_: Read-only project, legacy project, unsupported project
-
 **Unsupported project**:
-A writable repository tC Admin cannot manage: one with no metadata Door43 recognizes, such as an empty repository, or one whose project type this version does not manage, such as a Translation Words or Translation Academy repository. It appears in the portfolio with the reason stated and cannot be released or edited.
-_Avoid_: Hidden project, invalid project, broken project
+A writable repository tC Admin cannot manage: one with no metadata Door43 recognizes, such as an empty repository; one whose project type tC Admin does not manage, such as a Translation Words or Translation Academy repository; or a Bible or Open Bible Stories repository in a format other than Scripture Burrito. It appears in the portfolio with the reason stated and cannot be released or edited. For a Bible or Open Bible Stories repository in another format, the reason offers an import into a new project.
+_Avoid_: Hidden project, invalid project, broken project, release-only project, legacy project
 
 **Scripture Burrito**:
 The metadata format tC Admin uses as its internal model, writes for every project it creates, and produces for every release: a `metadata.json` file plus an `ingredients/` folder.
 _Avoid_: SB (in user-facing copy), burrito
 
 **Resource Container**:
-The older Door43 metadata format built around `manifest.yaml`. Door43 converts it to Scripture Burrito when tC Admin reads it for release. tC Admin does not write it.
+The older Door43 metadata format built around `manifest.yaml`. Door43 converts it to Scripture Burrito when tC Admin imports from it. tC Admin never writes it and never releases it; Door43 and Gateway Admin release such repositories.
 _Avoid_: RC (in user-facing copy), legacy format
 
 **Scripture Burrito archive**:
-The zip Door43 serves for any ref of a repository, converted to Scripture Burrito when the ref is another format and rolled up as-is when it already is. tC Admin's only source of repository content for a release.
+The zip Door43 serves for any ref of a repository, converted to Scripture Burrito when the ref is another format and rolled up as-is when it already is (`GET /api/v1/repos/{owner}/{repo}/sb/{ref}.zip`, E34). tC Admin's only source of repository content for an import, and the source of book bytes for a release.
 _Avoid_: Conversion zip, sb zip (in user-facing copy)
 
 **Project metadata**:
@@ -81,8 +77,16 @@ The line of commits made only of releases, each release one commit on top of the
 _Avoid_: Release branch (for the permanent history), master
 
 **Carried-forward content**:
-A book or story copied from the latest full release without incorporating newer unselected changes from the default branch. Once released, a book or story is carried forward in every later release; releases never remove content.
-_Avoid_: Unchanged content, old content, removed content
+A book copied from the latest full release without incorporating newer changes from the default branch: the dash state of the release selection. A released book is carried forward in every later release unless the manager leaves it out.
+_Avoid_: Unchanged content, old content
+
+**Removed content**:
+A book that was in the latest full release and that the manager left out of a new release. It is absent from that release's files and metadata; earlier releases keep it. Removal is explicit: the plan lists it and the release notes name it (ADR 0013).
+_Avoid_: Deleted book, unpublished book (in user-facing copy)
+
+**Selection state**:
+The state of one book in a release selection, shown as a three-state checkbox. **Include** (checked): the book's current file from the default branch goes into the release, new or changed. **Carry forward** (dash): the file from the previous release, untouched. **Leave out** (blank): the book is not in the new release; a previously released book becomes removed content. A first release starts with every book included; a later release starts with previously released books carried forward and new books left out. Open Bible Stories projects have no selection: a release takes the whole default branch.
+_Avoid_: Checked, ticked, unchecked, excluded (in user-facing copy)
 
 **Pre-release**:
 An optional Door43 release created for review before being promoted to a full release. Promotion does not change its version or contents.
@@ -111,7 +115,7 @@ A change to the project metadata made through the structured metadata form and c
 _Avoid_: Manifest edit, configuration edit
 
 **Upload operation**:
-A user-confirmed batch of file additions and overwrites committed together as one Door43 commit.
+A user-confirmed batch of file additions and overwrites committed together as one Door43 commit. Each uploaded file is identified as a book or story from its header and name, and the manager confirms the identification before the commit.
 _Avoid_: Import, sync
 
 **Release preparation**:
@@ -126,9 +130,17 @@ _Avoid_: Republish, rebuild
 Abandoning an unreleased release preparation after confirmation. tC Admin deletes its temporary branch; a released preparation cannot be discarded.
 _Avoid_: Cancel, abort, rollback
 
-**Source translation**:
-The Door43 repository and release a translation is made from, recorded in Scripture Burrito metadata as a `source` relationship under the `dcs` id authority. Chosen in the creation wizard.
-_Avoid_: Source resource, base text, original
+**Import**:
+Adding books or stories to a project from an existing Door43 repository of any metadata format, read through its Scripture Burrito archive. The manager finds the owner, picks the repository, chooses its latest content or its last release, and picks all or some of its books or stories; the files come from the archive's `ingredients/` folder. The repository and revision are recorded in the project's metadata as a `source` relationship under the `dcs` id authority (E24).
+_Avoid_: Convert, clone, fork, sync, source translation
+
+**Owner**:
+The Door43 organization or user account that holds a project's repository. The manager's own account is an owner like any organization; the portfolio lists the manager's organizations first.
+_Avoid_: Namespace, org (in user-facing copy)
+
+**Abbreviation**:
+The short name of a project, such as ULT for unfoldingWord Literal Text, written to the metadata's `identification.abbreviation`. With the language code it forms the repository name, `<language>_<abbreviation>` in lowercase, which the wizard derives and checks for uniqueness in the owner.
+_Avoid_: Repository name (as a wizard field), slug, code
 
 ## System language
 
@@ -149,7 +161,7 @@ The complete situation of one project returned by one read: type, format, editab
 _Avoid_: Project detail, summary, dashboard data
 
 **Editability**:
-Whether tC Admin may write to a project's default branch: editable (Scripture Burrito), release-only (other valid formats), or unsupported (no recognized metadata, or a project type this version does not manage). Always shown with its reason.
+Whether tC Admin may write to a project's default branch: editable (a Scripture Burrito Bible or Open Bible Stories project) or unsupported (anything else). Always shown with its reason.
 _Avoid_: Mode, capability, status
 
 **Freshness**:
@@ -176,19 +188,20 @@ The identifier is the only spelling used in code, API payloads, tests, logs, and
 | --- | --- | --- |
 | Project type | `project_type` | `bible`, `obs`, `other` |
 | Metadata format | `metadata_format` | `sb`, `rc`, `ts`, `tc`, `none` |
-| Editability | `editability.state` | `editable`, `release_only`, `unsupported` |
+| Editability | `editability.state` | `editable`, `unsupported` |
 | Testament scope | `coverage.scope` | `nt`, `ot`, `full`, `obs`, `unknown` |
 | Coverage basis | `coverage.basis` | `catalog`, `archive` |
 | Health state | `health.state` | `healthy`, `info`, `warning`, `failing`, `never_checked`, `checking`, `door43_unavailable`, `health_error`, `unsupported` |
-| Content inclusion state | inclusion | `unreleased`, `released`, `changed_released`, `selected`, `carried_forward`, `excluded`, `administrative`, `unknown` |
+| Content inclusion state | inclusion | `unreleased`, `released`, `changed_released`, `selected`, `carried_forward`, `excluded`, `removed`, `administrative`, `unknown` |
+| Selection state | `selection` | `include`, `carry_forward`, `leave_out` |
 | Candidate group | group | `new`, `changed_released`, `unchanged`, `unknown` |
 | Release preparation state | `preparation.state` | `selecting`, `snapshot_prepared`, `health_checking`, `health_blocked`, `ready_for_release`, `pre_release`, `full_release`, `restart_required`, `retryable_failure`, `discarded` |
-| Version rule | `version.rule_applied` | `first`, `format_change`, `new_books`, `revisions` |
+| Version rule | `version.rule_applied` | `first`, `removal`, `new_books`, `revisions` |
 | Setup state | `setup.state` | `complete`, `incomplete` |
 | Freshness source | `freshness.source` | `live`, `cache` |
 | Temporary branch | — | `temp-tca-release/<version>` |
-| Operation | operation name | dotted, as in the [operation catalog](docs/operations.md) §3: `release.plan`, `release.prepare` |
+| Operation | operation name | dotted, as in the [operation catalog](docs/operations.md) §3: `release.plan`, `import.apply` |
 | Error | `error.code` | snake_case, as in the operation catalog §6: `source_changed`, `health_blocked` |
 | Invariant | — | group letter and number: `R1`, `H3`, `A2` |
 | Evidence record, open question | — | `E<n>`, `Q<n>` |
-| Acceptance scenario | — | `S1` to `S7` in product spec §13 |
+| Acceptance scenario | — | `S1` to `S9` in product spec §13 |

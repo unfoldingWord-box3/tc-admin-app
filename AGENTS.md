@@ -4,7 +4,7 @@ This file is the entry point for anyone, human or agent, working in this reposit
 
 ## What this is
 
-tC Admin is a planned hosted web application that lets Bible translation managers see, create, and selectively release their Door43 repositories as Scripture Burrito. The repository holds the product design, the decisions, the plan, two prototypes, and the first application code: the Worker's project model (`worker/src/model/`, `shared/schema/`, #19), placed per the module map ahead of the full scaffold in [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7). Milestone 1 is due 16 October 2026 and its scope does not grow ([roadmap](docs/roadmap.md)).
+tC Admin is a planned hosted web application that lets Bible translation managers set up a Bible or Open Bible Stories project, put its books in by upload or import, and release exactly the books they choose, all as Scripture Burrito and without thinking in git terms. The repository holds the product design, the decisions, the plan, two prototypes, and the first application code: the Worker's project model (`worker/src/model/`, `shared/schema/`, #19), placed per the module map ahead of the full scaffold in [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7). Milestone 1 is due 16 October 2026; its scope was re-set on 1 October 2026 and does not grow further ([roadmap](docs/roadmap.md)).
 
 ## The tower
 
@@ -31,7 +31,7 @@ Each document answers one question. Read downward for "why", upward for "how".
 | Implement an issue | the issue's Traceability section, the operations it names, the invariants it cites | build in the layer the module map names, add tests named with the invariant ids |
 | Change a rule or a state | CONTEXT.md, domain-model.md, invariants.md | write or amend an ADR; update identifiers everywhere they appear |
 | Ask "how does Door43 behave" | evidence.md | cite an `E` id; if absent, add a `Q` and probe only with credentials and a named host |
-| Change the plan | roadmap.md, the epic issue | keep Milestone 1 scope fixed; record why |
+| Change the plan | roadmap.md, the epic issue | keep Milestone 1 scope as re-set on 1 October 2026; record why |
 | Touch the UI | product-spec.md §5–§10, the design system rules in #8 | glossary wording only; health never color alone |
 
 ## Five rules
@@ -96,7 +96,8 @@ Each kind of work leaves the system more legible than it found it:
 - Grow Milestone 1 scope, or move its date, without the roadmap saying so.
 - Hide a writable repository, show unknown health as healthy, or show unknown coverage as complete or zero.
 - Reinterpret a Door43 health result.
-- Write to a default branch as part of a release, or write any format but Scripture Burrito.
+- Write to a default branch as part of a release, write any format but Scripture Burrito, or write to a repository that is not a Scripture Burrito project (imports read, never write, their source).
+- Remove a book from a release unless the manager set it to leave out; list every removal.
 - Retry a write whose outcome is unknown.
 - Put a Door43 token anywhere the browser, a URL, or a log can see it.
 - Resolve an open question by choosing an answer and building it.

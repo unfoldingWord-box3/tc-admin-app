@@ -69,10 +69,12 @@ const FORMAT_NAMES: Readonly<Record<Exclude<MetadataFormat, 'none'>, string>> = 
 };
 
 /**
- * Editability with its one-line reason (ADR 0009, P1). A project of type
- * `other` is neither releasable nor editable, whatever its format, which the
- * glossary spells `unsupported` (CONTEXT.md "Unsupported project"); for a
- * Bible or Open Bible Stories project, the format decides.
+ * Editability with its one-line reason (ADR 0013, P1, W2). Only a Scripture
+ * Burrito Bible or Open Bible Stories project is editable. Everything else is
+ * `unsupported` (CONTEXT.md "Unsupported project"): a project of type `other`
+ * whatever its format, a repository without recognized metadata, and a Bible
+ * or Open Bible Stories repository in another format, whose reason offers an
+ * import into a new project.
  */
 export function editability(format: MetadataFormat, type: ProjectType, subject: string | null): Editability {
   if (format === 'none') {
@@ -84,7 +86,7 @@ export function editability(format: MetadataFormat, type: ProjectType, subject: 
   }
   const name = FORMAT_NAMES[format];
   if (format === 'sb') return { state: 'editable', reason: `${name} project. Release and editing are available.` };
-  return { state: 'release_only', reason: `${name} project. Release is available; editing needs conversion.` };
+  return { state: 'unsupported', reason: `${name} project. Import it into a new project to manage it here.` };
 }
 
 const TARGET_BY_SCOPE: Readonly<Record<CoverageScope, number | null>> = { nt: 27, ot: 39, full: 66, obs: 50, unknown: null };

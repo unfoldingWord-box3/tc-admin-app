@@ -18,18 +18,18 @@ Groups: **R** release safety, **H** health and coverage truthfulness, **A** acce
 ## R — Release safety
 
 ### R1 — Unselected changes never enter a release
-Unselected changes on the default branch never enter a release snapshot. Selected books come from the default-branch archive; every other previously released book comes from the release-tag archive.
+Changes on the default branch enter a release snapshot only through books the manager set to include. An included book comes from the default branch; a carried-forward book is the file from the release tag, untouched.
 Source: product spec §10 snapshot rules; ADR 0003, ADR 0005.
 Enforced in: `worker/src/operations/release-prepare` (snapshot assembly); `worker/src/model/candidates` (source of each file).
 Verified by: contract test with a fixture where an unselected released book differs between tag and default branch; the snapshot must contain the tag version byte for byte.
 Issues: #33, #34.
 
-### R2 — A released book is never removed
-A book or story present in the latest full release is present in every later release. A selection that omits it is invalid; a snapshot that lacks it is invalid.
-Source: ADR 0010; CONTEXT.md "Carried-forward content".
-Enforced in: `worker/src/operations/release-prepare` (selection validation); `worker/src/model/burrito` (metadata merge keeps every released ingredient).
-Verified by: selection without a released book returns `invalid_selection`; merged metadata and snapshot tree contain every released ingredient.
-Issues: #33, #35.
+### R2 — Removal is explicit and listed
+A book present in the latest full release leaves a later release only when the manager set it to leave out. The plan's preview lists every removal, the release notes name each one, and the snapshot and its merged metadata drop exactly those books and no other. Nothing is removed by default or by omission (amended 1 October 2026, ADR 0013; before that, a released book could never be removed).
+Source: ADR 0013; CONTEXT.md "Removed content", "Selection state".
+Enforced in: `worker/src/operations/release-plan` (default selection carries every released book forward); `release-prepare` (deletes only books whose selection is `leave_out`); `worker/src/model/burrito` (metadata merge drops exactly the removed ingredients).
+Verified by: the default selection on a project with a release contains no `leave_out`; a `leave_out` on a released book appears in `preview.removals`, is absent from the snapshot tree and the merged metadata, and every other released book is present byte for byte.
+Issues: #33, #35, #38.
 
 ### R3 — A release never writes to the default branch
 The only Door43 writes a release performs are: create the temporary branch, one or more commits on it (Q22), the tag, and the Door43 release. Nothing else, and nothing on the default branch.
@@ -38,11 +38,11 @@ Enforced in: `worker/src/operations/release-prepare`, `release-create`; the Door
 Verified by: recorded-request test asserting the exact set of write calls for a release; a plan's `would_write` list contains only those four kinds, and every commit is on the temporary branch.
 Issues: #34, #39.
 
-### R4 — Nothing is preselected; a first release needs a book
-Release planning presents candidates with nothing selected. A first release requires at least one book or story.
-Source: product spec §10.
-Enforced in: `worker/src/operations/release-plan` (no default selection); `release-prepare` (rejects empty first-release selection).
-Verified by: plan output has an empty selection; empty selection on a project with no release returns `invalid_selection`.
+### R4 — Defaults publish nothing new, and a release needs a book
+A first release starts with every book present included. A later release starts with every previously released book carried forward, changed or not, and every new book left out, so nothing new or changed is published unless the manager includes it. A release needs at least one included or carried-forward book (amended 1 October 2026, ADR 0013).
+Source: product spec §10; CONTEXT.md "Selection state".
+Enforced in: `worker/src/operations/release-plan` (default selection); `release-prepare` (rejects a selection with no included or carried-forward book).
+Verified by: plan output on a project with a release has `carry_forward` for every released book and `leave_out` for every new one; on a project without a release, `include` for every book; a selection with nothing included or carried forward returns `invalid_selection`.
 Issues: #33.
 
 ### R5 — Preparation is bound to the source commit
@@ -74,14 +74,14 @@ Verified by: recorded-request test asserting the PATCH body contains only the pr
 Issues: #39.
 
 ### R9 — The version is valid and moves forward
-The final version is valid semver and greater than the latest full release on Door43, whichever tool created that release. Loose tags are coerced before comparison; a bare year or no release yields `v1.0.0`; a baseline release that is not Scripture Burrito forces a major increment (Q19).
+The final version is valid semver and greater than the latest full release on Door43, whichever tool created that release. Loose tags are coerced before comparison; a bare year or no release yields `v1.0.0`; a release that removes a book forces a major increment (ADR 0013, Q19).
 Source: product spec §10 versioning; domain model §7.
 Enforced in: `worker/src/model/version`; `worker/src/operations/release-create` (precondition).
 Verified by: table-driven tests over the coercion and bump rules; edited version not greater than baseline returns `invalid_version`.
 Issues: #37.
 
 ### R10 — Every release is Scripture Burrito with true sizes and checksums
-Every release tC Admin creates is Scripture Burrito assembled from Door43's `/sb/` archives, and every ingredient in its `metadata.json` carries the size and md5 recomputed from the file actually in the snapshot. Base metadata is never trusted for these values.
+Every release tC Admin creates is Scripture Burrito assembled from the project's own files, and every ingredient in its `metadata.json` carries the size and md5 recomputed from the file actually in the snapshot. Base metadata is never trusted for these values.
 Source: ADR 0008; product spec §7; evidence E5 (stale checksums in a real repository).
 Enforced in: `worker/src/model/burrito` (metadata merge recomputes size and md5 for every ingredient).
 Verified by: fixture with stale base checksums; merged metadata matches the snapshot files; a snapshot file without an ingredient entry, or an entry without a file, fails the test.
@@ -163,11 +163,11 @@ Enforced in: `worker/src/model/burrito` is the only metadata writer.
 Verified by: generated metadata validates against the Scripture Burrito schema; no writer for other formats exists.
 Issues: #17, #29.
 
-### W2 — A release-only project's default branch is never written
-For Resource Container, translationStudio, and translationCore projects, tC Admin performs no write to the default branch until a manager-confirmed conversion (Milestone 2).
-Source: ADR 0009; architecture §5.
-Enforced in: `worker/src/operations` editability precondition (`editable` required for upload, metadata, and convert applies).
-Verified by: edit-class operations on a `release_only` project return `not_editable` and write nothing.
+### W2 — Only a Scripture Burrito project is ever written
+tC Admin writes only to repositories it manages: Scripture Burrito Bible and Open Bible Stories projects. A repository in any other format, of any other type, or without recognized metadata is read for import and never written, released, or converted in place (amended 1 October 2026, ADR 0013).
+Source: ADR 0013; architecture §5.
+Enforced in: `worker/src/operations` editability precondition (`editable` required for upload, import, and metadata applies); the import operations read the source repository through the archive and write only the destination project.
+Verified by: edit-class operations on an `unsupported` project return `not_editable` and write nothing; an import's recorded requests write only to the destination repository.
 Issues: #21, #45, #46, #47.
 
 ### W3 — Project purpose is protected after the first save
@@ -191,7 +191,7 @@ Enforced in: `worker/src/door43` multi-file contents call used by every committi
 Verified by: recorded-request tests assert exactly one contents call per apply, except `release.prepare`, where the number of contents calls equals the plan's announced commit count.
 Issues: #30, #34, #45, #46.
 
-### W6 — Upload paths are safe (Milestone 2)
+### W6 — Upload paths are safe
 Uploads reject absolute paths, path traversal, symlinks, executable behavior, and files or batches over the configured limits.
 Source: product spec §8; architecture §5.
 Enforced in: `worker/src/operations/upload-plan` path normalization.
@@ -208,8 +208,8 @@ Issues: #46.
 ## P — Portfolio truthfulness
 
 ### P1 — Nothing writable is hidden
-Every non-archived repository where the user has push or admin permission appears in the portfolio. Release-only and unsupported projects appear with a one-line reason.
-Source: ADR 0009; product spec §2.
+Every non-archived repository where the user has push or admin permission appears in the portfolio. Unsupported projects appear with a one-line reason; for a Bible or Open Bible Stories repository in another format the reason offers an import into a new project.
+Source: ADR 0013; product spec §2.
 Enforced in: `worker/src/operations/portfolio-list` (no filter beyond writable and non-archived); `worker/src/model/project` (editability with reason).
 Verified by: fixture portfolio containing sb, rc, ts, tc, and metadata-less repositories; all appear with the expected editability and reason.
 Issues: #21, #23.
