@@ -30,12 +30,12 @@ describe('the seed repositories from the repository search (E32)', () => {
     expect(result.coverage.units.filter(unit => !unit.present)).toEqual([]);
   });
 
-  test('H5: bahtraku/id_tb1 is a Resource Container Bible covering 66 of 66 books from the catalog', () => {
+  test('H5: bahtraku/id_tb1 is a Resource Container Bible covering 66 of 66 books from the catalog, unsupported with an import offer', () => {
     const result = classifyProject(projectCatalog(searchItem('bahtraku__id_tb1')));
     expect(result).toMatchObject({
       project_type: 'bible',
       metadata_format: 'rc',
-      editability: { state: 'release_only', reason: 'Resource Container project. Release is available; editing needs conversion.' },
+      editability: { state: 'unsupported', reason: 'Resource Container project. Import it into a new project to manage it here.' },
       coverage: { scope: 'full', target: 66, present: 66, basis: 'catalog' },
     });
   });

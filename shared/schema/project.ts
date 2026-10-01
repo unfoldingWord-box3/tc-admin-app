@@ -15,12 +15,12 @@ export type ProjectType = (typeof PROJECT_TYPES)[number];
 export const METADATA_FORMATS = ['sb', 'rc', 'ts', 'tc', 'none'] as const;
 export type MetadataFormat = (typeof METADATA_FORMATS)[number];
 
-export const EDITABILITY_STATES = ['editable', 'release_only', 'unsupported'] as const;
+export const EDITABILITY_STATES = ['editable', 'unsupported'] as const;
 export type EditabilityState = (typeof EDITABILITY_STATES)[number];
 
 export interface Editability {
   state: EditabilityState;
-  /** One sentence in glossary language, shown next to the state (P1). */
+  /** One sentence in glossary language, shown next to the state (P1). For a Bible or Open Bible Stories repository in another format it offers an import (ADR 0013). */
   reason: string;
 }
 

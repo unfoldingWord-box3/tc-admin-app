@@ -52,14 +52,23 @@ describe('editability', () => {
     expect(editability('sb', 'other', null).reason).toBe('tC Admin does not manage projects of this type. Release and editing are not available.');
   });
 
-  test('P1: every editability state carries a one-line reason', () => {
+  test('P1: every editability state carries a one-line reason, and another format offers an import', () => {
     expect(editability('sb', 'bible', 'Bible')).toEqual({ state: 'editable', reason: 'Scripture Burrito project. Release and editing are available.' });
-    expect(editability('rc', 'bible', 'Bible')).toEqual({ state: 'release_only', reason: 'Resource Container project. Release is available; editing needs conversion.' });
-    expect(editability('ts', 'bible', 'Bible').state).toBe('release_only');
-    expect(editability('tc', 'bible', 'Bible').state).toBe('release_only');
+    expect(editability('rc', 'bible', 'Bible')).toEqual({ state: 'unsupported', reason: 'Resource Container project. Import it into a new project to manage it here.' });
+    expect(editability('ts', 'bible', 'Bible')).toEqual({ state: 'unsupported', reason: 'translationStudio project. Import it into a new project to manage it here.' });
+    expect(editability('tc', 'bible', 'Bible')).toEqual({ state: 'unsupported', reason: 'translationCore project. Import it into a new project to manage it here.' });
     expect(editability('sb', 'obs', 'Open Bible Stories').state).toBe('editable');
-    expect(editability('rc', 'obs', 'Open Bible Stories').state).toBe('release_only');
+    expect(editability('rc', 'obs', 'Open Bible Stories')).toEqual({ state: 'unsupported', reason: 'Resource Container project. Import it into a new project to manage it here.' });
     expect(editability('none', 'other', null)).toEqual({ state: 'unsupported', reason: 'Door43 found no project metadata it recognizes. Release and editing are not available.' });
+  });
+
+  test('W2: only a Scripture Burrito Bible or Open Bible Stories project is editable', () => {
+    for (const format of ['sb', 'rc', 'ts', 'tc', 'none'] as const) {
+      for (const type of ['bible', 'obs', 'other'] as const) {
+        const state = editability(format, type, 'Bible').state;
+        expect(state).toBe(format === 'sb' && type !== 'other' ? 'editable' : 'unsupported');
+      }
+    }
   });
 });
 
@@ -175,7 +184,7 @@ describe('classifyProject', () => {
     expect(result).toEqual({
       project_type: 'bible',
       metadata_format: 'rc',
-      editability: { state: 'release_only', reason: 'Resource Container project. Release is available; editing needs conversion.' },
+      editability: { state: 'unsupported', reason: 'Resource Container project. Import it into a new project to manage it here.' },
       coverage: expect.objectContaining({ scope: 'nt', target: 27, present: 2, basis: 'catalog' }),
     });
   });
