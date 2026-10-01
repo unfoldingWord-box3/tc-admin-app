@@ -4,7 +4,7 @@ This file is the entry point for anyone, human or agent, working in this reposit
 
 ## What this is
 
-tC Admin is a planned hosted web application that lets Bible translation managers set up a Bible or Open Bible Stories project, put its books in by upload or import, and release exactly the books they choose, all as Scripture Burrito and without thinking in git terms. The repository holds the product design, the decisions, the plan, two prototypes, and the first application code: the Worker's project model (`worker/src/model/`, `shared/schema/`, #19), placed per the module map ahead of the full scaffold in [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7). Milestone 1 is due 16 October 2026; its scope was re-set on 1 October 2026 and does not grow further ([roadmap](docs/roadmap.md)).
+tC Admin is a planned hosted web application that lets Bible translation managers set up a Bible or Open Bible Stories project, put its books in by upload or import, and release exactly the books they choose, all as Scripture Burrito and without thinking in git terms. The repository holds the product design, the decisions, the plan, one prototype (`prototypes/door43-mcp`, not a deliverable), and the application: `shared/schema/` (the operation catalog as Zod schemas), `worker/` (the Cloudflare Worker: Door43 adapter, model, operations, HTTP projection), and `web/` (Vite and React), laid out by [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7) per the module map. Milestone 1 is due 16 October 2026; its scope was re-set on 1 October 2026 and does not grow further ([roadmap](docs/roadmap.md)).
 
 ## The tower
 
@@ -56,18 +56,20 @@ Each document answers one question. Read downward for "why", upward for "how".
 One command runs every check, locally and in CI on every pull request (`.github/workflows/check.yml`):
 
 ```
-npm ci                               # once, from the repository root (npm workspaces: worker/)
-npm run check                        # docs check, Worker typecheck (TypeScript strict) and tests (Vitest), prototype tests
+npm ci                               # once, from the repository root (npm workspaces: shared/, worker/, web/)
+npm run check                        # docs check, lint (oxlint), then per workspace: typecheck (TypeScript strict) and tests (Vitest)
 ```
 
-The parts, when one is enough: `node scripts/check-docs.mjs` (relative links; every R/H/A/W/P/X, E/Q, and S id referenced is defined), `npm run check --workspace worker`, `npm test --prefix prototypes/tc-admin`. Unit tests live in `worker/test/model/`, contract tests against `fixtures/door43/` in `worker/test/contract/`; test titles start with the invariant id they prove.
+The parts, when one is enough: `node scripts/check-docs.mjs` (relative links; every R/H/A/W/P/X, E/Q, and S id referenced is defined), `npm run lint` (also enforces the layer tower: `.oxlintrc.json` refuses an import that crosses a layer the wrong way, and `any`), `npm run check --workspace shared` (and `worker`, `web`). Tests live beside their layer: `worker/test/model/` (units), `worker/test/door43/` (the adapter against stubbed fetch), `worker/test/operations/`, `worker/test/http/` (the HTTP projection), `worker/test/contract/` (against `fixtures/door43/`), `shared/test/` (the schema against `docs/operations.md` and CONTEXT.md), `web/test/`. Test titles start with the invariant id they prove. Tests run in Node; Cloudflare's Workers pool for Vitest (`@cloudflare/vitest-pool-workers` 0.22) supports only Vitest 4, so running them inside `workerd` waits for #10.
 
-The live Door43 write probe is `node --env-file=.env scripts/probe/qa-write-probe.mjs`; it needs a `TEST_TOKEN` issued by the QA host and refuses production. It prints the server's message on any failing step. Planned with `web/` and the rest of `worker/` (#7, #10): lint in `npm run check`, and `npm run e2e` (one Playwright sign-in on QA).
+`npm run build` builds `web/dist`; `npm run dev` builds it and runs `wrangler dev` (the root `wrangler.jsonc`, against QA). For reloads while editing the interface, run `npx wrangler dev` and `npm run dev --workspace web` together; Vite sends `/api/` to the Worker.
+
+The live Door43 write probe is `node --env-file=.env scripts/probe/qa-write-probe.mjs`; it needs a `TEST_TOKEN` issued by the QA host and refuses production. It prints the server's message on any failing step. Planned with #10: `npm run e2e` (one Playwright sign-in on QA).
 
 ## Hosts and credentials
 
 - QA Door43 (`https://qa.door43.org`) is the development target. Production (`https://git.door43.org`) is for sign-in verification, the Milestone 1 demo, and the pilot. Never mutate a production repository outside the demo and pilot plans.
-- Configuration comes from a root `.env` (ignored by Git); see the prototype README. The QA test user's credentials are `TEST_ORG`, `TEST_USER`, `TEST_PASSWORD`, and `TEST_TOKEN` (E23); an agent session has them only when the environment is configured with them. Never commit a client id, secret, or token. Never print one in a log, a test, a fixture, or a chat message.
+- Configuration comes from a root `.env` (ignored by Git); `.env.example` names every variable. The QA test user's credentials are `TEST_ORG`, `TEST_USER`, `TEST_PASSWORD`, and `TEST_TOKEN` (E23); an agent session has them only when the environment is configured with them. Never commit a client id, secret, or token. Never print one in a log, a test, a fixture, or a chat message.
 - Seed repositories and their formats are listed in evidence.md (E9). The `tc-admin-qa-org` organization on production is copied to QA at each reset (#1); until then QA probes use the `tc-admin-qa` user's own namespace.
 - The translationCore 4 design system lives in https://github.com/unfoldingWord/translationCore4 (#8).
 
@@ -76,7 +78,7 @@ The live Door43 write probe is `node --env-file=.env scripts/probe/qa-write-prob
 - Commits: imperative subject under 70 characters, a body that says why. One concern per commit.
 - Branches: `claude/<name>` for agent sessions; a pull request per issue or per coherent document change.
 - Copy: sentence case, verbs with objects on buttons, middle-dot separators, no emoji (the translationCore 4 design system rules, #8). "unfoldingWord" is always camelCase.
-- Code (planned): TypeScript strict in `web/`, `worker/`, and `shared/`; no `any` at a layer boundary; the shared schema is the only source of API types.
+- Code: TypeScript strict in `web/`, `worker/`, and `shared/`; no `any` (lint refuses it); the shared schema (`@tc-admin/shared/schema`) is the only source of API types. Add a dependency only for a concrete need of this application (the router choice is Q27).
 - Errors: only codes from the operation catalog's error catalog; the message text the specification fixes is quoted, not paraphrased.
 
 ## Accretion

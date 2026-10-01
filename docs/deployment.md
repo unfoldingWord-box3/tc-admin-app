@@ -14,6 +14,8 @@ One Wrangler configuration at the repository root with two environments, which C
 
 The account's `workers.dev` subdomain is `unfoldingword` (confirmed by Rich, 22 September 2026). The account already runs this shape for translationCore mobile: `tc-mobile-staging.unfoldingword.workers.dev` and `tc-mobile.unfoldingword.workers.dev`, both connected to `unfoldingWord/tc-mobile`; tC Admin mirrors it. The OAuth callback path is `/auth/callback` on each URL (#2).
 
+The configuration is `wrangler.jsonc` (#7). Its top level is for `wrangler dev` and points at QA; `env.qa` and `env.production` name their Workers explicitly. A `wrangler deploy` without `--env` would deploy the top level under the name `tc-admin`, the production Worker, with QA settings: always pass `--env`, as the Cloudflare build commands in section 3 do.
+
 Each Worker has its own KV namespaces (`SESSIONS`, `PLANS`) and its own runtime secrets (`DOOR43_CLIENT_ID`, `DOOR43_CLIENT_SECRET`, `SESSION_SIGNING_KEY`). The Door43 OAuth applications (#2) register each Worker's URL as a redirect URI.
 
 ## 2. How deployment works: Cloudflare's Git integration
@@ -83,7 +85,7 @@ Never paste a secret into a chat with an agent. If a value must reach an agent s
 
 ## 5. Local development
 
-Copy `.env.example` (created by #7) to `.env` with the QA OAuth client, then `npm run dev` runs the Worker and the web app locally against QA. The QA test user's credentials (`TEST_ORG`, `TEST_USER`, `TEST_PASSWORD`, `TEST_TOKEN`, E23) are for probes and the Playwright smoke test, never for the application itself, which always acts as the signed-in manager (A3).
+Copy `.env.example` to `.env` with the QA OAuth client, then `npm run dev` builds the web app and runs the Worker locally (`wrangler dev`, the top level of `wrangler.jsonc`) against QA, with local KV. For reloads while editing the interface, run `npx wrangler dev` and `npm run dev --workspace web` side by side; Vite sends `/api/` to the Worker. The QA test user's credentials (`TEST_ORG`, `TEST_USER`, `TEST_PASSWORD`, `TEST_TOKEN`, E23) are for probes and the Playwright smoke test, never for the application itself, which always acts as the signed-in manager (A3).
 
 ## Appendix: deploying from GitHub Actions instead
 

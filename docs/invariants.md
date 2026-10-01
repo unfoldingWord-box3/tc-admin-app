@@ -93,7 +93,7 @@ Issues: #35.
 Door43's health-check result is the health result. tC Admin maps severities to display states and never reinterprets a result into a more permissive release decision.
 Source: ADR 0007; product spec §9.
 Enforced in: `worker/src/model/health` (pure mapping, no local judgement); `worker/src/operations/release-create` (reads the state, adds no exceptions).
-Verified by: mapping tests over every observed severity; no code path sets `healthy` without a Door43 success result.
+Verified by: mapping tests over every observed severity (the `H1:` test in `worker/test/model/health.test.ts`); no code path sets `healthy` without a Door43 success result.
 Issues: #25, #36.
 
 ### H2 — Health blocks release, and a warning needs acknowledgement
@@ -107,7 +107,7 @@ Issues: #36, #39.
 Unknown, unavailable, running, or never-checked health is never displayed as healthy. Unknown coverage is never displayed as complete or as zero.
 Source: product spec §5; issues #19, #25.
 Enforced in: `worker/src/model/health`, `worker/src/model/project` (coverage `present` is `null`, not `0`, when unknown); `web` renders each state distinctly.
-Verified by: prototype tests carried over: missing severity maps to `never_checked`; OBS container entry yields `null` coverage. Coverage: the `H3:` tests in `worker/test/model/project.test.ts` and `worker/test/contract/project-catalog.test.ts` (no ingredients, a container directory, and unknown never equal to the target).
+Verified by: the prototype tests carried over by #7: the `H3:` test in `worker/test/model/health.test.ts` (a missing or unknown severity is `never_checked`) and the OBS container test in `worker/test/model/project.test.ts`. Coverage: the `H3:` tests in `worker/test/model/project.test.ts` and `worker/test/contract/project-catalog.test.ts` (no ingredients, a container directory, and unknown never equal to the target).
 Issues: #19, #25.
 
 ### H4 — Health is never color alone
@@ -216,9 +216,9 @@ Issues: #21, #23.
 
 ### P2 — Missing permission grants nothing
 A repository is writable only when Door43 explicitly returns push or admin permission for it. A missing or ambiguous permissions object means not writable.
-Source: product spec §2; prototype behavior carried over.
+Source: product spec §2; prototype behavior carried over by #7.
 Enforced in: `worker/src/operations/portfolio-list` filter.
-Verified by: prototype tests carried over.
+Verified by: the `P2:` test in `worker/test/operations/portfolio-list.test.ts` (no permissions object, a non-boolean grant, or pull only is not writable).
 Issues: #23.
 
 ### P3 — Cached data says how old it is
@@ -241,12 +241,12 @@ Issues: #40.
 Every failure returns an error code from the catalog in [operations.md](operations.md), the user-facing message the specification fixes for it, whether it is retryable, the next action, and a request id.
 Source: product spec §11; architecture §7.
 Enforced in: `worker/src/http/errors` maps every thrown error to the catalog; unknown errors become `unexpected` with a request id.
-Verified by: every catalog code has a test producing it; no route returns an uncataloged shape.
+Verified by: every catalog code has a test producing it; no route returns an uncataloged shape. So far: the `X2:` tests in `shared/test/catalog.test.ts` (the schema's codes, statuses, and messages are the catalog's), `worker/test/http/app.test.ts` (unknown routes, unbuilt operations, invalid input, and an output outside its schema all answer with the error shape), and `web/test/client.test.ts`.
 Issues: #15, #31, #40.
 
 ### X3 — Diagnostics never carry secrets or content
 Diagnostics and logs may include request id, project, commit SHA, version, target ref, health state, and Door43 response status. They never include tokens, secrets, or file contents.
 Source: architecture §7; Milestone 3 security review.
 Enforced in: `worker/src/http/errors` and the logger's redaction list.
-Verified by: redaction tests; security review checklist.
+Verified by: redaction tests (so far the `X3:` test in `worker/test/http/app.test.ts`: the failure log carries the request id, code, and details, not the thrown message); security review checklist.
 Issues: #51.
