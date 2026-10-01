@@ -1,6 +1,6 @@
 # Release any valid repository; edit only Scripture Burrito
 
-Status: accepted, 17 September 2026; rewritten 18 September 2026
+Status: superseded by [ADR 0013](0013-scripture-burrito-projects-only-import-and-explicit-removal.md) on 1 October 2026. Accepted 17 September 2026 as "Show unsupported project types read-only"; rewritten 18 September 2026 into the text below, which Rich did not recognize as his decision. Kept for the record; nothing in it is current.
 
 Any writable repository whose metadata Door43 recognizes as valid Resource Container, translationStudio, translationCore, or Scripture Burrito can be released through tC Admin. Only Scripture Burrito repositories can be edited through tC Admin: metadata form, uploads, and any other change to the default branch.
 
