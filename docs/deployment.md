@@ -14,7 +14,7 @@ One Wrangler configuration at the repository root with two environments, which C
 
 The account's `workers.dev` subdomain is `unfoldingword` (confirmed by Rich, 22 September 2026). The account already runs this shape for translationCore mobile: `tc-mobile-staging.unfoldingword.workers.dev` and `tc-mobile.unfoldingword.workers.dev`, both connected to `unfoldingWord/tc-mobile`; tC Admin mirrors it. The OAuth callback path is `/auth/callback` on each URL (#2).
 
-The configuration is `wrangler.jsonc` (#7). Its top level is for `wrangler dev` and points at QA; `env.qa` and `env.production` name their Workers explicitly. A `wrangler deploy` without `--env` would deploy the top level under the name `tc-admin`, the production Worker, with QA settings: always pass `--env`, as the Cloudflare build commands in section 3 do.
+The configuration is `wrangler.jsonc` (#7). Its top level is for `wrangler dev` and points at QA, and it is named `tc-admin-qa` (decided by Rich, 1 October 2026), so a `wrangler deploy` without `--env` deploys to the QA Worker with QA settings and cannot reach production. `env.qa` and `env.production` name their Workers explicitly; the Cloudflare build commands in section 3 still pass `--env`.
 
 Each Worker has its own KV namespaces (`SESSIONS`, `PLANS`) and its own runtime secrets (`DOOR43_CLIENT_ID`, `DOOR43_CLIENT_SECRET`, `SESSION_SIGNING_KEY`). The Door43 OAuth applications (#2) register each Worker's URL as a redirect URI.
 
@@ -31,7 +31,7 @@ GitHub Actions (`.github/workflows/check.yml`) keeps running the tests and the d
 Two consequences to know about:
 
 - **Door43 sign-in on a preview.** Door43 OAuth requires the exact redirect URI. Preview URLs differ per branch, so sign-in works on QA (`main`) and production, not on an arbitrary preview, unless that preview's URL is registered on the QA OAuth application. Previews are for reviewing the interface and anything that runs against fixtures; sign-in is verified on QA after merge. If a long-lived branch needs sign-in, register its preview URL once.
-- **Worker names must match.** Cloudflare requires the Worker's name in the dashboard to equal the name in the Wrangler configuration in the chosen root directory, which is why the configuration lives at the repository root with `name = "tc-admin"` and Wrangler's environment naming produces `tc-admin-qa` for `--env qa`.
+- **Worker names must match.** Cloudflare requires the Worker's name in the dashboard to equal the name in the Wrangler configuration in the chosen root directory. The configuration names each environment's Worker explicitly (`tc-admin-qa` for `--env qa`, `tc-admin` for `--env production`) and names the top level `tc-admin-qa`. Not yet verified: whether Workers Builds compares the dashboard name with the top-level `name` or with the name `--env` selects. If the first production build in #9 reports a name mismatch, the top level goes back to `tc-admin` and a deploy without `--env` must again be avoided.
 
 ## 3. One-time setup, in order
 

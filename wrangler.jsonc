@@ -1,11 +1,12 @@
 // One Wrangler configuration, two environments (docs/deployment.md §1):
 // `--env qa` is the `tc-admin-qa` Worker against QA Door43, `--env production`
 // the `tc-admin` Worker against production Door43. The top level is what
-// `wrangler dev` runs locally, against QA. Secrets are never here: they are
+// `wrangler dev` runs locally, against QA, and it is named for the QA Worker,
+// so a `wrangler deploy` without `--env` can only reach QA. Secrets are never here: they are
 // set per Worker in the Cloudflare dashboard, or in `.dev.vars` locally.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tc-admin",
+  "name": "tc-admin-qa",
   "main": "worker/src/index.ts",
   "compatibility_date": "2026-10-01",
   "assets": {
