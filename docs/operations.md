@@ -28,7 +28,7 @@ Rules that hold for every operation:
 
 ## 2. Common shapes
 
-Shapes are described as fields; the shared schema package (`shared/schema`, proposed in [architecture.md](architecture.md) §10) is the executable form and the source the Worker, web client, and tests import.
+Shapes are described as fields; the shared schema package (`shared/schema`, [architecture.md](architecture.md) §10) is the executable form and the source the Worker, web client, and tests import. `shared/test/catalog.test.ts` checks the schema against sections 3, 5, 6, and 7 of this file and the identifiers in CONTEXT.md, so a change to either fails until the other follows.
 
 ### Freshness
 
@@ -367,33 +367,33 @@ Defined in [domain-model.md](domain-model.md) and repeated here so a client can 
 
 ## 7. Projections
 
-**HTTP (Milestone 1).** One route per operation under the same-origin `/api/` prefix. Reads are `GET`, plans and applies are `POST`. Applies carry the CSRF token (A4) and an `Idempotency-Key` header equal to the plan id. Illustrative, decided in #7:
+**HTTP (Milestone 1).** One route per operation under the same-origin `/api/` prefix, fixed by #7 in `shared/schema/operations.ts`, which the Worker's router and the web client both read. Reads are `GET`, plans and applies are `POST` (`project.refresh` is a `POST` because it invalidates the cache). A `{name}` segment fills the input field of that name; a `GET` takes the rest of its input from the query string and a `POST` from a JSON body. Applies carry the CSRF token (A4) and an `Idempotency-Key` header equal to the plan id. A response is the operation's output with status 200, or the error shape of section 2 with the status section 6 gives its code.
 
 ```
-GET  /api/situation                                   situation.read
-GET  /api/portfolio                                   portfolio.list
-GET  /api/projects/{owner}/{repo}                     project.read
-POST /api/projects/{owner}/{repo}/refresh             project.refresh
-POST /api/projects/plan                               project.create.plan
-POST /api/projects                                    project.create.apply
-POST /api/projects/{owner}/{repo}/releases/plan       release.plan
-POST /api/projects/{owner}/{repo}/preparations        release.prepare
-GET  /api/projects/{owner}/{repo}/preparations/{id}   preparation.read
-POST /api/projects/{owner}/{repo}/preparations/{id}/release   release.create
-GET  /api/projects/{owner}/{repo}/releases/{tag}      release.lookup
-POST /api/projects/{owner}/{repo}/releases/{tag}/promote      release.promote
-GET  /api/owners?q=                                   owner.search
-GET  /api/sources?owner=&stage=                       source.search
-POST /api/projects/{owner}/{repo}/imports/plan        import.plan
-POST /api/projects/{owner}/{repo}/imports             import.apply
-POST /api/projects/{owner}/{repo}/uploads/plan        upload.plan
-POST /api/projects/{owner}/{repo}/uploads             upload.apply
+GET  /api/situation                                                   situation.read
+GET  /api/portfolio                                                   portfolio.list
+GET  /api/projects/{owner}/{repo}                                     project.read
+POST /api/projects/{owner}/{repo}/refresh                             project.refresh
+POST /api/projects/plan                                               project.create.plan
+POST /api/projects                                                    project.create.apply
+POST /api/projects/{owner}/{repo}/setup/retry                         project.create.retry
+POST /api/projects/{owner}/{repo}/releases/plan                       release.plan
+POST /api/projects/{owner}/{repo}/preparations                        release.prepare
+GET  /api/projects/{owner}/{repo}/preparations/{preparation_id}       preparation.read
+POST /api/projects/{owner}/{repo}/preparations/{preparation_id}/release   release.create
+GET  /api/projects/{owner}/{repo}/releases/{tag}                      release.lookup
+POST /api/projects/{owner}/{repo}/releases/{tag}/promote              release.promote
+POST /api/projects/{owner}/{repo}/preparations/{preparation_id}/discard   preparation.discard
+GET  /api/owners?q=                                                   owner.search
+GET  /api/sources?owner=&stage=                                       source.search
+POST /api/projects/{owner}/{repo}/imports/plan                        import.plan
+POST /api/projects/{owner}/{repo}/imports                             import.apply
+POST /api/projects/{owner}/{repo}/uploads/plan                        upload.plan
+POST /api/projects/{owner}/{repo}/uploads                             upload.apply
 ```
 
-**Web client.** Generated or hand-written against `shared/schema`; each wizard and stepper step calls exactly one operation. The wizard's last step maps to `upload.plan` and `upload.apply`, or `owner.search`, `source.search`, `import.plan`, and `import.apply`. The stepper in product spec §10 maps as: set selection states → `release.plan` and the selection; review snapshot → `release.prepare`; health → `preparation.read`; notes and version → client state; create → `release.create`; promote → `release.promote`.
+`project.refresh` with a null input (the whole portfolio) has no route yet; #26 adds one or folds it into `portfolio.list`. The Door43 sign-in redirect is `/auth/callback` (deployment.md §1), outside `/api/` because the browser follows it; #12 adds it with the other sign-in routes. Milestone 2 operations get routes with their shapes.
 
-```
-POST /api/projects/{owner}/{repo}/preparations/{id}/discard  preparation.discard
-```
+**Web client.** Typed against `shared/schema` (`web/src/api/client.ts`); each wizard and stepper step calls exactly one operation. The wizard's last step maps to `upload.plan` and `upload.apply`, or `owner.search`, `source.search`, `import.plan`, and `import.apply`. The stepper in product spec §10 maps as: set selection states → `release.plan` and the selection; review snapshot → `release.prepare`; health → `preparation.read`; notes and version → client state; create → `release.create`; promote → `release.promote`; discard → `preparation.discard`.
 
 **MCP (deferred).** One tool per operation with the same input and output schemas, the same error codes, and the same plan-before-apply requirement, so an agent operating tC Admin follows the same safety path as a manager. No new logic in the MCP layer.

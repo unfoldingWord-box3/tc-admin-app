@@ -1,0 +1,51 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "import", "vitest"],
+  "categories": { "correctness": "error" },
+  "env": { "browser": true, "es2024": true },
+  "ignorePatterns": ["**/dist/**", "**/node_modules/**", "worker/.wrangler/**"],
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "react/react-in-jsx-scope": "off",
+    "vitest/valid-expect": "off",
+    "vitest/no-conditional-expect": "off"
+  },
+  "overrides": [
+    {
+      "files": ["shared/schema/**"],
+      "rules": {
+        "no-restricted-imports": ["error", { "patterns": [{ "group": ["**/worker/**", "**/web/**", "node:*"], "message": "shared/schema is the catalog as types: it depends on no layer and no runtime (architecture §10)." }] }]
+      }
+    },
+    {
+      "files": ["worker/src/model/**"],
+      "rules": {
+        "no-restricted-imports": ["error", { "patterns": [{ "group": ["**/door43/**", "**/operations/**", "**/http/**", "node:*"], "message": "model/ performs no I/O and sees no Door43 shape (architecture §1, §10)." }] }]
+      }
+    },
+    {
+      "files": ["worker/src/door43/**"],
+      "rules": {
+        "no-restricted-imports": ["error", { "patterns": [{ "group": ["**/operations/**", "**/http/**"], "message": "door43/ is the adapter: it knows nothing above the model (architecture §1, §10)." }] }]
+      }
+    },
+    {
+      "files": ["worker/src/operations/**"],
+      "rules": {
+        "no-restricted-imports": ["error", { "patterns": [{ "group": ["**/http/**"], "message": "operations/ is independent of its HTTP projection (architecture §1, §10)." }] }]
+      }
+    },
+    {
+      "files": ["worker/src/http/**"],
+      "rules": {
+        "no-restricted-imports": ["error", { "patterns": [{ "group": ["**/door43/**", "**/model/**"], "message": "http/ is a projection of operations: it reaches Door43 and the model only through them (architecture §1, §10)." }] }]
+      }
+    },
+    {
+      "files": ["web/**"],
+      "rules": {
+        "no-restricted-imports": ["error", { "patterns": [{ "group": ["**/worker/**", "node:*"], "message": "web/ talks to the Worker only through the API and shared/schema (architecture §2)." }] }]
+      }
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+// One Wrangler configuration, two environments (docs/deployment.md §1):
+// `--env qa` is the `tc-admin-qa` Worker against QA Door43, `--env production`
+// the `tc-admin` Worker against production Door43. The top level is what
+// `wrangler dev` runs locally, against QA. Secrets are never here: they are
+// set per Worker in the Cloudflare dashboard, or in `.dev.vars` locally.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tc-admin",
+  "main": "worker/src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": { "enabled": true },
+  "vars": { "DOOR43_ORIGIN": "https://qa.door43.org" },
+  "kv_namespaces": [
+    { "binding": "SESSIONS", "id": "d38d8016088a41468ae07d86e43d8bd0" },
+    { "binding": "PLANS", "id": "4144422f84394d569ce4717c39568e2f" }
+  ],
+  "env": {
+    "qa": {
+      "name": "tc-admin-qa",
+      "vars": { "DOOR43_ORIGIN": "https://qa.door43.org" },
+      "kv_namespaces": [
+        { "binding": "SESSIONS", "id": "d38d8016088a41468ae07d86e43d8bd0" },
+        { "binding": "PLANS", "id": "4144422f84394d569ce4717c39568e2f" }
+      ]
+    },
+    "production": {
+      "name": "tc-admin",
+      "vars": { "DOOR43_ORIGIN": "https://git.door43.org" },
+      "kv_namespaces": [
+        { "binding": "SESSIONS", "id": "90e3158d46d74a7f9a60f48b11cab246" },
+        { "binding": "PLANS", "id": "dfb39941f93e43f6826d58bf39709ea9" }
+      ]
+    }
+  }
+}

@@ -2,7 +2,7 @@
 // Door43 responses (ADR 0012). Fixtures carry their host and date.
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
-import type { ProjectType } from '../../../shared/schema/project';
+import type { ProjectType } from '@tc-admin/shared/schema';
 import { metadataFormat, projectCatalog } from '../../src/door43/catalog';
 import type { Door43Repository, Door43RepositorySearch } from '../../src/door43/catalog';
 import { classifyProject } from '../../src/model/project';

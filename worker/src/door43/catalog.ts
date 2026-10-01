@@ -2,7 +2,7 @@
 // repository endpoint return it (E7, E14, E32), mapped to the model's input.
 // Door43's field names stop here.
 
-import type { MetadataFormat } from '../../../shared/schema/project';
+import type { MetadataFormat } from '@tc-admin/shared/schema';
 import type { CatalogIngredient, ProjectCatalog } from '../model/project';
 
 /** One entry of `ingredients[]` (E14). Only the fields tC Admin reads. */

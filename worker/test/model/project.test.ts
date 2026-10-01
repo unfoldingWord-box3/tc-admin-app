@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { PROJECT_TYPES } from '../../../shared/schema/project';
-import type { CoverageScope, ProjectType } from '../../../shared/schema/project';
+import { PROJECT_TYPES } from '@tc-admin/shared/schema';
+import type { CoverageScope, ProjectType } from '@tc-admin/shared/schema';
 import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT, STORIES } from '../../src/model/books';
 import { classifyProject, coverage, editability, projectTypeFromSubject, testamentScope } from '../../src/model/project';
 import type { CatalogIngredient, ProjectCatalog } from '../../src/model/project';

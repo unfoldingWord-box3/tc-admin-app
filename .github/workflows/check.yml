@@ -7,7 +7,7 @@ on:
 
 jobs:
   check:
-    name: Document tower, Worker typecheck and tests, prototype tests
+    name: Document tower, lint, typecheck and tests (shared, worker, web)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

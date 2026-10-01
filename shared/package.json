@@ -1,14 +1,16 @@
 {
-  "name": "tc-admin-worker",
+  "name": "@tc-admin/shared",
   "private": true,
   "type": "module",
+  "exports": {
+    "./schema": "./schema/index.ts"
+  },
   "scripts": {
     "check": "npm run typecheck && npm test",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run"
   },
   "dependencies": {
-    "@tc-admin/shared": "*",
     "zod": "^4.6.5"
   },
   "devDependencies": {
