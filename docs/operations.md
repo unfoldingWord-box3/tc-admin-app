@@ -58,6 +58,8 @@ project
   freshness
 ```
 
+The project summary `portfolio.list` returns is the part of the report the repository search carries (E7, E32): `ref`, `title` (the repository name when Door43 has no title), `description`, `default_branch`, `language`, `project_type`, `metadata_format`, `editability`, `coverage`, `health`, and `permissions`. The search does not say which ref or when its health severity was checked, so a summary's `health.ref` and `health.checked_at` are `null`, and `health.issue_count` is `null` until the health-check read (#25).
+
 `health.state` is one of the health states in [domain-model.md](domain-model.md) section 5. `editability.reason` is one sentence in glossary language, for example "Resource Container project. Import it into a new project to manage it here."
 
 ### Plan
@@ -163,6 +165,7 @@ The orientation call. One request tells a client who is signed in, which host, a
 - Door43 reads: repository search for the signed-in user, every page, de-duplicated by repository id (carried over from the prototype). Per-project type, coverage, and health come from the catalog metadata in that response (E12); no archive is downloaded.
 - Returns: `{ organizations: [{ name, projects: [project summary] }], freshness, analysis: { complete, pending } }`. Projects appear immediately with `health.state = never_checked` and `coverage.present = null` until analysis completes (H3).
 - Filters: non-archived repositories with explicit push or admin permission (P1, P2). Nothing else is filtered out.
+- Order: owner groups by name, the account's own repositories last (product spec §2); projects in a group by repository name. The configurable sort is #24. Because the catalog metadata arrives with the search, analysis is complete when the list is (`analysis.pending = 0`).
 - Errors: `session_expired`, `door43_unavailable`, `portfolio_too_large` (the prototype's read limit, retained until Milestone 3 performance work).
 
 ### `project.read`

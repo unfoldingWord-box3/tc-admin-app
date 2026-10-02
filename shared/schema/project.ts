@@ -102,9 +102,22 @@ export const ProjectReport = z.object({
 export type ProjectReport = z.infer<typeof ProjectReport>;
 
 /**
- * One project in `portfolio.list`. The catalog calls it "a summary of" the
- * project report without naming its fields; until #23 and #24 trim it, it is
- * the report itself.
+ * One project in `portfolio.list`: the parts of the project report the
+ * repository search carries (E7, E32), so the portfolio needs no read per
+ * project. Releases, the default-branch head, preparations, and setup come
+ * from `project.read`.
  */
-export const ProjectSummary = ProjectReport;
-export type ProjectSummary = ProjectReport;
+export const ProjectSummary = ProjectReport.pick({
+  ref: true,
+  title: true,
+  description: true,
+  default_branch: true,
+  language: true,
+  project_type: true,
+  metadata_format: true,
+  editability: true,
+  coverage: true,
+  health: true,
+  permissions: true,
+});
+export type ProjectSummary = z.infer<typeof ProjectSummary>;

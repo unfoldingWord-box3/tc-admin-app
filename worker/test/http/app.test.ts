@@ -138,6 +138,20 @@ describe('routing', () => {
     ]);
   });
 
+  test('portfolio.list without a session is session_expired, and Door43 is not asked', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetch = vi.fn<typeof globalThis.fetch>();
+    vi.stubGlobal('fetch', fetch);
+    try {
+      const response = await call('/api/portfolio');
+      expect(response.status).toBe(401);
+      expect(OperationErrorShape.parse(await response.json()).code).toBe('session_expired');
+      expect(fetch).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   test('X2: a method the route does not take is no operation', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const body = OperationErrorShape.parse(await (await call('/api/projects/plan')).json());

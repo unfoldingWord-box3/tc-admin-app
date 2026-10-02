@@ -211,14 +211,14 @@ Issues: #46.
 Every non-archived repository where the user has push or admin permission appears in the portfolio. Unsupported projects appear with a one-line reason; for a Bible or Open Bible Stories repository in another format the reason offers an import into a new project.
 Source: ADR 0013; product spec §2.
 Enforced in: `worker/src/operations/portfolio-list` (no filter beyond writable and non-archived); `worker/src/model/project` (editability with reason).
-Verified by: fixture portfolio containing sb, rc, ts, tc, and metadata-less repositories; all appear with the expected editability and reason.
+Verified by: the `P1:` tests in `worker/test/operations/portfolio-list.test.ts`: a fixture portfolio of the recorded seed repositories (E32) and sb, ts, tc, metadata-less, and Translation Words stand-ins lists every writable one with its `editability.state` and reason; `web/test/portfolio-labels.test.ts` (only an editable project opens).
 Issues: #21, #23.
 
 ### P2 — Missing permission grants nothing
 A repository is writable only when Door43 explicitly returns push or admin permission for it. A missing or ambiguous permissions object means not writable.
 Source: product spec §2; prototype behavior carried over by #7.
 Enforced in: `worker/src/operations/portfolio-list` filter.
-Verified by: the `P2:` test in `worker/test/operations/portfolio-list.test.ts` (no permissions object, a non-boolean grant, or pull only is not writable).
+Verified by: the `P2:` tests in `worker/test/operations/portfolio-list.test.ts` (no permissions object, a non-boolean grant, or pull only is not writable; a read-only or archived repository is not listed).
 Issues: #23.
 
 ### P3 — Cached data says how old it is
