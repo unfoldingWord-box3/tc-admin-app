@@ -33,10 +33,21 @@ describe('reads', () => {
       expect(new URL(url).pathname).toBe('/api/v1/user');
       expect(new URL(url).search).toBe('');
       expect(new Headers(init?.headers).get('authorization')).toBe('Bearer test-only');
-      expect(init?.redirect).toBe('error');
+      // `error` is what Node allows and the Workers runtime refuses (E39).
+      expect(init?.redirect).toBe('manual');
       return json({ id: 1, login: 'tester' });
     };
     expect(await readDoor43(client(fetch), '/user')).toEqual({ id: 1, login: 'tester' });
+  });
+
+  test('A1: a redirect from Door43 is refused, never followed', async () => {
+    const calls: string[] = [];
+    const redirecting: Fetch = async url => {
+      calls.push(url);
+      return new Response('', { status: 302, headers: { location: 'https://example.org/elsewhere' } });
+    };
+    expect(await code(readDoor43(client(redirecting), '/user'))).toBe('door43_unavailable');
+    expect(calls).toEqual(['https://qa.door43.org/api/v1/user']);
   });
 
   test('A1: an expired Door43 session requires a new sign-in', async () => {

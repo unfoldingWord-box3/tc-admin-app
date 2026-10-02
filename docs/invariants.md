@@ -129,7 +129,7 @@ Issues: #19, #24.
 ### A1 — Door43 credentials never reach the browser
 No Door43 access token appears in JavaScript-visible state, browser storage, URLs, or client or server logs. The browser holds only an opaque HttpOnly session cookie.
 Source: ADR 0001; architecture §2 and §8.
-Enforced in: `worker/src/http/session` (token lives in Workers KV keyed by session id); `worker/src/http` response serialization; logging redaction.
+Enforced in: `worker/src/http/session` (token lives in Workers KV keyed by a hash of the session id; the cookie is HttpOnly, SameSite=Lax, and Secure on HTTPS); `worker/src/http` response serialization; logging redaction (the sign-in failure log carries only the code and the error kind).
 Verified by: response-shape tests assert no token field on any route; log redaction test; Playwright smoke test inspects storage and URLs.
 Issues: #12, #15, #51.
 

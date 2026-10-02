@@ -2,8 +2,9 @@
 // one route per operation, generated from `shared/schema`. Each request's
 // input is validated against the operation's schema, the operation runs, its
 // output is validated, and the answer is the output or the error shape (X2).
-// Everything outside `/api/` is the built web app. Sign-in, sessions, and
-// CSRF (#12, #13) join here as Hono middleware.
+// Sign-in is `/auth/` (session.ts); every `/api/` request carries the session
+// its cookie names, if any. Everything else is the built web app. CSRF (#13)
+// joins here as Hono middleware.
 
 import { CatalogError, OPERATIONS, OPERATION_NAMES } from '@tc-admin/shared/schema';
 import type { OperationDefinition, RoutedOperation } from '@tc-admin/shared/schema';
@@ -14,8 +15,10 @@ import type { Env } from '../env';
 import { HANDLERS, operationContext } from '../operations';
 import type { OperationContext } from '../operations';
 import { errorResponse, logFailure } from './errors';
+import { auth, endSession, readSession, signInFailed } from './session';
+import type { ActiveSession } from './session';
 
-type App = { Bindings: Env; Variables: { requestId: string } };
+export type App = { Bindings: Env; Variables: { requestId: string; session: ActiveSession | null } };
 
 const HEADERS = {
   'cache-control': 'no-store',
@@ -25,7 +28,7 @@ const HEADERS = {
 };
 
 function answer(c: Context<App>, status: number, body: unknown): Response {
-  return c.json(body, status as 200, { ...HEADERS, 'x-request-id': c.get('requestId') });
+  return c.json(body, status as 200, { ...HEADERS, 'x-request-id': c.get('requestId') ?? '' });
 }
 
 /** `{name}` in a catalog route is `:name` in Hono. */
@@ -56,7 +59,11 @@ function validationError(error: z.ZodError): CatalogError {
 }
 
 async function runOperation(c: Context<App>, name: RoutedOperation): Promise<Response> {
-  const context: OperationContext = operationContext({ door43Origin: c.env.DOOR43_ORIGIN, door43ClientId: c.env.DOOR43_CLIENT_ID }, c.get('requestId'));
+  const context: OperationContext = operationContext(
+    { door43Origin: c.env.DOOR43_ORIGIN, door43ClientId: c.env.DOOR43_CLIENT_ID },
+    c.get('requestId'),
+    c.get('session')?.record.token ?? null,
+  );
   const handler = HANDLERS[name] as ((input: unknown, context: OperationContext) => Promise<unknown>) | undefined;
   // Until every Milestone 1 operation is built, an unbuilt one answers as no operation (Q26).
   if (!handler) throw new CatalogError('unknown_operation', { details: { reason: 'operation not built yet', operation: name } });
@@ -70,10 +77,19 @@ async function runOperation(c: Context<App>, name: RoutedOperation): Promise<Res
 
 export const app = new Hono<App>();
 
-app.use('/api/*', async (c, next) => {
+// Every request the Worker answers itself carries a request id (X2); sign-in routes too.
+app.use('/auth/*', async (c, next) => {
   c.set('requestId', crypto.randomUUID());
   await next();
 });
+
+app.use('/api/*', async (c, next) => {
+  c.set('requestId', crypto.randomUUID());
+  c.set('session', await readSession(c));
+  await next();
+});
+
+app.route('/auth', auth);
 
 for (const name of OPERATION_NAMES) {
   const route = (OPERATIONS[name] as OperationDefinition).route;
@@ -87,8 +103,20 @@ app.all('/api/*', () => {
 
 app.all('*', c => c.env.ASSETS.fetch(c.req.raw));
 
-app.onError((error, c) => {
-  const response = errorResponse(error, c.get('requestId') ?? crypto.randomUUID());
+app.onError(async (error, c) => {
+  if (!c.get('requestId')) c.set('requestId', crypto.randomUUID());
+  const response = errorResponse(error, c.get('requestId'));
   logFailure(error, response);
+  // Door43 refused the session's token: the session is over here too (architecture §3).
+  const session = c.get('session');
+  if (response.body.code === 'session_expired' && session) {
+    try {
+      await endSession(c, session.key);
+    } catch (cause) {
+      logFailure(cause, errorResponse(cause, c.get('requestId')));
+    }
+  }
+  // The browser follows sign-in routes: it goes back to the app, which shows the catalog message.
+  if (c.req.method === 'GET' && new URL(c.req.url).pathname.startsWith('/auth/')) return signInFailed(c, response.body.code, response.body.request_id);
   return answer(c, response.status, response.body);
 });

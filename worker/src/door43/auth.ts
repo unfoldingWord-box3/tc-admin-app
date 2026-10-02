@@ -1,11 +1,12 @@
 // Door43 OAuth, carried over from the prototype and moved to Web Crypto: the
 // authorization request with PKCE S256 and the server-side code exchange
 // (ADR 0001). The client secret, when the application is confidential, is
-// sent only in the exchange. Sessions that hold the token are #12.
+// sent only in the exchange. The session that holds the token is
+// `http/session.ts`.
 
 import { CatalogError } from '@tc-admin/shared/schema';
-import { door43Request } from './api';
-import type { Fetch } from './api';
+import { door43Request, readDoor43 } from './api';
+import type { Door43Client, Fetch } from './api';
 import type { Door43Host } from './host';
 
 /** The token permissions every Milestone 1 operation needs (Q10, E26, E27). */
@@ -87,4 +88,20 @@ export async function exchangeCode(client: OAuthClient, pending: PendingLogin, c
   if (typeof token.access_token !== 'string' || !token.access_token) throw new CatalogError('session_expired');
   const seconds = Math.min(Number(token.expires_in) || 3600, MAX_TOKEN_SECONDS);
   return { token: token.access_token, expiresAt: now + seconds * 1000 };
+}
+
+/** The signed-in account in glossary terms, and the Door43 user id repository discovery needs (E7). */
+export interface SignedInAccount {
+  account: { login: string; name: string };
+  userId: number;
+}
+
+/** `GET /user` with the token: who signed in. A shape without a login or id is not a session. */
+export async function readAccount(client: Door43Client): Promise<SignedInAccount> {
+  const user = await readDoor43<{ id?: unknown; login?: unknown; full_name?: unknown }>(client, '/user');
+  if (typeof user.login !== 'string' || !user.login || typeof user.id !== 'number') {
+    throw new CatalogError('door43_unavailable', { details: { reason: 'unexpected user shape' } });
+  }
+  const name = typeof user.full_name === 'string' && user.full_name ? user.full_name : user.login;
+  return { account: { login: user.login, name }, userId: user.id };
 }
