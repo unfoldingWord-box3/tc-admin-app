@@ -326,6 +326,32 @@ describe('sign-in failures are named for what failed', () => {
     const body = OperationErrorShape.parse(await response.json());
     expect(body.code).toBe('unexpected');
     expect(response.headers.get('x-request-id')).toBe(body.request_id);
+    expect(cookies(response).get('tca_session')).toMatch(/Max-Age=0/);
+  });
+
+  test('A1: the store failing while an expired session is removed still clears the cookie', async () => {
+    quiet();
+    const { session } = await signIn();
+    const [key] = [...sessions.entries.keys()];
+    sessions.entries.set(key!, JSON.stringify({ ...JSON.parse(sessions.entries.get(key!)!), expiresAt: Date.now() - 1 }));
+    sessions.delete = async () => {
+      throw new Error('store unavailable');
+    };
+    const response = await call('/api/situation', { headers: { cookie: `tca_session=${session}` } });
+    expect(OperationErrorShape.parse(await response.json()).code).toBe('unexpected');
+    expect(cookies(response).get('tca_session')).toMatch(/Max-Age=0/);
+  });
+
+  test('A1: the store failing while a refused token ends the session still answers session_expired and clears the cookie', async () => {
+    quiet();
+    const { session } = await signIn();
+    userStatus = 401;
+    sessions.delete = async () => {
+      throw new Error('store unavailable');
+    };
+    const response = await call('/api/situation', { headers: { cookie: `tca_session=${session}` } });
+    expect(OperationErrorShape.parse(await response.json()).code).toBe('session_expired');
+    expect(cookies(response).get('tca_session')).toMatch(/Max-Age=0/);
   });
 
   test('sign-in responses are not cached and send no referrer', async () => {

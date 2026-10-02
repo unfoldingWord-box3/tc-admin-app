@@ -74,10 +74,17 @@ function parseRecord(stored: string | null): SessionRecord | null {
   }
 }
 
-/** Removes the session and its credential from the store and the cookie from the browser. */
+/**
+ * Removes the session and its credential from the store and the cookie from the browser.
+ * The cookie is cleared even when the store fails, so the browser stops sending a dead
+ * session; the failure still propagates, and the record expires on its own TTL.
+ */
 export async function endSession(c: Context<App>, key: string | null): Promise<void> {
-  if (key) await c.env.SESSIONS.delete(key);
-  deleteCookie(c, SESSION_COOKIE, { path: '/', secure: secure(c) });
+  try {
+    if (key) await c.env.SESSIONS.delete(key);
+  } finally {
+    deleteCookie(c, SESSION_COOKIE, { path: '/', secure: secure(c) });
+  }
 }
 
 const backToApp = (c: Context<App>, failure?: ErrorCode) => c.redirect(failure ? `/?sign_in=${failure}` : '/', 302);
