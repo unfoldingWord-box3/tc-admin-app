@@ -64,3 +64,11 @@ export async function callOperation<Name extends RoutedOperation>(
   }
   return (OPERATIONS[name] as OperationDefinition).output!.parse(body) as OperationOutput<Name>;
 }
+
+/** Ends the session (`POST /auth/logout`). A refusal is an `ApiError`; a network failure rejects as it is. */
+export async function signOut(fetcher: Fetch = (url, init) => fetch(url, init)): Promise<void> {
+  const response = await fetcher('/auth/logout', { method: 'POST', credentials: 'same-origin', headers: { accept: 'application/json' } });
+  if (response.ok) return;
+  const parsed = OperationErrorShape.safeParse(await response.json().catch(() => null));
+  throw new ApiError(parsed.success ? parsed.data : unexpected(response.headers.get('x-request-id') ?? 'unknown'), response.status);
+}

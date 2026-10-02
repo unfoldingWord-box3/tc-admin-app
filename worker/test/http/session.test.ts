@@ -253,3 +253,97 @@ describe('session end', () => {
     expect(await (await call('/api/situation', { headers: { cookie: `tca_session=${first}` } })).json()).toMatchObject({ account: null });
   });
 });
+
+describe('sign-in failures are named for what failed', () => {
+  /** A store whose `put` fails for keys with this prefix. */
+  const failingPut = (prefix: string) => {
+    const put = sessions.put.bind(sessions);
+    sessions.put = async (key: string, value: string) => {
+      if (key.startsWith(prefix)) throw new Error('store unavailable');
+      return put(key, value);
+    };
+  };
+  const quiet = () => vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  test('X2: Door43 refusing the code is session_expired', async () => {
+    quiet();
+    const { state } = await startLogin();
+    vi.stubGlobal('fetch', async () => new Response('', { status: 400 }));
+    const response = await call(`/auth/callback?code=c&state=${state}`, { headers: { cookie: `tca_login=${state}` } });
+    expect(response.headers.get('location')).toBe('/?sign_in=session_expired');
+  });
+
+  test('X2: Door43 refusing the new token at /user is session_expired', async () => {
+    quiet();
+    userStatus = 401;
+    const { state } = await startLogin();
+    const response = await call(`/auth/callback?code=c&state=${state}`, { headers: { cookie: `tca_login=${state}` } });
+    expect(response.headers.get('location')).toBe('/?sign_in=session_expired');
+  });
+
+  test('X2: the session store failing after Door43 accepted the sign-in is unexpected, with the reference the message quotes, never session_expired', async () => {
+    const log = quiet();
+    const { state } = await startLogin();
+    failingPut('session:');
+    const response = await call(`/auth/callback?code=c&state=${state}`, { headers: { cookie: `tca_login=${state}` } });
+    expect(response.status).toBe(302);
+    const location = new URL(response.headers.get('location')!, ORIGIN);
+    expect(location.pathname).toBe('/');
+    expect(location.searchParams.get('sign_in')).toBe('unexpected');
+    const reference = location.searchParams.get('reference');
+    expect(reference).toMatch(/^[0-9a-f-]{36}$/);
+    expect(response.headers.get('x-request-id')).toBe(reference);
+    expect(cookies(response).has('tca_session')).toBe(false);
+    const line = JSON.parse(String(log.mock.calls.at(-1)![0]));
+    expect(line).toMatchObject({ request_id: reference, code: 'unexpected' });
+    expect(JSON.stringify(log.mock.calls)).not.toContain(TOKEN);
+  });
+
+  test('X2: the session store failing at /auth/login is answered, not a crash: back to the app with unexpected', async () => {
+    quiet();
+    failingPut('login:');
+    const response = await call('/auth/login');
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toMatch(/^\/\?sign_in=unexpected&reference=[0-9a-f-]{36}$/);
+  });
+
+  test('X2: a corrupt pending sign-in is unexpected, not a crash', async () => {
+    quiet();
+    const { state } = await startLogin();
+    sessions.entries.set(`login:${state}`, '{not json');
+    const response = await call(`/auth/callback?code=c&state=${state}`, { headers: { cookie: `tca_login=${state}` } });
+    expect(response.headers.get('location')).toMatch(/^\/\?sign_in=unexpected&reference=/);
+  });
+
+  test('X2: the store failing at /auth/logout answers with the catalog error shape and a request id', async () => {
+    quiet();
+    const { session } = await signIn();
+    sessions.delete = async () => {
+      throw new Error('store unavailable');
+    };
+    const response = await call('/auth/logout', { method: 'POST', headers: { cookie: `tca_session=${session}` } });
+    expect(response.status).toBe(500);
+    const body = OperationErrorShape.parse(await response.json());
+    expect(body.code).toBe('unexpected');
+    expect(response.headers.get('x-request-id')).toBe(body.request_id);
+  });
+
+  test('sign-in responses are not cached and send no referrer', async () => {
+    const { response } = await startLogin();
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+  });
+});
+
+describe('stored sessions', () => {
+  test('A1: a session record that does not parse is no session: removed, the cookie cleared, and the API still answers', async () => {
+    const { session } = await signIn();
+    const [key] = [...sessions.entries.keys()];
+    sessions.entries.set(key!, '{not json');
+    const response = await call('/api/situation', { headers: { cookie: `tca_session=${session}` } });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ account: null });
+    expect(sessions.entries.size).toBe(0);
+    expect(cookies(response).get('tca_session')).toMatch(/Max-Age=0/);
+  });
+});

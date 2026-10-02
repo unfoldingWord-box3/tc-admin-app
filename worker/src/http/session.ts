@@ -4,7 +4,12 @@
 // sit under `/auth/`, outside the catalog, because the browser follows them:
 // `/auth/login` sends it to Door43, `/auth/callback` exchanges the code and
 // starts the session, `/auth/logout` ends it. A failed sign-in returns to the
-// app with a catalog code in `?sign_in=`, never with Door43's own text.
+// app with a catalog code in `?sign_in=`, never with Door43's own text:
+// `session_expired` only when Door43 refused the code or the token, or the
+// sign-in did not start in this browser in the last ten minutes;
+// `door43_unavailable` when Door43 could not be reached or answered
+// unreadably; `unexpected` with `&reference=<request id>` for anything else,
+// such as the session store failing (app.ts error handler).
 
 import { CatalogError } from '@tc-admin/shared/schema';
 import type { ErrorCode } from '@tc-admin/shared/schema';
@@ -15,6 +20,7 @@ import type { Env, KVNamespace } from '../env';
 import { beginSignIn, completeSignIn, newSessionId } from '../operations/sign-in';
 import type { PendingSignIn, SessionRecord, SignInConfig } from '../operations/sign-in';
 import type { App } from './app';
+import { errorResponse, logFailure } from './errors';
 
 const SESSION_COOKIE = 'tca_session';
 /** Binds the callback to the browser that started the sign-in: it holds the OAuth `state`. */
@@ -49,13 +55,23 @@ export async function readSession(c: Context<App>, now = Date.now()): Promise<Ac
   const id = getCookie(c, SESSION_COOKIE);
   if (!id) return null;
   const key = await sessionKey(id);
-  const stored = await c.env.SESSIONS.get(key);
-  const record = stored ? (JSON.parse(stored) as SessionRecord) : null;
+  const record = parseRecord(await c.env.SESSIONS.get(key));
   if (!record || record.expiresAt <= now) {
     await endSession(c, key);
     return null;
   }
   return { key, record };
+}
+
+/** A stored record that does not parse, or lacks a token or an expiry, is no session. */
+function parseRecord(stored: string | null): SessionRecord | null {
+  if (!stored) return null;
+  try {
+    const record = JSON.parse(stored) as Partial<SessionRecord> | null;
+    return typeof record?.token === 'string' && typeof record.expiresAt === 'number' && record.account ? (record as SessionRecord) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Removes the session and its credential from the store and the cookie from the browser. */
@@ -65,6 +81,16 @@ export async function endSession(c: Context<App>, key: string | null): Promise<v
 }
 
 const backToApp = (c: Context<App>, failure?: ErrorCode) => c.redirect(failure ? `/?sign_in=${failure}` : '/', 302);
+
+/** Back to the app after a failure the error handler caught: the code, and the request id the message quotes. */
+export function signInFailed(c: Context<App>, code: ErrorCode, requestId: string): Response {
+  c.header('x-request-id', requestId);
+  c.header('cache-control', 'no-store');
+  return code === 'unexpected' ? c.redirect(`/?sign_in=unexpected&reference=${encodeURIComponent(requestId)}`, 302) : backToApp(c, code);
+}
+
+/** The failures a callback reports as such; anything else is `unexpected`. */
+const REPORTED: readonly ErrorCode[] = ['session_expired', 'door43_unavailable'];
 
 async function takePending(store: KVNamespace, state: string): Promise<PendingSignIn | null> {
   const stored = await store.get(loginKey(state));
@@ -110,9 +136,10 @@ auth.get('/callback', async c => {
     setCookie(c, SESSION_COOKIE, id, { path: '/', httpOnly: true, secure: secure(c), sameSite: 'Lax', maxAge: ttl(record.expiresAt, now) });
     return backToApp(c);
   } catch (error) {
-    const code: ErrorCode = error instanceof CatalogError && error.code === 'door43_unavailable' ? 'door43_unavailable' : 'session_expired';
-    console.error(JSON.stringify({ event: 'sign_in_failed', code, kind: error instanceof Error ? error.name : typeof error }));
-    return backToApp(c, code);
+    // A Door43 refusal or outage is reported as such; a failure of tC Admin's own goes to the error handler as `unexpected`.
+    if (!(error instanceof CatalogError) || !REPORTED.includes(error.code)) throw error;
+    logFailure(error, errorResponse(error, c.get('requestId')));
+    return backToApp(c, error.code);
   }
 });
 

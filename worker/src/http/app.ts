@@ -15,7 +15,7 @@ import type { Env } from '../env';
 import { HANDLERS, operationContext } from '../operations';
 import type { OperationContext } from '../operations';
 import { errorResponse, logFailure } from './errors';
-import { auth, endSession, readSession } from './session';
+import { auth, endSession, readSession, signInFailed } from './session';
 import type { ActiveSession } from './session';
 
 export type App = { Bindings: Env; Variables: { requestId: string; session: ActiveSession | null } };
@@ -28,7 +28,7 @@ const HEADERS = {
 };
 
 function answer(c: Context<App>, status: number, body: unknown): Response {
-  return c.json(body, status as 200, { ...HEADERS, 'x-request-id': c.get('requestId') });
+  return c.json(body, status as 200, { ...HEADERS, 'x-request-id': c.get('requestId') ?? '' });
 }
 
 /** `{name}` in a catalog route is `:name` in Hono. */
@@ -77,6 +77,12 @@ async function runOperation(c: Context<App>, name: RoutedOperation): Promise<Res
 
 export const app = new Hono<App>();
 
+// Every request the Worker answers itself carries a request id (X2); sign-in routes too.
+app.use('/auth/*', async (c, next) => {
+  c.set('requestId', crypto.randomUUID());
+  await next();
+});
+
 app.use('/api/*', async (c, next) => {
   c.set('requestId', crypto.randomUUID());
   c.set('session', await readSession(c));
@@ -98,9 +104,19 @@ app.all('/api/*', () => {
 app.all('*', c => c.env.ASSETS.fetch(c.req.raw));
 
 app.onError(async (error, c) => {
-  const response = errorResponse(error, c.get('requestId') ?? crypto.randomUUID());
+  if (!c.get('requestId')) c.set('requestId', crypto.randomUUID());
+  const response = errorResponse(error, c.get('requestId'));
   logFailure(error, response);
   // Door43 refused the session's token: the session is over here too (architecture §3).
-  if (response.body.code === 'session_expired' && c.get('session')) await endSession(c, c.get('session')!.key);
+  const session = c.get('session');
+  if (response.body.code === 'session_expired' && session) {
+    try {
+      await endSession(c, session.key);
+    } catch (cause) {
+      logFailure(cause, errorResponse(cause, c.get('requestId')));
+    }
+  }
+  // The browser follows sign-in routes: it goes back to the app, which shows the catalog message.
+  if (c.req.method === 'GET' && new URL(c.req.url).pathname.startsWith('/auth/')) return signInFailed(c, response.body.code, response.body.request_id);
   return answer(c, response.status, response.body);
 });
