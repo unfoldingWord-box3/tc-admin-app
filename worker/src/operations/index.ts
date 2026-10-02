@@ -13,5 +13,5 @@ export const HANDLERS: OperationHandlers = {
   'situation.read': situationRead,
 };
 
-export { operationContext } from './context';
+export { operationContext, signedIn } from './context';
 export type { DeploymentConfig, OperationContext } from './context';

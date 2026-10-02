@@ -1,0 +1,123 @@
+// Sign-in and sessions (ADR 0001, architecture §3 Authentication). The Door43
+// token lives only in Workers KV under a hash of the session id; the browser
+// holds the opaque id in an HttpOnly cookie and nothing else (A1). The routes
+// sit under `/auth/`, outside the catalog, because the browser follows them:
+// `/auth/login` sends it to Door43, `/auth/callback` exchanges the code and
+// starts the session, `/auth/logout` ends it. A failed sign-in returns to the
+// app with a catalog code in `?sign_in=`, never with Door43's own text.
+
+import { CatalogError } from '@tc-admin/shared/schema';
+import type { ErrorCode } from '@tc-admin/shared/schema';
+import { Hono } from 'hono';
+import type { Context } from 'hono';
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
+import type { Env, KVNamespace } from '../env';
+import { beginSignIn, completeSignIn, newSessionId } from '../operations/sign-in';
+import type { PendingSignIn, SessionRecord, SignInConfig } from '../operations/sign-in';
+import type { App } from './app';
+
+const SESSION_COOKIE = 'tca_session';
+/** Binds the callback to the browser that started the sign-in: it holds the OAuth `state`. */
+const LOGIN_COOKIE = 'tca_login';
+/** A sign-in not completed in ten minutes starts over (carried over from the prototype). */
+const LOGIN_SECONDS = 600;
+/** Workers KV refuses an expiration sooner than a minute ahead. */
+const MIN_KV_TTL = 60;
+
+export interface ActiveSession {
+  /** The KV key: a hash of the cookie value, so the store never holds a usable cookie. */
+  key: string;
+  record: SessionRecord;
+}
+
+async function sha256(value: string): Promise<string> {
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
+  return [...digest].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+const sessionKey = async (id: string) => `session:${await sha256(id)}`;
+const loginKey = (state: string) => `login:${state}`;
+const ttl = (expiresAt: number, now: number) => Math.max(MIN_KV_TTL, Math.ceil((expiresAt - now) / 1000));
+
+/** Secure everywhere but plain-HTTP local development (`wrangler dev` on 127.0.0.1). */
+const secure = (c: Context<App>) => new URL(c.req.url).protocol === 'https:';
+
+const signInConfig = (env: Env): SignInConfig => ({ door43Origin: env.DOOR43_ORIGIN, clientId: env.DOOR43_CLIENT_ID, clientSecret: env.DOOR43_CLIENT_SECRET });
+
+/** The session the request's cookie names, or `null` when there is none or it has expired. */
+export async function readSession(c: Context<App>, now = Date.now()): Promise<ActiveSession | null> {
+  const id = getCookie(c, SESSION_COOKIE);
+  if (!id) return null;
+  const key = await sessionKey(id);
+  const stored = await c.env.SESSIONS.get(key);
+  const record = stored ? (JSON.parse(stored) as SessionRecord) : null;
+  if (!record || record.expiresAt <= now) {
+    await endSession(c, key);
+    return null;
+  }
+  return { key, record };
+}
+
+/** Removes the session and its credential from the store and the cookie from the browser. */
+export async function endSession(c: Context<App>, key: string | null): Promise<void> {
+  if (key) await c.env.SESSIONS.delete(key);
+  deleteCookie(c, SESSION_COOKIE, { path: '/', secure: secure(c) });
+}
+
+const backToApp = (c: Context<App>, failure?: ErrorCode) => c.redirect(failure ? `/?sign_in=${failure}` : '/', 302);
+
+async function takePending(store: KVNamespace, state: string): Promise<PendingSignIn | null> {
+  const stored = await store.get(loginKey(state));
+  if (!stored) return null;
+  await store.delete(loginKey(state));
+  return JSON.parse(stored) as PendingSignIn;
+}
+
+export const auth = new Hono<App>();
+
+auth.use('*', async (c, next) => {
+  await next();
+  c.header('cache-control', 'no-store');
+  c.header('referrer-policy', 'no-referrer');
+});
+
+auth.get('/login', async c => {
+  const pending = await beginSignIn(signInConfig(c.env), `${new URL(c.req.url).origin}/auth/callback`);
+  if (!pending) return backToApp(c, 'door43_unavailable');
+  await c.env.SESSIONS.put(loginKey(pending.state), JSON.stringify(pending), { expirationTtl: LOGIN_SECONDS });
+  setCookie(c, LOGIN_COOKIE, pending.state, { path: '/auth', httpOnly: true, secure: secure(c), sameSite: 'Lax', maxAge: LOGIN_SECONDS });
+  return c.redirect(pending.url, 302);
+});
+
+auth.get('/callback', async c => {
+  const state = c.req.query('state');
+  const bound = getCookie(c, LOGIN_COOKIE);
+  deleteCookie(c, LOGIN_COOKIE, { path: '/auth', secure: secure(c) });
+  // A callback from another browser, a replay, or a sign-in older than ten minutes starts over.
+  if (!state || state !== bound) return backToApp(c, 'session_expired');
+  const pending = await takePending(c.env.SESSIONS, state);
+  if (!pending || Date.now() - pending.createdAt > LOGIN_SECONDS * 1000) return backToApp(c, 'session_expired');
+  const code = c.req.query('code');
+  // The manager declined on Door43: nothing failed, nothing to report.
+  if (c.req.query('error') || !code) return backToApp(c);
+  try {
+    const record = await completeSignIn(signInConfig(c.env), pending, code);
+    const previous = getCookie(c, SESSION_COOKIE);
+    if (previous) await c.env.SESSIONS.delete(await sessionKey(previous));
+    const id = newSessionId();
+    const now = Date.now();
+    await c.env.SESSIONS.put(await sessionKey(id), JSON.stringify(record), { expirationTtl: ttl(record.expiresAt, now) });
+    setCookie(c, SESSION_COOKIE, id, { path: '/', httpOnly: true, secure: secure(c), sameSite: 'Lax', maxAge: ttl(record.expiresAt, now) });
+    return backToApp(c);
+  } catch (error) {
+    const code: ErrorCode = error instanceof CatalogError && error.code === 'door43_unavailable' ? 'door43_unavailable' : 'session_expired';
+    console.error(JSON.stringify({ event: 'sign_in_failed', code, kind: error instanceof Error ? error.name : typeof error }));
+    return backToApp(c, code);
+  }
+});
+
+auth.post('/logout', async c => {
+  const id = getCookie(c, SESSION_COOKIE);
+  await endSession(c, id ? await sessionKey(id) : null);
+  return c.body(null, 204);
+});

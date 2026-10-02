@@ -246,12 +246,12 @@ shared/              @tc-admin/shared
     states.ts        the state identifiers of the catalog §5
   test/              the schema against docs/operations.md and CONTEXT.md
 worker/
-  src/index.ts       the Worker: /api/ to the HTTP projection, everything else to the web assets
+  src/index.ts       the Worker: /api/ and /auth/ to the HTTP projection, everything else to the web assets
   src/env.ts         bindings and variables
   src/door43/        Door43 shapes stop here
     host.ts          the configured host, QA or production only
     api.ts           reads with the session token, pagination (P1)
-    auth.ts          OAuth with PKCE, code exchange (sessions: #12)
+    auth.ts          OAuth with PKCE, code exchange, the signed-in account from /user
     repos.ts         repository search and permissions read strictly (P2)
     catalog.ts       the catalog view of a repository (#19)
                      planned: archive (#18), health (#36), writes (#30, #34, #39)
@@ -262,14 +262,16 @@ worker/
                      planned: burrito (#17, #29, #35), classify (#20, #45), candidates (#33), version (#37), states
   src/operations/    one module per catalog operation, plus shared preconditions
     index.ts         the built operations by name
-    context.ts       what every operation receives
-    situation-read.ts  situation.read without a session (account: #12)
+    context.ts       what every operation receives, with the session's Door43 client (A3)
+    sign-in.ts       begin and complete sign-in for http/session; not catalog operations (#12)
+    situation-read.ts  situation.read; the account from /user when signed in
     portfolio-list.ts  the writable filter (P1, P2); the operation: #23
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)
     errors.ts        every failure to the error shape (X2, X3)
-                     planned: session (#12), csrf (#13)
+    session.ts       /auth/login, /auth/callback, /auth/logout; the token in Workers KV under a hash of the cookie (A1)
+                     planned: csrf (#13)
   test/              model/, door43/, operations/, http/, contract/ (against fixtures)
 web/
   src/api/client.ts  typed client: one call per operation, from shared/schema
