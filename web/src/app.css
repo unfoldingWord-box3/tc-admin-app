@@ -32,3 +32,4 @@ a { color: var(--uw-ocean); }
 .report dd { margin: 0; }
 .units { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 4px 16px; list-style: none; padding: 0; font-size: 14px; }
 .units .absent { color: #5b6770; }
+.show-all { display: flex; align-items: center; gap: 8px; font-size: 14px; }

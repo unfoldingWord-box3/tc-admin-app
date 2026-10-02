@@ -207,11 +207,11 @@ Issues: #46.
 
 ## P — Portfolio truthfulness
 
-### P1 — Nothing writable is hidden
-Every non-archived repository where the user has push or admin permission appears in the portfolio. Unsupported projects appear with a one-line reason; for a Bible or Open Bible Stories repository in another format the reason offers an import into a new project.
-Source: ADR 0013; product spec §2.
-Enforced in: `worker/src/operations/portfolio-list` (no filter beyond writable and non-archived); `worker/src/model/project` (editability with reason).
-Verified by: the `P1:` tests in `worker/test/operations/portfolio-list.test.ts`: a fixture portfolio of the recorded seed repositories (E32) and sb, ts, tc, metadata-less, and Translation Words stand-ins lists every writable one with its `editability.state` and reason; `web/test/portfolio-labels.test.ts` (only an editable project opens).
+### P1 — Nothing writable is hidden from show all
+With "Show all projects" (`show: all`), every non-archived repository where the user has push or admin permission appears in the portfolio. Unsupported projects appear with a one-line reason; for a Bible or Open Bible Stories repository in another format the reason offers an import into a new project. By default (`show: supported`) every such Scripture Burrito Bible or Open Bible Stories repository appears, and the choice to show all is always on the page.
+Source: ADR 0013, ADR 0014; product spec §2.
+Enforced in: `worker/src/operations/portfolio-list` (no filter beyond writable and non-archived, and by default Door43's format and flavor filter); `worker/src/model/project` (editability with reason).
+Verified by: the `P1:` tests in `worker/test/operations/portfolio-list.test.ts`: a fixture portfolio of the recorded seed repositories (E32) and sb, ts, tc, metadata-less, and Translation Words stand-ins lists every writable one with its `editability.state` and reason under `show: all`, and that mode sends Door43 no format or flavor filter; `web/test/portfolio-labels.test.ts` (only an editable project opens).
 Issues: #21, #23.
 
 ### P2 — Missing permission grants nothing

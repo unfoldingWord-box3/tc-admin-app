@@ -161,10 +161,10 @@ The orientation call. One request tells a client who is signed in, which host, a
 
 ### `portfolio.list`
 
-- Inputs: optional filters (organization, language, project type, health state) and sort; filters are applied by the client where the whole portfolio is already loaded.
-- Door43 reads: repository search for the signed-in user, every page, de-duplicated by repository id (carried over from the prototype). Per-project type, coverage, and health come from the catalog metadata in that response (E12); no archive is downloaded.
+- Inputs: `show`, `supported` (the default) or `all` (ADR 0014); optional filters (organization, language, project type, health state) and sort; filters are applied by the client where the whole portfolio is already loaded.
+- Door43 reads: repository search for the signed-in user, every page, de-duplicated by repository id (carried over from the prototype); with `show: supported`, filtered by Door43 to `metadataType=sb` and `flavor` `textTranslation` or `textStories` (E41). Per-project type, coverage, and health come from the catalog metadata in that response (E12); no archive is downloaded.
 - Returns: `{ organizations: [{ name, projects: [project summary] }], freshness, analysis: { complete, pending } }`. Projects appear immediately with `health.state = never_checked` and `coverage.present = null` until analysis completes (H3).
-- Filters: non-archived repositories with explicit push or admin permission (P1, P2). Nothing else is filtered out.
+- Filters: non-archived repositories with explicit push or admin permission (P1, P2). Nothing else is filtered out beyond the `show: supported` search filter.
 - Order: owner groups by name, the account's own repositories last (product spec §2); projects in a group by repository name. The configurable sort is #24. Because the catalog metadata arrives with the search, analysis is complete when the list is (`analysis.pending = 0`).
 - Errors: `session_expired`, `door43_unavailable`, `portfolio_too_large` (the prototype's read limit, retained until Milestone 3 performance work).
 

@@ -1,10 +1,12 @@
 // `portfolio.list` (operations.md §4). Every repository the signed-in account
 // can write, from the repository search, each classified from the catalog
 // metadata that search already carries (E12, E32): no read per project and no
-// archive (Q17), so analysis is complete when the list is. The filter, carried
-// over from the prototype: a repository is listed when it is not archived and
-// Door43 explicitly grants push or admin (P1, P2); nothing else is filtered
-// out, and an unsupported project is listed with its reason. Projects are
+// archive (Q17), so analysis is complete when the list is. By default Door43
+// is asked for Scripture Burrito Bible and Open Bible Stories repositories
+// only, the projects tC Admin manages; `show: all` asks for every repository
+// and lists the unsupported ones with their reasons (ADR 0014). The filter,
+// carried over from the prototype: a repository is listed when it is not
+// archived and Door43 explicitly grants push or admin (P1, P2). Projects are
 // grouped by owner, the account's organizations first and its own account
 // last (product spec §2), each group by repository name; the configurable
 // sort is #24.
@@ -68,7 +70,7 @@ function matches(project: ProjectSummary, input: ParsedInput<'portfolio.list'>):
 export async function portfolioList(input: ParsedInput<'portfolio.list'>, context: OperationContext): Promise<PortfolioList> {
   const client = signedIn(context);
   const { account, userId } = await readAccount(client);
-  const repositories = await searchRepositories(client, userId);
+  const repositories = await searchRepositories(client, userId, input.show !== 'all');
   const readAt = context.now().toISOString();
   const projects = repositories.flatMap(repo => {
     const access = repositoryAccess(repo);

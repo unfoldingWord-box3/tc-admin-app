@@ -1,6 +1,9 @@
-// The portfolio (`portfolio.list`): every project the manager can write,
-// grouped by owner. An editable project opens; an unsupported one is listed
-// with its reason and does not (P1). The open project is named in the address
+// The portfolio (`portfolio.list`): the projects the manager can write,
+// grouped by owner. By default only Scripture Burrito Bible and Open Bible
+// Stories projects are listed, which Door43 filters quickly for an account
+// with many repositories; "Show all projects" adds every unsupported writable
+// repository with its reason (ADR 0014). An editable project opens; an
+// unsupported one does not (P1). The open project is named in the address
 // (`#/<owner>/<repo>`) so a reload keeps it. Filters and sorting are #24,
 // refresh is #26, and the full project report (`project.read`) is #25.
 
@@ -10,6 +13,7 @@ import { callOperation } from './api/client';
 import { canOpen, coverageLabel, formatLabel, hashRef, healthLabel, projectHash, typeLabel } from './portfolio-labels';
 
 type PortfolioList = OperationOutput<'portfolio.list'>;
+type Show = 'supported' | 'all';
 
 interface Props {
   /** Shows a failure; a `session_expired` failure also ends the signed-in view. */
@@ -17,12 +21,21 @@ interface Props {
 }
 
 export function Portfolio({ onFailure }: Props) {
-  const [portfolio, setPortfolio] = useState<PortfolioList | null>(null);
+  const [show, setShow] = useState<Show>('supported');
+  // The portfolio with the `show` it was read for; a different `show` is still loading.
+  const [result, setResult] = useState<{ show: Show; portfolio: PortfolioList } | null>(null);
   const [hash, setHash] = useState(() => window.location.hash);
 
   useEffect(() => {
-    callOperation('portfolio.list', {}).then(setPortfolio, onFailure);
-  }, [onFailure]);
+    let current = true;
+    callOperation('portfolio.list', { show }).then(
+      portfolio => current && setResult({ show, portfolio }),
+      failure => current && onFailure(failure),
+    );
+    return () => {
+      current = false;
+    };
+  }, [show, onFailure]);
 
   useEffect(() => {
     const follow = () => setHash(window.location.hash);
@@ -30,20 +43,28 @@ export function Portfolio({ onFailure }: Props) {
     return () => window.removeEventListener('hashchange', follow);
   }, []);
 
-  if (!portfolio) return <p>Loading your projects…</p>;
-
-  const projects = portfolio.organizations.flatMap(group => group.projects);
+  const portfolio = result?.show === show ? result.portfolio : null;
+  const projects = portfolio?.organizations.flatMap(group => group.projects) ?? [];
   const wanted = hashRef(hash);
   const open = wanted && projects.find(project => project.ref.owner === wanted.owner && project.ref.repo === wanted.repo && canOpen(project));
   if (open) return <ProjectView project={open} />;
 
-  if (projects.length === 0) {
-    return <p>You have no projects you can write to on this Door43 host.</p>;
-  }
   return (
     <>
-      {wanted && <p role="alert">That project is not one you can open here. Choose a project from the list.</p>}
-      {portfolio.organizations.map(group => (
+      <label className="show-all">
+        <input type="checkbox" checked={show === 'all'} onChange={event => setShow(event.target.checked ? 'all' : 'supported')} /> Show all projects,
+        including unsupported ones
+      </label>
+      {!portfolio && <p>Loading your projects…</p>}
+      {portfolio && wanted && <p role="alert">That project is not one you can open here. Choose a project from the list.</p>}
+      {portfolio && projects.length === 0 && (
+        <p>
+          {show === 'all'
+            ? 'You have no projects you can write to on this Door43 host.'
+            : 'You have no Bible or Open Bible Stories projects in Scripture Burrito that you can write to on this Door43 host. Show all projects to see the others.'}
+        </p>
+      )}
+      {portfolio?.organizations.map(group => (
         <section key={group.name} className="owner">
           <h2>{group.name}</h2>
           <ul className="projects">
@@ -53,7 +74,7 @@ export function Portfolio({ onFailure }: Props) {
           </ul>
         </section>
       ))}
-      <p className="freshness">Read from Door43 at {new Date(portfolio.freshness.read_at).toLocaleTimeString()}.</p>
+      {portfolio && <p className="freshness">Read from Door43 at {new Date(portfolio.freshness.read_at).toLocaleTimeString()}.</p>}
     </>
   );
 }

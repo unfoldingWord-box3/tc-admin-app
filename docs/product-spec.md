@@ -22,7 +22,7 @@ Bible translation team leaders and project managers who are responsible for the 
 - Door43 organization and repository permissions are authoritative.
 - The portfolio includes every owner where the current user has write access: their organizations first, then their own account.
 - Repositories that are read-only to the user are not shown in the normal portfolio.
-- Only Scripture Burrito Bible and Open Bible Stories repositories are projects. A writable repository in Resource Container, translationStudio, or translationCore format, with no recognized metadata, or of any other type is unsupported and shown with the reason (ADR 0013). For a Bible or Open Bible Stories repository in another format, the reason offers an import into a new project.
+- Only Scripture Burrito Bible and Open Bible Stories repositories are projects, and by default the portfolio lists only those (ADR 0014). With "Show all projects", a writable repository in Resource Container, translationStudio, or translationCore format, with no recognized metadata, or of any other type is listed as unsupported with the reason (ADR 0013). For a Bible or Open Bible Stories repository in another format, the reason offers an import into a new project.
 - tC Admin must re-check authorization before mutations and releases; a stale screen must not grant access.
 
 ## 3. Goals

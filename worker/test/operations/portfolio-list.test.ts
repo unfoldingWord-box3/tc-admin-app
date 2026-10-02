@@ -68,21 +68,38 @@ describe('portfolio.list', () => {
     repo({ id: 16, name: 'old', owner: { login: 'team' }, metadata_type: 'sb', subject: 'Bible', archived: true, ...writable }),
   ];
 
-  const run = async (repositories = portfolio, input: ParsedInput<'portfolio.list'> = {}) => {
+  const run = async (repositories = portfolio, input: ParsedInput<'portfolio.list'> = { show: 'all' }) => {
     const calls: string[] = [];
+    const searches: URLSearchParams[] = [];
     const fetch = async (url: string) => {
       const { pathname, searchParams } = new URL(url);
       calls.push(pathname);
+      if (pathname === '/api/v1/repos/search') searches.push(searchParams);
       if (pathname === '/api/v1/user') return Response.json({ id: 7, login: 'tc-admin-qa', full_name: 'tC Admin QA' });
       const page = Number(searchParams.get('page'));
       return Response.json({ ok: true, data: page === 1 ? repositories : [] });
     };
     const context = { ...operationContext({ door43Origin: 'https://qa.door43.org', door43ClientId: 'id' }, 'request-1', 't'), now: () => new Date('2026-10-02T12:00:00Z') };
     const output = OPERATIONS['portfolio.list'].output.parse(await portfolioList(input, { ...context, door43: { ...context.door43!, fetch } }));
-    return { output, calls, projects: output.organizations.flatMap(group => group.projects) };
+    return { output, calls, searches, projects: output.organizations.flatMap(group => group.projects) };
   };
 
-  test('P1: every writable repository is listed with its editability state and reason, whatever its format or type', async () => {
+  test('by default Door43 is asked for Scripture Burrito Bible and Open Bible Stories repositories only (ADR 0014, E41)', async () => {
+    const { searches } = await run(portfolio, {});
+    for (const query of searches) {
+      expect(query.get('metadataType')).toBe('sb');
+      expect(query.getAll('flavor')).toEqual(['textTranslation', 'textStories']);
+      expect([query.get('uid'), query.get('exclusive'), query.get('private')]).toEqual(['7', 'false', 'true']);
+    }
+    expect(searches.length).toBeGreaterThan(0);
+  });
+
+  test('P1: show all asks Door43 for every repository, with no format or flavor filter', async () => {
+    const { searches } = await run(portfolio, { show: 'all' });
+    expect(searches.every(query => !query.has('metadataType') && !query.has('flavor'))).toBe(true);
+  });
+
+  test('P1: with show all, every writable repository is listed with its editability state and reason, whatever its format or type', async () => {
     const { projects } = await run();
     const byRepo = Object.fromEntries(projects.map(project => [project.ref.repo, project.editability]));
     expect(byRepo).toEqual({
@@ -142,10 +159,10 @@ describe('portfolio.list', () => {
   });
 
   test('filters narrow the list by organization, language, project type, and health state', async () => {
-    expect((await run(portfolio, { organization: 'bahtraku' })).projects.map(project => project.ref.repo)).toEqual(['id_tb1', 'Perjanjian-Baru-Pendau']);
-    expect((await run(portfolio, { language: 'ums' })).projects.map(project => project.ref.repo)).toEqual(['Perjanjian-Baru-Pendau']);
-    expect((await run(portfolio, { project_type: 'obs' })).projects.map(project => project.ref.repo)).toEqual(['en_obs']);
-    expect((await run(portfolio, { health_state: 'warning' })).projects.map(project => project.ref.repo)).toEqual(['Perjanjian-Baru-Pendau']);
+    expect((await run(portfolio, { show: 'all', organization: 'bahtraku' })).projects.map(project => project.ref.repo)).toEqual(['id_tb1', 'Perjanjian-Baru-Pendau']);
+    expect((await run(portfolio, { show: 'all', language: 'ums' })).projects.map(project => project.ref.repo)).toEqual(['Perjanjian-Baru-Pendau']);
+    expect((await run(portfolio, { show: 'all', project_type: 'obs' })).projects.map(project => project.ref.repo)).toEqual(['en_obs']);
+    expect((await run(portfolio, { show: 'all', health_state: 'warning' })).projects.map(project => project.ref.repo)).toEqual(['Perjanjian-Baru-Pendau']);
   });
 
   test('without a session it is session_expired, and Door43 is not asked', async () => {

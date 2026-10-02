@@ -96,7 +96,7 @@ Each kind of work leaves the system more legible than it found it:
 ## Do not
 
 - Grow Milestone 1 scope, or move its date, without the roadmap saying so.
-- Hide a writable repository, show unknown health as healthy, or show unknown coverage as complete or zero.
+- Hide a writable repository from "Show all projects" (ADR 0014), show unknown health as healthy, or show unknown coverage as complete or zero.
 - Reinterpret a Door43 health result.
 - Write to a default branch as part of a release, write any format but Scripture Burrito, or write to a repository that is not a Scripture Burrito project (imports read, never write, their source).
 - Remove a book from a release unless the manager set it to leave out; list every removal.
