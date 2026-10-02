@@ -1,7 +1,8 @@
 // Reads from the Door43 API with the signed-in manager's token, carried over
 // from the prototype: requests go to the configured host only, never follow
 // a redirect, time out, and send the token only in the authorization header
-// (A1, A3). Door43's statuses become catalog codes here; nothing above this
+// (A1, A3). The Workers runtime refuses `redirect: 'error'` (E39), so a
+// request is sent with `manual` and any redirect answer is refused here. Door43's statuses become catalog codes here; nothing above this
 // module sees an HTTP status from Door43.
 
 import { CatalogError } from '@tc-admin/shared/schema';
@@ -23,11 +24,17 @@ export async function door43Request(host: Door43Host, url: string, init: Request
   if (new URL(url).origin !== host.origin) {
     throw new CatalogError('unexpected', { details: { reason: 'request outside the configured Door43 host' } });
   }
+  let response: Response;
   try {
-    return await fetcher(url, { ...init, redirect: 'error', signal: AbortSignal.timeout(TIMEOUT_MS) });
+    response = await fetcher(url, { ...init, redirect: 'manual', signal: AbortSignal.timeout(TIMEOUT_MS) });
   } catch (cause) {
     throw new CatalogError('door43_unavailable', { cause });
   }
+  // A redirect could carry the token to another address; it is never followed.
+  if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+    throw new CatalogError('door43_unavailable', { details: { reason: 'Door43 answered with a redirect', door43_status: response.status } });
+  }
+  return response;
 }
 
 /** `GET /api/v1<path>` as JSON. 401 is `session_expired`, 403 `permission_denied`, 404 `not_found`, anything else `door43_unavailable`. */
