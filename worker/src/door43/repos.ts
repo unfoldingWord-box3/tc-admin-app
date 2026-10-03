@@ -28,8 +28,20 @@ export function repositoryAccess(repo: Door43SearchRepository): RepositoryAccess
   };
 }
 
-/** Every repository the account can see, each once (`GET /repos/search?uid=`, E7). */
-export async function searchRepositories(client: Door43Client, userId: number): Promise<Door43SearchRepository[]> {
-  const repositories = await readPages<Door43SearchRepository>(client, '/repos/search', { uid: userId, exclusive: false, private: true });
+/**
+ * The search filter for the repositories tC Admin manages: Scripture Burrito
+ * with the `textTranslation` or `textStories` flavor (ADR 0013). Door43 reads
+ * a repeated `flavor` as any of them (E41), so only those come back.
+ */
+const SUPPORTED_ONLY = { metadataType: 'sb', flavor: ['textTranslation', 'textStories'] } as const;
+
+/**
+ * Every repository the account can see, each once (`GET /repos/search?uid=`, E7);
+ * with `supportedOnly`, only the Scripture Burrito Bible and Open Bible Stories
+ * ones, which keeps a large account's portfolio quick (ADR 0014).
+ */
+export async function searchRepositories(client: Door43Client, userId: number, supportedOnly = false): Promise<Door43SearchRepository[]> {
+  const query = { uid: userId, exclusive: false, private: true, ...(supportedOnly ? SUPPORTED_ONLY : {}) };
+  const repositories = await readPages<Door43SearchRepository>(client, '/repos/search', query);
   return [...new Map(repositories.map(repo => [repo.id, repo])).values()];
 }

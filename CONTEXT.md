@@ -25,7 +25,7 @@ How a repository describes itself on its default branch: Scripture Burrito, Reso
 _Avoid_: Metadata type (in user-facing copy), repo type
 
 **Unsupported project**:
-A writable repository tC Admin cannot manage: one with no metadata Door43 recognizes, such as an empty repository; one whose project type tC Admin does not manage, such as a Translation Words or Translation Academy repository; or a Bible or Open Bible Stories repository in a format other than Scripture Burrito. It appears in the portfolio with the reason stated and cannot be released or edited. For a Bible or Open Bible Stories repository in another format, the reason offers an import into a new project.
+A writable repository tC Admin cannot manage: one with no metadata Door43 recognizes, such as an empty repository; one whose project type tC Admin does not manage, such as a Translation Words or Translation Academy repository; or a Bible or Open Bible Stories repository in a format other than Scripture Burrito. It appears in the portfolio, when the manager chooses to show all projects, with the reason stated, and cannot be released or edited (ADR 0014). For a Bible or Open Bible Stories repository in another format, the reason offers an import into a new project.
 _Avoid_: Hidden project, invalid project, broken project, release-only project, legacy project
 
 **Scripture Burrito**:

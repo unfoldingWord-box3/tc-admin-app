@@ -1,6 +1,6 @@
 # Manage Scripture Burrito projects only; import from any repository; let a manager remove a released book
 
-Status: accepted by Rich and Birch, 1 October 2026; proposed in writing until the pull request that adds it merges. Supersedes ADR 0009 (both its 17 and 18 September versions). Amends ADR 0003, ADR 0005, and ADR 0010 on removal.
+Status: accepted by Rich and Birch, 1 October 2026; proposed in writing until the pull request that adds it merges. Supersedes ADR 0009 (both its 17 and 18 September versions). Amends ADR 0003, ADR 0005, and ADR 0010 on removal. Decision 1 amended by ADR 0014 (2 October 2026): unsupported repositories are listed when the manager chooses to show all projects.
 
 ## Decision
 

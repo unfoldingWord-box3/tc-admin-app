@@ -82,6 +82,8 @@ export const OPERATIONS = {
     milestone: 1,
     route: { method: 'GET', path: '/api/portfolio' },
     input: z.object({
+      /** `supported` (the default) lists Scripture Burrito Bible and Open Bible Stories projects only; `all` adds every unsupported writable repository (ADR 0014). */
+      show: z.enum(['supported', 'all']).optional(),
       organization: z.string().optional(),
       language: z.string().optional(),
       project_type: ProjectType.optional(),

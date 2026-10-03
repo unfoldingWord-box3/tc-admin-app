@@ -37,11 +37,17 @@ export async function door43Request(host: Door43Host, url: string, init: Request
   return response;
 }
 
+/** A query value; an array repeats the parameter, which Door43's search reads as any of the values (E41). */
+export type QueryValue = string | number | boolean | readonly string[];
+export type Query = Readonly<Record<string, QueryValue>>;
+
 /** `GET /api/v1<path>` as JSON. 401 is `session_expired`, 403 `permission_denied`, 404 `not_found`, anything else `door43_unavailable`. */
-export async function readDoor43<T = unknown>(client: Door43Client, path: string, query: Readonly<Record<string, string | number | boolean>> = {}): Promise<T> {
+export async function readDoor43<T = unknown>(client: Door43Client, path: string, query: Query = {}): Promise<T> {
   if (!path.startsWith('/') || path.startsWith('//')) throw new CatalogError('unexpected', { details: { reason: 'invalid Door43 API path' } });
   const url = new URL(`/api/v1${path}`, client.host.origin);
-  url.search = new URLSearchParams(Object.entries(query).map(([key, value]): [string, string] => [key, String(value)])).toString();
+  url.search = new URLSearchParams(
+    Object.entries(query).flatMap(([key, value]): [string, string][] => (Array.isArray(value) ? value.map(item => [key, item]) : [[key, String(value)]])),
+  ).toString();
   const response = await door43Request(
     client.host,
     url.href,
@@ -68,7 +74,7 @@ const PAGE_SIZE = 50;
 export async function readPages<T extends { id: number }>(
   client: Door43Client,
   path: string,
-  query: Readonly<Record<string, string | number | boolean>> = {},
+  query: Query = {},
   maxPages = MAX_PAGES,
 ): Promise<T[]> {
   const items: T[] = [];
