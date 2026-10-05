@@ -1,4 +1,4 @@
-// The prototype's OAuth tests, carried over (#7) with the Milestone 1 scopes (Q10).
+// The prototype's OAuth tests, carried over (#7) with the Milestone 1 scopes (Q10, Q28).
 import { describe, expect, test } from 'vitest';
 import { SCOPES, beginLogin, exchangeCode } from '../../src/door43/auth';
 import type { Fetch } from '../../src/door43/api';
@@ -13,7 +13,7 @@ describe('sign-in', () => {
     const url = new URL(flow.url);
     expect(url.origin).toBe('https://qa.door43.org');
     expect(url.pathname).toBe('/login/oauth/authorize');
-    expect(url.searchParams.get('scope')).toBe('read:user write:repository write:organization');
+    expect(url.searchParams.get('scope')).toBe('read:user write:repository write:organization write:user');
     expect(SCOPES).toBe(url.searchParams.get('scope'));
     expect(url.searchParams.get('code_challenge_method')).toBe('S256');
     expect(url.searchParams.get('state')).toBe(flow.state);

@@ -82,11 +82,12 @@ async function signIn() {
 }
 
 describe('sign-in', () => {
-  test('A1: /auth/login sends the browser to Door43 with exactly the three scopes and PKCE, and binds the state to this browser', async () => {
+  test('A1: /auth/login sends the browser to Door43 with exactly the four scopes (Q10, Q28) and PKCE, and binds the state to this browser', async () => {
     const { response, location, state, loginCookie } = await startLogin();
     expect(response.status).toBe(302);
     expect(location.origin + location.pathname).toBe('https://qa.door43.org/login/oauth/authorize');
-    expect(location.searchParams.get('scope')!.split(' ').sort()).toEqual(['read:user', 'write:organization', 'write:repository']);
+    expect(location.searchParams.getAll('scope')).toHaveLength(1);
+    expect(location.searchParams.get('scope')!.split(' ').sort()).toEqual(['read:user', 'write:organization', 'write:repository', 'write:user']);
     expect(location.searchParams.get('code_challenge_method')).toBe('S256');
     expect(location.searchParams.get('redirect_uri')).toBe(`${ORIGIN}/auth/callback`);
     expect(location.searchParams.has('client_secret')).toBe(false);

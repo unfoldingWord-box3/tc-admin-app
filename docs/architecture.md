@@ -211,7 +211,7 @@ Diagnostics may include request ID, project, commit SHA, version, target ref, he
 - Secure, HttpOnly, SameSite session cookie.
 - CSRF protection on browser mutations.
 - No token in URL, local storage, IndexedDB, or client logs.
-- Least-privilege Door43 scopes.
+- Least-privilege Door43 scopes: `read:user write:repository write:organization write:user`, each needed by a Milestone 1 operation (Q10; `write:user` for a project under the manager's own account, Q28), requested explicitly at sign-in because Gitea grants full access when none is asked.
 - Live permission checks at mutation boundaries.
 - Path traversal and symlink defenses for uploads.
 - No automatic repository deletion.
