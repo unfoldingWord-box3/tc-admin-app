@@ -81,20 +81,33 @@ Keep this file current: an issue's Traceability section and its row here say the
 
 ### EPIC: Add books: upload and import ([#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45), [#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47))
 
-Moved into Milestone 1 on 1 October 2026 (Q25). #47 is re-scoped from conversion to import; child issues are created when Rich confirms.
+Moved into Milestone 1 on 1 October 2026 (Q25); #47 re-scoped from conversion to import. Child issues created 5 October 2026 at Rich's direction.
 
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45) Uploads with book and story identification | §8 | 0004, 0013 | W2, W5, W6, A2, R10 | E36, Q15, Q25 | `upload.plan`, `upload.apply` | operations/upload, model/classify | S2 |
+| [#72](https://github.com/unfoldingWord-box3/tc-admin-app/issues/72) Identify a book or story | §8 | 0008, 0013 | W1, W6 | E36, E37 | `upload.plan`, `upload.apply`, `import.plan` | model/upload, model/books | S2, S5 |
+| [#73](https://github.com/unfoldingWord-box3/tc-admin-app/issues/73) Upload path safety and limits | §8 | 0013 | W6 | E31, Q15 | `upload.plan` | model/upload, operations/upload | S2 |
+| [#74](https://github.com/unfoldingWord-box3/tc-admin-app/issues/74) `upload.plan` | §8 | 0004, 0011, 0013 | W2, W6, R5, R10 | E19, E36, E37, Q15 | `upload.plan` | operations/upload, door43/repos | S2, S5 |
+| [#75](https://github.com/unfoldingWord-box3/tc-admin-app/issues/75) `upload.apply` | §8 | 0004, 0011, 0013 | W2, W5, A2, A3, R5, X1 | E21, E27, E31 | `upload.apply` | operations/upload, door43/repos | S2 |
+| [#76](https://github.com/unfoldingWord-box3/tc-admin-app/issues/76) Upload screen | §8 | 0011, 0013 | W6, X2 | E36 | `upload.plan`, `upload.apply` | web | S2, S5 |
 | [#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47) Import from an existing repository | §8 | 0008, 0013 | W1, W2, W5, A2, R10 | E1, E17, E24, E34, E35, E36, Q25 | `owner.search`, `source.search`, `import.plan`, `import.apply` | door43/catalog, door43/archive, operations/import | S9 |
+| [#77](https://github.com/unfoldingWord-box3/tc-admin-app/issues/77) `owner.search` | §8 | 0013 | P3 | E35 | `owner.search` | door43/catalog, operations/import | S9 |
+| [#78](https://github.com/unfoldingWord-box3/tc-admin-app/issues/78) `source.search` | §8 | 0013 | H3, P3 | E20, E35, E36, Q23, Q25 | `source.search` | door43/catalog, operations/import | S9 |
+| [#79](https://github.com/unfoldingWord-box3/tc-admin-app/issues/79) `import.plan` | §8 | 0008, 0013 | W1, W2, R5, R10 | E1, E17, E18, E24, E30, E34, E36, Q12 | `import.plan` | door43/archive, operations/import | S9 |
+| [#80](https://github.com/unfoldingWord-box3/tc-admin-app/issues/80) `import.apply` | §8 | 0004, 0011, 0013 | W1, W2, W5, A2, A3, R5, X1 | E21, E27, E31 | `import.apply` | operations/import, door43/repos | S9 |
+| [#81](https://github.com/unfoldingWord-box3/tc-admin-app/issues/81) Import screen | §8 | 0013 | X2 | E35, E36 | `owner.search`, `source.search`, `import.plan`, `import.apply` | web | S9 |
 
 ### EPIC: Open Bible Stories ([#48](https://github.com/unfoldingWord-box3/tc-admin-app/issues/48))
 
-Moved into Milestone 1 on 1 October 2026 (Q25).
+Moved into Milestone 1 on 1 October 2026 (Q25). Child issues created 5 October 2026 at Rich's direction.
 
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#48](https://github.com/unfoldingWord-box3/tc-admin-app/issues/48) Open Bible Stories | §5, §6, §8, §10 | 0008, 0013 | H5, W1, R10 | E36, E37, Q4, Q24 | every project operation with `obs`; `release.plan` with no selection | model, operations, web | S1, S9 |
+| [#82](https://github.com/unfoldingWord-box3/tc-admin-app/issues/82) Create an Open Bible Stories project | §6 | 0006, 0013 | W1, W3, H5 | E36, E37, Q4, Q25 | `project.create.plan`, `project.create.apply` | model/metadata, operations/create, web | S1 |
+| [#83](https://github.com/unfoldingWord-box3/tc-admin-app/issues/83) Stories in uploads, imports, archives | §5, §8 | 0013 | H3, H5, W1 | E35, E36 | `upload.plan`, `import.plan`, `project.read` | model/books, model/upload, door43/archive | S2, S9 |
+| [#84](https://github.com/unfoldingWord-box3/tc-admin-app/issues/84) Release Open Bible Stories whole | §10 | 0003, 0005, 0010, 0013 | R1, R3, R4, R10, H5 | E36, Q24 | `release.plan`, `release.prepare`, `release.create` | operations/release, web | S3 |
 
 ### EPIC: Demo readiness ([#44](https://github.com/unfoldingWord-box3/tc-admin-app/issues/44))
 

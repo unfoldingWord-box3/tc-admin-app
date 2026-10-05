@@ -252,8 +252,8 @@ Recorded in: architecture §10, `worker/src/http/app.ts`.
 ### Q14 — Is a manager-initiated discard of a preparation in scope? (closed)
 **Decided 22 September 2026 by Rich:** yes. `preparation.discard` is a Milestone 1 operation, built by #58: after confirmation it deletes the temporary branch of an unreleased preparation and marks it `discarded`; a released preparation cannot be discarded. Recorded in the operation catalog §4, product spec §10, domain model §6, R7.
 
-### Q15 — Safe upload byte limits (Milestone 2)
-Blocks: #45. Owner: Rich. Close by: reading Worker request limits and Door43 contents limits; recording both.
+### Q15 — Safe upload byte limits (Milestone 1 since the 1 October 2026 re-plan)
+Blocks: #73, #74 (EPIC #45). Owner: Rich. Close by: reading Worker request limits and Door43 contents limits; recording both.
 
 ### Q16 — Is `ingredients[]` populated for Scripture Burrito repositories? (closed)
 **Verified 21 September 2026 (E14):** yes, with `exists`, `size`, `path`, `identifier`, `categories`, and `sort` for both the Scripture Burrito and the Resource Container seed repository.
