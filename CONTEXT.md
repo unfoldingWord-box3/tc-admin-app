@@ -17,7 +17,7 @@ A repository whose files are organized one per Bible book, one `.usfm` file per 
 _Avoid_: Multi-book repo, per-book repo
 
 **Bible project**:
-A book package repository whose content is Scripture: flavor `scripture/textTranslation`. The Greek and Hebrew Bibles are Bible projects like any other (Q23).
+A book package repository whose content is Scripture: flavor `scripture/textTranslation`. The Greek and Hebrew Bibles are Bible projects like any other (Q23), though none is in Scripture Burrito yet (E42).
 _Avoid_: Bible (as the name for the repository), scripture repo
 
 **Metadata format**:
