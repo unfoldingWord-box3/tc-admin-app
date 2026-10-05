@@ -9,8 +9,8 @@ A Door43 repository managed through tC Admin, presented so that a manager never 
 _Avoid_: Workspace, release unit, project file, Bible (as the name for the repository)
 
 **Project type**:
-The kind of content a project holds, derived from its metadata subject, which Door43 derives from the Scripture Burrito flavor. Version one manages two types, the two flavors translationCore 4 edits: Bible (including Aligned Bible; flavor `scripture/textTranslation`; subjects Bible and Aligned Bible) and Open Bible Stories (flavor `gloss/textStories`; subject Open Bible Stories). Every other type is unsupported: listed with the reason stated, neither released nor edited; its identifier is `other` (Q11, Q23).
-_Avoid_: Subject (in user-facing copy), resource type
+The kind of content a project holds, derived from the Scripture Burrito flavor Door43 reads from its metadata, in every format (E42). Version one manages two types, the two flavors translationCore 4 edits: Bible (including Aligned Bible), flavor `scripture/textTranslation`, and Open Bible Stories, flavor `gloss/textStories`. Door43's catalog subject (Bible, Aligned Bible, Open Bible Stories) is a label it derives from the same flavor; tC Admin does not read it. Every other flavor, or none, is unsupported: listed with the reason stated, neither released nor edited; its identifier is `other` (Q11, Q23).
+_Avoid_: Subject (Door43's catalog label: not read, never in user-facing copy), resource type
 
 **Book package repository**:
 A repository whose files are organized one per Bible book, one `.usfm` file per book, so that books can be selected individually for release. Bible and Aligned Bible projects are book package repositories.

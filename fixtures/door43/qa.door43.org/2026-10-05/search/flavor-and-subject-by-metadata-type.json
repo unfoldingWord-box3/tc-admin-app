@@ -1,0 +1,127 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-10-05",
+  "method": "public reads, no credentials; x-total-count is Door43's count, seen is the rows read",
+  "queries": [
+    {
+      "request": "GET /api/v1/repos/search?limit=50&metadataType=sb&page=1..22",
+      "total": 1099,
+      "seen": 1099,
+      "counts_by_flavor_type_flavor_subject": {
+        "scripture/textTranslation | Bible": 269,
+        "peripheral/x-rawcistern | Unknown": 215,
+        "gloss/textStories | Open Bible Stories": 200,
+        "parascriptural/x-bcvarticles | TSV Translation Words Links": 93,
+        "parascriptural/x-bcvnotes | TSV Translation Notes": 80,
+        "scripture/textTranslation | Aligned Bible": 63,
+        "parascriptural/x-bnotes | Unknown": 31,
+        "parascriptural/x-bcvimages | Unknown": 23,
+        "parascriptural/x-bcvvideo | Unknown": 18,
+        "peripheral/x-peripheralArticles | Translation Academy": 16,
+        "peripheral/x-peripheralArticles | Translation Words": 15,
+        "scripture/x-juxtalinear | Juxtalinear": 15,
+        "parascriptural/x-bcvquestions | TSV Translation Questions": 11,
+        "parascriptural/x-bcvQuestions | TSV Translation Questions": 10,
+        "peripheral/x-browsabledocument | Unknown": 9,
+        "peripheral/x-obsnotes | TSV OBS Translation Notes": 4,
+        "parascriptural/x-bcvImages | Unknown": 3,
+        "peripheral/x-obsnotes | TSV OBS Study Notes": 3,
+        "peripheral/x-obsquestions | TSV OBS Study Questions": 3,
+        "peripheral/x-obsquestions | TSV OBS Translation Questions": 3,
+        "peripheral/x-obsarticles | Unknown": 2,
+        "scripture/audioTranslation | Unknown": 2,
+        "parascriptural/x-translationplan | Unknown": 2,
+        "peripheral/x-printspec | Unknown": 2,
+        "scripture/embossedBrailleScripture | Unknown": 1,
+        "parascriptural/x-parallel | Unknown": 1,
+        "peripheral/x-lexicon | Greek Lexicon": 1,
+        "peripheral/x-lexicon | Hebrew Lexicon": 1,
+        "parascriptural/x-bcvNotes | TSV Translation Notes": 1,
+        "peripheral/x-obsnotes | Unknown": 1,
+        "peripheral/x-obsimages | Unknown": 1
+      }
+    },
+    {
+      "request": "GET /api/v1/repos/search?limit=50&metadataType=rc&page=1..10",
+      "total": 1852,
+      "seen": 500,
+      "counts_by_flavor_type_flavor_subject": {
+        "gloss/textStories | Open Bible Stories": 128,
+        "scripture/textTranslation | Aligned Bible": 84,
+        "scripture/textTranslation | Bible": 47,
+        "peripheral/x-peripheralArticles | Translation Words": 41,
+        "parascriptural/x-bcvnotes | TSV Translation Notes": 36,
+        "peripheral/x-peripheralArticles | Translation Academy": 34,
+        "parascriptural/x-bcvarticles | TSV Translation Words Links": 16,
+        "parascriptural/x-bcvquestions | TSV Translation Questions": 15,
+        "peripheral/x-OBSTranslationNotes | OBS Translation Notes": 13,
+        "scripture/textTranslation | Greek New Testament": 13,
+        "peripheral/x-HebrewGrammar | Hebrew Grammar": 13,
+        "peripheral/x-TranslationQuestions | Translation Questions": 11,
+        "peripheral/x-GreekGrammar | Greek Grammar": 8,
+        "peripheral/x-TranslationNotes | Translation Notes": 6,
+        "peripheral/x-OBSTranslationQuestions | OBS Translation Questions": 5,
+        "parascriptural/x-questions | TSV Study Questions": 5,
+        "parascriptural/x-notes | TSV OBS Translation Notes": 3,
+        "parascriptural/x-questions | TSV OBS Translation Questions": 3,
+        "peripheral/x-GreekLexicon | Greek Lexicon": 3,
+        "parascriptural/x-notes | TSV OBS Study Notes": 2,
+        "parascriptural/x-questions | TSV OBS Study Questions": 2,
+        "parascriptural/x-notes | TSV Study Notes": 2,
+        "parascriptural/x-TranslationNotes | TSV Translation Notes": 2,
+        "peripheral/x-StudyNotes | Study Notes": 1,
+        "peripheral/x-OBSStudyNotes | OBS Study Notes": 1,
+        "peripheral/x-OBSStudyQuestions | OBS Study Questions": 1,
+        "peripheral/x-OBSTheologicalFormation | OBS Theological Formation": 1,
+        "parascriptural/x-links | TSV OBS Translation Words Links": 1,
+        "gloss/x-TranslationAcademy | Translation Academy": 1,
+        "peripheral/x-TrainingLibrary | Training Library": 1,
+        "peripheral/x-AramaicGrammar | Aramaic Grammar": 1
+      }
+    },
+    {
+      "request": "GET /api/v1/repos/search?limit=50&metadataType=ts&page=1..10",
+      "total": 24825,
+      "seen": 500,
+      "counts_by_flavor_type_flavor_subject": {
+        "scripture/textTranslation | Bible": 479,
+        "gloss/textStories | Open Bible Stories": 17,
+        "peripheral/x-TranslationNotes | Translation Notes": 2,
+        "peripheral/x-peripheralArticles | Translation Words": 1,
+        "peripheral/x-TranslationQuestions | Translation Questions": 1
+      }
+    },
+    {
+      "request": "GET /api/v1/repos/search?limit=50&metadataType=tc&page=1..10",
+      "total": 4695,
+      "seen": 500,
+      "counts_by_flavor_type_flavor_subject": {
+        "scripture/textTranslation | Aligned Bible": 500
+      }
+    },
+    {
+      "request": "GET /api/v1/repos/search?limit=50&metadataType=sb&subject=Bible&page=1..1",
+      "total": 269,
+      "seen": 50,
+      "counts_by_flavor_type_flavor_subject": {
+        "scripture/textTranslation | Bible": 50
+      }
+    },
+    {
+      "request": "GET /api/v1/repos/search?limit=50&metadataType=sb&subject=Aligned%20Bible&page=1..1",
+      "total": 63,
+      "seen": 50,
+      "counts_by_flavor_type_flavor_subject": {
+        "scripture/textTranslation | Aligned Bible": 50
+      }
+    },
+    {
+      "request": "GET /api/v1/repos/search?limit=50&metadataType=sb&subject=Open%20Bible%20Stories&page=1..1",
+      "total": 200,
+      "seen": 50,
+      "counts_by_flavor_type_flavor_subject": {
+        "gloss/textStories | Open Bible Stories": 50
+      }
+    }
+  ]
+}

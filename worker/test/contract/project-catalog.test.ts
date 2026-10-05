@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vitest';
 import type { ProjectType } from '@tc-admin/shared/schema';
 import { metadataFormat, projectCatalog } from '../../src/door43/catalog';
 import type { Door43Repository, Door43RepositorySearch } from '../../src/door43/catalog';
-import { classifyProject } from '../../src/model/project';
+import { PROJECT_TYPE_BY_FLAVOR, SUPPORTED_FLAVORS, classifyProject, projectTypeFromFlavor } from '../../src/model/project';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/', import.meta.url);
 const read = <T>(path: string): T => JSON.parse(readFileSync(new URL(path, fixtures), 'utf8')) as T;
@@ -56,38 +56,38 @@ describe('the seed repositories from the repository search (E32)', () => {
 });
 
 describe('Door43 vocabularies', () => {
-  test('E33: every subject Door43 lists maps to a project_type; only the two flavors tC Admin manages are not other (Q11, Q23)', () => {
-    const subjects = read<{ ok: boolean; data: string[] }>('2026-09-30/catalog/list__subjects.json');
-    expect(subjects.ok).toBe(true);
-    const mapping = Object.fromEntries(subjects.data.map(subject => [subject, classifyProject({ subject, metadata_format: 'rc', ingredients: [] }).project_type]));
-    const expected: Record<string, ProjectType> = {
-      'Aligned Bible': 'bible',
-      'Aramaic Grammar': 'other',
-      'Bible': 'bible',
-      'Greek Grammar': 'other',
-      'Greek New Testament': 'other',
-      'Hebrew Grammar': 'other',
-      'Hebrew Old Testament': 'other',
-      'OBS Study Notes': 'other',
-      'OBS Study Questions': 'other',
-      'OBS Theological Formation': 'other',
-      'OBS Translation Notes': 'other',
-      'OBS Translation Questions': 'other',
-      'Open Bible Stories': 'obs',
-      'TSV OBS Study Notes': 'other',
-      'TSV OBS Study Questions': 'other',
-      'TSV OBS Translation Notes': 'other',
-      'TSV OBS Translation Questions': 'other',
-      'TSV OBS Translation Words Links': 'other',
-      'TSV Translation Notes': 'other',
-      'TSV Translation Questions': 'other',
-      'TSV Translation Words Links': 'other',
-      'Translation Academy': 'other',
-      'Translation Notes': 'other',
-      'Translation Questions': 'other',
-      'Translation Words': 'other',
-    };
-    expect(mapping).toEqual(expected);
+  /** The probe's row key is `<flavor_type>/<flavor> | <subject>`, each empty when Door43 names none. */
+  const row = (key: string) => {
+    const [kind = '', subject = ''] = key.split(' | ');
+    return { flavor: kind.split('/')[1] || null, subject };
+  };
+  const SUPPORTED_SUBJECTS: Record<string, ProjectType> = { 'Bible': 'bible', 'Aligned Bible': 'bible', 'Open Bible Stories': 'obs' };
+  const probe = read<{ queries: { request: string; total: number; seen: number; counts_by_flavor_type_flavor_subject: Record<string, number> }[] }>(
+    '2026-10-05/search/flavor-and-subject-by-metadata-type.json',
+  );
+
+  test('E42: on every Scripture Burrito repository QA holds, the flavor classifies exactly as its Bible, Aligned Bible, or Open Bible Stories subject would (Q11, Q23)', () => {
+    const burritos = probe.queries.find(query => query.request.includes('metadataType=sb&page'))!;
+    expect(burritos.seen).toBe(burritos.total);
+    expect(burritos.total).toBeGreaterThan(1000);
+    for (const key of Object.keys(burritos.counts_by_flavor_type_flavor_subject)) {
+      const { flavor, subject } = row(key);
+      expect(projectTypeFromFlavor(flavor), key).toBe(SUPPORTED_SUBJECTS[subject] ?? 'other');
+    }
+  });
+
+  test('P1: the search filter names exactly the flavors the model classifies as bible or obs, and in every format a Bible, Aligned Bible, or Open Bible Stories subject with a flavor is one of them', () => {
+    expect([...SUPPORTED_FLAVORS].sort()).toEqual(
+      Object.keys(PROJECT_TYPE_BY_FLAVOR)
+        .filter(flavor => projectTypeFromFlavor(flavor) !== 'other')
+        .sort(),
+    );
+    for (const query of probe.queries) {
+      for (const key of Object.keys(query.counts_by_flavor_type_flavor_subject)) {
+        const { flavor, subject } = row(key);
+        if (subject in SUPPORTED_SUBJECTS && flavor) expect(SUPPORTED_FLAVORS, `${query.request}: ${key}`).toContain(flavor);
+      }
+    }
   });
 
   test('E14: every metadata type Door43 lists maps to a metadata_format, and anything else is none', () => {

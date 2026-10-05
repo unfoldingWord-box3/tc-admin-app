@@ -154,7 +154,7 @@ describe('sign-in', () => {
       if (!url.startsWith('https://qa.door43.org/api/v1/repos/search')) return stubbed(url, init);
       door43Calls.push({ url, init });
       const page = new URL(url).searchParams.get('page');
-      const data = page === '1' ? [{ id: 1, name: 'en_obs', full_name: 'team/en_obs', owner: { login: 'team' }, metadata_type: 'sb', subject: 'Open Bible Stories', permissions: { push: true } }] : [];
+      const data = page === '1' ? [{ id: 1, name: 'en_obs', full_name: 'team/en_obs', owner: { login: 'team' }, metadata_type: 'sb', flavor: 'textStories', permissions: { push: true } }] : [];
       return Response.json({ ok: true, data });
     });
     const response = await call('/api/portfolio', { headers: { cookie: `tca_session=${session}` } });

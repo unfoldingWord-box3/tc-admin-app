@@ -7,6 +7,7 @@ import type { ParsedInput } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import { repositoryAccess } from '../../src/door43/repos';
 import type { Door43SearchRepository } from '../../src/door43/repos';
+import { SUPPORTED_FLAVORS } from '../../src/model/project';
 import { operationContext } from '../../src/operations';
 import { isListed, portfolioList } from '../../src/operations/portfolio-list';
 
@@ -59,13 +60,13 @@ describe('portfolio.list', () => {
   const portfolio: Door43SearchRepository[] = [
     { ...recorded('bahtraku__Perjanjian-Baru-Pendau'), ...writable },
     { ...recorded('bahtraku__id_tb1'), ...writable },
-    repo({ id: 10, name: 'en_obs', owner: { login: 'team' }, metadata_type: 'sb', subject: 'Open Bible Stories', ingredients: null, ...writable }),
-    repo({ id: 11, name: 'id_ts_mat', owner: { login: 'team' }, metadata_type: 'ts', subject: 'Bible', ingredients: [{ identifier: 'mat', path: './mat', exists: true }], ...writable }),
-    repo({ id: 12, name: 'id_tc_mrk', owner: { login: 'team' }, metadata_type: 'tc', subject: 'Aligned Bible', ingredients: [{ identifier: 'mrk', path: './mrk', exists: true }], ...writable }),
-    repo({ id: 13, name: 'empty', owner: { login: 'tc-admin-qa' }, metadata_type: null, subject: null, ...writable }),
-    repo({ id: 14, name: 'id_tw', owner: { login: 'team' }, metadata_type: 'rc', subject: 'Translation Words', permissions: { admin: true } }),
-    repo({ id: 15, name: 'read_only', owner: { login: 'team' }, metadata_type: 'sb', subject: 'Bible', permissions: { pull: true } }),
-    repo({ id: 16, name: 'old', owner: { login: 'team' }, metadata_type: 'sb', subject: 'Bible', archived: true, ...writable }),
+    repo({ id: 10, name: 'en_obs', owner: { login: 'team' }, metadata_type: 'sb', flavor: 'textStories', ingredients: null, ...writable }),
+    repo({ id: 11, name: 'id_ts_mat', owner: { login: 'team' }, metadata_type: 'ts', flavor: 'textTranslation', ingredients: [{ identifier: 'mat', path: './mat', exists: true }], ...writable }),
+    repo({ id: 12, name: 'id_tc_mrk', owner: { login: 'team' }, metadata_type: 'tc', flavor: 'textTranslation', ingredients: [{ identifier: 'mrk', path: './mrk', exists: true }], ...writable }),
+    repo({ id: 13, name: 'empty', owner: { login: 'tc-admin-qa' }, metadata_type: null, flavor: null, ...writable }),
+    repo({ id: 14, name: 'id_tw', owner: { login: 'team' }, metadata_type: 'rc', flavor: 'x-peripheralArticles', permissions: { admin: true } }),
+    repo({ id: 15, name: 'read_only', owner: { login: 'team' }, metadata_type: 'sb', flavor: 'textTranslation', permissions: { pull: true } }),
+    repo({ id: 16, name: 'old', owner: { login: 'team' }, metadata_type: 'sb', flavor: 'textTranslation', archived: true, ...writable }),
   ];
 
   const run = async (repositories = portfolio, input: ParsedInput<'portfolio.list'> = { show: 'all' }) => {
@@ -84,11 +85,12 @@ describe('portfolio.list', () => {
     return { output, calls, searches, projects: output.organizations.flatMap(group => group.projects) };
   };
 
-  test('by default Door43 is asked for Scripture Burrito Bible and Open Bible Stories repositories only (ADR 0014, E41)', async () => {
+  test('P1: by default Door43 is asked for Scripture Burrito repositories of exactly the flavors the model classifies as bible or obs (ADR 0014, E41, E42)', async () => {
     const { searches } = await run(portfolio, {});
     for (const query of searches) {
       expect(query.get('metadataType')).toBe('sb');
       expect(query.getAll('flavor')).toEqual(['textTranslation', 'textStories']);
+      expect(query.getAll('flavor')).toEqual([...SUPPORTED_FLAVORS]);
       expect([query.get('uid'), query.get('exclusive'), query.get('private')]).toEqual(['7', 'false', 'true']);
     }
     expect(searches.length).toBeGreaterThan(0);
@@ -109,7 +111,7 @@ describe('portfolio.list', () => {
       'id_ts_mat': { state: 'unsupported', reason: 'translationStudio project. Import it into a new project to manage it here.' },
       'id_tc_mrk': { state: 'unsupported', reason: 'translationCore project. Import it into a new project to manage it here.' },
       'empty': { state: 'unsupported', reason: 'Door43 found no project metadata it recognizes. Release and editing are not available.' },
-      'id_tw': { state: 'unsupported', reason: 'tC Admin does not manage Translation Words projects. Release and editing are not available.' },
+      'id_tw': { state: 'unsupported', reason: 'tC Admin manages Bible and Open Bible Stories projects only. Release and editing are not available.' },
     });
   });
 

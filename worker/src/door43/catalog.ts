@@ -32,8 +32,7 @@ export interface Door43Repository {
   language?: string | null;
   language_title?: string | null;
   metadata_type?: string | null;
-  subject?: string | null;
-  flavor_type?: string | null;
+  /** The Scripture Burrito flavor, which Door43 reads for every metadata format (E14, E42). Its `subject` is derived from this and is not read. */
   flavor?: string | null;
   ingredients?: Door43Ingredient[] | null;
   healthcheck_severity?: string | null;
@@ -70,7 +69,7 @@ function ingredient(entry: Door43Ingredient): CatalogIngredient {
 /** The model's catalog view of a repository. Absent `ingredients` is unknown, not empty (H3). */
 export function projectCatalog(repo: Door43Repository): ProjectCatalog {
   return {
-    subject: repo.subject || null,
+    flavor: repo.flavor || null,
     metadata_format: metadataFormat(repo.metadata_type),
     ingredients: Array.isArray(repo.ingredients) ? repo.ingredients.map(ingredient) : null,
   };

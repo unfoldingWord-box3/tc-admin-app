@@ -1,5 +1,5 @@
 // Project classification: type, content structure, editability, and coverage
-// from the catalog view of a repository (E12, E14, E32). Pure: no I/O, no
+// from the catalog view of a repository (E12, E14, E32, E42). Pure: no I/O, no
 // Door43 shapes; `worker/src/door43/catalog.ts` produces the input.
 //
 // Enforces H3 (unknown coverage is `null`, never `0`, and never complete) and
@@ -30,8 +30,12 @@ export interface CatalogIngredient {
 
 /** The catalog view of one repository, the input to classification. */
 export interface ProjectCatalog {
-  /** Door43's subject for the repository's metadata; `null` when it names none. */
-  subject: string | null;
+  /**
+   * The Scripture Burrito flavor Door43 reads from the repository's metadata,
+   * whatever its format (E42): `textTranslation`, `textStories`, or another;
+   * `null` when it names none.
+   */
+  flavor: string | null;
   metadata_format: MetadataFormat;
   /** The ingredients Door43 lists; `null` when it lists none, which is unknown, not empty. */
   ingredients: CatalogIngredient[] | null;
@@ -44,21 +48,24 @@ export interface ProjectCatalog {
 }
 
 /**
- * Subject to project type. tC Admin manages the two Scripture Burrito flavors
- * translationCore 4 edits; Door43 derives the subject from the flavor, so
- * `scripture/textTranslation` reads as Bible or Aligned Bible and
- * `gloss/textStories` as Open Bible Stories (E14, E33). Every other subject,
- * or none, is `other` (CONTEXT.md "Project type", Q11 and Q23).
+ * Flavor to project type. tC Admin manages the two Scripture Burrito flavors
+ * translationCore 4 edits: `scripture/textTranslation` is Bible (including
+ * Aligned Bible) and `gloss/textStories` is Open Bible Stories. Door43 reads
+ * the flavor for every metadata format and derives its catalog subject from
+ * it (E14, E42), so the subject is never read. Every other flavor, or none,
+ * is `other` (CONTEXT.md "Project type", Q11 and Q23).
  */
-const PROJECT_TYPE_BY_SUBJECT: Readonly<Record<string, ProjectType>> = {
-  'Bible': 'bible',
-  'Aligned Bible': 'bible',
-  'Open Bible Stories': 'obs',
+export const PROJECT_TYPE_BY_FLAVOR: Readonly<Record<string, Exclude<ProjectType, 'other'>>> = {
+  textTranslation: 'bible',
+  textStories: 'obs',
 };
 
-export function projectTypeFromSubject(subject: string | null | undefined): ProjectType {
-  if (!subject) return 'other';
-  return PROJECT_TYPE_BY_SUBJECT[subject.trim()] ?? 'other';
+/** The flavors of the projects tC Admin manages; the search filter asks Door43 for exactly these (ADR 0014). */
+export const SUPPORTED_FLAVORS: readonly string[] = Object.keys(PROJECT_TYPE_BY_FLAVOR);
+
+export function projectTypeFromFlavor(flavor: string | null | undefined): ProjectType {
+  if (!flavor) return 'other';
+  return PROJECT_TYPE_BY_FLAVOR[flavor.trim()] ?? 'other';
 }
 
 const FORMAT_NAMES: Readonly<Record<Exclude<MetadataFormat, 'none'>, string>> = {
@@ -76,13 +83,12 @@ const FORMAT_NAMES: Readonly<Record<Exclude<MetadataFormat, 'none'>, string>> = 
  * or Open Bible Stories repository in another format, whose reason offers an
  * import into a new project.
  */
-export function editability(format: MetadataFormat, type: ProjectType, subject: string | null): Editability {
+export function editability(format: MetadataFormat, type: ProjectType): Editability {
   if (format === 'none') {
     return { state: 'unsupported', reason: 'Door43 found no project metadata it recognizes. Release and editing are not available.' };
   }
   if (type === 'other') {
-    const what = subject ? `${subject} projects` : 'projects of this type';
-    return { state: 'unsupported', reason: `tC Admin does not manage ${what}. Release and editing are not available.` };
+    return { state: 'unsupported', reason: 'tC Admin manages Bible and Open Bible Stories projects only. Release and editing are not available.' };
   }
   const name = FORMAT_NAMES[format];
   if (format === 'sb') return { state: 'editable', reason: `${name} project. Release and editing are available.` };
@@ -151,11 +157,11 @@ export function coverage(catalog: ProjectCatalog, type: ProjectType): Coverage {
 
 /** The classification fields of the project report for one catalog view. */
 export function classifyProject(catalog: ProjectCatalog): ProjectClassification {
-  const project_type = projectTypeFromSubject(catalog.subject);
+  const project_type = projectTypeFromFlavor(catalog.flavor);
   return {
     project_type,
     metadata_format: catalog.metadata_format,
-    editability: editability(catalog.metadata_format, project_type, catalog.subject),
+    editability: editability(catalog.metadata_format, project_type),
     coverage: coverage(catalog, project_type),
   };
 }

@@ -6,6 +6,7 @@
 import { readPages } from './api';
 import type { Door43Client } from './api';
 import type { Door43Repository } from './catalog';
+import { SUPPORTED_FLAVORS } from '../model/project';
 
 /** The repository search fields discovery reads (E7). */
 export interface Door43SearchRepository extends Door43Repository {
@@ -30,10 +31,10 @@ export function repositoryAccess(repo: Door43SearchRepository): RepositoryAccess
 
 /**
  * The search filter for the repositories tC Admin manages: Scripture Burrito
- * with the `textTranslation` or `textStories` flavor (ADR 0013). Door43 reads
- * a repeated `flavor` as any of them (E41), so only those come back.
+ * with exactly the flavors the model classifies as `bible` or `obs` (ADR 0013,
+ * ADR 0014). Door43 reads a repeated `flavor` as any of them (E41).
  */
-const SUPPORTED_ONLY = { metadataType: 'sb', flavor: ['textTranslation', 'textStories'] } as const;
+const SUPPORTED_ONLY = { metadataType: 'sb', flavor: SUPPORTED_FLAVORS } as const;
 
 /**
  * Every repository the account can see, each once (`GET /repos/search?uid=`, E7);
