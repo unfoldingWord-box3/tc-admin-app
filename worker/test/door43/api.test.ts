@@ -70,6 +70,20 @@ describe('pagination', () => {
     expect((await readPages(client(fetch), '/repos/search')).map(item => item.id)).toEqual([1, 2, 3]);
   });
 
+  test('an array query value repeats the parameter on every page', async () => {
+    const seen: string[][] = [];
+    const fetch: Fetch = async url => {
+      const query = new URL(url).searchParams;
+      seen.push(query.getAll('flavor'));
+      return json({ ok: true, data: query.get('page') === '1' ? [{ id: 1 }] : [] });
+    };
+    await readPages(client(fetch), '/repos/search', { flavor: ['textTranslation', 'textStories'] });
+    expect(seen).toEqual([
+      ['textTranslation', 'textStories'],
+      ['textTranslation', 'textStories'],
+    ]);
+  });
+
   test('pagination rejects repeated pages rather than loading forever', async () => {
     expect(await code(readPages(client(async () => json({ data: [{ id: 1 }] })), '/repos/search'))).toBe('door43_unavailable');
   });

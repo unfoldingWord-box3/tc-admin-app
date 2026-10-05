@@ -2,7 +2,7 @@
 // Workers KV, and the cookie the browser holds. Door43 is stubbed; `/user`
 // answers with the recorded QA response for the test user.
 import { readFileSync } from 'node:fs';
-import { OperationErrorShape } from '@tc-admin/shared/schema';
+import { OPERATIONS, OperationErrorShape } from '@tc-admin/shared/schema';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { Env, KVNamespace } from '../../src/env';
 import worker from '../../src/index';
@@ -144,6 +144,26 @@ describe('sign-in', () => {
     expect(state).toBeTruthy();
     expect(everything).not.toContain(TOKEN);
     expect(everything).not.toContain(SECRET);
+  });
+
+  test('portfolio.list reads the signed-in account\'s repository search with the session\'s token', async () => {
+    const { session } = await signIn();
+    door43Calls = [];
+    const stubbed = globalThis.fetch;
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+      if (!url.startsWith('https://qa.door43.org/api/v1/repos/search')) return stubbed(url, init);
+      door43Calls.push({ url, init });
+      const page = new URL(url).searchParams.get('page');
+      const data = page === '1' ? [{ id: 1, name: 'en_obs', full_name: 'team/en_obs', owner: { login: 'team' }, metadata_type: 'sb', flavor: 'textStories', permissions: { push: true } }] : [];
+      return Response.json({ ok: true, data });
+    });
+    const response = await call('/api/portfolio', { headers: { cookie: `tca_session=${session}` } });
+    expect(response.status).toBe(200);
+    const body = OPERATIONS['portfolio.list'].output.parse(await response.json());
+    expect(body.organizations).toMatchObject([{ name: 'team', projects: [{ ref: { repo: 'en_obs' }, editability: { state: 'editable' } }] }]);
+    const search = new URL(door43Calls.find(entry => entry.url.includes('/repos/search'))!.url);
+    expect(search.searchParams.get('uid')).toBe(String(recordedUser.response.json.id));
+    expect(new Headers(door43Calls.at(-1)!.init?.headers).get('authorization')).toBe(`Bearer ${TOKEN}`);
   });
 
   test('A3: every Door43 request a session makes carries its bearer token and no other credential', async () => {

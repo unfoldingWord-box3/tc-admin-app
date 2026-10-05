@@ -2,7 +2,7 @@
 // repository endpoint return it (E7, E14, E32), mapped to the model's input.
 // Door43's field names stop here.
 
-import type { MetadataFormat } from '@tc-admin/shared/schema';
+import type { MetadataFormat, ProjectRef } from '@tc-admin/shared/schema';
 import type { CatalogIngredient, ProjectCatalog } from '../model/project';
 
 /** One entry of `ingredients[]` (E14). Only the fields tC Admin reads. */
@@ -25,9 +25,14 @@ export interface Door43Repository {
   name: string;
   full_name: string;
   owner: { login: string };
+  html_url?: string | null;
+  title?: string | null;
+  description?: string | null;
+  default_branch?: string | null;
+  language?: string | null;
+  language_title?: string | null;
   metadata_type?: string | null;
-  subject?: string | null;
-  flavor_type?: string | null;
+  /** The Scripture Burrito flavor, which Door43 reads for every metadata format (E14, E42). Its `subject` is derived from this and is not read. */
   flavor?: string | null;
   ingredients?: Door43Ingredient[] | null;
   healthcheck_severity?: string | null;
@@ -64,8 +69,27 @@ function ingredient(entry: Door43Ingredient): CatalogIngredient {
 /** The model's catalog view of a repository. Absent `ingredients` is unknown, not empty (H3). */
 export function projectCatalog(repo: Door43Repository): ProjectCatalog {
   return {
-    subject: repo.subject || null,
+    flavor: repo.flavor || null,
     metadata_format: metadataFormat(repo.metadata_type),
     ingredients: Array.isArray(repo.ingredients) ? repo.ingredients.map(ingredient) : null,
+  };
+}
+
+/** What a repository is called and where it lives, in glossary terms. A repository without a title is called by its name. */
+export interface RepositoryIdentity {
+  ref: ProjectRef;
+  title: string;
+  description: string;
+  default_branch: string;
+  language: { code: string; title: string };
+}
+
+export function repositoryIdentity(repo: Door43Repository): RepositoryIdentity {
+  return {
+    ref: { owner: repo.owner.login, repo: repo.name, id: repo.id, url: repo.html_url ?? '' },
+    title: repo.title || repo.name,
+    description: repo.description ?? '',
+    default_branch: repo.default_branch ?? '',
+    language: { code: repo.language ?? '', title: repo.language_title ?? '' },
   };
 }

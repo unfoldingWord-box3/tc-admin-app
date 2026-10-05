@@ -58,6 +58,8 @@ project
   freshness
 ```
 
+The project summary `portfolio.list` returns is the part of the report the repository search carries (E7, E32): `ref`, `title` (the repository name when Door43 has no title), `description`, `default_branch`, `language`, `project_type`, `metadata_format`, `editability`, `coverage`, `health`, and `permissions`. The search does not say which ref or when its health severity was checked, so a summary's `health.ref` and `health.checked_at` are `null`, and `health.issue_count` is `null` until the health-check read (#25).
+
 `health.state` is one of the health states in [domain-model.md](domain-model.md) section 5. `editability.reason` is one sentence in glossary language, for example "Resource Container project. Import it into a new project to manage it here."
 
 ### Plan
@@ -159,17 +161,18 @@ The orientation call. One request tells a client who is signed in, which host, a
 
 ### `portfolio.list`
 
-- Inputs: optional filters (organization, language, project type, health state) and sort; filters are applied by the client where the whole portfolio is already loaded.
-- Door43 reads: repository search for the signed-in user, every page, de-duplicated by repository id (carried over from the prototype). Per-project type, coverage, and health come from the catalog metadata in that response (E12); no archive is downloaded.
+- Inputs: `show`, `supported` (the default) or `all` (ADR 0014); optional filters (organization, language, project type, health state) and sort; filters are applied by the client where the whole portfolio is already loaded.
+- Door43 reads: repository search for the signed-in user, every page, de-duplicated by repository id (carried over from the prototype); with `show: supported`, filtered by Door43 to `metadataType=sb` and `flavor` `textTranslation` or `textStories` (E41). Per-project type, coverage, and health come from the catalog metadata in that response (E12); no archive is downloaded.
 - Returns: `{ organizations: [{ name, projects: [project summary] }], freshness, analysis: { complete, pending } }`. Projects appear immediately with `health.state = never_checked` and `coverage.present = null` until analysis completes (H3).
-- Filters: non-archived repositories with explicit push or admin permission (P1, P2). Nothing else is filtered out.
+- Filters: non-archived repositories with explicit push or admin permission (P1, P2). Nothing else is filtered out beyond the `show: supported` search filter.
+- Order: owner groups by name, the account's own repositories last (product spec §2); projects in a group by repository name. The configurable sort is #24. Because the catalog metadata arrives with the search, analysis is complete when the list is (`analysis.pending = 0`).
 - Errors: `session_expired`, `door43_unavailable`, `portfolio_too_large` (the prototype's read limit, retained until Milestone 3 performance work).
 
 ### `project.read`
 
 - Inputs: `{ owner, repo }`.
-- Door43 reads: the repository (E14 supplies `metadata_type`, `subject`, `flavor_type`, `ingredients`, `healthcheck_severity`, and `catalog.prod` as the latest full release with its tag and commit SHA, `catalog.preprod` as the latest pre-release, `catalog.latest` as the default-branch head); the health result for the default branch (E15) for the issue counts. No archive download (Q17); `coverage.basis = catalog`.
-- Classification (`worker/src/model/project`, #19): `project_type` from `subject` (E33, Q11, Q23), `bible` for Bible and Aligned Bible, `obs` for Open Bible Stories, `other` for anything else; `coverage.scope` from the books the catalog lists, `nt` when only New Testament books are listed, `ot` when only Old Testament books are, `full` when both, `obs` for Open Bible Stories, `unknown` otherwise, with `target` 27, 39, 66, 50, or `null` (H5); `coverage.present` is `null` when Door43 lists no ingredients or lists no recognized unit but a directory it does not itemize (H3). The search item carries no `currentScope` (E32); a caller that has read the catalog metadata (E20) may supply it and the scope widens to cover it.
+- Door43 reads: the repository (E14 supplies `metadata_type`, `flavor`, `ingredients`, `healthcheck_severity`, and `catalog.prod` as the latest full release with its tag and commit SHA, `catalog.preprod` as the latest pre-release, `catalog.latest` as the default-branch head); the health result for the default branch (E15) for the issue counts. No archive download (Q17); `coverage.basis = catalog`.
+- Classification (`worker/src/model/project`, #19): `project_type` from the Scripture Burrito `flavor` (E14, E42, Q11, Q23), `bible` for `textTranslation`, `obs` for `textStories`, `other` for any other flavor or none; Door43's catalog `subject` is not read; `coverage.scope` from the books the catalog lists, `nt` when only New Testament books are listed, `ot` when only Old Testament books are, `full` when both, `obs` for Open Bible Stories, `unknown` otherwise, with `target` 27, 39, 66, 50, or `null` (H5); `coverage.present` is `null` when Door43 lists no ingredients or lists no recognized unit but a directory it does not itemize (H3). The search item carries no `currentScope` (E32); a caller that has read the catalog metadata (E20) may supply it and the scope widens to cover it.
 - Returns: the project report.
 - Errors: `not_found`, `permission_denied` (the repository is not writable), `session_expired`, `door43_unavailable`.
 

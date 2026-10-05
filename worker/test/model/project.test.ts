@@ -2,70 +2,68 @@ import { describe, expect, test } from 'vitest';
 import { PROJECT_TYPES } from '@tc-admin/shared/schema';
 import type { CoverageScope, ProjectType } from '@tc-admin/shared/schema';
 import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT, STORIES } from '../../src/model/books';
-import { classifyProject, coverage, editability, projectTypeFromSubject, testamentScope } from '../../src/model/project';
+import { SUPPORTED_FLAVORS, classifyProject, coverage, editability, projectTypeFromFlavor, testamentScope } from '../../src/model/project';
 import type { CatalogIngredient, ProjectCatalog } from '../../src/model/project';
 
 const file = (id: string, exists = true): CatalogIngredient => ({ id, path: `./${id}.usfm`, exists, is_dir: false });
 const dir = (id: string, path: string): CatalogIngredient => ({ id, path, exists: true, is_dir: true });
 const bible = (ingredients: CatalogIngredient[] | null, extra: Partial<ProjectCatalog> = {}): ProjectCatalog => ({
-  subject: 'Bible',
+  flavor: 'textTranslation',
   metadata_format: 'sb',
   ingredients,
   ...extra,
 });
 
 describe('project type', () => {
-  test('project_type covers all three values from the catalog subject: the two flavors tC Admin manages, and other', () => {
-    const seen = new Map<string, ProjectType>(
-      ['Bible', 'Aligned Bible', 'Open Bible Stories', 'Translation Words'].map(subject => [subject, projectTypeFromSubject(subject)]),
-    );
+  test('project_type covers all three values from the Scripture Burrito flavor: the two flavors tC Admin manages, and other', () => {
+    const seen = new Map<string, ProjectType>(['textTranslation', 'textStories', 'x-peripheralArticles'].map(flavor => [flavor, projectTypeFromFlavor(flavor)]));
     expect(Object.fromEntries(seen)).toEqual({
-      'Bible': 'bible',
-      'Aligned Bible': 'bible',
-      'Open Bible Stories': 'obs',
-      'Translation Words': 'other',
+      'textTranslation': 'bible',
+      'textStories': 'obs',
+      'x-peripheralArticles': 'other',
     });
     expect(new Set(seen.values())).toEqual(new Set(PROJECT_TYPES));
+    expect(SUPPORTED_FLAVORS).toEqual(['textTranslation', 'textStories']);
   });
 
-  test('every subject outside the two flavors is other, including the helps and the original-language Bibles (Q11)', () => {
-    for (const subject of ['TSV Translation Notes', 'Translation Notes', 'TSV Translation Questions', 'TSV Translation Words Links', 'Translation Academy', 'Greek New Testament', 'Hebrew Old Testament', 'OBS Translation Notes']) {
-      expect(projectTypeFromSubject(subject)).toBe('other');
+  test('every other flavor Door43 carries is other, including the helps and the audio and braille scripture flavors (Q11, E42)', () => {
+    for (const flavor of ['x-bcvnotes', 'x-bcvquestions', 'x-bcvarticles', 'x-peripheralArticles', 'x-obsnotes', 'x-juxtalinear', 'audioTranslation', 'embossedBrailleScripture', 'x-rawcistern']) {
+      expect(projectTypeFromFlavor(flavor)).toBe('other');
     }
   });
 
-  test('a missing, empty, or unlisted subject is other', () => {
-    expect(projectTypeFromSubject(null)).toBe('other');
-    expect(projectTypeFromSubject(undefined)).toBe('other');
-    expect(projectTypeFromSubject('')).toBe('other');
-    expect(projectTypeFromSubject('bible')).toBe('other');
+  test('a missing, empty, differently cased, or unlisted flavor is other', () => {
+    expect(projectTypeFromFlavor(null)).toBe('other');
+    expect(projectTypeFromFlavor(undefined)).toBe('other');
+    expect(projectTypeFromFlavor('')).toBe('other');
+    expect(projectTypeFromFlavor('TextTranslation')).toBe('other');
+    expect(projectTypeFromFlavor('scripture/textTranslation')).toBe('other');
   });
 });
 
 describe('editability', () => {
   test('other is unsupported with the reason stated, whatever its format', () => {
     for (const format of ['sb', 'rc', 'ts', 'tc'] as const) {
-      const result = editability(format, 'other', 'Translation Words');
+      const result = editability(format, 'other');
       expect(result.state).toBe('unsupported');
-      expect(result.reason).toBe('tC Admin does not manage Translation Words projects. Release and editing are not available.');
+      expect(result.reason).toBe('tC Admin manages Bible and Open Bible Stories projects only. Release and editing are not available.');
     }
-    expect(editability('sb', 'other', null).reason).toBe('tC Admin does not manage projects of this type. Release and editing are not available.');
   });
 
   test('P1: every editability state carries a one-line reason, and another format offers an import', () => {
-    expect(editability('sb', 'bible', 'Bible')).toEqual({ state: 'editable', reason: 'Scripture Burrito project. Release and editing are available.' });
-    expect(editability('rc', 'bible', 'Bible')).toEqual({ state: 'unsupported', reason: 'Resource Container project. Import it into a new project to manage it here.' });
-    expect(editability('ts', 'bible', 'Bible')).toEqual({ state: 'unsupported', reason: 'translationStudio project. Import it into a new project to manage it here.' });
-    expect(editability('tc', 'bible', 'Bible')).toEqual({ state: 'unsupported', reason: 'translationCore project. Import it into a new project to manage it here.' });
-    expect(editability('sb', 'obs', 'Open Bible Stories').state).toBe('editable');
-    expect(editability('rc', 'obs', 'Open Bible Stories')).toEqual({ state: 'unsupported', reason: 'Resource Container project. Import it into a new project to manage it here.' });
-    expect(editability('none', 'other', null)).toEqual({ state: 'unsupported', reason: 'Door43 found no project metadata it recognizes. Release and editing are not available.' });
+    expect(editability('sb', 'bible')).toEqual({ state: 'editable', reason: 'Scripture Burrito project. Release and editing are available.' });
+    expect(editability('rc', 'bible')).toEqual({ state: 'unsupported', reason: 'Resource Container project. Import it into a new project to manage it here.' });
+    expect(editability('ts', 'bible')).toEqual({ state: 'unsupported', reason: 'translationStudio project. Import it into a new project to manage it here.' });
+    expect(editability('tc', 'bible')).toEqual({ state: 'unsupported', reason: 'translationCore project. Import it into a new project to manage it here.' });
+    expect(editability('sb', 'obs').state).toBe('editable');
+    expect(editability('rc', 'obs')).toEqual({ state: 'unsupported', reason: 'Resource Container project. Import it into a new project to manage it here.' });
+    expect(editability('none', 'other')).toEqual({ state: 'unsupported', reason: 'Door43 found no project metadata it recognizes. Release and editing are not available.' });
   });
 
   test('W2: only a Scripture Burrito Bible or Open Bible Stories project is editable', () => {
     for (const format of ['sb', 'rc', 'ts', 'tc', 'none'] as const) {
       for (const type of ['bible', 'obs', 'other'] as const) {
-        const state = editability(format, type, 'Bible').state;
+        const state = editability(format, type).state;
         expect(state).toBe(format === 'sb' && type !== 'other' ? 'editable' : 'unsupported');
       }
     }
@@ -99,7 +97,7 @@ describe('coverage by testament scope', () => {
   });
 
   test('H5: an Open Bible Stories project counts stories against 50', () => {
-    const result = coverage({ subject: 'Open Bible Stories', metadata_format: 'sb', ingredients: [file('01'), file('50'), file('51'), file('02', false)] }, 'obs');
+    const result = coverage({ flavor: 'textStories', metadata_format: 'sb', ingredients: [file('01'), file('50'), file('51'), file('02', false)] }, 'obs');
     expect(result).toMatchObject({ scope: 'obs', target: 50, present: 2, basis: 'catalog' });
     expect(result.units).toHaveLength(50);
     expect(result.units.filter(unit => unit.present).map(unit => unit.id)).toEqual(['01', '50']);
@@ -122,8 +120,8 @@ describe('coverage by testament scope', () => {
       coverage(bible(NEW_TESTAMENT.map(id => file(id))), 'bible'),
       coverage(bible(null), 'bible'),
       coverage(bible([]), 'bible'),
-      coverage({ subject: 'Open Bible Stories', metadata_format: 'rc', ingredients: [dir('obs', './content')] }, 'obs'),
-      coverage({ subject: 'Translation Words', metadata_format: 'rc', ingredients: [dir('bible', './bible')] }, 'other'),
+      coverage({ flavor: 'textStories', metadata_format: 'rc', ingredients: [dir('obs', './content')] }, 'obs'),
+      coverage({ flavor: 'x-peripheralArticles', metadata_format: 'rc', ingredients: [dir('bible', './bible')] }, 'other'),
     ];
     for (const result of cases) {
       expect(result.basis).toBe('catalog');
@@ -148,7 +146,7 @@ describe('unknown coverage', () => {
   });
 
   test('H3: an OBS container entry does not mean zero stories', () => {
-    const result = coverage({ subject: 'Open Bible Stories', metadata_format: 'rc', ingredients: [dir('obs', './content')] }, 'obs');
+    const result = coverage({ flavor: 'textStories', metadata_format: 'rc', ingredients: [dir('obs', './content')] }, 'obs');
     expect(result).toMatchObject({ present: null, scope: 'obs', target: 50, units: [] });
   });
 
@@ -160,8 +158,8 @@ describe('unknown coverage', () => {
   test('H3: unknown coverage is never complete', () => {
     const unknowns = [
       coverage(bible(null, { current_scope: NEW_TESTAMENT }), 'bible'),
-      coverage({ subject: 'Open Bible Stories', metadata_format: 'rc', ingredients: [dir('obs', './content')] }, 'obs'),
-      coverage({ subject: 'Translation Academy', metadata_format: 'rc', ingredients: null }, 'other'),
+      coverage({ flavor: 'textStories', metadata_format: 'rc', ingredients: [dir('obs', './content')] }, 'obs'),
+      coverage({ flavor: 'x-peripheralArticles', metadata_format: 'rc', ingredients: null }, 'other'),
     ];
     for (const result of unknowns) {
       expect(result.present).toBeNull();
@@ -172,7 +170,7 @@ describe('unknown coverage', () => {
   });
 
   test('H3: a project of type other has no coverage claim', () => {
-    expect(coverage({ subject: 'Translation Words', metadata_format: 'sb', ingredients: STORIES.map(id => file(id)) }, 'other')).toEqual({
+    expect(coverage({ flavor: 'x-peripheralArticles', metadata_format: 'sb', ingredients: STORIES.map(id => file(id)) }, 'other')).toEqual({
       present: null, target: null, scope: 'unknown', basis: 'catalog', units: [],
     });
   });
@@ -180,7 +178,7 @@ describe('unknown coverage', () => {
 
 describe('classifyProject', () => {
   test('returns the classification fields of the project report together', () => {
-    const result = classifyProject({ subject: 'Aligned Bible', metadata_format: 'rc', ingredients: [file('tit'), file('phm')] });
+    const result = classifyProject({ flavor: 'textTranslation', metadata_format: 'rc', ingredients: [file('tit'), file('phm')] });
     expect(result).toEqual({
       project_type: 'bible',
       metadata_format: 'rc',
@@ -190,9 +188,9 @@ describe('classifyProject', () => {
   });
 
   test('other is listed with the reason stated and is neither releasable nor editable', () => {
-    const result = classifyProject({ subject: 'Translation Academy', metadata_format: 'rc', ingredients: [dir('ta', './translate')] });
+    const result = classifyProject({ flavor: 'x-peripheralArticles', metadata_format: 'rc', ingredients: [dir('ta', './translate')] });
     expect(result.project_type).toBe('other');
-    expect(result.editability).toEqual({ state: 'unsupported', reason: 'tC Admin does not manage Translation Academy projects. Release and editing are not available.' });
+    expect(result.editability).toEqual({ state: 'unsupported', reason: 'tC Admin manages Bible and Open Bible Stories projects only. Release and editing are not available.' });
     expect(result.coverage).toMatchObject({ present: null, target: null, scope: 'unknown' });
   });
 });

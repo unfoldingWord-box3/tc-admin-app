@@ -2,12 +2,13 @@
 // `situation.read`, and sign-in: a link to the Worker's `/auth/login`, which
 // returns here with `?sign_in=<code>` when it fails. A session Door43 no
 // longer accepts is reported and the situation read again, so the sign-in
-// link comes back. The portfolio (#23, #24) and the design system (#8) build
-// on it.
+// link comes back. Signed in, it shows the portfolio (#23); the design system
+// (#8) builds on it.
 
 import { useCallback, useEffect, useState } from 'react';
 import type { OperationOutput } from '@tc-admin/shared/schema';
 import { ApiError, callOperation, signOut } from './api/client';
+import { Portfolio } from './Portfolio';
 import { signInFailure } from './sign-in';
 
 type Situation = OperationOutput<'situation.read'>;
@@ -52,6 +53,20 @@ export function App() {
     if (failure) window.history.replaceState(null, '', failure.cleaned);
     void readSituation().then(apply);
   }, [apply]);
+
+  // A portfolio read Door43 refused for the session: the Worker ended it, so the situation is read again to offer sign-in.
+  const portfolioFailed = useCallback(
+    (failure: unknown) => {
+      if (failure instanceof ApiError && failure.error.code === 'session_expired') {
+        setNotice(failure.error.message);
+        setSituation(null);
+        void readSituation().then(apply);
+      } else {
+        setError(messageOf(failure));
+      }
+    },
+    [apply],
+  );
 
   const endSession = async () => {
     try {
@@ -119,7 +134,7 @@ export function App() {
             )}
           </>
         )}
-        {situation?.account && !error && <p>Signed in to Door43 {host?.name} as {situation.account.login}.</p>}
+        {situation?.account && !error && <Portfolio onFailure={portfolioFailed} />}
       </main>
     </>
   );

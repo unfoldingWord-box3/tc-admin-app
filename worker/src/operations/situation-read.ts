@@ -1,8 +1,8 @@
 // `situation.read` (operations.md §4): who is signed in, which host, and how the
 // portfolio stands. With a session the account is read from Door43's `/user`
 // each time, so a token Door43 no longer accepts ends the session
-// (`session_expired`). The portfolio summary arrives with #23; until then it
-// is `null`.
+// (`session_expired`). The portfolio summary needs the whole repository search
+// (`portfolio.list`), so it is `null` until a cache can answer it (#26).
 
 import type { OperationOutput, ParsedInput } from '@tc-admin/shared/schema';
 import { readAccount } from '../door43/auth';
