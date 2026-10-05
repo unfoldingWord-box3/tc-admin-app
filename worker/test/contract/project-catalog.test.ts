@@ -90,6 +90,12 @@ describe('Door43 vocabularies', () => {
     }
   });
 
+  test('Q23: textTranslation is bible in every format whatever Door43 calls it, the Greek New Testament included', () => {
+    const rows = probe.queries.flatMap(query => Object.keys(query.counts_by_flavor_type_flavor_subject).map(row)).filter(entry => entry.flavor === 'textTranslation');
+    expect(rows.map(entry => entry.subject)).toContain('Greek New Testament');
+    for (const entry of rows) expect(projectTypeFromFlavor(entry.flavor), entry.subject).toBe('bible');
+  });
+
   test('E14: every metadata type Door43 lists maps to a metadata_format, and anything else is none', () => {
     const types = read<{ ok: boolean; data: string[] }>('2026-09-21/catalog/list__metadata-types.json');
     expect(types.data.map(metadataFormat)).toEqual(['rc', 'sb', 'tc', 'ts']);
