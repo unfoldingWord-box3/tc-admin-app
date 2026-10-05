@@ -140,3 +140,51 @@ describe('the recorded QA creation of an Open Bible Stories project (E47)', () =
     expect(recorded<{ is_valid: boolean; flavor: string }>('11-GET-catalog_entry_master.json', obs)).toMatchObject({ is_valid: true, flavor: 'textStories' });
   });
 });
+
+describe('the recorded creation under the signed-in account (E48, Q28)', () => {
+  const own = new URL('tc-admin-qa-oauth/', runs);
+  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', own)));
+  const receipt = OPERATIONS['project.create.apply'].output.parse(JSON.parse(read('receipt.json', own)));
+  const committed = read('metadata.json', own);
+
+  test('W1: the metadata.json committed under the account is byte for byte what the writer generates', () => {
+    const written = JSON.parse(committed) as { meta: { dateCreated: string }; identification: { name: { en: string }; abbreviation: { en: string } } };
+    const generated = newProjectFiles(
+      {
+        owner: 'tc-admin-qa',
+        repo_name: plan.preview.repo_name,
+        project_type: 'bible',
+        title: written.identification.name.en,
+        abbreviation: written.identification.abbreviation.en,
+        language: { code: 'id', title: 'Bahasa Indonesia', direction: 'ltr' },
+        testament_scope: 'nt',
+        license: 'cc-by-sa-4.0',
+      },
+      GENERATOR,
+      new Date(written.meta.dateCreated),
+    );
+    expect(generated.files.find(file => file.path === METADATA_PATH)!.content).toBe(committed);
+  });
+
+  test('A3: the receipt wrote the repository and one commit under tc-admin-qa, and Door43 recorded that user as author', () => {
+    expect(receipt.wrote.map(({ kind, target }) => ({ kind, target }))).toEqual([
+      { kind: 'repo', target: 'tc-admin-qa/id_tcap2002' },
+      { kind: 'commit', target: 'tc-admin-qa/id_tcap2002@master' },
+    ]);
+    expect(receipt.wrote).toEqual(plan.would_write.map(write => expect.objectContaining(write)));
+    expect(receipt.result.ref).toMatchObject({ owner: 'tc-admin-qa', repo: 'id_tcap2002' });
+    const commit = recorded<{ commit: { author: { name: string }; committer: { name: string } } }>('02-GET-git_commit.json', own);
+    expect(commit.commit.author.name).toBe('tc-admin-qa');
+    expect(commit.commit.committer.name).toBe('tc-admin-qa');
+  });
+
+  test('Door43 read the project under the account as a Scripture Burrito Bible with health info and only release_needed', () => {
+    const view = recorded<Door43Repository & { owner: { login: string } }>('01-GET-repos_catalog-view.json', own);
+    expect(view.owner.login).toBe('tc-admin-qa');
+    expect(classifyProject(projectCatalog(view))).toMatchObject({ project_type: 'bible', metadata_format: 'sb', editability: { state: 'editable' } });
+    const health = recorded<{ data: { overall_severity_level: string; issues: Record<string, unknown[]> } }>('03-GET-healthcheck_master.json', own);
+    expect(health.data.overall_severity_level).toBe('info');
+    expect(Object.entries(health.data.issues).filter(([, issues]) => issues.length).map(([rule]) => rule)).toEqual(['release_needed']);
+    expect(recorded<{ is_valid: boolean }>('04-GET-catalog_entry_master.json', own).is_valid).toBe(true);
+  });
+});
