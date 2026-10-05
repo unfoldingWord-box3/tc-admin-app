@@ -32,6 +32,8 @@ export interface OperationDefinition {
 }
 
 const Language = z.object({ code: z.string(), title: z.string() });
+/** The wizard's language, with the script direction when Door43's language list gives it (E25), for the metadata's `scriptDirection`. */
+const ChosenLanguage = Language.extend({ direction: z.enum(['ltr', 'rtl']).nullish() });
 const Account = z.object({ login: z.string(), name: z.string() });
 const Unit = z.union([z.object({ book: z.string() }), z.object({ story: z.string() })]);
 const PlanId = z.object({ plan_id: z.string().min(1) });
@@ -115,7 +117,7 @@ export const OPERATIONS = {
       project_type: z.enum(['bible', 'obs']),
       title: z.string().min(1),
       abbreviation: z.string().min(1),
-      language: Language,
+      language: ChosenLanguage,
       testament_scope: CoverageScope.extract(['nt', 'ot', 'full']).nullable(),
       license: z.literal('cc-by-sa-4.0'),
     }),

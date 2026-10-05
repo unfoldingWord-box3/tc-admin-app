@@ -67,13 +67,13 @@ The project summary `portfolio.list` returns is the part of the report the repos
 ```
 plan
   id, operation, created_at, expires_at
-  bound_to:    { default_branch_sha, release_tag | null, release_tag_sha | null }
+  bound_to:    { default_branch_sha | null, release_tag | null, release_tag_sha | null }
   preview:     operation-specific (section 4)
   would_write: [ { kind: repo | branch | commit | tag | release, target } ]
   warnings:    [ { code, message } ]
 ```
 
-A plan expires (proposed: 30 minutes) and is invalid once `bound_to` no longer matches Door43.
+A plan expires after thirty minutes (`worker/src/operations/plans.ts`) and is invalid once `bound_to` no longer matches Door43. `default_branch_sha` is `null` only for `project.create.plan`, which has no source commit. A plan lives in Workers KV under its id, together with what its apply needs, and its id is the apply's idempotency key.
 
 ### Receipt
 
@@ -184,10 +184,10 @@ The orientation call. One request tells a client who is signed in, which host, a
 
 ### `project.create.plan`
 
-- Inputs: `{ owner, project_type: bible | obs, title, abbreviation, language: { code, title }, testament_scope: nt | ot | full | null, license }`. `owner` is one of the account's organizations or the account itself. `testament_scope` is required for `bible` and sets `currentScope`; it is null for `obs`. `license` is `cc-by-sa-4.0` in Milestone 1 (Q20).
-- Computes: `repo_name = lowercase(language.code) + "_" + lowercase(abbreviation)`, as in `en_ult`; the `metadata.json` the schema requires (E37, Q4) with the flavor `scripture/textTranslation` or `gloss/textStories` (W1), `identification.name` and `abbreviation` from the inputs, tC Admin as generator, and no `relationships` until an import adds one (E24).
-- Checks: the owner allows repository creation for this account; `repo_name` is free in that owner (`name_taken`) and valid; `abbreviation` and `title` present.
-- Returns: `plan.preview = { repo_name, metadata_json, files: [{ path, size, md5 }] }`, `would_write = [repo, commit]`.
+- Inputs: `{ owner, project_type: bible | obs, title, abbreviation, language: { code, title, direction: ltr | rtl | null }, testament_scope: nt | ot | full | null, license }`. `owner` is one of the account's organizations or the account itself. `testament_scope` is required for `bible` and sets `currentScope`; it is null for `obs`. `language.direction` is the script direction when Door43's language list gives it (E25) and becomes the language's `scriptDirection`. `license` is `cc-by-sa-4.0` in Milestone 1 (Q20).
+- Computes: `repo_name = lowercase(language.code) + "_" + lowercase(abbreviation)`, as in `en_ult`; the `metadata.json` the schema requires (E37, E44, Q4), written by `worker/src/model/burrito` and by nothing else (W1): the flavor `scripture/textTranslation` or `gloss/textStories`; `identification.name` and `abbreviation` from the inputs and `identification.primary.dcs` naming `<owner>/<repo_name>` at revision `master`; the `dcs` id authority as `https://git.door43.org` (E24); tC Admin as generator with its version and the signed-in manager as user; `currentScope` with every book of the testament scope; `copyright.licenses` naming the license ingredient; the license text as `ingredients/license.md`, the one ingredient, with the size and md5 of the file (R10); and no `relationships` until an import adds one (E24). The files are `metadata.json`, `ingredients/license.md`, and `README.md`. An Open Bible Stories project is #82 (the schema requires at least one book in `currentScope`, E44, and what a new one carries is open in Q4); until then `obs` is `validation_failed`.
+- Checks: the account is signed in (read live from `/user`); the owner allows repository creation for this account: for an organization, a team of the account there is the owner team or may create repositories (`GET /user/teams`, E43), and anything less fails closed (A2); the account itself is accepted, and Door43 decides at apply (Q28); `repo_name` is valid for Door43 and free in that owner (`GET /repos/{owner}/{repo}` answers 404; a repository there is `name_taken`); `abbreviation`, `title`, and a language present.
+- Returns: `plan.preview = { repo_name, metadata_json, files: [{ path, size, md5 }] }`, `would_write = [repo, commit]`, `bound_to.default_branch_sha = null`. The plan is stored with the exact file contents, so the apply writes what the manager reviewed.
 - Errors: `validation_failed`, `permission_denied`, `name_taken`, `session_expired`, `door43_unavailable`.
 
 ### `project.create.apply`

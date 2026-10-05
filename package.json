@@ -1,5 +1,6 @@
 {
   "name": "tc-admin",
+  "version": "0.1.0",
   "private": true,
   "description": "tC Admin: see, create, and selectively release Door43 repositories as Scripture Burrito",
   "type": "module",

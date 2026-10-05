@@ -68,14 +68,16 @@ describe('failures', () => {
     expect(body).toMatchObject({ code: 'unknown_operation', details: { operation: 'project.read' } });
   });
 
-  describe('with a stand-in for an operation that is not built yet', () => {
+  describe('with a stand-in for an operation', () => {
     const standIn = vi.fn<() => Promise<unknown>>(async () => ({ not: 'a plan' }));
+    const built = HANDLERS['project.create.plan'];
     beforeEach(() => {
       HANDLERS['project.create.plan'] = standIn as never;
       vi.spyOn(console, 'error').mockImplementation(() => {});
     });
     afterEach(() => {
-      delete HANDLERS['project.create.plan'];
+      if (built) HANDLERS['project.create.plan'] = built;
+      else delete HANDLERS['project.create.plan'];
     });
     const post = (body: string) => call('/api/projects/plan', { method: 'POST', body });
 
