@@ -32,6 +32,8 @@ class MemoryKV implements KVNamespace {
 let sessions: MemoryKV;
 let door43Calls: string[];
 const applied: unknown[] = [];
+/** The real apply, if built, restored after each test. */
+const built = HANDLERS['project.create.apply'];
 
 const env = (): Env => ({
   ASSETS: { fetch: async () => new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } }) },
@@ -84,7 +86,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  delete HANDLERS['project.create.apply'];
+  if (built) HANDLERS['project.create.apply'] = built;
+  else delete HANDLERS['project.create.apply'];
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
