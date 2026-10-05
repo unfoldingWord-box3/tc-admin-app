@@ -81,10 +81,10 @@ describe('the recorded QA creation (E45)', () => {
   });
 
   test('Q28: creating in the user\'s own namespace was refused for the write:user scope and written nothing', () => {
-    const refused = JSON.parse(readFileSync(new URL('../tc-admin-qa/05-POST-user_repos.json', run), 'utf8')) as { response: { status: number; json: { message: string } } };
+    const refused = JSON.parse(readFileSync(new URL('../tc-admin-qa-refused/05-POST-user_repos.json', run), 'utf8')) as { response: { status: number; json: { message: string } } };
     expect(refused.response.status).toBe(403);
     expect(refused.response.json.message).toContain('required=[write:user]');
-    const summaryUser = JSON.parse(readFileSync(new URL('../tc-admin-qa/summary.json', run), 'utf8')) as { apply_error: { code: string } };
+    const summaryUser = JSON.parse(readFileSync(new URL('../tc-admin-qa-refused/summary.json', run), 'utf8')) as { apply_error: { code: string } };
     expect(summaryUser.apply_error.code).toBe('permission_denied');
   });
 });
