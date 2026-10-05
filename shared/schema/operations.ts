@@ -22,6 +22,15 @@ export interface Route {
   path: string;
 }
 
+/**
+ * The HTTP projection's headers (operations.md §7). The Worker issues a signed-in
+ * browser's CSRF token in `x-csrf-token` on every `/api/` response, and every `POST`
+ * must send it back in the same header from the Worker's own origin (A4).
+ */
+export const CSRF_HEADER = 'x-csrf-token';
+/** An apply's idempotency key: the plan id (operations.md §1 rule 6). */
+export const IDEMPOTENCY_HEADER = 'idempotency-key';
+
 export interface OperationDefinition {
   kind: OperationKind;
   milestone: 1 | 2;

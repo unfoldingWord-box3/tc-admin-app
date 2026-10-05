@@ -23,6 +23,8 @@ export interface SessionRecord {
   expiresAt: number;
   account: { login: string; name: string };
   userId: number;
+  /** The session's CSRF token, which every browser mutation must carry (A4); issued to the browser in a response header only. */
+  csrf: string;
 }
 
 function oauthClient(config: SignInConfig): OAuthClient | null {
@@ -44,7 +46,7 @@ export async function completeSignIn(config: SignInConfig, pending: PendingSignI
   if (!client) throw new Error('sign-in is not configured');
   const token = await exchangeCode(client, pending, code);
   const { account, userId } = await readAccount({ host: client.host, token: token.token });
-  return { token: token.token, expiresAt: token.expiresAt, account, userId };
+  return { token: token.token, expiresAt: token.expiresAt, account, userId, csrf: nonce() };
 }
 
 /** An opaque session id: 32 random bytes, base64url. */

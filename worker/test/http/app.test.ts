@@ -77,7 +77,8 @@ describe('failures', () => {
     afterEach(() => {
       delete HANDLERS['project.create.plan'];
     });
-    const post = (body: string) => call('/api/projects/plan', { method: 'POST', body });
+    // As a browser sends it: with its own origin (A4; csrf.test.ts has the refusals).
+    const post = (body: string) => call('/api/projects/plan', { method: 'POST', headers: { origin: 'https://tc-admin.test' }, body });
 
     test('X2: a body that is not JSON is validation_failed with its message', async () => {
       const response = await post('{');
