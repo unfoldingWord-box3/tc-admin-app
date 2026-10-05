@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://qa.door43.org/api/v1/user/repos",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]",
+      "content-type": "application/json"
+    },
+    "body": "{\"name\":\"id_tcap1856\",\"description\":\"tC Admin probe 2026-10-05 1856\",\"private\":false,\"auto_init\":false,\"default_branch\":\"master\"}"
+  },
+  "response": {
+    "status": 403,
+    "ms": 126,
+    "json": {
+      "message": "token does not have at least one of required scope(s), required=[write:user], token scope=write:activitypub,write:misc,write:notification,write:organization,write:package,write:issue,write:repository,read:user",
+      "url": "https://qa.door43.org/api/swagger"
+    }
+  }
+}

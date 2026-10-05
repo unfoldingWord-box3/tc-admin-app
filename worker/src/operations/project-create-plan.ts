@@ -29,12 +29,13 @@ export interface PlannedOwner {
   kind: 'organization' | 'account';
 }
 
-/** What the apply needs from the plan: the owner, the name, and the exact files. */
+/** What the apply needs from the plan: the owner, the name, and the exact files. The apply marks the plan once the repository exists (#31). */
 export interface ProjectCreatePayload {
   owner: PlannedOwner;
   repo_name: string;
   project: NewBibleProject;
   files: { path: string; content: string }[];
+  repository_created?: boolean;
 }
 
 const validation = (field: string, message: string) => new CatalogError('validation_failed', { message: `${field}: ${message}`, details: { fields: [{ path: field, message }] } });

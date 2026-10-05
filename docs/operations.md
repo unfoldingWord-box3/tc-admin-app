@@ -51,7 +51,7 @@ project
   coverage:          { present | null, target | null, scope: nt | ot | full | obs | unknown, basis: catalog | archive, units: [{ id, present }] }
   health:            { state, severity_raw, ref, checked_at, issue_count | null, source: door43 }
   latest_full_release: { tag, version, sha, published_at, author } | null
-  default_branch_head: { sha, committed_at }
+  default_branch_head: { sha, committed_at } | null   (null for a repository without a commit: setup incomplete, or empty, E10)
   active_preparation: { id, state, version } | null
   setup:             { state: complete | incomplete, failed_step | null }
   permissions:       { push, admin, checked_at }
@@ -192,11 +192,11 @@ The orientation call. One request tells a client who is signed in, which host, a
 
 ### `project.create.apply`
 
-- Inputs: `{ plan_id }`.
-- Checks: plan valid and not expired; permission re-read (A2).
-- Door43 writes: create repository, then one commit with `metadata.json`, `ingredients/license.md`, `README.md` (W5, A3).
-- Returns: `receipt.result = project report`. If the repository was created but the commit failed, `receipt.result.setup = { state: incomplete, failed_step: first_commit }` and `warnings` carries `setup_incomplete`; the repository is never deleted (W4). The wizard's last step may follow with `upload.plan` or `import.plan` to add books at once.
-- Errors: `permission_denied`, `plan_expired`, `name_taken`, `commit_failed`, `door43_unavailable`.
+- Inputs: `{ plan_id }`, also sent as the `Idempotency-Key` header (§7).
+- Checks: the account is signed in (read live from `/user`); a receipt already stored under the plan id for this account is answered as it is and nothing is written again (§1 rule 6); the plan exists, was made by this account, and has not expired, else `plan_expired`; the owner's creation right is read again (`GET /user/teams` for an organization, E43; A2) and the name is still free (`name_taken`).
+- Door43 writes: `POST /orgs/{org}/repos`, or `POST /user/repos` for the account itself (E26, Q28), public, not initialized, default branch `master`; then one `POST /repos/{owner}/{repo}/contents` with `metadata.json`, `ingredients/license.md`, and `README.md` from the plan as `create` operations (W5; shapes E21, E27, E45). Both carry the session's token and no author or committer, so Door43 attributes them to the signed-in manager (A3). Neither is retried (X1).
+- Returns: `receipt.result = project report`, built from what was written because Door43's catalog reads the new repository a few seconds later (E28, E45): type `bible`, format `sb`, editable, coverage 0 of the testament scope's target with basis `archive` (the metadata just written, not Door43's catalog), health `never_checked` (H3), permissions from Door43's answer, the first commit as `default_branch_head`. If the repository was created but the commit failed, or its outcome is unknown, `receipt.result.setup = { state: incomplete, failed_step: first_commit }`, `default_branch_head` is `null`, `wrote` lists the repository only, and `warnings` carries `setup_incomplete`; the repository is never deleted (W4), and the plan is kept with the receipt for `project.create.retry` (#31). The receipt is stored under the plan id for a day. The wizard's last step may follow with `upload.plan` or `import.plan` to add books at once.
+- Errors: `plan_expired`, `permission_denied`, `name_taken`, `validation_failed` (Door43 refused the name), `session_expired`, `door43_unavailable`. A failed first commit is the `setup_incomplete` warning above, not `commit_failed`.
 
 ### `project.create.retry`
 

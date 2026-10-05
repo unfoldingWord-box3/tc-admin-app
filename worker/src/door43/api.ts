@@ -1,7 +1,7 @@
-// Reads from the Door43 API with the signed-in manager's token, carried over
-// from the prototype: requests go to the configured host only, never follow
-// a redirect, time out, and send the token only in the authorization header
-// (A1, A3). The Workers runtime refuses `redirect: 'error'` (E39), so a
+// Reads and writes to the Door43 API with the signed-in manager's token, the
+// reads carried over from the prototype: requests go to the configured host
+// only, never follow a redirect, time out, and send the token only in the
+// authorization header (A1, A3). A write is sent once and never retried (X1). The Workers runtime refuses `redirect: 'error'` (E39), so a
 // request is sent with `manual` and any redirect answer is refused here. Door43's statuses become catalog codes here; nothing above this
 // module sees an HTTP status from Door43.
 
@@ -90,4 +90,51 @@ export async function readPages<T extends { id: number }>(
     items.push(...batch);
   }
   throw new CatalogError('portfolio_too_large');
+}
+
+/** What one write came back with: Door43's status and parsed body, for the endpoint's module to map. */
+export interface WriteOutcome {
+  status: number;
+  body: unknown;
+}
+
+/**
+ * One write (`POST`, `PATCH`, `DELETE`) to `/api/v1<path>` with a JSON body, sent
+ * once and never retried, whatever the outcome (X1). 401 is `session_expired`
+ * and 403 `permission_denied` here; every other status is returned for the
+ * endpoint to map, since a 409 or 422 means something different per endpoint.
+ */
+export async function writeDoor43(client: Door43Client, method: 'POST' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<WriteOutcome> {
+  if (!path.startsWith('/') || path.startsWith('//')) throw new CatalogError('unexpected', { details: { reason: 'invalid Door43 API path' } });
+  const headers: Record<string, string> = { accept: 'application/json', authorization: `Bearer ${client.token}` };
+  const init: RequestInit = { method, headers };
+  if (body !== undefined) {
+    headers['content-type'] = 'application/json';
+    init.body = JSON.stringify(body);
+  }
+  const response = await door43Request(client.host, new URL(`/api/v1${path}`, client.host.origin).href, init, client.fetch);
+  const status = { door43_status: response.status };
+  if (response.status === 401) throw new CatalogError('session_expired', { details: status });
+  if (response.status === 403) throw new CatalogError('permission_denied', { details: status });
+  const text = await response.text();
+  let parsed: unknown = null;
+  try {
+    parsed = text ? JSON.parse(text) : null;
+  } catch {
+    parsed = { message: text.slice(0, 500) };
+  }
+  return { status: response.status, body: parsed };
+}
+
+/** Door43's own `message` from an error body, for the catalog messages that quote it; the status when there is none. */
+export function door43Message(outcome: WriteOutcome): string {
+  const body = outcome.body as { message?: unknown } | null;
+  return typeof body?.message === 'string' && body.message ? body.message : `Door43 answered ${outcome.status}`;
+}
+
+/** File bytes as base64, which the contents endpoint takes (E21). Chunked so a book-sized file does not overflow the call stack. */
+export function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  return btoa(binary);
 }

@@ -1,0 +1,89 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-10-05T18:56:20.186Z",
+  "input": {
+    "owner": "tc-admin-qa",
+    "project_type": "bible",
+    "title": "tC Admin probe 2026-10-05 1856",
+    "abbreviation": "tcap1856",
+    "language": {
+      "code": "id",
+      "title": "Bahasa Indonesia",
+      "direction": "ltr"
+    },
+    "testament_scope": "nt",
+    "license": "cc-by-sa-4.0"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 132
+    },
+    {
+      "step": 2,
+      "name": "GET-repos_tc-admin-qa_id_tcap1856",
+      "status": 404,
+      "ms": 139
+    },
+    {
+      "step": 3,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 122
+    },
+    {
+      "step": 4,
+      "name": "GET-repos_tc-admin-qa_id_tcap1856",
+      "status": 404,
+      "ms": 134
+    },
+    {
+      "step": 5,
+      "name": "POST-user_repos",
+      "status": 403,
+      "ms": 126
+    }
+  ],
+  "dcs_version": "1.27.3+dcs.13-g23ba3c3ef9",
+  "plan": {
+    "id": "bad38571-1de3-4a09-87b7-b3a1474b514c",
+    "repo_name": "id_tcap1856",
+    "would_write": [
+      {
+        "kind": "repo",
+        "target": "tc-admin-qa/id_tcap1856"
+      },
+      {
+        "kind": "commit",
+        "target": "tc-admin-qa/id_tcap1856@master"
+      }
+    ],
+    "files": [
+      {
+        "path": "metadata.json",
+        "size": 2148,
+        "md5": "d8789e9120031c22dbb6fbc2d7510ad9"
+      },
+      {
+        "path": "ingredients/license.md",
+        "size": 18535,
+        "md5": "0bf7ef1533f6486c8362dcb8bc19bdd1"
+      },
+      {
+        "path": "README.md",
+        "size": 197,
+        "md5": "384ade2134a3806c2d729739fb5e04c8"
+      }
+    ]
+  },
+  "apply_error": {
+    "code": "permission_denied",
+    "message": "You no longer have write access to this project.",
+    "details": {
+      "door43_status": 403
+    }
+  },
+  "failed": "permission_denied You no longer have write access to this project."
+}

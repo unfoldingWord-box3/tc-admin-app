@@ -64,13 +64,13 @@ The parts, when one is enough: `node scripts/check-docs.mjs` (relative links; ev
 
 `npm run build` builds `web/dist`; `npm run dev` builds it and runs `wrangler dev` (the root `wrangler.jsonc`, against QA). Open it at `http://127.0.0.1:8787`, not `localhost`: sign-in returns to `<address>/auth/callback`, and only the 127.0.0.1 callbacks are registered (E38). For reloads while editing the interface, run `npx wrangler dev` and `npm run dev --workspace web` together; Vite sends `/api/` and `/auth/` to the Worker, and a sign-in started there ends on the 8787 page, signed in on both.
 
-The live Door43 write probe is `node --env-file=.env scripts/probe/qa-write-probe.mjs`; it needs a `TEST_TOKEN` issued by the QA host and refuses production. It prints the server's message on any failing step. Planned with #10: `npm run e2e` (one Playwright sign-in on QA).
+The live Door43 write probes are `node --env-file=.env scripts/probe/qa-write-probe.mjs` (the release writes) and `node --env-file=.env scripts/probe/qa-create-probe.mjs` (`project.create.plan` and `project.create.apply` through the Worker's own code, bundled with esbuild); each needs a `TEST_TOKEN` issued by the QA host, refuses production, and prints the server's message on any failing step. Planned with #10: `npm run e2e` (one Playwright sign-in on QA).
 
 ## Hosts and credentials
 
 - QA Door43 (`https://qa.door43.org`) is the development target. Production (`https://git.door43.org`) is for sign-in verification, the Milestone 1 demo, and the pilot. Never mutate a production repository outside the demo and pilot plans.
 - Configuration comes from a root `.env` (ignored by Git); `.env.example` names every variable. The QA test user's credentials are `TEST_ORG`, `TEST_USER`, `TEST_PASSWORD`, and `TEST_TOKEN` (E23); an agent session has them only when the environment is configured with them. Never commit a client id, secret, or token. Never print one in a log, a test, a fixture, or a chat message.
-- Seed repositories and their formats are listed in evidence.md (E9). The `tc-admin-qa-org` organization on production is copied to QA at each reset (#1); until then QA probes use the `tc-admin-qa` user's own namespace.
+- Seed repositories and their formats are listed in evidence.md (E9). The `tc-admin-qa-org` organization exists on production and is copied to QA at each reset (E23); QA probes create repositories there (`TEST_ORG`), never in the `tc-admin-qa` user's own namespace, which the token cannot create in (E26, Q28).
 - The translationCore 4 design system lives in https://github.com/unfoldingWord/translationCore4 (#8).
 
 ## Conventions

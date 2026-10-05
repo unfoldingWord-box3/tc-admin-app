@@ -19,11 +19,17 @@ export interface StoredPlan<Payload = unknown> {
   account: string;
 }
 
+/** What an apply stores under its plan id: the receipt it answered, and who applied. */
+export interface StoredReceipt<Receipt = unknown> {
+  receipt: Receipt;
+  account: string;
+}
+
 export interface PlanStore {
   getPlan<Payload = unknown>(id: string): Promise<StoredPlan<Payload> | null>;
   putPlan(stored: StoredPlan, ttlSeconds?: number): Promise<void>;
-  getReceipt<Receipt = unknown>(planId: string): Promise<Receipt | null>;
-  putReceipt(planId: string, receipt: unknown, ttlSeconds?: number): Promise<void>;
+  getReceipt<Receipt = unknown>(planId: string): Promise<StoredReceipt<Receipt> | null>;
+  putReceipt(planId: string, stored: StoredReceipt, ttlSeconds?: number): Promise<void>;
 }
 
 export const newPlanId = (): string => crypto.randomUUID();
@@ -51,8 +57,8 @@ export function planStore(kv: KVNamespace): PlanStore {
     async getReceipt(planId) {
       return parse(await kv.get(receiptKey(planId)));
     },
-    async putReceipt(planId, receipt, ttlSeconds = RECEIPT_SECONDS) {
-      await kv.put(receiptKey(planId), JSON.stringify(receipt), { expirationTtl: ttlSeconds });
+    async putReceipt(planId, stored, ttlSeconds = RECEIPT_SECONDS) {
+      await kv.put(receiptKey(planId), JSON.stringify(stored), { expirationTtl: ttlSeconds });
     },
   };
 }
