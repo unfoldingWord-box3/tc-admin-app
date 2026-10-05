@@ -1,0 +1,63 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_obs1948/healthcheck?ref=master"
+  },
+  "response": {
+    "status": 200,
+    "ms": 5467,
+    "json": {
+      "ok": true,
+      "data": {
+        "issues": {
+          "title_has_uw": [],
+          "ingredient_title_is_en": [],
+          "release_needed": [
+            {
+              "issue_code": "release_needed",
+              "severity_level": "info",
+              "positive_title": "An error-free release has been published",
+              "negative_title": "An error-free release needs to be published for the resource",
+              "details": "An error-free release needs to be published for the resource.",
+              "suggestion": "No release exists for this resource. Make a release with <a href=\"https://gateway-admin.netlify.app/\" target=\"_blank\">gatewayAdmin</a>."
+            }
+          ],
+          "repo_name_lang_mismatch": [],
+          "sb_ingredient_missing": [],
+          "sb_ingredient_mismatch": [],
+          "metadata_invalid": [],
+          "language_is_en": [],
+          "ingredient_missing": [],
+          "ingredient_empty": [],
+          "no_metadata": []
+        },
+        "overall_severity_level": "info",
+        "severity_level_count": {
+          "warning": 0,
+          "error": 0,
+          "success": 0,
+          "info": 1
+        }
+      }
+    }
+  },
+  "sequence": [
+    {
+      "t_ms": 114,
+      "status": 422,
+      "level": null,
+      "error": "no metadata found for repo [tc-admin-qa-org/id_obs1948] and ref [master]",
+      "issues": null
+    },
+    {
+      "t_ms": 5467,
+      "status": 200,
+      "level": "info",
+      "error": null,
+      "issues": {
+        "release_needed": 1
+      }
+    }
+  ],
+  "latency_ms": 5467
+}

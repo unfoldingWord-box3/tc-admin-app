@@ -169,6 +169,21 @@ describe('a successful apply', () => {
     expect(result.coverage.units.every(unit => !unit.present)).toBe(true);
   });
 
+  test('H5: an Open Bible Stories project\'s report counts 0 of 50 stories, type obs, editable (#82)', async () => {
+    const planned = await plan({ project_type: 'obs', testament_scope: null, abbreviation: 'OBS' });
+    const { result, wrote } = await apply(planned.id);
+    expect(wrote[0]!.target).toBe('tc-admin-qa-org/id_obs');
+    expect(result).toMatchObject({
+      project_type: 'obs',
+      metadata_format: 'sb',
+      editability: { state: 'editable' },
+      coverage: { present: 0, target: 50, scope: 'obs', basis: 'archive' },
+      setup: { state: 'complete', failed_step: null },
+    });
+    expect(result.coverage.units).toHaveLength(50);
+    expect(result.coverage.units.map(unit => unit.id).slice(0, 3)).toEqual(['01', '02', '03']);
+  });
+
   test('a repeated apply with the same plan id answers the same receipt and writes nothing more; the receipt is kept a day', async () => {
     const planned = await plan();
     const first = await apply(planned.id);

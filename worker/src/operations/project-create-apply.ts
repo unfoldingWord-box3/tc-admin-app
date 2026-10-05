@@ -12,7 +12,8 @@
 // and before the commit, and with what became of the commit. The report is
 // built from what was written, because Door43's catalog
 // reads the new repository a few seconds later (E28), and says so: coverage
-// from the metadata just written, health never checked (H3).
+// from the metadata just written, 0 of the testament scope's books or of the
+// fifty stories (H5), health never checked (H3).
 
 import { CatalogError, catalogMessage } from '@tc-admin/shared/schema';
 import type { OperationOutput, ParsedInput, ProjectReport } from '@tc-admin/shared/schema';
@@ -20,7 +21,7 @@ import { readAccount } from '../door43/auth';
 import { repositoryExists } from '../door43/repos';
 import { DEFAULT_BRANCH, commitFiles, createRepository } from '../door43/writes';
 import type { Commit, CreatedRepository } from '../door43/writes';
-import { LICENSE_PATH, currentScope } from '../model/burrito';
+import { FLAVOR_BY_TYPE, LICENSE_PATH, projectScope } from '../model/burrito';
 import { coverage, editability } from '../model/project';
 import type { OperationContext } from './context';
 import { signedIn } from './context';
@@ -39,10 +40,15 @@ export function createdProjectReport(
   checkedAt: string,
 ): ProjectReport {
   const { project } = payload;
-  const books = Object.keys(currentScope(project.testament_scope));
   const files = coverage(
-    { flavor: 'textTranslation', metadata_format: 'sb', ingredients: [{ id: 'license', path: LICENSE_PATH, exists: true, is_dir: false }], current_scope: books },
-    'bible',
+    {
+      flavor: FLAVOR_BY_TYPE[project.project_type].flavor,
+      metadata_format: 'sb',
+      ingredients: [{ id: 'license', path: LICENSE_PATH, exists: true, is_dir: false }],
+      // A Bible's testament scope widens the coverage scope (H5); the Open Bible Stories scope lists passages, not stories, and the coverage scope is `obs` regardless.
+      current_scope: project.project_type === 'bible' ? Object.keys(projectScope(project)) : null,
+    },
+    project.project_type,
   );
   return {
     ref: { owner: payload.owner.login, repo: payload.repo_name, id: repository.id, url: repository.url },
@@ -50,9 +56,9 @@ export function createdProjectReport(
     description: project.title,
     default_branch: repository.default_branch,
     language: { code: project.language.code, title: project.language.title },
-    project_type: 'bible',
+    project_type: project.project_type,
     metadata_format: 'sb',
-    editability: editability('sb', 'bible'),
+    editability: editability('sb', project.project_type),
     // Counted from the metadata just written, which is the project's Scripture Burrito, not from Door43's catalog, which has not read it yet.
     coverage: { ...files, basis: 'archive' },
     health: { state: 'never_checked', severity_raw: null, ref: repository.default_branch, checked_at: null, issue_count: null, source: 'door43' },

@@ -1,0 +1,278 @@
+{
+  "operation": "project.create.apply",
+  "request_id": "probe-1791229696664",
+  "plan_id": "1f34db8a-6852-4ad0-ad87-0339eb7447b4",
+  "started_at": "2026-10-05T19:48:17.460Z",
+  "finished_at": "2026-10-05T19:48:18.759Z",
+  "wrote": [
+    {
+      "kind": "repo",
+      "target": "tc-admin-qa-org/id_obs1948",
+      "url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948"
+    },
+    {
+      "kind": "commit",
+      "target": "tc-admin-qa-org/id_obs1948@master",
+      "sha": "9b95450fef1734901069806cfe457c1dabf3a442",
+      "url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/commit/9b95450fef1734901069806cfe457c1dabf3a442"
+    }
+  ],
+  "result": {
+    "ref": {
+      "owner": "tc-admin-qa-org",
+      "repo": "id_obs1948",
+      "id": 96870,
+      "url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948"
+    },
+    "title": "tC Admin probe OBS 2026-10-05 1948",
+    "description": "tC Admin probe OBS 2026-10-05 1948",
+    "default_branch": "master",
+    "language": {
+      "code": "id",
+      "title": "Bahasa Indonesia"
+    },
+    "project_type": "obs",
+    "metadata_format": "sb",
+    "editability": {
+      "state": "editable",
+      "reason": "Scripture Burrito project. Release and editing are available."
+    },
+    "coverage": {
+      "present": 0,
+      "target": 50,
+      "scope": "obs",
+      "basis": "archive",
+      "units": [
+        {
+          "id": "01",
+          "present": false
+        },
+        {
+          "id": "02",
+          "present": false
+        },
+        {
+          "id": "03",
+          "present": false
+        },
+        {
+          "id": "04",
+          "present": false
+        },
+        {
+          "id": "05",
+          "present": false
+        },
+        {
+          "id": "06",
+          "present": false
+        },
+        {
+          "id": "07",
+          "present": false
+        },
+        {
+          "id": "08",
+          "present": false
+        },
+        {
+          "id": "09",
+          "present": false
+        },
+        {
+          "id": "10",
+          "present": false
+        },
+        {
+          "id": "11",
+          "present": false
+        },
+        {
+          "id": "12",
+          "present": false
+        },
+        {
+          "id": "13",
+          "present": false
+        },
+        {
+          "id": "14",
+          "present": false
+        },
+        {
+          "id": "15",
+          "present": false
+        },
+        {
+          "id": "16",
+          "present": false
+        },
+        {
+          "id": "17",
+          "present": false
+        },
+        {
+          "id": "18",
+          "present": false
+        },
+        {
+          "id": "19",
+          "present": false
+        },
+        {
+          "id": "20",
+          "present": false
+        },
+        {
+          "id": "21",
+          "present": false
+        },
+        {
+          "id": "22",
+          "present": false
+        },
+        {
+          "id": "23",
+          "present": false
+        },
+        {
+          "id": "24",
+          "present": false
+        },
+        {
+          "id": "25",
+          "present": false
+        },
+        {
+          "id": "26",
+          "present": false
+        },
+        {
+          "id": "27",
+          "present": false
+        },
+        {
+          "id": "28",
+          "present": false
+        },
+        {
+          "id": "29",
+          "present": false
+        },
+        {
+          "id": "30",
+          "present": false
+        },
+        {
+          "id": "31",
+          "present": false
+        },
+        {
+          "id": "32",
+          "present": false
+        },
+        {
+          "id": "33",
+          "present": false
+        },
+        {
+          "id": "34",
+          "present": false
+        },
+        {
+          "id": "35",
+          "present": false
+        },
+        {
+          "id": "36",
+          "present": false
+        },
+        {
+          "id": "37",
+          "present": false
+        },
+        {
+          "id": "38",
+          "present": false
+        },
+        {
+          "id": "39",
+          "present": false
+        },
+        {
+          "id": "40",
+          "present": false
+        },
+        {
+          "id": "41",
+          "present": false
+        },
+        {
+          "id": "42",
+          "present": false
+        },
+        {
+          "id": "43",
+          "present": false
+        },
+        {
+          "id": "44",
+          "present": false
+        },
+        {
+          "id": "45",
+          "present": false
+        },
+        {
+          "id": "46",
+          "present": false
+        },
+        {
+          "id": "47",
+          "present": false
+        },
+        {
+          "id": "48",
+          "present": false
+        },
+        {
+          "id": "49",
+          "present": false
+        },
+        {
+          "id": "50",
+          "present": false
+        }
+      ]
+    },
+    "health": {
+      "state": "never_checked",
+      "severity_raw": null,
+      "ref": "master",
+      "checked_at": null,
+      "issue_count": null,
+      "source": "door43"
+    },
+    "latest_full_release": null,
+    "default_branch_head": {
+      "sha": "9b95450fef1734901069806cfe457c1dabf3a442",
+      "committed_at": "2026-10-05T19:48:18Z"
+    },
+    "active_preparation": null,
+    "setup": {
+      "state": "complete",
+      "failed_step": null
+    },
+    "permissions": {
+      "push": true,
+      "admin": true,
+      "checked_at": "2026-10-05T19:48:18.759Z"
+    },
+    "freshness": {
+      "read_at": "2026-10-05T19:48:18.759Z",
+      "source": "live",
+      "age_seconds": 0
+    }
+  },
+  "warnings": []
+}
