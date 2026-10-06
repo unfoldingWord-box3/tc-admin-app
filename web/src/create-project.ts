@@ -1,5 +1,5 @@
 // The creation wizard's logic, pure so it can be tested without a browser
-// (product spec §6, #28): the owners it offers, the form and its defaults,
+// (product spec §6, #28): the owner it starts with, the form and its defaults,
 // the plan input it sends, which field a failure belongs to (X2), the
 // language search over `language.list` (Q20), and the words for the
 // translation details and the writes. The Worker owns every rule; what is
@@ -27,30 +27,14 @@ type Organizations = OperationOutput<'portfolio.list'>['organizations'];
 /** The wizard's address, so a reload or the back button keeps it; one segment, so it is never a project's (`#/<owner>/<repo>`). */
 export const CREATE_HASH = '#/new';
 
-export interface Owner {
-  login: string;
-  name: string;
-  kind: 'organization' | 'account';
-}
+/** An owner the wizard offers: one `owner.list` returned, which is one the account may create a project in (E43). */
+export type Owner = OperationOutput<'owner.list'>['owners'][number];
 
 const sameLogin = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
-const account = (login: string, name: string): Owner => ({ login, name, kind: 'account' });
 
-/**
- * The owners when `owner.search` is not built yet: the organizations of the loaded
- * portfolio, then the account (product spec §2; decided 6 October 2026 by Rich). An
- * organization the account has no listed project in is missing until `owner.search`
- * lists every organization; `project.create.plan` still decides the creation right (A2).
- */
-export function ownersFromPortfolio(organizations: readonly { name: string }[], me: { login: string; name: string }): Owner[] {
-  const own = organizations.filter(group => !sameLogin(group.name, me.login)).map(group => ({ login: group.name, name: group.name, kind: 'organization' as const }));
-  return [...own, account(me.login, me.name)];
-}
-
-/** The owners from `owner.search`'s `own` list: the account's organizations, then the account. */
-export function ownersFromSearch(own: readonly { login: string; name: string }[], me: { login: string; name: string }): Owner[] {
-  const organizations = own.filter(entry => !sameLogin(entry.login, me.login)).map(entry => ({ login: entry.login, name: entry.name || entry.login, kind: 'organization' as const }));
-  return [...organizations, account(me.login, me.name)];
+/** The owner a wizard starts with: the only one offered, when there is only one; else none, so the manager chooses. */
+export function initialOwner(owners: readonly Owner[]): string {
+  return owners.length === 1 ? owners[0]!.login : '';
 }
 
 export interface Form {

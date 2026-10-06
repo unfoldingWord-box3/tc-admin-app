@@ -3,11 +3,11 @@
 // and shows its preview and `would_write` before anything is written (ADR
 // 0011), then `project.create.apply` with the plan id, and shows the receipt.
 // A failure a field answers for is shown at that field (X2); a session Door43
-// no longer accepts goes to the shell. The owners come from `owner.search`
-// once it is built, and until then, when the Worker answers
-// `unknown_operation` for it (Q26), from the account and the organizations of
-// the loaded portfolio (decided 6 October 2026 by Rich); `project.create.plan`
-// decides the creation right (A2). The language field searches
+// no longer accepts goes to the shell. The owners are `owner.list`'s: only
+// the account and the organizations Door43 lets it create a repository in
+// (E43), as Rich decided on 6 October 2026, so no owner is offered that the
+// plan would refuse; `project.create.plan` and the apply still decide the
+// right at the boundary (A2). The language field searches
 // `language.list` in the browser (Q20); a language whose tag the schema
 // refuses is shown and cannot be chosen (Q30). The project type is asked once,
 // right after the owner (W3). The Bible's translation details are shown with
@@ -26,11 +26,10 @@ import {
   TESTAMENT_SCOPE_LABELS,
   WRITE_LABELS,
   fieldErrors,
+  initialOwner,
   languageLabel,
   missing,
   newForm,
-  ownersFromPortfolio,
-  ownersFromSearch,
   planInput,
   repositoryNameOf,
   searchLanguages,
@@ -46,9 +45,6 @@ type Receipt = OperationOutput<'project.create.apply'>;
 type LanguageList = OperationOutput<'language.list'>;
 
 interface Props {
-  account: { login: string; name: string };
-  /** The loaded portfolio's owner groups, the owners offered until `owner.search` is built. */
-  organizations: readonly { name: string }[];
   onCreated: (project: ProjectReport) => void;
   /** A session Door43 no longer accepts, which ends the signed-in view. */
   onFailure: (failure: unknown) => void;
@@ -65,7 +61,7 @@ function without(errors: FieldErrors, field: Field): FieldErrors {
   return rest;
 }
 
-export function CreateProject({ account, organizations, onCreated, onFailure }: Props) {
+export function CreateProject({ onCreated, onFailure }: Props) {
   const ids = { title: useId(), abbreviation: useId(), language: useId() };
   const [owners, setOwners] = useState<Owner[] | null>(null);
   const [form, setForm] = useState<Form>(() => newForm(''));
@@ -90,28 +86,23 @@ export function CreateProject({ account, organizations, onCreated, onFailure }: 
     [onFailure],
   );
 
-  // The owners: `owner.search`'s own list, or, while the Worker has no such operation, the portfolio's. One owner is no choice.
-  // Nothing is read again once the project is created, though the portfolio read behind it changes the organizations.
+  // The owners the account may create in, read live (E43, A2). One owner is no choice: it is chosen.
   useEffect(() => {
     if (receipt) return;
     let current = true;
-    const offer = (offered: Owner[]) => {
-      if (!current) return;
-      setOwners(offered);
-      if (offered.length === 1) setForm(previous => (previous.owner ? previous : { ...previous, owner: offered[0]!.login }));
-    };
-    callOperation('owner.search', { q: null }).then(
-      result => offer(ownersFromSearch(result.own, account)),
-      (failure: unknown) => {
+    callOperation('owner.list', {}).then(
+      result => {
         if (!current) return;
-        if (failure instanceof ApiError && failure.error.code === 'unknown_operation') offer(ownersFromPortfolio(organizations, account));
-        else if (!expired(failure)) setProblem(failureMessage(failure));
+        setOwners(result.owners);
+        const only = initialOwner(result.owners);
+        if (only) setForm(previous => (previous.owner ? previous : { ...previous, owner: only }));
       },
+      (failure: unknown) => current && !expired(failure) && setProblem(failureMessage(failure)),
     );
     return () => {
       current = false;
     };
-  }, [account, organizations, expired, attempt, receipt]);
+  }, [expired, attempt, receipt]);
 
   // The languages, once the owners are known (so a lone owner is already chosen), with the owner's own first.
   const ownersKnown = owners !== null;
@@ -321,7 +312,8 @@ export function CreateProject({ account, organizations, onCreated, onFailure }: 
 
       <fieldset>
         <legend>Owner</legend>
-        {!owners && <p className="muted">Loading your organizations…</p>}
+        {!owners && <p className="muted">Finding where you can create a project…</p>}
+        {owners?.length === 1 && <p className="muted">Door43 lets you create a project under your own account only. An organization appears here once one of your teams there may create repositories.</p>}
         {owners?.map(owner => (
           <label className="choice" key={owner.login}>
             <input type="radio" name="owner" value={owner.login} checked={form.owner === owner.login} onChange={() => update({ owner: owner.login }, 'owner')} />{' '}

@@ -277,6 +277,7 @@ worker/
     project-create-plan.ts  project.create.plan (#29)
     project-create-apply.ts  project.create.apply: the first Door43 writes, idempotent by plan id (#30)
     language-list.ts  language.list: the wizard's language list, each tag marked as accepted or not (#28)
+    owner-list.ts    owner.list: the owners the account may create a project in, from its teams (E43, A2; #28)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)

@@ -80,7 +80,7 @@ The dashboard must not represent unavailable or unknown health as healthy.
 
 The manager provides:
 
-- Owner: one of their organizations or their own account
+- Owner: their own account, or one of their organizations where Door43 permits repository creation for this account; no other owner is offered (decided 6 October 2026, E43)
 - Project type (Bible or Open Bible Stories), stored as the Scripture Burrito flavor
 - Project title, the name of the Bible or story collection
 - Abbreviation, such as ULT, required

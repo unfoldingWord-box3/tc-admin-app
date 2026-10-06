@@ -5,8 +5,7 @@
 // repository with its reason (ADR 0014). An editable project opens; an
 // unsupported one does not (P1). The open project is named in the address
 // (`#/<owner>/<repo>`) so a reload keeps it, and `#/new` is the creation
-// wizard (#28), whose owners come from the loaded portfolio until
-// `owner.search` is built; a project it creates is listed at once, since
+// wizard (#28); a project it creates is listed at once, since
 // Door43's catalog lists a new repository a few seconds later (E28, S1).
 // Filters and sorting are #24, refresh is #26, and the full project report
 // (`project.read`) is #25.
@@ -69,8 +68,6 @@ export function Portfolio({ account, onFailure }: Props) {
     if (!portfolio) return <p>Loading your projects…</p>;
     return (
       <CreateProject
-        account={account}
-        organizations={portfolio.organizations}
         onCreated={project => {
           setCreated(project);
           setReads(count => count + 1);

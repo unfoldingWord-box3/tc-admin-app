@@ -13,11 +13,10 @@ import {
   TESTAMENT_SCOPE_LABELS,
   WRITE_LABELS,
   fieldErrors,
+  initialOwner,
   languageLabel,
   missing,
   newForm,
-  ownersFromPortfolio,
-  ownersFromSearch,
   planInput,
   repositoryNameOf,
   retireCreated,
@@ -26,10 +25,9 @@ import {
   withCreated,
   withProjectType,
 } from '../src/create-project';
-import type { Form, Language } from '../src/create-project';
+import type { Form, Language, Owner } from '../src/create-project';
 import { hashRef } from '../src/portfolio-labels';
 
-const me = { login: 'tc-admin-qa', name: 'QA Tester' };
 const language = (extra: Partial<Language>): Language => ({ code: 'id', title: 'Bahasa Indonesia', english: 'Indonesian', direction: 'ltr', alternates: [], tag_accepted: true, ...extra });
 const indonesian = language({});
 const pendau = language({ code: 'ums', title: 'Pendau', english: 'Pendau', alternates: ['Ndaoe', 'Ndau', 'Umalasa'] });
@@ -42,22 +40,13 @@ const filled = (extra: Partial<Form> = {}): Form => ({ ...newForm('tc-admin-qa-o
 const error = (extra: Partial<OperationErrorShape>): OperationErrorShape => ({ code: 'validation_failed', message: 'x', retryable: false, next_action: 'fix the input', request_id: 'r1', details: {}, invariant: null, ...extra });
 
 describe('the owners offered', () => {
-  test('from the portfolio: its organizations first, then the account, whose own group is not an organization', () => {
-    const owners = ownersFromPortfolio([{ name: 'bahtraku' }, { name: 'TC-Admin-QA' }, { name: 'unfoldingWord' }], me);
-    expect(owners).toEqual([
-      { login: 'bahtraku', name: 'bahtraku', kind: 'organization' },
-      { login: 'unfoldingWord', name: 'unfoldingWord', kind: 'organization' },
-      { login: 'tc-admin-qa', name: 'QA Tester', kind: 'account' },
-    ]);
-    expect(ownersFromPortfolio([], me)).toEqual([{ login: 'tc-admin-qa', name: 'QA Tester', kind: 'account' }]);
-  });
+  const account: Owner = { login: 'tc-admin-qa', name: 'QA Tester', kind: 'account' };
+  const organization: Owner = { login: 'tc-admin-qa-org', name: 'tc-admin-qa-org', kind: 'organization' };
 
-  test("from owner.search's own list: the organizations by login with their names, then the account", () => {
-    expect(ownersFromSearch([{ login: 'tc-admin-qa-org', name: '' }, { login: 'unfoldingWord', name: 'unfoldingWord®' }], me)).toEqual([
-      { login: 'tc-admin-qa-org', name: 'tc-admin-qa-org', kind: 'organization' },
-      { login: 'unfoldingWord', name: 'unfoldingWord®', kind: 'organization' },
-      { login: 'tc-admin-qa', name: 'QA Tester', kind: 'account' },
-    ]);
+  test('A2: the wizard offers exactly what owner.list returns and starts with the only owner when there is one, else with none', () => {
+    expect(initialOwner([account])).toBe('tc-admin-qa');
+    expect(initialOwner([organization, account])).toBe('');
+    expect(initialOwner([])).toBe('');
   });
 
   test('the wizard address is one segment, so it is never read as a project', () => {

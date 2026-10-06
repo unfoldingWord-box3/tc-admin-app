@@ -128,6 +128,7 @@ error
 | `project.create.apply` | apply | 1 | repo, commit | A2, A3, W1, W4, W5 | #30 |
 | `project.create.retry` | apply | 1 | commit | W4 | #31 |
 | `language.list` | read | 1 | — | — | #28 |
+| `owner.list` | read | 1 | — | A2 | #28 |
 | `release.plan` | plan | 1 | — | R1, R2, R4, R9 | #33, #37, #38 |
 | `release.prepare` | apply | 1 | branch, commit | R1, R2, R3, R5, R7, R10, W2, A2 | #34, #35 |
 | `preparation.read` | read | 1 | — | H1, H2, H3 | #36 |
@@ -212,6 +213,15 @@ The wizard's language field (Q20): every language Door43 lists, for the browser 
 - Inputs: `{ owner | null }`.
 - Door43 reads: `GET /languages/langnames.json` (E25), every entry in Door43's order; with `owner`, also `GET /catalog/list/languages?owner=<owner>&stage=latest` (E25), the languages that owner has repositories in, so the wizard can show those first.
 - Returns: `{ languages: [{ code, title, english, direction: ltr | rtl | null, alternates: [name], tag_accepted }], owner_languages: [code] | null, freshness }`. `title` is the native name and `english` the English name, empty when Door43 has none. `tag_accepted` says whether the Scripture Burrito schema accepts the tag as a language tag (E44, `worker/src/model/language.ts`): Door43's list carries tags it refuses (472 of 9,166 on 6 October 2026, Q30), and the wizard offers such a language as not choosable, saying why, since `project.create.plan` refuses the tag (W1). `owner_languages` is `null` when no owner was named and empty for an owner with no catalog entry.
+- Errors: `session_expired`, `door43_unavailable`.
+
+### `owner.list`
+
+The owners the wizard offers: only those Door43 lets the signed-in account create a repository in, so a manager works only with owners they have write access to (decided 6 October 2026 by Rich; product spec §6).
+
+- Inputs: none.
+- Door43 reads: `/user`; `/user/teams`, every page (E43), the same read `project.create.plan` and `project.create.apply` make for the owner chosen (A2).
+- Returns: `{ owners: [{ login, name, kind: organization | account }], freshness }`: every organization in which a team of the account is the owner team or may create repositories, each once, by name, then the account itself, which creates under its own namespace with the `write:user` scope sign-in requests (Q28). An organization the account belongs to without that right is not returned; a missing or non-boolean grant counts as none (A2 fails closed).
 - Errors: `session_expired`, `door43_unavailable`.
 
 ### `release.plan`
@@ -392,6 +402,7 @@ POST /api/projects/plan                                               project.cr
 POST /api/projects                                                    project.create.apply
 POST /api/projects/{owner}/{repo}/setup/retry                         project.create.retry
 GET  /api/languages?owner=                                            language.list
+GET  /api/owners/writable                                             owner.list
 POST /api/projects/{owner}/{repo}/releases/plan                       release.plan
 POST /api/projects/{owner}/{repo}/preparations                        release.prepare
 GET  /api/projects/{owner}/{repo}/preparations/{preparation_id}       preparation.read
@@ -409,6 +420,6 @@ POST /api/projects/{owner}/{repo}/uploads                             upload.app
 
 `project.refresh` with a null input (the whole portfolio) has no route yet; #26 adds one or folds it into `portfolio.list`. Sign-in is outside `/api/` because the browser follows it, and is not a catalog operation (#12): `GET /auth/login` sends the browser to Door43 with the four scopes (Q10, Q28) and PKCE; `GET /auth/callback` (deployment.md §1) exchanges the code in the Worker, reads `/user`, and starts the session; `POST /auth/logout` ends it. A failed sign-in returns to `/?sign_in=<code>`: `session_expired` only when the sign-in did not start in this browser in the last ten minutes, was replayed, or Door43 refused the code or the new token; `door43_unavailable` when Door43 could not be reached or answered unreadably; `unexpected` with `&reference=<request id>` for any other failure, such as the session store, so the message quotes the id the log carries. Declining on Door43 returns to `/` with nothing to report. `POST /auth/logout` answers 204, or the error shape. Milestone 2 operations get routes with their shapes.
 
-**Web client.** Typed against `shared/schema` (`web/src/api/client.ts`); each wizard and stepper step calls exactly one operation. The creation wizard (#28, `web/src/CreateProject.tsx`) calls `language.list` for its language field, `project.create.plan` to show what will be written, and `project.create.apply` to create; it takes its owners from `owner.search`'s `own` list once that operation is built, and until then, when the Worker answers `unknown_operation` (Q26), from the account and the organizations of the loaded portfolio (decided 6 October 2026 by Rich). The wizard's last step maps to `upload.plan` and `upload.apply`, or `owner.search`, `source.search`, `import.plan`, and `import.apply`. The stepper in product spec §10 maps as: set selection states → `release.plan` and the selection; review snapshot → `release.prepare`; health → `preparation.read`; notes and version → client state; create → `release.create`; promote → `release.promote`; discard → `preparation.discard`.
+**Web client.** Typed against `shared/schema` (`web/src/api/client.ts`); each wizard and stepper step calls exactly one operation. The creation wizard (#28, `web/src/CreateProject.tsx`) calls `owner.list` for the owners it offers, `language.list` for its language field, `project.create.plan` to show what will be written, and `project.create.apply` to create. The wizard's last step maps to `upload.plan` and `upload.apply`, or `owner.search`, `source.search`, `import.plan`, and `import.apply`. The stepper in product spec §10 maps as: set selection states → `release.plan` and the selection; review snapshot → `release.prepare`; health → `preparation.read`; notes and version → client state; create → `release.create`; promote → `release.promote`; discard → `preparation.discard`.
 
 **MCP (deferred).** One tool per operation with the same input and output schemas, the same error codes, and the same plan-before-apply requirement, so an agent operating tC Admin follows the same safety path as a manager. No new logic in the MCP layer.

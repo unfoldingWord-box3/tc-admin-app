@@ -191,6 +191,14 @@ export const OPERATIONS = {
     input: z.object({ owner: z.string().nullish() }),
     output: z.object({ languages: z.array(ListedLanguage), owner_languages: z.array(z.string()).nullable(), freshness: Freshness }),
   },
+  'owner.list': {
+    kind: 'read',
+    milestone: 1,
+    route: { method: 'GET', path: '/api/owners/writable' },
+    input: z.object({}),
+    /** The owners the account may create a project in (E43), organizations by name and the account last; nothing else is offered (decided 6 October 2026). */
+    output: z.object({ owners: z.array(Account.extend({ kind: z.enum(['organization', 'account']) })), freshness: Freshness }),
+  },
   'release.plan': {
     kind: 'plan',
     milestone: 1,
