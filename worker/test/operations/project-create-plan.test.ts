@@ -2,7 +2,9 @@
 // user (E43): the plan previews the metadata and the files, is bound to no
 // source, announces the repository and one commit, and is stored for the apply.
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 import { CatalogError, OPERATIONS } from '@tc-admin/shared/schema';
 import type { OperationInput } from '@tc-admin/shared/schema';
 import { beforeEach, describe, expect, test } from 'vitest';
@@ -19,6 +21,19 @@ const recorded = <T>(path: string): T => (JSON.parse(readFileSync(new URL(path, 
 const user = recorded<{ id: number; login: string }>('2026-10-05/user/user.json');
 const teams = recorded<unknown[]>('2026-10-05/user/user__teams.json');
 const pendau = JSON.parse(readFileSync(new URL('2026-09-21/repos/bahtraku__Perjanjian-Baru-Pendau.json', fixtures), 'utf8')) as object;
+
+// The recorded Scripture Burrito schema (E44), loaded as `worker/test/model/burrito.test.ts` loads it.
+const SCHEMA_DIR = new URL('../../../fixtures/scripture-burrito/2026-10-05/schema/', import.meta.url);
+const schemaFiles = (dir: URL): URL[] =>
+  readdirSync(dir).flatMap(name => {
+    const entry = new URL(name, dir);
+    if (statSync(entry).isDirectory()) return schemaFiles(new URL(`${name}/`, dir));
+    return name.endsWith('.schema.json') && name !== 'scripture_flavor_type.schema.json' ? [entry] : [];
+  });
+const ajv = new Ajv({ strict: false, allErrors: true });
+addFormats(ajv);
+for (const file of schemaFiles(SCHEMA_DIR)) ajv.addSchema(JSON.parse(readFileSync(file, 'utf8')) as object);
+const validateSource = ajv.getSchema('https://burrito.bible/schema/source_metadata.schema.json')!;
 
 class MemoryKV implements KVNamespace {
   readonly entries = new Map<string, { value: string; ttl: number | undefined }>();
@@ -122,6 +137,18 @@ describe('a Bible plan', () => {
     expect(plan.preview.metadata_json).toMatchObject({ languages: [{ tag: 'es-419', name: { en: 'Español (Latinoamérica)' } }], identification: { abbreviation: { en: 'ULT' } } });
   });
 
+  test.each([
+    ['id', 'Bahasa Indonesia'],
+    ['es-419', 'Español (Latinoamérica)'],
+    ['el-x-koine', 'Koine Greek'],
+    ['zh-Hant-TW', '中文 (台灣)'],
+  ])('W1: the stored metadata.json validates against the recorded Scripture Burrito schema (language %s)', async (code, title) => {
+    const plan = await projectCreatePlan(parsed({ language: { code, title } }), context());
+    const stored = JSON.parse(kv.entries.get(`plan:${plan.id}`)!.value) as StoredPlan<ProjectCreatePayload>;
+    const written = JSON.parse(stored.payload.files[0]!.content) as unknown;
+    expect(validateSource(written), JSON.stringify(validateSource.errors, null, 2)).toBe(true);
+  });
+
   test('two plans have two ids', async () => {
     const first = await projectCreatePlan(parsed(), context());
     const second = await projectCreatePlan(parsed(), context());
@@ -147,8 +174,26 @@ describe('what a plan refuses', () => {
     expect((await failure(projectCreatePlan(parsed(), context())))!.code).toBe('permission_denied');
     teamsAnswer = [{ organization: { username: 'tc-admin-qa-org' } }];
     expect((await failure(projectCreatePlan(parsed(), context())))!.code).toBe('permission_denied');
+    teamsAnswer = [
+      { organization: { username: 'tc-admin-qa-org' }, permission: 'read', can_create_org_repo: false },
+      { organization: { username: 'tc-admin-qa-org' }, permission: 'write', can_create_org_repo: false },
+      { organization: { username: 'other-org' }, permission: 'owner', can_create_org_repo: true },
+    ];
+    expect((await failure(projectCreatePlan(parsed(), context())))!.code).toBe('permission_denied');
     expect(kv.entries.size).toBe(0);
     expect(calls.filter(path => path.startsWith('/api/v1/repos/'))).toEqual([]);
+  });
+
+  const denying = { organization: { username: 'tc-admin-qa-org' }, permission: 'read', can_create_org_repo: false };
+  const owning = { organization: { username: 'tc-admin-qa-org' }, permission: 'owner', can_create_org_repo: false };
+  test.each([
+    ['a denying team listed before the owner team', [denying, owning]],
+    ['the owner team listed before a denying team', [owning, denying]],
+  ])('A2: any one team that may create is enough, whatever the order: %s', async (_order, answer) => {
+    teamsAnswer = answer;
+    const plan = await projectCreatePlan(parsed(), context());
+    expect(plan.would_write[0]!.target).toBe('tc-admin-qa-org/id_tcap');
+    expect(kv.entries.size).toBe(1);
   });
 
   test('a team that may create, but is not the owner team, is enough', async () => {
@@ -172,12 +217,15 @@ describe('what a plan refuses', () => {
     ['abbreviation', { abbreviation: 'my ult' }],
     ['language.code', { language: { code: 'not a tag', title: 'X' } }],
     ['language.title', { language: { code: 'xx', title: ' ' } }],
-  ])('validation_failed naming %s, before Door43 is asked about the name', async (field, extra) => {
+    ['title', { title: 'Alkitab\nPercobaan' }],
+    ['language.code', { language: { code: 'en-a', title: 'English' } }],
+    ['language.title', { language: { code: 'id', title: 'Bahasa\nIndonesia' } }],
+  ])('X2: validation_failed naming %s, before Door43 is asked anything, so a schema-invalid metadata.json is never stored', async (field, extra) => {
     const error = (await failure(projectCreatePlan(parsed(extra), context())))!;
     expect(error.code).toBe('validation_failed');
     expect(error.message.startsWith(`${field}: `)).toBe(true);
     expect(error.details).toEqual({ fields: [{ path: field, message: error.message.slice(field.length + 2) }] });
-    expect(calls.filter(path => path.startsWith('/api/v1/repos/'))).toEqual([]);
+    expect(calls).toEqual([]);
     expect(kv.entries.size).toBe(0);
   });
 
