@@ -63,6 +63,7 @@ export async function repositoryExists(client: Door43Client, owner: string, repo
 
 /** One of the account's teams as `GET /user/teams` returns it (E43). Only the fields read. */
 interface Door43Team {
+  id: number;
   organization?: { username?: unknown; name?: unknown } | null;
   permission?: unknown;
   can_create_org_repo?: unknown;
@@ -77,13 +78,13 @@ export interface CreationRight {
 /**
  * The organizations the account belongs to through a team, each with whether that
  * team may create repositories (`GET /user/teams`, E43): an owner team, or a team
- * with `can_create_org_repo`. Read strictly: only an explicit `true` or `owner`
+ * with `can_create_org_repo`. Every page is read, so a granting team listed after
+ * the first page still grants. Read strictly: only an explicit `true` or `owner`
  * grants anything (A2 fails closed).
  */
 export async function creationRights(client: Door43Client): Promise<CreationRight[]> {
-  const teams = await readDoor43<unknown>(client, '/user/teams');
-  if (!Array.isArray(teams)) throw new CatalogError('door43_unavailable', { details: { reason: 'unexpected teams shape' } });
-  return (teams as Door43Team[]).flatMap(team => {
+  const teams = await readPages<Door43Team>(client, '/user/teams');
+  return teams.flatMap(team => {
     const organization = team.organization?.username ?? team.organization?.name;
     if (typeof organization !== 'string' || !organization) return [];
     return [{ organization, can_create: team.permission === 'owner' || team.can_create_org_repo === true }];

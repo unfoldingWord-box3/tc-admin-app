@@ -53,12 +53,19 @@ let calls: string[];
 /** Repositories that exist, as `owner/repo`; a read of any other answers 404. */
 let existing: Set<string>;
 let teamsAnswer: unknown;
+/** When set, the teams list by page (1-based), for the pagination tests. */
+let teamsPages: unknown[][] | null;
 
 const door43: Fetch = async url => {
   const { pathname } = new URL(url);
   calls.push(pathname);
   if (pathname === '/api/v1/user') return Response.json(user);
-  if (pathname === '/api/v1/user/teams') return Response.json(teamsAnswer);
+  if (pathname === '/api/v1/user/teams') {
+    // Door43 pages the list (E43): the fake answers page 1, or `teamsPages[n]`, and an empty page after the last.
+    const page = Number(new URL(url).searchParams.get('page') ?? '1');
+    const pages = teamsPages ?? [teamsAnswer];
+    return Response.json(pages[page - 1] ?? []);
+  }
   const repo = /^\/api\/v1\/repos\/([^/]+)\/([^/]+)$/.exec(pathname);
   if (repo) return existing.has(`${decodeURIComponent(repo[1]!)}/${decodeURIComponent(repo[2]!)}`) ? Response.json(pendau) : new Response('', { status: 404 });
   return new Response('', { status: 404 });
@@ -88,6 +95,7 @@ beforeEach(() => {
   calls = [];
   existing = new Set();
   teamsAnswer = teams;
+  teamsPages = null;
 });
 
 describe('a Bible plan', () => {
@@ -111,7 +119,8 @@ describe('a Bible plan', () => {
       type: { flavorType: { name: 'scripture', flavor: { name: 'textTranslation' } } },
     });
     expect(Object.keys((plan.preview.metadata_json.type as { flavorType: { currentScope: object } }).flavorType.currentScope)).toHaveLength(27);
-    expect(calls).toEqual(['/api/v1/user', '/api/v1/user/teams', '/api/v1/repos/tc-admin-qa-org/id_tcap']);
+    // The teams list is read to its empty last page (E43), then the name is checked.
+    expect(calls).toEqual(['/api/v1/user', '/api/v1/user/teams', '/api/v1/user/teams', '/api/v1/repos/tc-admin-qa-org/id_tcap']);
   });
 
   test('R10: the previewed sizes and checksums are those of the stored files the apply will write, and the plan is kept thirty minutes with its account', async () => {
@@ -199,6 +208,20 @@ describe('what a plan refuses', () => {
   test('a team that may create, but is not the owner team, is enough', async () => {
     teamsAnswer = [{ organization: { username: 'tc-admin-qa-org' }, permission: 'write', can_create_org_repo: true }];
     expect((await projectCreatePlan(parsed(), context())).would_write[0]!.target).toBe('tc-admin-qa-org/id_tcap');
+  });
+
+  test('A2: a granting team listed on a later page grants; every page is read before a denial', async () => {
+    const deny = { organization: { username: 'tc-admin-qa-org' }, permission: 'write', can_create_org_repo: false };
+    const other = { organization: { username: 'some-other-org' }, permission: 'owner', can_create_org_repo: true };
+    teamsPages = [
+      Array.from({ length: 50 }, (_, i) => ({ id: i + 1, ...deny })),
+      [{ id: 51, ...other }, { id: 52, organization: { username: 'tc-admin-qa-org' }, permission: 'owner', can_create_org_repo: true }],
+    ];
+    const plan = await projectCreatePlan(parsed(), context());
+    expect(plan.would_write[0]!.target).toBe('tc-admin-qa-org/id_tcap');
+    expect(calls.filter(path => path === '/api/v1/user/teams')).toHaveLength(3);
+    teamsPages = [Array.from({ length: 50 }, (_, i) => ({ id: i + 1, ...deny })), [{ id: 51, ...other }]];
+    expect((await failure(projectCreatePlan(parsed(), context())))!.code).toBe('permission_denied');
   });
 
   test('the account itself is an owner, planned under the account without a teams read (Q28)', async () => {

@@ -13,9 +13,9 @@ import { md5 } from './md5';
 
 /**
  * The `dcs` id authority every project tC Admin writes declares, as Door43's own
- * converter writes it (`go-rc2sb`, E17): without a trailing slash. translationCore 4
- * writes `https://git.door43.org/`; the two spellings are settled here (E24, #29).
- * The id names the authority, not the host, so it is the same on QA and production.
+ * converter writes it (`go-rc2sb`, E17, E46): without a trailing slash, settled by #29
+ * and confirmed by Rich (E24). The id names the authority, not the host, so it is the
+ * same on QA and production.
  */
 export const DCS_AUTHORITY = { id: 'https://git.door43.org', name: { en: 'Door43 Content Service' } } as const;
 
