@@ -15,6 +15,7 @@ import type { OperationOutput, ParsedInput } from '@tc-admin/shared/schema';
 import type { Door43Client } from '../door43/api';
 import { readAccount } from '../door43/auth';
 import { creationRights, repositoryExists } from '../door43/repos';
+import type { CreatedRepository } from '../door43/writes';
 import { newBibleProjectFiles, repositoryName, validRepositoryName } from '../model/burrito';
 import type { NewBibleProject, ProjectFile } from '../model/burrito';
 import type { OperationContext } from './context';
@@ -36,6 +37,8 @@ export interface ProjectCreatePayload {
   project: NewBibleProject;
   files: { path: string; content: string }[];
   repository_created?: boolean;
+  /** The repository the apply created, stored on the plan before its first commit, so a later apply of this plan never reads it as `name_taken`. */
+  created_repository?: CreatedRepository;
 }
 
 const validation = (field: string, message: string) => new CatalogError('validation_failed', { message: `${field}: ${message}`, details: { fields: [{ path: field, message }] } });

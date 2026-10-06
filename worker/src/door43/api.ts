@@ -116,7 +116,13 @@ export async function writeDoor43(client: Door43Client, method: 'POST' | 'PATCH'
   const status = { door43_status: response.status };
   if (response.status === 401) throw new CatalogError('session_expired', { details: status });
   if (response.status === 403) throw new CatalogError('permission_denied', { details: status });
-  const text = await response.text();
+  let text: string;
+  try {
+    text = await response.text();
+  } catch (cause) {
+    // The status arrived and the body did not: what Door43 did is unknown, as for a lost request, and is not retried (X1).
+    throw new CatalogError('door43_unavailable', { cause, details: { ...status, reason: 'unreadable response body' } });
+  }
   let parsed: unknown = null;
   try {
     parsed = text ? JSON.parse(text) : null;

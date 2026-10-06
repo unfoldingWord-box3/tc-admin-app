@@ -74,10 +74,18 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
   if (done && done.account === account.login) return done.receipt;
 
   const stored = await context.plans.getPlan<ProjectCreatePayload>(input.plan_id);
-  if (!stored || stored.plan.operation !== 'project.create.plan' || stored.account !== account.login || expired(stored, context.now())) {
+  if (!stored || stored.plan.operation !== 'project.create.plan' || stored.account !== account.login) {
     throw new CatalogError('plan_expired', { details: { plan_id: input.plan_id } });
   }
   const { payload } = stored;
+
+  // This plan already created its repository, but no receipt is stored: the earlier apply ended before storing one, or is
+  // still committing. The repository is not created again, nor is the commit retried (X1): setup is incomplete, the retry is #31.
+  // No receipt is stored here, so a receipt the earlier apply stores later is never overwritten.
+  if (payload.created_repository) {
+    return receiptFor(input.plan_id, context, payload, payload.created_repository, null, context.now());
+  }
+  if (expired(stored, context.now())) throw new CatalogError('plan_expired', { details: { plan_id: input.plan_id } });
 
   // The permission at the boundary, read again (A2), and the name, still free.
   const owner = await ownerForCreation(client, account.login, payload.owner.login);
@@ -86,10 +94,10 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
   }
 
   const started = context.now();
-  const target = `${owner.login}/${payload.repo_name}`;
   const repository = await createRepository(client, owner, { name: payload.repo_name, description: payload.project.title });
-  const wrote: ProjectCreateReceipt['wrote'] = [{ kind: 'repo', target, url: repository.url }];
-  const warnings: ProjectCreateReceipt['warnings'] = [];
+  // Recorded before the commit, and kept with the receipt for the retry (#31), so a later apply of this plan finds it.
+  const marked = { ...payload, repository_created: true, created_repository: repository };
+  await context.plans.putPlan({ ...stored, payload: marked }, RECEIPT_SECONDS);
 
   let commit: Commit | null = null;
   try {
@@ -97,25 +105,37 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
       message: `Create ${payload.project.title}\n\nmetadata.json, ingredients/license.md, and README.md, written by ${context.application.name} ${context.application.version}.`,
       files: payload.files,
     });
-    wrote.push({ kind: 'commit', target: `${target}@${DEFAULT_BRANCH}`, sha: commit.sha, url: commit.url });
   } catch (error) {
     // The repository exists and is never deleted (W4); the commit is not retried (X1). Setup is incomplete, and the retry is #31.
     if (!(error instanceof CatalogError)) throw error;
-    warnings.push({ code: 'setup_incomplete', message: catalogMessage('setup_incomplete') });
-    await context.plans.putPlan({ ...stored, payload: { ...payload, repository_created: true } }, RECEIPT_SECONDS);
   }
 
+  const receipt = receiptFor(input.plan_id, context, marked, repository, commit, started);
+  await context.plans.putReceipt(input.plan_id, { receipt, account: account.login });
+  return receipt;
+}
+
+/** The receipt of an apply: the repository, the commit when there is one, else the `setup_incomplete` warning. */
+function receiptFor(
+  planId: string,
+  context: OperationContext,
+  payload: ProjectCreatePayload,
+  repository: CreatedRepository,
+  commit: Commit | null,
+  started: Date,
+): ProjectCreateReceipt {
+  const target = `${payload.owner.login}/${payload.repo_name}`;
+  const wrote: ProjectCreateReceipt['wrote'] = [{ kind: 'repo', target, url: repository.url }];
+  if (commit) wrote.push({ kind: 'commit', target: `${target}@${DEFAULT_BRANCH}`, sha: commit.sha, url: commit.url });
   const finished = context.now();
-  const receipt: ProjectCreateReceipt = {
+  return {
     operation: 'project.create.apply',
     request_id: context.requestId,
-    plan_id: input.plan_id,
+    plan_id: planId,
     started_at: started.toISOString(),
     finished_at: finished.toISOString(),
     wrote,
     result: createdProjectReport(payload, repository, commit, finished.toISOString()),
-    warnings,
+    warnings: commit ? [] : [{ code: 'setup_incomplete', message: catalogMessage('setup_incomplete') }],
   };
-  await context.plans.putReceipt(input.plan_id, { receipt, account: account.login });
-  return receipt;
 }

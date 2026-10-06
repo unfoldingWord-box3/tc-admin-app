@@ -52,6 +52,18 @@ describe('one write', () => {
     expect(requests).toBe(2);
   });
 
+  test('X1: a write whose status arrives but whose body breaks off raises door43_unavailable with the status, after one request', async () => {
+    let requests = 0;
+    const brokenBody: Fetch = async () => {
+      requests += 1;
+      return new Response(new ReadableStream({ start: controller => controller.error(new TypeError('terminated')) }), { status: 201 });
+    };
+    const error = (await failure(writeDoor43(client(brokenBody), 'POST', '/orgs/team/repos', {})))!;
+    expect(error.code).toBe('door43_unavailable');
+    expect(error.details).toMatchObject({ door43_status: 201, reason: 'unreadable response body' });
+    expect(requests).toBe(1);
+  });
+
   test('401 is session_expired and 403 permission_denied; other statuses are returned for the endpoint to map', async () => {
     const status = (code: number) => writeDoor43(client(async () => new Response('{"message":"no"}', { status: code })), 'POST', '/x', {});
     expect((await failure(status(401)))!.code).toBe('session_expired');

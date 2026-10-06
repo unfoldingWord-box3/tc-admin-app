@@ -47,7 +47,7 @@ let sent: Sent[];
 let existing: Set<string>;
 let teamsAnswer: unknown;
 /** What the contents endpoint answers: the recorded commit, a status, or a thrown network failure. */
-let commitAnswer: 'created' | number | 'network';
+let commitAnswer: 'created' | number | 'network' | 'broken-body';
 let createAnswer: 'created' | number;
 
 const door43: Fetch = async (url, init) => {
@@ -67,6 +67,7 @@ const door43: Fetch = async (url, init) => {
   }
   if (method === 'POST' && /^\/api\/v1\/repos\/[^/]+\/[^/]+\/contents$/.test(pathname)) {
     if (commitAnswer === 'network') throw new TypeError('fetch failed');
+    if (commitAnswer === 'broken-body') return new Response(new ReadableStream({ start: controller => controller.error(new TypeError('terminated')) }), { status: 201 });
     if (commitAnswer !== 'created') return Response.json({ message: 'the server broke' }, { status: commitAnswer });
     return Response.json(firstCommit, { status: 201 });
   }
@@ -255,5 +256,61 @@ describe('a first commit that fails', () => {
     sent = [];
     expect(await apply(planned.id)).toEqual(receipt);
     expect(writesSent()).toEqual([]);
+  });
+
+  test('X1: a commit whose status arrives but whose body breaks off is an unknown outcome: setup incomplete, the receipt stored, and a repeated apply writes nothing', async () => {
+    const planned = await plan();
+    commitAnswer = 'broken-body';
+    sent = [];
+    const receipt = OPERATIONS['project.create.apply'].output.parse(await apply(planned.id));
+    expect(writesSent()).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'POST /api/v1/repos/tc-admin-qa-org/id_tcap/contents']);
+    expect(receipt.warnings.map(warning => warning.code)).toEqual(['setup_incomplete']);
+    expect(kv.entries.has(`receipt:${planned.id}`)).toBe(true);
+    sent = [];
+    expect(await apply(planned.id)).toEqual(receipt);
+    expect(writesSent()).toEqual([]);
+  });
+});
+
+describe('a repository this plan created, with no receipt stored', () => {
+  test('X1: an apply that ended after creating the repository is answered setup_incomplete on the next apply, never name_taken, and nothing is written again', async () => {
+    const planned = await plan();
+    const put = kv.put.bind(kv);
+    kv.put = async (key, value, options) => {
+      if (key.startsWith('receipt:')) throw new Error('the request ended before its receipt was stored');
+      return put(key, value, options);
+    };
+    await expect(apply(planned.id)).rejects.toThrow('the request ended');
+    kv.put = put;
+    expect(existing.has('tc-admin-qa-org/id_tcap')).toBe(true);
+    sent = [];
+    const receipt = OPERATIONS['project.create.apply'].output.parse(await apply(planned.id));
+    expect(writesSent()).toEqual([]);
+    expect(receipt.wrote).toEqual([{ kind: 'repo', target: 'tc-admin-qa-org/id_tcap', url: 'https://qa.door43.org/tc-admin-qa-org/id_tcap' }]);
+    expect(receipt.warnings.map(warning => warning.code)).toEqual(['setup_incomplete']);
+    expect(receipt.result.setup).toEqual({ state: 'incomplete', failed_step: 'first_commit' });
+    expect(kv.entries.has(`receipt:${planned.id}`)).toBe(false);
+  });
+
+  test('X1: an apply sent while the first is still committing finds the repository marked on the plan and writes nothing', async () => {
+    const planned = await plan();
+    const pending: { second?: ReturnType<typeof projectCreateApply> } = {};
+    const answer = door43;
+    const pausing: Fetch = async (url, init) => {
+      if (init?.method === 'POST' && url.endsWith('/contents') && !pending.second) {
+        // The second apply answers while the first's commit is still in flight.
+        pending.second = projectCreateApply({ plan_id: planned.id }, { ...context(), door43: { ...context().door43!, fetch: answer } });
+        await pending.second;
+      }
+      return answer(url, init);
+    };
+    const base = context();
+    sent = [];
+    const first = await projectCreateApply({ plan_id: planned.id }, { ...base, door43: { ...base.door43!, fetch: pausing } });
+    const concurrent = await pending.second!;
+    expect(writesSent()).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'POST /api/v1/repos/tc-admin-qa-org/id_tcap/contents']);
+    expect(concurrent.warnings.map(warning => warning.code)).toEqual(['setup_incomplete']);
+    expect(first.warnings).toEqual([]);
+    expect(await apply(planned.id)).toEqual(first);
   });
 });
