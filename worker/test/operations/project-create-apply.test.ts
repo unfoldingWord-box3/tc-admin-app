@@ -301,6 +301,48 @@ describe('a first commit that fails', () => {
     expect(writesSent()).toEqual([]);
     expect((JSON.parse(kv.entries.get(`plan:${planned.id}`)!.value) as StoredPlan<ProjectCreatePayload>).payload.first_commit).toEqual({ outcome: 'unknown', door43_status: 201 });
   });
+
+  test('W4, X1: a commit refused at once still stores its outcome and its receipt within Workers KV\'s one write a second to a key', async () => {
+    const planned = await plan();
+    // Workers KV refuses a second write to the same key inside a second (429); the plan step's own write is long past.
+    const put = kv.put.bind(kv);
+    const lastWrite = new Map<string, number>();
+    kv.put = async (key, value, options) => {
+      const now = Date.now();
+      if (now - (lastWrite.get(key) ?? -Infinity) < 1000) throw new Error('KV PUT failed: 429 Too Many Requests');
+      lastWrite.set(key, now);
+      return put(key, value, options);
+    };
+    commitAnswer = 403;
+    sent = [];
+    const receipt = OPERATIONS['project.create.apply'].output.parse(await apply(planned.id));
+    expect(writesSent()).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'POST /api/v1/repos/tc-admin-qa-org/id_tcap/contents']);
+    expect(receipt.warnings.map(warning => warning.code)).toEqual(['setup_incomplete']);
+    expect(kv.entries.has(`receipt:${planned.id}`)).toBe(true);
+    const stored = JSON.parse(kv.entries.get(`plan:${planned.id}`)!.value) as StoredPlan<ProjectCreatePayload>;
+    expect(stored.payload.created_repository).toMatchObject({ full_name: 'tc-admin-qa-org/id_tcap' });
+    expect(stored.payload.first_commit).toEqual({ outcome: 'failed', door43_status: 403 });
+  });
+
+  test('W4: a commit outcome the plan cannot store does not cost the apply its receipt; the repository marked before the commit stands', async () => {
+    const planned = await plan();
+    const put = kv.put.bind(kv);
+    let planWrites = 0;
+    kv.put = async (key, value, options) => {
+      if (key.startsWith('plan:') && ++planWrites === 2) throw new Error('KV PUT failed: 500');
+      return put(key, value, options);
+    };
+    commitAnswer = 500;
+    sent = [];
+    const receipt = OPERATIONS['project.create.apply'].output.parse(await apply(planned.id));
+    expect(receipt.warnings.map(warning => warning.code)).toEqual(['setup_incomplete']);
+    expect(kv.entries.has(`receipt:${planned.id}`)).toBe(true);
+    const stored = JSON.parse(kv.entries.get(`plan:${planned.id}`)!.value) as StoredPlan<ProjectCreatePayload>;
+    expect(stored.payload.created_repository).toMatchObject({ full_name: 'tc-admin-qa-org/id_tcap' });
+    sent = [];
+    expect(await apply(planned.id)).toEqual(receipt);
+    expect(writesSent()).toEqual([]);
+  });
 });
 
 describe('a repository this plan created, with no receipt stored', () => {

@@ -107,6 +107,7 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
   // Recorded before the commit, and kept with the receipt for the retry (#31), so a later apply of this plan finds it.
   const marked = { ...payload, repository_created: true, created_repository: repository };
   await context.plans.putPlan({ ...stored, payload: marked }, RECEIPT_SECONDS);
+  const markedAt = Date.now();
 
   let commit: Commit | null = null;
   try {
@@ -117,12 +118,31 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
   } catch (error) {
     // The repository exists and is never deleted (W4); the commit is not retried (X1). Setup is incomplete, and the retry (#31) learns what became of it.
     if (!(error instanceof CatalogError)) throw error;
-    await context.plans.putPlan({ ...stored, payload: { ...marked, first_commit: commitOutcome(error) } }, RECEIPT_SECONDS);
+    await recordCommitOutcome(context, { ...stored, payload: { ...marked, first_commit: commitOutcome(error) } }, markedAt);
   }
 
   const receipt = receiptFor(input.plan_id, context, marked, repository, commit, started);
   await context.plans.putReceipt(input.plan_id, { receipt, account: account.login });
   return receipt;
+}
+
+/** Workers KV takes at most one write a second to the same key; a faster second write is refused (429). */
+const SAME_KEY_WRITE_MS = 1000;
+
+/**
+ * Stores what became of the first commit on the plan, the plan's second write
+ * in this apply: it waits out KV's one write a second to a key after the marker,
+ * so a commit refused at once is still recorded. A write that fails anyway does
+ * not cost the apply its receipt: the repository marked before the commit stands.
+ */
+async function recordCommitOutcome(context: OperationContext, stored: StoredPlan<ProjectCreatePayload>, markedAt: number): Promise<void> {
+  const wait = markedAt + SAME_KEY_WRITE_MS - Date.now();
+  if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait));
+  try {
+    await context.plans.putPlan(stored, RECEIPT_SECONDS);
+  } catch {
+    // The marker already on the plan keeps a later apply off name_taken; the receipt below is stored and answered.
+  }
 }
 
 /** The receipt of an apply: the repository, the commit when there is one, else the `setup_incomplete` warning. */
