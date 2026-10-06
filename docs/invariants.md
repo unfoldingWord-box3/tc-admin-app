@@ -83,9 +83,9 @@ Issues: #37.
 ### R10 — Every release is Scripture Burrito with true sizes and checksums
 Every release tC Admin creates is Scripture Burrito assembled from the project's own files, and every ingredient in its `metadata.json` carries the size and md5 recomputed from the file actually in the snapshot. Base metadata is never trusted for these values.
 Source: ADR 0008; product spec §7; evidence E5 (stale checksums in a real repository).
-Enforced in: `worker/src/model/burrito` (metadata merge recomputes size and md5 for every ingredient).
-Verified by: fixture with stale base checksums; merged metadata matches the snapshot files; a snapshot file without an ingredient entry, or an entry without a file, fails the test.
-Issues: #35.
+Enforced in: `worker/src/model/burrito` (a new project's ingredient entries, and the metadata merge, carry the size and md5 computed from the bytes written; `worker/src/model/md5`).
+Verified by: the `R10:` tests in `worker/test/model/burrito.test.ts` and `md5.test.ts` (the license ingredient and every planned file carry the size and md5 of their bytes; md5 against the RFC 1321 suite and Node's digest) and in `worker/test/operations/project-create-plan.test.ts` (the preview's sizes and checksums are those of the stored files the apply writes). For the merge (#35): fixture with stale base checksums; merged metadata matches the snapshot files; a snapshot file without an ingredient entry, or an entry without a file, fails the test.
+Issues: #29, #35.
 
 ## H — Health and coverage truthfulness
 
@@ -160,7 +160,7 @@ Issues: #13.
 Every project tC Admin creates is Scripture Burrito with tC Admin recorded as generator. tC Admin never writes Resource Container, translationStudio, or translationCore metadata.
 Source: ADR 0008.
 Enforced in: `worker/src/model/burrito` is the only metadata writer.
-Verified by: generated metadata validates against the Scripture Burrito schema; no writer for other formats exists.
+Verified by: the `W1:` tests in `worker/test/model/burrito.test.ts` (a new Bible project's metadata validates against the recorded Scripture Burrito source schema, E44, for every testament scope, and names tC Admin as generator with the flavor `scripture/textTranslation`) and in `worker/test/operations/project-create-plan.test.ts`; no writer for other formats exists.
 Issues: #17, #29.
 
 ### W2 — Only a Scripture Burrito project is ever written

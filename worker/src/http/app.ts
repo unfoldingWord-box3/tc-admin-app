@@ -64,6 +64,7 @@ async function runOperation(c: Context<App>, name: RoutedOperation): Promise<Res
     { door43Origin: c.env.DOOR43_ORIGIN, door43ClientId: c.env.DOOR43_CLIENT_ID },
     c.get('requestId'),
     c.get('session')?.record.token ?? null,
+    c.env.PLANS,
   );
   const handler = HANDLERS[name] as ((input: unknown, context: OperationContext) => Promise<unknown>) | undefined;
   // Until every Milestone 1 operation is built, an unbuilt one answers as no operation (Q26).

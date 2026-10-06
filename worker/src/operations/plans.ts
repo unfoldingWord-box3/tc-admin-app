@@ -1,0 +1,58 @@
+// Plans live in Workers KV for their lifetime (architecture §3): a plan
+// operation stores what its apply needs under the plan id, which is also the
+// apply's idempotency key (operations.md §1 rule 6), and the apply reads it
+// back, refuses it once expired or made by another account (`plan_expired`),
+// and stores its receipt under the same id so a repeated apply answers the
+// same receipt and writes nothing more.
+
+import type { KVNamespace } from '../env';
+
+/** A plan expires after thirty minutes (operations.md §2). */
+export const PLAN_SECONDS = 30 * 60;
+/** A receipt is kept a day, so a retried apply inside that time answers the same receipt. */
+export const RECEIPT_SECONDS = 24 * 60 * 60;
+
+/** What a plan operation stores: the plan as returned, the apply's payload, and who planned. */
+export interface StoredPlan<Payload = unknown> {
+  plan: { id: string; operation: string; expires_at: string };
+  payload: Payload;
+  account: string;
+}
+
+export interface PlanStore {
+  getPlan<Payload = unknown>(id: string): Promise<StoredPlan<Payload> | null>;
+  putPlan(stored: StoredPlan, ttlSeconds?: number): Promise<void>;
+  getReceipt<Receipt = unknown>(planId: string): Promise<Receipt | null>;
+  putReceipt(planId: string, receipt: unknown, ttlSeconds?: number): Promise<void>;
+}
+
+export const newPlanId = (): string => crypto.randomUUID();
+
+const planKey = (id: string) => `plan:${id}`;
+const receiptKey = (id: string) => `receipt:${id}`;
+
+function parse<T>(stored: string | null): T | null {
+  if (!stored) return null;
+  try {
+    return JSON.parse(stored) as T;
+  } catch {
+    return null;
+  }
+}
+
+export function planStore(kv: KVNamespace): PlanStore {
+  return {
+    async getPlan(id) {
+      return parse(await kv.get(planKey(id)));
+    },
+    async putPlan(stored, ttlSeconds = PLAN_SECONDS) {
+      await kv.put(planKey(stored.plan.id), JSON.stringify(stored), { expirationTtl: ttlSeconds });
+    },
+    async getReceipt(planId) {
+      return parse(await kv.get(receiptKey(planId)));
+    },
+    async putReceipt(planId, receipt, ttlSeconds = RECEIPT_SECONDS) {
+      await kv.put(receiptKey(planId), JSON.stringify(receipt), { expirationTtl: ttlSeconds });
+    },
+  };
+}

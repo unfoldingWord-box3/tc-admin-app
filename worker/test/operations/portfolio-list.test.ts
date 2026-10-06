@@ -8,7 +8,10 @@ import { describe, expect, test } from 'vitest';
 import { repositoryAccess } from '../../src/door43/repos';
 import type { Door43SearchRepository } from '../../src/door43/repos';
 import { SUPPORTED_FLAVORS } from '../../src/model/project';
+import type { KVNamespace } from '../../src/env';
 import { operationContext } from '../../src/operations';
+
+const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {} };
 import { isListed, portfolioList } from '../../src/operations/portfolio-list';
 
 const repo = (extra: Partial<Door43SearchRepository>): Door43SearchRepository => ({
@@ -80,7 +83,7 @@ describe('portfolio.list', () => {
       const page = Number(searchParams.get('page'));
       return Response.json({ ok: true, data: page === 1 ? repositories : [] });
     };
-    const context = { ...operationContext({ door43Origin: 'https://qa.door43.org', door43ClientId: 'id' }, 'request-1', 't'), now: () => new Date('2026-10-02T12:00:00Z') };
+    const context = { ...operationContext({ door43Origin: 'https://qa.door43.org', door43ClientId: 'id' }, 'request-1', 't', noPlans), now: () => new Date('2026-10-02T12:00:00Z') };
     const output = OPERATIONS['portfolio.list'].output.parse(await portfolioList(input, { ...context, door43: { ...context.door43!, fetch } }));
     return { output, calls, searches, projects: output.organizations.flatMap(group => group.projects) };
   };
@@ -168,7 +171,7 @@ describe('portfolio.list', () => {
   });
 
   test('without a session it is session_expired, and Door43 is not asked', async () => {
-    const context = operationContext({ door43Origin: 'https://qa.door43.org' }, 'request-1');
+    const context = operationContext({ door43Origin: 'https://qa.door43.org' }, 'request-1', null, noPlans);
     await expect(portfolioList({}, context)).rejects.toMatchObject({ code: 'session_expired' });
   });
 });

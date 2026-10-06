@@ -28,9 +28,9 @@ export type WriteKind = z.infer<typeof WriteKind>;
 export const Warning = z.object({ code: z.string(), message: z.string() });
 export type Warning = z.infer<typeof Warning>;
 
-/** The SHAs a plan or preparation was computed from (R5). */
+/** The SHAs a plan or preparation was computed from (R5); `default_branch_sha` is `null` for `project.create.plan`, which has no source. */
 export const BoundTo = z.object({
-  default_branch_sha: z.string(),
+  default_branch_sha: z.string().nullable(),
   release_tag: z.string().nullable(),
   release_tag_sha: z.string().nullable(),
 });

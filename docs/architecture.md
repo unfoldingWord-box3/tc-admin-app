@@ -259,13 +259,18 @@ worker/
     books.ts         book and story ids (#19)
     project.ts       type, editability, coverage (#19)
     health.ts        Door43 severity to health state (H1, H3)
-                     planned: burrito (#17, #29, #35), classify (#20, #45), candidates (#33), version (#37), states
+    burrito.ts       the Scripture Burrito writer: a new Bible project's metadata and files (#29, W1, R10); the release merge is #35, Open Bible Stories #82
+    md5.ts           ingredient checksums (R10)
+    license-cc-by-sa-4.0.ts  the license text of ingredients/license.md (Q20)
+                     planned: burrito reader (#17), classify (#20, #45), candidates (#33), version (#37), states
   src/operations/    one module per catalog operation, plus shared preconditions
     index.ts         the built operations by name
     context.ts       what every operation receives, with the session's Door43 client (A3)
     sign-in.ts       begin and complete sign-in for http/session; not catalog operations (#12)
     situation-read.ts  situation.read; the account from /user when signed in
     portfolio-list.ts  the writable filter (P1, P2); the operation: #23
+    plans.ts         plans and receipts in Workers KV, by plan id (operations.md §2)
+    project-create-plan.ts  project.create.plan (#29)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)
