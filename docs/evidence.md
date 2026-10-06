@@ -135,7 +135,7 @@ Each question names an owner. An agent does not decide an open question; it reco
 **Verified 22 September 2026 (E27):** every write succeeded with an API token holding `write:repository` and `write:organization`; `target_commitish` accepts and records a commit SHA; `operation: upload` updates an existing file without a blob `sha`. The same scopes on an OAuth token are Q10's decided set.
 
 ### Q4 — Required Scripture Burrito metadata for the two flavors (closed)
-The minimum valid `metadata.json` for `scripture/textTranslation` and `gloss/textStories`, and whether Door43's health check accepts what the wizard generates. The schema's required fields are recorded (E37, 1 October 2026); what remains open is the health check's acceptance and the exact values (`format`, `meta.version`, `meta.generator`, `confidential`, `copyright.licenses` for CC BY-SA 4.0).
+The minimum valid `metadata.json` for `scripture/textTranslation` and `gloss/textStories`, and whether Door43's health check accepts what the wizard generates. The schema's required fields were recorded first (E37, 1 October 2026); the health check's acceptance and the exact values were open until the entries below closed them (E45, E47).
 Blocks: #29, #48. Owner: Rich.
 Close by: validating a generated file against the Scripture Burrito schema and committing it to a `tc-admin-qa` repository until health is `success`; recording the file as a fixture.
 

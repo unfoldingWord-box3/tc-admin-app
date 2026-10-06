@@ -101,7 +101,7 @@ export function projectFile(path: string, content: string): ProjectFile {
 /** The repository's README: the project in glossary words; not an ingredient. */
 export function readme(project: NewProject): string {
   const units = project.project_type === 'bible' ? 'books' : 'stories';
-  return `# ${project.title}\n\n${project.abbreviation} · ${project.language.title} (${project.language.code}) · ${TYPE_TERM[project.project_type]}\n\nA Scripture Burrito project created with tC Admin. Its ${units} are listed in \`${METADATA_PATH}\` and kept in \`ingredients/\`.\n`;
+  return `# ${project.title}\n\n${project.abbreviation} · ${project.language.title} (${project.language.code}) · ${TYPE_TERM[project.project_type]}\n\nA Scripture Burrito project created with tC Admin. \`${METADATA_PATH}\` describes it and lists its files; its ${units} will live under \`ingredients/\` as they are added.\n`;
 }
 
 /** The `type` of the metadata: the flavor, and the scope (E37, E44). */

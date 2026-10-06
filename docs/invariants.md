@@ -161,7 +161,7 @@ Every project tC Admin creates is Scripture Burrito with tC Admin recorded as ge
 Source: ADR 0008.
 Enforced in: `worker/src/model/burrito` is the only metadata writer.
 Verified by: the `W1:` tests in `worker/test/model/burrito.test.ts` (a new Bible project's metadata validates against the recorded Scripture Burrito source schema, E44, for every testament scope, and names tC Admin as generator with the flavor `scripture/textTranslation`; a new Open Bible Stories project's validates with `gloss/textStories` and the fixed scope, E46) and in `worker/test/operations/project-create-plan.test.ts`; no writer for other formats exists.
-Issues: #17, #29.
+Issues: #17, #29, #82.
 
 ### W2 — Only a Scripture Burrito project is ever written
 tC Admin writes only to repositories it manages: Scripture Burrito Bible and Open Bible Stories projects. A repository in any other format, of any other type, or without recognized metadata is read for import and never written, released, or converted in place (amended 1 October 2026, ADR 0013).
