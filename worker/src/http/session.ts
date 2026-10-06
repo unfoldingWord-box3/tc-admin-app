@@ -63,12 +63,13 @@ export async function readSession(c: Context<App>, now = Date.now()): Promise<Ac
   return { key, record };
 }
 
-/** A stored record that does not parse, or lacks a token or an expiry, is no session. */
+/** A stored record that does not parse, or lacks a token, an expiry, an account, or a CSRF token, is no session. */
 function parseRecord(stored: string | null): SessionRecord | null {
   if (!stored) return null;
   try {
     const record = JSON.parse(stored) as Partial<SessionRecord> | null;
-    return typeof record?.token === 'string' && typeof record.expiresAt === 'number' && record.account ? (record as SessionRecord) : null;
+    const complete = typeof record?.token === 'string' && typeof record.expiresAt === 'number' && Boolean(record.account) && typeof record.csrf === 'string' && record.csrf !== '';
+    return complete ? (record as SessionRecord) : null;
   } catch {
     return null;
   }
@@ -150,8 +151,10 @@ auth.get('/callback', async c => {
   }
 });
 
+// The session was read by app.ts, which also ran the same-origin and token checks (A4).
 auth.post('/logout', async c => {
+  const session = c.get('session');
   const id = getCookie(c, SESSION_COOKIE);
-  await endSession(c, id ? await sessionKey(id) : null);
+  await endSession(c, session?.key ?? (id ? await sessionKey(id) : null));
   return c.body(null, 204);
 });

@@ -150,8 +150,8 @@ Issues: #12, #30, #39.
 ### A4 — Browser mutations are same-origin with a CSRF token
 Every mutation from the browser passes a same-origin check and a CSRF token. Cross-origin requests are rejected.
 Source: architecture §8; issue #13.
-Enforced in: `worker/src/http` middleware ahead of every apply route.
-Verified by: route tests for missing token, wrong token, and foreign origin.
+Enforced in: `worker/src/http/csrf` middleware ahead of every `POST` under `/api/` and of `POST /auth/logout`: the `Origin` header must be the Worker's own origin, and the `x-csrf-token` header must be the session's token, which `operations/sign-in` makes at sign-in and `http/app` issues to the signed-in browser in a response header, never in a cookie or a body.
+Verified by: the `A4:` tests in `worker/test/http/csrf.test.ts` (a missing or foreign origin, a missing token, and a wrong token each answer `csrf_rejected` and the operation does not run; the token is issued only to a signed-in browser) and in `web/test/client.test.ts` (the client sends the issued token on every `POST` and on no `GET`).
 Issues: #13.
 
 ## W — Writes and formats

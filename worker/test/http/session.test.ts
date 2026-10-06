@@ -2,7 +2,7 @@
 // Workers KV, and the cookie the browser holds. Door43 is stubbed; `/user`
 // answers with the recorded QA response for the test user.
 import { readFileSync } from 'node:fs';
-import { OPERATIONS, OperationErrorShape } from '@tc-admin/shared/schema';
+import { CSRF_HEADER, OPERATIONS, OperationErrorShape } from '@tc-admin/shared/schema';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { Env, KVNamespace } from '../../src/env';
 import worker from '../../src/index';
@@ -79,6 +79,12 @@ async function signIn() {
   const { state } = await startLogin();
   const response = await call(`/auth/callback?code=the-code&state=${state}`, { headers: { cookie: `tca_login=${state}` } });
   return { response, session: cookieValue(cookies(response).get('tca_session'))! };
+}
+
+/** Signs out as the browser does: from the Worker's origin, with the CSRF token an API response issued (A4; csrf.test.ts has the refusals). */
+async function logout(session: string) {
+  const csrf = (await call('/api/situation', { headers: { cookie: `tca_session=${session}` } })).headers.get(CSRF_HEADER) ?? '';
+  return call('/auth/logout', { method: 'POST', headers: { cookie: `tca_session=${session}`, origin: ORIGIN, [CSRF_HEADER]: csrf } });
 }
 
 describe('sign-in', () => {
@@ -258,7 +264,7 @@ describe('session end', () => {
 
   test('A1: logout removes the session and its token from KV and clears the cookie', async () => {
     const { session } = await signIn();
-    const response = await call('/auth/logout', { method: 'POST', headers: { cookie: `tca_session=${session}` } });
+    const response = await logout(session);
     expect(response.status).toBe(204);
     expect(sessions.entries.size).toBe(0);
     expect(cookies(response).get('tca_session')).toMatch(/Max-Age=0/);
@@ -338,10 +344,13 @@ describe('sign-in failures are named for what failed', () => {
   test('X2: the store failing at /auth/logout answers with the catalog error shape and a request id', async () => {
     quiet();
     const { session } = await signIn();
-    sessions.delete = async () => {
-      throw new Error('store unavailable');
-    };
-    const response = await call('/auth/logout', { method: 'POST', headers: { cookie: `tca_session=${session}` } });
+    const response = await (async () => {
+      const csrf = (await call('/api/situation', { headers: { cookie: `tca_session=${session}` } })).headers.get(CSRF_HEADER) ?? '';
+      sessions.delete = async () => {
+        throw new Error('store unavailable');
+      };
+      return call('/auth/logout', { method: 'POST', headers: { cookie: `tca_session=${session}`, origin: ORIGIN, [CSRF_HEADER]: csrf } });
+    })();
     expect(response.status).toBe(500);
     const body = OperationErrorShape.parse(await response.json());
     expect(body.code).toBe('unexpected');

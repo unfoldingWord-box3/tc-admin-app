@@ -278,7 +278,7 @@ worker/
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)
     errors.ts        every failure to the error shape (X2, X3)
     session.ts       /auth/login, /auth/callback, /auth/logout; the token in Workers KV under a hash of the cookie (A1)
-                     planned: csrf (#13)
+    csrf.ts          same-origin and CSRF token checks ahead of every POST (A4)
   test/              model/, door43/, operations/, http/, contract/ (against fixtures)
 web/
   src/api/client.ts  typed client: one call per operation, from shared/schema

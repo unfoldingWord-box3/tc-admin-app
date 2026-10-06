@@ -1,9 +1,11 @@
 // The typed client: one call per catalog operation, with its route, input,
 // and output taken from `shared/schema` (operations.md §7). A failure is an
 // `ApiError` carrying the catalog error shape; the client branches on `code`,
-// never on `message`.
+// never on `message`. The Worker issues the signed-in browser's CSRF token in
+// a response header; the client keeps it in memory only and sends it on every
+// `POST` (A4, A1).
 
-import { ERROR_CATALOG, IDEMPOTENCY_HEADER, OPERATIONS, OperationErrorShape, catalogMessage, routeParams } from '@tc-admin/shared/schema';
+import { CSRF_HEADER, ERROR_CATALOG, IDEMPOTENCY_HEADER, OPERATIONS, OperationErrorShape, catalogMessage, routeParams } from '@tc-admin/shared/schema';
 import type { OperationDefinition, OperationInput, OperationOutput, RoutedOperation } from '@tc-admin/shared/schema';
 
 export class ApiError extends Error {
@@ -19,6 +21,26 @@ export class ApiError extends Error {
 }
 
 export type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
+
+let csrfToken: string | null = null;
+
+/** Keeps the CSRF token a response carries, if any (A4). */
+export function rememberCsrfToken(response: Response): void {
+  const token = response.headers.get(CSRF_HEADER);
+  if (token) csrfToken = token;
+}
+
+/** For tests: forgets the token, as a new page would. */
+export function forgetCsrfToken(): void {
+  csrfToken = null;
+}
+
+/** A mutation's request headers: the token, when the Worker has issued one. */
+function mutationHeaders(headers: HeadersInit | undefined): Headers {
+  const sent = new Headers(headers);
+  if (csrfToken) sent.set(CSRF_HEADER, csrfToken);
+  return sent;
+}
 
 /** The request a call makes: path fields fill the route; the rest is the query of a GET or the JSON body of a POST. */
 export function operationRequest(name: RoutedOperation, input: Readonly<Record<string, unknown>>): { url: string; init: RequestInit } {
@@ -56,7 +78,9 @@ export async function callOperation<Name extends RoutedOperation>(
   fetcher: Fetch = (url, init) => fetch(url, init),
 ): Promise<OperationOutput<Name>> {
   const { url, init } = operationRequest(name, input as Record<string, unknown>);
-  const response = await fetcher(url, { ...init, credentials: 'same-origin' });
+  const headers = init.method === 'POST' ? mutationHeaders(init.headers) : new Headers(init.headers);
+  const response = await fetcher(url, { ...init, headers, credentials: 'same-origin' });
+  rememberCsrfToken(response);
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const parsed = OperationErrorShape.safeParse(body);
@@ -67,8 +91,11 @@ export async function callOperation<Name extends RoutedOperation>(
 
 /** Ends the session (`POST /auth/logout`). A refusal is an `ApiError`; a network failure rejects as it is. */
 export async function signOut(fetcher: Fetch = (url, init) => fetch(url, init)): Promise<void> {
-  const response = await fetcher('/auth/logout', { method: 'POST', credentials: 'same-origin', headers: { accept: 'application/json' } });
-  if (response.ok) return;
+  const response = await fetcher('/auth/logout', { method: 'POST', credentials: 'same-origin', headers: mutationHeaders({ accept: 'application/json' }) });
+  if (response.ok) {
+    forgetCsrfToken();
+    return;
+  }
   const parsed = OperationErrorShape.safeParse(await response.json().catch(() => null));
   throw new ApiError(parsed.success ? parsed.data : unexpected(response.headers.get('x-request-id') ?? 'unknown'), response.status);
 }
