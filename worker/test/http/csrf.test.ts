@@ -111,6 +111,16 @@ describe('the token', () => {
     expect(body).not.toContain(TOKEN);
   });
 
+  test('A4: a request a browser marks cross-site is never issued the token; same-site, same-origin, and non-browser requests are', async () => {
+    const { cookie } = await signIn();
+    for (const [site, issued] of [['cross-site', false], ['same-site', false], ['same-origin', true], ['none', true]] as const) {
+      const response = await call('/api/situation', { headers: { cookie, 'sec-fetch-site': site } });
+      expect(response.status, site).toBe(200);
+      expect(response.headers.has(CSRF_HEADER), site).toBe(issued);
+    }
+    expect((await call('/api/situation', { headers: { cookie } })).headers.has(CSRF_HEADER)).toBe(true);
+  });
+
   test('two sign-ins get two tokens', async () => {
     const first = await signIn();
     const second = await signIn();

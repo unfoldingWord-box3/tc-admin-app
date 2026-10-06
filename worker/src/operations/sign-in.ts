@@ -23,7 +23,7 @@ export interface SessionRecord {
   expiresAt: number;
   account: { login: string; name: string };
   userId: number;
-  /** The session's CSRF token, which every browser mutation must carry (A4); issued to the browser in a response header only. */
+  /** The session's CSRF token, which every browser mutation must carry (A4): 32 random bytes, base64url, as the session id is; issued to the browser in a response header only. */
   csrf: string;
 }
 

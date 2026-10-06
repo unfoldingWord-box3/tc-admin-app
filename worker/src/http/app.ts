@@ -92,12 +92,21 @@ app.use('/auth/logout', async (c, next) => {
 });
 app.use('/auth/logout', csrf);
 
+/**
+ * A request a browser marks as its own site, or one no browser sent. Browsers send
+ * `Sec-Fetch-Site` on every request; a cross-site one is never issued the token, so a
+ * CORS rule added later could not hand it to another site's script (A4).
+ */
+function sameSite(site: string | undefined): boolean {
+  return site === undefined || site === 'same-origin' || site === 'none';
+}
+
 app.use('/api/*', async (c, next) => {
   c.set('requestId', crypto.randomUUID());
   const session = await readSession(c);
   c.set('session', session);
-  // The signed-in browser learns its CSRF token from any API response (A4); it is never in a cookie or a body.
-  if (session) c.header(CSRF_HEADER, session.record.csrf);
+  // The signed-in browser learns its CSRF token from any same-site API response (A4); it is never in a cookie or a body.
+  if (session && sameSite(c.req.header('sec-fetch-site'))) c.header(CSRF_HEADER, session.record.csrf);
   await next();
 });
 app.use('/api/*', csrf);

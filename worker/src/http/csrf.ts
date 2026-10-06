@@ -16,7 +16,11 @@ import type { App } from './app';
 
 const SAFE_METHODS: ReadonlySet<string> = new Set(['GET', 'HEAD', 'OPTIONS']);
 
-/** Compares two strings in time independent of where they differ. */
+/**
+ * Compares two strings byte by byte without stopping at the first difference. The
+ * token is random and compared once per request, so timing is not a practical
+ * oracle here; this keeps the comparison from being an obvious one all the same.
+ */
 export function sameString(a: string, b: string): boolean {
   const left = new TextEncoder().encode(a);
   const right = new TextEncoder().encode(b);
