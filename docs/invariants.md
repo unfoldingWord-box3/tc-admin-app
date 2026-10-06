@@ -174,7 +174,7 @@ Issues: #21, #45, #46, #47.
 The Scripture Burrito flavor is chosen in the wizard and cannot be changed through normal editing after the first valid metadata is saved.
 Source: ADR 0006.
 Enforced in: `worker/src/operations/metadata-apply` (Milestone 2) rejects flavor changes; the wizard (`web/src/CreateProject.tsx`) asks the project type once, right after the owner, and `project.create.plan` writes the flavor from it.
-Verified by: metadata plan that changes the flavor returns `validation_failed`.
+Verified by: a metadata plan that changes the flavor returns `validation_failed` (Milestone 2, #46). Until then: the `W1:` tests in `worker/test/model/burrito.test.ts` and `worker/test/operations/project-create-plan.test.ts` prove the flavor is written from the project type the wizard sends, and the review screen renders the project type the plan was asked for, not a later edit (`web/src/CreateProject.tsx`, bench round 1).
 Issues: #28, #46.
 
 ### W4 — No automatic repository deletion

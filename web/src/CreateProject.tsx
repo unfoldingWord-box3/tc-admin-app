@@ -193,7 +193,7 @@ export function CreateProject({ account, organizations, onCreated, onFailure }: 
         ))}
         <p>
           {incomplete
-            ? 'The repository exists on Door43 without its first commit. tC Admin cannot retry the commit yet, so the project shows as setup incomplete.'
+            ? 'The repository exists on Door43, and its first commit failed or could not be confirmed. tC Admin cannot retry it yet, so the project shows as setup incomplete.'
             : 'Door43 has the repository and its first commit. It can take Door43 a few seconds to list the new project.'}
         </p>
         <p className="muted">Written: {receipt.wrote.map(write => `${WRITE_LABELS[write.kind]} ${write.target}`).join(' · ')}</p>

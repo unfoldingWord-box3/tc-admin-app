@@ -6,6 +6,7 @@ import type { OperationErrorShape, ProjectSummary } from '@tc-admin/shared/schem
 import { describe, expect, test } from 'vitest';
 import {
   CREATE_HASH,
+  tagProblem,
   DETAIL_LABELS,
   DETAIL_OPTIONS,
   DETAIL_VALUE_LABELS,
@@ -105,6 +106,19 @@ describe('the form', () => {
     expect(missing(withProjectType(filled({ testament_scope: null }), 'obs'))).toEqual({});
     expect(missing(filled({ language: dayakLaur }))).toEqual({ language: tagRefused('xdy-x-dayaklaur') });
     expect(tagRefused('xdy-x-dayaklaur')).toContain('xdy-x-dayaklaur');
+  });
+
+  test('Q30: the label for a refused tag says why: a part over eight characters, an empty part, or a space', () => {
+    expect(tagProblem('xdy-x-dayaklaur')).toBe('its part "dayaklaur" is 9 characters long, and a language tag allows at most 8 in each part');
+    expect(tagProblem('aaz-x-amarasibarat')).toBe('its part "amarasibarat" is 12 characters long, and a language tag allows at most 8 in each part');
+    expect(tagProblem('alk-alakatapue')).toBe('its part "alakatapue" is 10 characters long, and a language tag allows at most 8 in each part');
+    expect(tagProblem('iba-x-')).toBe('it has an empty part');
+    expect(tagProblem('-x-')).toBe('it has an empty part');
+    expect(tagProblem('hni-x-bu4du1 hani')).toBe('it contains a space');
+    expect(tagProblem('en-a')).toBe('it is not in the form the standard allows');
+    expect(tagRefused('xdy-x-dayaklaur')).toBe(
+      'The tag xdy-x-dayaklaur is not a language tag Scripture Burrito accepts (BCP 47): its part "dayaklaur" is 9 characters long, and a language tag allows at most 8 in each part. A project cannot be created in this language yet.',
+    );
   });
 
   test('sends a Bible with its testament scope and translation details, and Open Bible Stories with neither, trimmed', () => {

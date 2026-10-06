@@ -91,8 +91,24 @@ export function repositoryNameOf(form: Pick<Form, 'language' | 'abbreviation'>):
 export type Field = 'owner' | 'project_type' | 'title' | 'abbreviation' | 'language' | 'testament_scope' | 'details';
 export type FieldErrors = Partial<Record<Field, string>>;
 
-/** The message `project.create.plan` gives a language whose tag the schema refuses is the same for every language; the wizard says which tag (Q30). */
-export const tagRefused = (code: string) => `The tag ${code} is not one Scripture Burrito accepts, so a project cannot be created in this language yet.`;
+/**
+ * Why a tag is not one the Scripture Burrito schema accepts, in the manager's words
+ * (decided 6 October 2026 by Rich, Q30): the schema takes language tags as BCP 47
+ * defines them, and Door43's list has tags with a part over eight characters
+ * (`xdy-x-dayaklaur`), an empty part (`iba-x-`, `-x-`), or a space. The Worker owns
+ * the rule (`worker/src/model/language.ts`); this names the cause for the label.
+ */
+export function tagProblem(code: string): string {
+  if (/\s/.test(code)) return 'it contains a space';
+  const parts = code.split('-');
+  if (parts.some(part => part === '')) return 'it has an empty part';
+  const long = parts.find(part => part.length > 8);
+  if (long) return `its part "${long}" is ${long.length} characters long, and a language tag allows at most 8 in each part`;
+  return 'it is not in the form the standard allows';
+}
+
+/** The label for a language whose tag the schema refuses: the tag, why, and that no project can be created in it yet (Q30). */
+export const tagRefused = (code: string) => `The tag ${code} is not a language tag Scripture Burrito accepts (BCP 47): ${tagProblem(code)}. A project cannot be created in this language yet.`;
 
 /** What the form still lacks, in the Worker's own words where it has them, so the manager hears one message for one lack. */
 export function missing(form: Form): FieldErrors {

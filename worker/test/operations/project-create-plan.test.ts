@@ -192,11 +192,17 @@ describe('a Bible plan', () => {
     expect((obs.preview.metadata_json.type as { flavorType: { flavor: object } }).flavorType.flavor).toEqual({ name: 'textStories' });
   });
 
-  test('X2: a value outside the schema\'s enumeration is refused by the input schema, naming the field', () => {
-    const raw: Record<string, unknown> = { ...input(), flavor: { audience: 'everyone' } };
-    const result = OPERATIONS['project.create.plan'].input.safeParse(raw);
-    expect(result.success).toBe(false);
-    expect(result.error?.issues.map(issue => issue.path.join('.'))).toEqual(['flavor.audience']);
+  test('X2: a value outside the schema\'s enumeration, or null, is refused by the input schema, naming the field in the spelling the wizard maps', () => {
+    for (const [flavor, path] of [
+      [{ audience: 'everyone' }, 'flavor.audience'],
+      [{ projectType: null }, 'flavor.projectType'],
+      [{ translationType: '' }, 'flavor.translationType'],
+    ] as const) {
+      const raw: Record<string, unknown> = { ...input(), flavor };
+      const result = OPERATIONS['project.create.plan'].input.safeParse(raw);
+      expect(result.success, path).toBe(false);
+      expect(result.error?.issues.map(issue => issue.path.join('.'))).toEqual([path]);
+    }
   });
 
   test('two plans have two ids', async () => {
