@@ -169,6 +169,21 @@ describe('a successful apply', () => {
     expect(result.coverage.units.every(unit => !unit.present)).toBe(true);
   });
 
+  test('H5: an Open Bible Stories project\'s report counts 0 of 50 stories, type obs, editable (#82)', async () => {
+    const planned = await plan({ project_type: 'obs', testament_scope: null, abbreviation: 'OBS' });
+    const { result, wrote } = await apply(planned.id);
+    expect(wrote[0]!.target).toBe('tc-admin-qa-org/id_obs');
+    expect(result).toMatchObject({
+      project_type: 'obs',
+      metadata_format: 'sb',
+      editability: { state: 'editable' },
+      coverage: { present: 0, target: 50, scope: 'obs', basis: 'archive' },
+      setup: { state: 'complete', failed_step: null },
+    });
+    expect(result.coverage.units).toHaveLength(50);
+    expect(result.coverage.units.map(unit => unit.id).slice(0, 3)).toEqual(['01', '02', '03']);
+  });
+
   test('a repeated apply with the same plan id answers the same receipt and writes nothing more; the receipt is kept a day', async () => {
     const planned = await plan();
     const first = await apply(planned.id);
@@ -177,6 +192,19 @@ describe('a successful apply', () => {
     expect(again).toEqual(first);
     expect(writesSent()).toEqual([]);
     expect(kv.entries.get(`receipt:${planned.id}`)!.ttl).toBe(86_400);
+  });
+
+  test('H5: a Bible plan stored before #82, with a testament scope and no project_type, is applied as a Bible: 0 of its testament\'s books, and the receipt is kept', async () => {
+    const planned = await plan();
+    const key = `plan:${planned.id}`;
+    const stored = JSON.parse(kv.entries.get(key)!.value) as StoredPlan<{ project: Record<string, unknown> }>;
+    delete stored.payload.project.project_type;
+    kv.entries.set(key, { ...kv.entries.get(key)!, value: JSON.stringify(stored) });
+    sent = [];
+    const receipt = OPERATIONS['project.create.apply'].output.parse(await apply(planned.id));
+    expect(writesSent()).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'POST /api/v1/repos/tc-admin-qa-org/id_tcap/contents']);
+    expect(receipt.result).toMatchObject({ project_type: 'bible', coverage: { present: 0, target: 27, scope: 'nt', basis: 'archive' }, setup: { state: 'complete', failed_step: null } });
+    expect(kv.entries.has(`receipt:${planned.id}`)).toBe(true);
   });
 
   test('the account itself is created under /user/repos (Q28)', async () => {
@@ -221,6 +249,18 @@ describe('what an apply refuses before writing', () => {
     clock = new Date('2026-10-05T15:00:00.000Z');
     const key = `plan:${planned.id}`;
     kv.entries.set(key, { ...kv.entries.get(key)!, value: JSON.stringify({ ...JSON.parse(kv.entries.get(key)!.value), account: 'someone-else' }) });
+    expect((await failure(apply(planned.id)))!.code).toBe('plan_expired');
+    expect(writesSent()).toEqual([]);
+  });
+
+  test('plan_expired for a stored plan with neither a project type nor a testament scope, and nothing is written', async () => {
+    const planned = await plan();
+    const key = `plan:${planned.id}`;
+    const stored = JSON.parse(kv.entries.get(key)!.value) as StoredPlan<{ project: Record<string, unknown> }>;
+    delete stored.payload.project.project_type;
+    stored.payload.project.testament_scope = null;
+    kv.entries.set(key, { ...kv.entries.get(key)!, value: JSON.stringify(stored) });
+    sent = [];
     expect((await failure(apply(planned.id)))!.code).toBe('plan_expired');
     expect(writesSent()).toEqual([]);
   });

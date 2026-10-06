@@ -121,8 +121,8 @@ Issues: #8, #25, #50.
 Coverage counts recognized books present against the testament-scope target (27, 39, 66) for a Bible project, or stories against 50 for an Open Bible Stories project. It is never presented as translation completeness. It is computed from catalog metadata (E12), and it is distinct from a release's `currentScope`, which lists only released books (Q7).
 Source: CONTEXT.md "Coverage"; product spec §5.
 Enforced in: `worker/src/model/project` (coverage carries `basis` and `target`); `web` copy uses the glossary wording.
-Verified by: the `H5:` tests in `worker/test/model/project.test.ts` over each scope and in `worker/test/contract/project-catalog.test.ts` over the seed repositories (E32); UI copy review against CONTEXT.md.
-Issues: #19, #24.
+Verified by: the `H5:` tests in `worker/test/model/project.test.ts` over each scope, in `worker/test/contract/project-catalog.test.ts` over the seed repositories (E32), and in `worker/test/operations/project-create-apply.test.ts` (a new Open Bible Stories project's report counts 0 of 50 stories); UI copy review against CONTEXT.md.
+Issues: #19, #24, #82.
 
 ## A — Access and identity
 
@@ -160,8 +160,8 @@ Issues: #13.
 Every project tC Admin creates is Scripture Burrito with tC Admin recorded as generator. tC Admin never writes Resource Container, translationStudio, or translationCore metadata.
 Source: ADR 0008.
 Enforced in: `worker/src/model/burrito` is the only metadata writer.
-Verified by: the `W1:` tests in `worker/test/model/burrito.test.ts` (a new Bible project's metadata validates against the recorded Scripture Burrito source schema, E44, for every testament scope, and names tC Admin as generator with the flavor `scripture/textTranslation`) and in `worker/test/operations/project-create-plan.test.ts`; no writer for other formats exists.
-Issues: #17, #29.
+Verified by: the `W1:` tests in `worker/test/model/burrito.test.ts` (a new Bible project's metadata validates against the recorded Scripture Burrito source schema, E44, for every testament scope, and names tC Admin as generator with the flavor `scripture/textTranslation`; a new Open Bible Stories project's validates with `gloss/textStories` and the fixed scope, E46) and in `worker/test/operations/project-create-plan.test.ts`; no writer for other formats exists.
+Issues: #17, #29, #82.
 
 ### W2 — Only a Scripture Burrito project is ever written
 tC Admin writes only to repositories it manages: Scripture Burrito Bible and Open Bible Stories projects. A repository in any other format, of any other type, or without recognized metadata is read for import and never written, released, or converted in place (amended 1 October 2026, ADR 0013).

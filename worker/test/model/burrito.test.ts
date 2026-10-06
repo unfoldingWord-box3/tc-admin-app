@@ -1,7 +1,8 @@
-// The Scripture Burrito writer (#29): a new Bible project's metadata.json
-// validates against the recorded Scripture Burrito schema (W1, E37, E44),
-// names tC Admin as generator, and lists its one ingredient with the size and
-// md5 of the bytes that will be written (R10).
+// The Scripture Burrito writer (#29, #82): a new project's metadata.json, a
+// Bible or Open Bible Stories, validates against the recorded Scripture
+// Burrito schema (W1, E37, E44), names tC Admin as generator, carries the
+// scope of its type, and lists its one ingredient with the size and md5 of
+// the bytes that will be written (R10).
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import Ajv from 'ajv';
@@ -14,11 +15,12 @@ import {
   METADATA_PATH,
   README_PATH,
   currentScope,
-  newBibleProjectFiles,
+  newProjectFiles,
   repositoryName,
   validRepositoryName,
 } from '../../src/model/burrito';
-import type { Generator, NewBibleProject } from '../../src/model/burrito';
+import type { Generator, NewProject } from '../../src/model/burrito';
+import { OBS_SCOPE } from '../../src/model/obs-scope';
 
 const SCHEMA_DIR = new URL('../../../fixtures/scripture-burrito/2026-10-05/schema/', import.meta.url);
 /** References three files the upstream repository lacks, and nothing a source burrito needs reaches it (the fixture README). */
@@ -40,9 +42,12 @@ const validateSource = ajv.getSchema('https://burrito.bible/schema/source_metada
 const reference = (bytes: Uint8Array) => createHash('md5').update(bytes).digest('hex');
 
 const generator: Generator = { name: 'tC Admin', version: '0.1.0', user: { login: 'tc-admin-qa', name: 'tc-admin-qa' } };
-const project = (extra: Partial<NewBibleProject> = {}): NewBibleProject => ({
+/** Overrides a test may give: every field but the type and its scope, which `project` and `stories` set. */
+type Overrides = Partial<{ owner: string; repo_name: string; title: string; abbreviation: string; language: NewProject['language']; testament_scope: 'nt' | 'ot' | 'full' }>;
+const project = (extra: Overrides = {}): NewProject => ({
   owner: 'tc-admin-qa-org',
   repo_name: 'id_tcap',
+  project_type: 'bible',
   title: 'Alkitab Percobaan',
   abbreviation: 'TCAP',
   language: { code: 'id', title: 'Bahasa Indonesia', direction: 'ltr' },
@@ -50,12 +55,21 @@ const project = (extra: Partial<NewBibleProject> = {}): NewBibleProject => ({
   license: 'cc-by-sa-4.0',
   ...extra,
 });
+const stories = (extra: Omit<Overrides, 'testament_scope'> = {}): NewProject => ({
+  ...project(),
+  project_type: 'obs',
+  testament_scope: null,
+  repo_name: 'id_obs',
+  title: 'Cerita Alkitab Terbuka',
+  abbreviation: 'OBS',
+  ...extra,
+});
 const now = new Date('2026-10-05T15:00:00.000Z');
 const upper = (books: readonly string[]) => books.map(book => book.toUpperCase());
 
 describe('the metadata of a new Bible project', () => {
   test.each(['nt', 'ot', 'full'] as const)('W1: the generated metadata.json validates against the Scripture Burrito source schema (scope %s)', scope => {
-    const { metadata, files } = newBibleProjectFiles(project({ testament_scope: scope }), generator, now);
+    const { metadata, files } = newProjectFiles(project({ testament_scope: scope }), generator, now);
     expect(validateSource(metadata), JSON.stringify(validateSource.errors, null, 2)).toBe(true);
     const written = JSON.parse(files.find(file => file.path === METADATA_PATH)!.content) as unknown;
     expect(written).toEqual(metadata);
@@ -63,7 +77,7 @@ describe('the metadata of a new Bible project', () => {
   });
 
   test('W1: tC Admin is the generator, as the signed-in manager, and the flavor is scripture/textTranslation with no relationships', () => {
-    const { metadata } = newBibleProjectFiles(project(), generator, now);
+    const { metadata } = newProjectFiles(project(), generator, now);
     expect(metadata).toMatchObject({
       format: 'scripture burrito',
       meta: {
@@ -91,13 +105,13 @@ describe('the metadata of a new Bible project', () => {
     expect(Object.keys(currentScope('ot'))).toHaveLength(39);
     expect(Object.keys(currentScope('full'))).toHaveLength(66);
     expect(Object.values(currentScope('full')).every(chapters => chapters.length === 0)).toBe(true);
-    const { metadata } = newBibleProjectFiles(project({ testament_scope: 'ot' }), generator, now);
+    const { metadata } = newProjectFiles(project({ testament_scope: 'ot' }), generator, now);
     expect(Object.keys((metadata.type as { flavorType: { currentScope: object } }).flavorType.currentScope)).toEqual(upper(OLD_TESTAMENT));
   });
 
   test('E24: the dcs authority is declared without a trailing slash, and the primary identification names the repository under it', () => {
     expect(DCS_AUTHORITY.id).toBe('https://git.door43.org');
-    const { metadata } = newBibleProjectFiles(project(), generator, now);
+    const { metadata } = newProjectFiles(project(), generator, now);
     expect(metadata).toMatchObject({
       idAuthorities: { dcs: { id: 'https://git.door43.org', name: { en: 'Door43 Content Service' } } },
       identification: { primary: { dcs: { 'tc-admin-qa-org/id_tcap': { revision: 'master', timestamp: '2026-10-05T15:00:00.000Z' } } } },
@@ -105,15 +119,53 @@ describe('the metadata of a new Bible project', () => {
   });
 
   test('scriptDirection is written only when the language direction is known', () => {
-    const { metadata } = newBibleProjectFiles(project({ language: { code: 'ums', title: 'Pendau' } }), generator, now);
+    const { metadata } = newProjectFiles(project({ language: { code: 'ums', title: 'Pendau' } }), generator, now);
     expect((metadata.languages as object[])[0]).toEqual({ tag: 'ums', name: { en: 'Pendau' } });
     expect(validateSource(metadata)).toBe(true);
   });
 });
 
+describe('the metadata of a new Open Bible Stories project (#82)', () => {
+  const myOrg = JSON.parse(readFileSync(new URL('../../../fixtures/door43/git.door43.org/2026-10-05/raw/MyOrg__en_obs__main__metadata.json', import.meta.url), 'utf8')) as {
+    type: { flavorType: { currentScope: Record<string, string[]> } };
+  };
+  const enObs = JSON.parse(readFileSync(new URL('../../../fixtures/door43/qa.door43.org/2026-10-01/sb-archives/unfoldingWord__en_obs__v9.metadata.json', import.meta.url), 'utf8')) as {
+    type: { flavorType: { currentScope: Record<string, string[]> } };
+  };
+
+  test('W1: the generated metadata.json validates against the Scripture Burrito source schema with the flavor gloss/textStories', () => {
+    const { metadata, files } = newProjectFiles(stories(), generator, now);
+    expect(validateSource(metadata), JSON.stringify(validateSource.errors, null, 2)).toBe(true);
+    expect(validateSource(JSON.parse(files[0]!.content))).toBe(true);
+    expect(metadata).toMatchObject({ type: { flavorType: { name: 'gloss', flavor: { name: 'textStories' } } } });
+    expect((metadata.type as { flavorType: { flavor: object } }).flavorType.flavor).toEqual({ name: 'textStories' });
+    expect(metadata).not.toHaveProperty('relationships');
+  });
+
+  test('E46: currentScope is the fixed scope Door43 writes for every Open Bible Stories repository: MyOrg/en_obs and unfoldingWord/en_obs v9 (E36) alike, 33 books', () => {
+    expect(OBS_SCOPE).toEqual(myOrg.type.flavorType.currentScope);
+    expect(OBS_SCOPE).toEqual(enObs.type.flavorType.currentScope);
+    expect(Object.keys(OBS_SCOPE)).toHaveLength(33);
+    const { metadata } = newProjectFiles(stories(), generator, now);
+    expect((metadata.type as { flavorType: { currentScope: object } }).flavorType.currentScope).toEqual(OBS_SCOPE);
+  });
+
+  test('the rest of the file is as for a Bible: generator, authority, identification, the one license ingredient, and the README names Open Bible Stories', () => {
+    const { metadata, files } = newProjectFiles(stories(), generator, now);
+    expect(metadata).toMatchObject({
+      meta: { generator: { softwareName: 'tC Admin' } },
+      idAuthorities: { dcs: DCS_AUTHORITY },
+      identification: { name: { en: 'Cerita Alkitab Terbuka' }, abbreviation: { en: 'OBS' }, primary: { dcs: { 'tc-admin-qa-org/id_obs': { revision: 'master' } } } },
+      copyright: { licenses: [{ ingredient: LICENSE_PATH }] },
+    });
+    expect(Object.keys(metadata.ingredients as object)).toEqual([LICENSE_PATH]);
+    expect(files.find(file => file.path === README_PATH)!.content).toContain('OBS · Bahasa Indonesia (id) · Open Bible Stories');
+  });
+});
+
 describe('the files of the first commit', () => {
   test('R10: the license ingredient is the CC BY-SA 4.0 text Scribe writes, with the size and md5 of the file, and is the only ingredient, named in copyright.licenses', () => {
-    const { metadata, files } = newBibleProjectFiles(project(), generator, now);
+    const { metadata, files } = newProjectFiles(project(), generator, now);
     const license = files.find(file => file.path === LICENSE_PATH)!;
     // Scribe's license ingredient in bahtraku/Perjanjian-Baru-Pendau (E17, the recorded metadata).
     expect(license.size).toBe(18535);
@@ -127,7 +179,7 @@ describe('the files of the first commit', () => {
   });
 
   test('R10: every file carries the size and md5 of the bytes that will be written', () => {
-    const { files } = newBibleProjectFiles(project(), generator, now);
+    const { files } = newProjectFiles(project(), generator, now);
     expect(files.map(file => file.path)).toEqual([METADATA_PATH, LICENSE_PATH, README_PATH]);
     for (const file of files) {
       expect(file.bytes).toEqual(new TextEncoder().encode(file.content));
@@ -137,7 +189,7 @@ describe('the files of the first commit', () => {
   });
 
   test('the README names the project in glossary words and is not an ingredient', () => {
-    const { metadata, files } = newBibleProjectFiles(project(), generator, now);
+    const { metadata, files } = newProjectFiles(project(), generator, now);
     const readme = files.find(file => file.path === README_PATH)!;
     expect(readme.content).toContain('# Alkitab Percobaan');
     expect(readme.content).toContain('TCAP · Bahasa Indonesia (id) · Bible');
@@ -146,7 +198,7 @@ describe('the files of the first commit', () => {
   });
 
   test('the metadata file is pretty-printed JSON ending in a newline', () => {
-    const { metadata, files } = newBibleProjectFiles(project(), generator, now);
+    const { metadata, files } = newProjectFiles(project(), generator, now);
     expect(files[0]!.content).toBe(`${JSON.stringify(metadata, null, 2)}\n`);
   });
 });

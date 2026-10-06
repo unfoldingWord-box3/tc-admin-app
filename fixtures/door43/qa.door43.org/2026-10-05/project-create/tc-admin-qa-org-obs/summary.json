@@ -1,0 +1,195 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-10-05T19:48:16.180Z",
+  "input": {
+    "owner": "tc-admin-qa-org",
+    "project_type": "obs",
+    "title": "tC Admin probe OBS 2026-10-05 1948",
+    "abbreviation": "obs1948",
+    "language": {
+      "code": "id",
+      "title": "Bahasa Indonesia",
+      "direction": "ltr"
+    },
+    "testament_scope": null,
+    "license": "cc-by-sa-4.0"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 131
+    },
+    {
+      "step": 2,
+      "name": "GET-user_teams",
+      "status": 200,
+      "ms": 126
+    },
+    {
+      "step": 3,
+      "name": "GET-repos_tc-admin-qa-org_id_obs1948",
+      "status": 404,
+      "ms": 137
+    },
+    {
+      "step": 4,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 125
+    },
+    {
+      "step": 5,
+      "name": "GET-user_teams",
+      "status": 200,
+      "ms": 124
+    },
+    {
+      "step": 6,
+      "name": "GET-repos_tc-admin-qa-org_id_obs1948",
+      "status": 404,
+      "ms": 125
+    },
+    {
+      "step": 7,
+      "name": "POST-orgs_tc-admin-qa-org_repos",
+      "status": 201,
+      "ms": 391
+    },
+    {
+      "step": 8,
+      "name": "POST-repos_tc-admin-qa-org_id_obs1948_contents",
+      "status": 201,
+      "ms": 732
+    },
+    {
+      "step": 9,
+      "name": "health-master",
+      "status": 200,
+      "ms": 5467,
+      "sequence": [
+        {
+          "t_ms": 114,
+          "status": 422,
+          "level": null,
+          "error": "no metadata found for repo [tc-admin-qa-org/id_obs1948] and ref [master]",
+          "issues": null
+        },
+        {
+          "t_ms": 5467,
+          "status": 200,
+          "level": "info",
+          "error": null,
+          "issues": {
+            "release_needed": 1
+          }
+        }
+      ],
+      "latency_ms": 5467
+    },
+    {
+      "step": 10,
+      "name": "GET-repos_catalog-view",
+      "status": 200,
+      "ms": 126
+    },
+    {
+      "step": 11,
+      "name": "GET-catalog_entry_master",
+      "status": 200,
+      "ms": 169
+    }
+  ],
+  "dcs_version": "1.27.3+dcs.13-g23ba3c3ef9",
+  "plan": {
+    "id": "1f34db8a-6852-4ad0-ad87-0339eb7447b4",
+    "repo_name": "id_obs1948",
+    "would_write": [
+      {
+        "kind": "repo",
+        "target": "tc-admin-qa-org/id_obs1948"
+      },
+      {
+        "kind": "commit",
+        "target": "tc-admin-qa-org/id_obs1948@master"
+      }
+    ],
+    "files": [
+      {
+        "path": "metadata.json",
+        "size": 5671,
+        "md5": "5ca6d90b1bf692de70c7a646b02bb0bd"
+      },
+      {
+        "path": "ingredients/license.md",
+        "size": 18535,
+        "md5": "0bf7ef1533f6486c8362dcb8bc19bdd1"
+      },
+      {
+        "path": "README.md",
+        "size": 215,
+        "md5": "aa103c9279c7471ec9bc270461b34f39"
+      }
+    ]
+  },
+  "receipt": {
+    "wrote": [
+      {
+        "kind": "repo",
+        "target": "tc-admin-qa-org/id_obs1948",
+        "url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948"
+      },
+      {
+        "kind": "commit",
+        "target": "tc-admin-qa-org/id_obs1948@master",
+        "sha": "9b95450fef1734901069806cfe457c1dabf3a442",
+        "url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/commit/9b95450fef1734901069806cfe457c1dabf3a442"
+      }
+    ],
+    "warnings": [],
+    "setup": {
+      "state": "complete",
+      "failed_step": null
+    },
+    "started_at": "2026-10-05T19:48:17.460Z",
+    "finished_at": "2026-10-05T19:48:18.759Z"
+  },
+  "repository": "tc-admin-qa-org/id_obs1948",
+  "health_master": {
+    "level": "info",
+    "issues": {
+      "release_needed": 1
+    },
+    "latency_ms": 5468
+  },
+  "catalog_view": {
+    "metadata_type": "sb",
+    "flavor_type": "gloss",
+    "flavor": "textStories",
+    "subject": "Open Bible Stories",
+    "language": "id",
+    "title": "tC Admin probe OBS 2026-10-05 1948",
+    "abbreviation": "obs1948",
+    "ingredients": [
+      "obs"
+    ],
+    "healthcheck_severity": "info",
+    "catalog": {
+      "prod": null,
+      "preprod": null,
+      "latest": {
+        "branch_or_tag_name": "master",
+        "release_url": null,
+        "commit_sha": "9b95450fef1734901069806cfe457c1dabf3a442",
+        "released": "2026-10-05T19:48:18Z",
+        "zipball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/archive/9b95450fef.zip",
+        "tarball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/archive/9b95450fef.tar.gz",
+        "sb_zipball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/sb/9b95450fef.zip",
+        "sb_tarball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/sb/9b95450fef.tar.gz",
+        "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_obs1948/git/trees/9b95450fef?recursive=1&per_page=99999",
+        "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_obs1948/contents?ref=9b95450fef"
+      }
+    }
+  }
+}

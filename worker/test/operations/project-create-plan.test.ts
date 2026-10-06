@@ -158,6 +158,22 @@ describe('a Bible plan', () => {
     expect(validateSource(written), JSON.stringify(validateSource.errors, null, 2)).toBe(true);
   });
 
+  test('W1: an Open Bible Stories plan has no testament scope and previews gloss/textStories metadata with the fixed scope (#82)', async () => {
+    const plan = OPERATIONS['project.create.plan'].output.parse(await projectCreatePlan(parsed({ project_type: 'obs', testament_scope: null, abbreviation: 'OBS' }), context()));
+    expect(plan.preview.repo_name).toBe('id_obs');
+    expect(plan.would_write).toEqual([
+      { kind: 'repo', target: 'tc-admin-qa-org/id_obs' },
+      { kind: 'commit', target: 'tc-admin-qa-org/id_obs@master' },
+    ]);
+    const type = plan.preview.metadata_json.type as { flavorType: { name: string; flavor: object; currentScope: Record<string, string[]> } };
+    expect(type.flavorType.name).toBe('gloss');
+    expect(type.flavorType.flavor).toEqual({ name: 'textStories' });
+    expect(Object.keys(type.flavorType.currentScope)).toHaveLength(33);
+    expect(type.flavorType.currentScope.GEN).toContain('1-2');
+    const stored = JSON.parse(kv.entries.get(`plan:${plan.id}`)!.value) as StoredPlan<ProjectCreatePayload>;
+    expect(stored.payload.project).toMatchObject({ project_type: 'obs', testament_scope: null });
+  });
+
   test('two plans have two ids', async () => {
     const first = await projectCreatePlan(parsed(), context());
     const second = await projectCreatePlan(parsed(), context());
@@ -233,8 +249,8 @@ describe('what a plan refuses', () => {
   });
 
   test.each([
-    ['project_type', { project_type: 'obs' as const, testament_scope: null }],
     ['testament_scope', { testament_scope: null }],
+    ['testament_scope', { project_type: 'obs' as const }],
     ['title', { title: '   ' }],
     ['abbreviation', { abbreviation: ' ' }],
     ['abbreviation', { abbreviation: 'my ult' }],

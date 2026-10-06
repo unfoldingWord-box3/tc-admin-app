@@ -5,17 +5,18 @@
 // would write. It closes the health-acceptance part of Q4 for scripture/textTranslation
 // and records the creation and first-commit request and response shapes (Q3, E27).
 //
-// Usage:  node --env-file=.env scripts/probe/qa-create-probe.mjs [--owner <login>] [--abbreviation <abbr>]
+// Usage:  node --env-file=.env scripts/probe/qa-create-probe.mjs [--owner <login>] [--type bible|obs] [--abbreviation <abbr>]
 //                [--language <code> --language-title <name>] [--scope nt|ot|full] [--plan]
 // Env:    DOOR43_ORIGIN (default https://qa.door43.org; production is refused), TEST_TOKEN (required),
 //         TEST_USER (the default owner: the token's own namespace, which needs a token with write:user,
 //         E26; pass --owner tc-admin-qa-org, where the QA probes create, E23).
-// Output: fixtures/door43/<host>/<date>/project-create/<owner>/NN-<METHOD>-<path>.json (Authorization and
+// Output: fixtures/door43/<host>/<date>/project-create/<owner>[-obs]/NN-<METHOD>-<path>.json (Authorization and
 //         the account's email redacted; the first-commit request body replaced by a note, its files being
 //         plan.json and metadata.json), plan.json, metadata.json (the generated file, the Q4 fixture),
 //         receipt.json, and summary.json. Nothing secret is written.
 // Effect: creates one public repository <language>_<abbreviation> under the owner with one commit,
-//         exactly as the Worker would, and leaves it in place for inspection.
+//         exactly as the Worker would, a Bible (New Testament scope by default) or, with --type obs,
+//         an Open Bible Stories project, and leaves it in place for inspection.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -41,7 +42,7 @@ const stamp = new Date().toISOString().slice(11, 16).replace(':', '');
 const plan = [
   '00 bundle worker/src/operations/index.ts with esbuild; GET /version (public)',
   '01 project.create.plan: GET /user, GET /user/teams (for an organization owner), GET /repos/{owner}/{repo} (404 means the name is free)',
-  '02 project.create.apply: GET /user, GET /user/teams, GET /repos/{owner}/{repo}; POST /orgs/{org}/repos or POST /user/repos; POST /repos/{owner}/{repo}/contents with metadata.json, ingredients/license.md, README.md',
+  '02 project.create.apply: GET /user, GET /user/teams, GET /repos/{owner}/{repo}; POST /orgs/{org}/repos or POST /user/repos; POST /repos/{owner}/{repo}/contents with metadata.json, ingredients/license.md, README.md (a Bible, or with --type obs an Open Bible Stories project)',
   '03 poll GET /repos/{owner}/{repo}/healthcheck?ref=master every 5 s for up to 3 min (public): the health result Door43 gives the generated metadata (Q4)',
   '04 GET /repos/{owner}/{repo} and GET /catalog/entry/{owner}/{repo}/master (public): the catalog view of the new project',
 ];
@@ -54,13 +55,14 @@ if (!TOKEN) {
   process.exit(2);
 }
 
+const type = flag('--type', 'bible');
 const input = {
   owner: flag('--owner', process.env.TEST_USER || ''),
-  project_type: 'bible',
-  title: `tC Admin probe ${today} ${stamp}`,
-  abbreviation: flag('--abbreviation', `tcap${stamp}`),
+  project_type: type,
+  title: `tC Admin probe ${type === 'obs' ? 'OBS ' : ''}${today} ${stamp}`,
+  abbreviation: flag('--abbreviation', `${type === 'obs' ? 'obs' : 'tcap'}${stamp}`),
   language: { code: flag('--language', 'id'), title: flag('--language-title', 'Bahasa Indonesia'), direction: 'ltr' },
-  testament_scope: flag('--scope', 'nt'),
+  testament_scope: type === 'obs' ? null : flag('--scope', 'nt'),
   license: 'cc-by-sa-4.0',
 };
 
@@ -162,7 +164,7 @@ const memoryKV = () => {
     input.owner = me.login;
     summary.input.owner = me.login;
   }
-  outDir = resolve(root, 'fixtures/door43', HOST, today, 'project-create', input.owner);
+  outDir = resolve(root, 'fixtures/door43', HOST, today, 'project-create', type === 'obs' ? `${input.owner}-obs` : input.owner);
   mkdirSync(outDir, { recursive: true });
   console.log(`Owner ${input.owner}, repository ${input.language.code.toLowerCase()}_${input.abbreviation.toLowerCase()}, recordings in ${outDir}`);
 

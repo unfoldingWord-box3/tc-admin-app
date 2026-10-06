@@ -12,7 +12,8 @@
 // and before the commit, and with what became of the commit. The report is
 // built from what was written, because Door43's catalog
 // reads the new repository a few seconds later (E28), and says so: coverage
-// from the metadata just written, health never checked (H3).
+// from the metadata just written, 0 of the testament scope's books or of the
+// fifty stories (H5), health never checked (H3).
 
 import { CatalogError, catalogMessage } from '@tc-admin/shared/schema';
 import type { OperationOutput, ParsedInput, ProjectReport } from '@tc-admin/shared/schema';
@@ -20,7 +21,7 @@ import { readAccount } from '../door43/auth';
 import { repositoryExists } from '../door43/repos';
 import { DEFAULT_BRANCH, commitFiles, createRepository } from '../door43/writes';
 import type { Commit, CreatedRepository } from '../door43/writes';
-import { LICENSE_PATH, currentScope } from '../model/burrito';
+import { FLAVOR_BY_TYPE, LICENSE_PATH, projectScope } from '../model/burrito';
 import { coverage, editability } from '../model/project';
 import type { OperationContext } from './context';
 import { signedIn } from './context';
@@ -39,10 +40,15 @@ export function createdProjectReport(
   checkedAt: string,
 ): ProjectReport {
   const { project } = payload;
-  const books = Object.keys(currentScope(project.testament_scope));
   const files = coverage(
-    { flavor: 'textTranslation', metadata_format: 'sb', ingredients: [{ id: 'license', path: LICENSE_PATH, exists: true, is_dir: false }], current_scope: books },
-    'bible',
+    {
+      flavor: FLAVOR_BY_TYPE[project.project_type].flavor,
+      metadata_format: 'sb',
+      ingredients: [{ id: 'license', path: LICENSE_PATH, exists: true, is_dir: false }],
+      // A Bible's testament scope widens the coverage scope (H5); the Open Bible Stories scope lists passages, not stories, and the coverage scope is `obs` regardless.
+      current_scope: project.project_type === 'bible' ? Object.keys(projectScope(project)) : null,
+    },
+    project.project_type,
   );
   return {
     ref: { owner: payload.owner.login, repo: payload.repo_name, id: repository.id, url: repository.url },
@@ -50,9 +56,9 @@ export function createdProjectReport(
     description: project.title,
     default_branch: repository.default_branch,
     language: { code: project.language.code, title: project.language.title },
-    project_type: 'bible',
+    project_type: project.project_type,
     metadata_format: 'sb',
-    editability: editability('sb', 'bible'),
+    editability: editability('sb', project.project_type),
     // Counted from the metadata just written, which is the project's Scripture Burrito, not from Door43's catalog, which has not read it yet.
     coverage: { ...files, basis: 'archive' },
     health: { state: 'never_checked', severity_raw: null, ref: repository.default_branch, checked_at: null, issue_count: null, source: 'door43' },
@@ -74,6 +80,19 @@ function commitOutcome(error: CatalogError): NonNullable<ProjectCreatePayload['f
   return { outcome: unknown ? 'unknown' : 'failed', door43_status: status };
 }
 
+/**
+ * The stored payload with its project type. A plan stored before #82 has no
+ * `project_type`: it was a Bible, with a testament scope. A payload with
+ * neither cannot be read, and is refused before anything is written.
+ */
+export function storedPayload(payload: ProjectCreatePayload): ProjectCreatePayload | null {
+  const project: { project_type?: unknown; testament_scope?: unknown } = payload.project;
+  if (project.project_type === 'bible' || project.project_type === 'obs') return payload;
+  const scope = project.testament_scope;
+  if (project.project_type !== undefined || (scope !== 'nt' && scope !== 'ot' && scope !== 'full')) return null;
+  return { ...payload, project: { ...payload.project, project_type: 'bible', testament_scope: scope } };
+}
+
 export async function projectCreateApply(input: ParsedInput<'project.create.apply'>, context: OperationContext): Promise<ProjectCreateReceipt> {
   const client = signedIn(context);
   const { account } = await readAccount(client);
@@ -86,7 +105,8 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
   if (!stored || stored.plan.operation !== 'project.create.plan' || stored.account !== account.login) {
     throw new CatalogError('plan_expired', { details: { plan_id: input.plan_id } });
   }
-  const { payload } = stored;
+  const payload = storedPayload(stored.payload);
+  if (!payload) throw new CatalogError('plan_expired', { details: { plan_id: input.plan_id } });
 
   // This plan already created its repository, but no receipt is stored: the earlier apply ended before storing one, or is
   // still committing. The repository is not created again, nor is the commit retried (X1): setup is incomplete, the retry is #31.

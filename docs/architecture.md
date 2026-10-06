@@ -260,7 +260,8 @@ worker/
     books.ts         book and story ids (#19)
     project.ts       type, editability, coverage (#19)
     health.ts        Door43 severity to health state (H1, H3)
-    burrito.ts       the Scripture Burrito writer: a new Bible project's metadata and files (#29, W1, R10); the release merge is #35, Open Bible Stories #82
+    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10); the release merge is #35
+    obs-scope.ts     the fixed currentScope of every Open Bible Stories project (E46)
     md5.ts           ingredient checksums (R10)
     license-cc-by-sa-4.0.ts  the license text of ingredients/license.md (Q20)
                      planned: burrito reader (#17), classify (#20, #45), candidates (#33), version (#37), states

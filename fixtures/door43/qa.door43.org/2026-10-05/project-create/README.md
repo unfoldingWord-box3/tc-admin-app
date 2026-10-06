@@ -8,5 +8,6 @@ Each `NN-<METHOD>-<path>.json` holds one Door43 request the operations made (hea
 | --- | --- | --- |
 | `tc-admin-qa/` | the user's own namespace (`POST /user/repos`) | the plan succeeded; the apply was refused with 403 `required=[write:user]` (step 05) and answered `permission_denied`, writing nothing (E26, Q28) |
 | `tc-admin-qa-org/` | the organization (`POST /orgs/{org}/repos`) | repository `tc-admin-qa-org/id_tcap1856` created (step 07, 201), one commit of `metadata.json`, `ingredients/license.md`, `README.md` (step 08, 201), health `info` with only `release_needed` after 10.9 s (step 09), the catalog view and entry (steps 10, 11); the repository is kept for inspection |
+| `tc-admin-qa-org-obs/` | the organization, `--type obs`: an Open Bible Stories project titled `tC Admin probe OBS 2026-10-05 1948`, abbreviation `obs1948`, no testament scope | repository `tc-admin-qa-org/id_obs1948` created (step 07), one commit (step 08), health `info` with only `release_needed` after 5.5 s (step 09), read as `gloss/textStories`, subject Open Bible Stories (steps 10, 11); kept for inspection |
 
-The facts derived are E45 and the 5 October entries under Q4 and Q28 in `docs/evidence.md`.
+The facts derived are E45 (the Bible) and E47 (Open Bible Stories), and the 5 October entries under Q4 and Q28 in `docs/evidence.md`.
