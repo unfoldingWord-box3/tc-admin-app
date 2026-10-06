@@ -13,6 +13,7 @@ import { operationContext } from '../../src/operations';
 import type { OperationContext } from '../../src/operations';
 import { projectCreateApply } from '../../src/operations/project-create-apply';
 import { projectCreatePlan } from '../../src/operations/project-create-plan';
+import type { ProjectCreatePayload } from '../../src/operations/project-create-plan';
 import type { StoredPlan } from '../../src/operations/plans';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/', import.meta.url);
@@ -48,21 +49,26 @@ let existing: Set<string>;
 let teamsAnswer: unknown;
 /** What the contents endpoint answers: the recorded commit, a status, or a thrown network failure. */
 let commitAnswer: 'created' | number | 'network' | 'broken-body';
-let createAnswer: 'created' | number;
+let createAnswer: 'created' | number | 'broken-body';
 
 const door43: Fetch = async (url, init) => {
   const { pathname } = new URL(url);
   const method = init?.method ?? 'GET';
   sent.push({ method, path: pathname, headers: new Headers(init?.headers), body: init?.body ? JSON.parse(String(init.body)) : null });
   if (pathname === '/api/v1/user') return Response.json(user);
-  if (pathname === '/api/v1/user/teams') return Response.json(teamsAnswer);
+  if (pathname === '/api/v1/user/teams') return Response.json(Number(new URL(url).searchParams.get('page') ?? '1') === 1 ? teamsAnswer : []);
   const repo = /^\/api\/v1\/repos\/([^/]+)\/([^/]+)$/.exec(pathname);
-  if (repo && method === 'GET') return existing.has(`${repo[1]}/${repo[2]}`) ? Response.json(createdRepo) : new Response('', { status: 404 });
+  if (repo && method === 'GET') {
+    return existing.has(`${repo[1]}/${repo[2]}`)
+      ? Response.json({ ...createdRepo, name: repo[2], full_name: `${repo[1]}/${repo[2]}`, html_url: `https://qa.door43.org/${repo[1]}/${repo[2]}` })
+      : new Response('', { status: 404 });
+  }
   if (method === 'POST' && (pathname === '/api/v1/orgs/tc-admin-qa-org/repos' || pathname === '/api/v1/user/repos')) {
-    if (createAnswer !== 'created') return Response.json({ message: 'refused' }, { status: createAnswer });
+    if (typeof createAnswer === 'number') return Response.json({ message: 'refused' }, { status: createAnswer });
     const name = (sent.at(-1)!.body as { name: string }).name;
     const owner = pathname.startsWith('/api/v1/orgs/') ? 'tc-admin-qa-org' : 'tc-admin-qa';
     existing.add(`${owner}/${name}`);
+    if (createAnswer === 'broken-body') return new Response(new ReadableStream({ start: controller => controller.error(new TypeError('terminated')) }), { status: 201 });
     return Response.json({ ...createdRepo, name, full_name: `${owner}/${name}`, html_url: `https://qa.door43.org/${owner}/${name}` }, { status: 201 });
   }
   if (method === 'POST' && /^\/api\/v1\/repos\/[^/]+\/[^/]+\/contents$/.test(pathname)) {
@@ -184,12 +190,19 @@ describe('a successful apply', () => {
 
 describe('what an apply refuses before writing', () => {
   test('A2: a plan whose owner no longer grants creation is permission_denied, and nothing is written', async () => {
-    const planned = await plan();
-    teamsAnswer = [{ organization: { username: 'tc-admin-qa-org' }, permission: 'write', can_create_org_repo: false }];
-    sent = [];
-    expect((await failure(apply(planned.id)))!.code).toBe('permission_denied');
-    expect(writesSent()).toEqual([]);
-    expect(kv.entries.has(`receipt:${planned.id}`)).toBe(false);
+    for (const answer of [
+      [{ id: 1, organization: { username: 'tc-admin-qa-org' }, permission: 'write', can_create_org_repo: false }],
+      [{ id: 1, organization: { username: 'tc-admin-qa-org' }, permission: 'write', can_create_org_repo: 'true' }],
+      [],
+    ]) {
+      teamsAnswer = teams;
+      const planned = await plan();
+      teamsAnswer = answer;
+      sent = [];
+      expect((await failure(apply(planned.id)))!.code).toBe('permission_denied');
+      expect(writesSent()).toEqual([]);
+      expect(kv.entries.has(`receipt:${planned.id}`)).toBe(false);
+    }
   });
 
   test('name_taken when the name was taken since the plan, and nothing is written', async () => {
@@ -229,6 +242,21 @@ describe('what an apply refuses before writing', () => {
   });
 });
 
+describe('a repository whose creation answer broke off', () => {
+  test('X1, W4: Door43 said 201 and the body broke off: the repository is read back, recorded on the plan, and the apply completes', async () => {
+    const planned = await plan();
+    createAnswer = 'broken-body';
+    sent = [];
+    const receipt = OPERATIONS['project.create.apply'].output.parse(await apply(planned.id));
+    expect(receipt.warnings).toEqual([]);
+    expect(receipt.result.ref).toMatchObject({ owner: 'tc-admin-qa-org', repo: 'id_tcap', id: 96475 });
+    expect(sent.filter(request => request.method === 'GET' && request.path === '/api/v1/repos/tc-admin-qa-org/id_tcap')).toHaveLength(2);
+    expect(writesSent()).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'POST /api/v1/repos/tc-admin-qa-org/id_tcap/contents']);
+    const stored = JSON.parse(kv.entries.get(`plan:${planned.id}`)!.value) as StoredPlan<ProjectCreatePayload>;
+    expect(stored.payload.created_repository).toMatchObject({ id: 96475, full_name: 'tc-admin-qa-org/id_tcap' });
+  });
+});
+
 describe('a first commit that fails', () => {
   test('W4: the repository is kept, the receipt lists the repository only and warns setup_incomplete, the report says setup is incomplete, and the plan is kept for the retry', async () => {
     const planned = await plan();
@@ -244,6 +272,7 @@ describe('a first commit that fails', () => {
     const stored = JSON.parse(kv.entries.get(`plan:${planned.id}`)!.value) as StoredPlan<{ repository_created?: boolean }>;
     expect(stored.payload.repository_created).toBe(true);
     expect(kv.entries.get(`plan:${planned.id}`)!.ttl).toBe(86_400);
+    expect((JSON.parse(kv.entries.get(`plan:${planned.id}`)!.value) as StoredPlan<ProjectCreatePayload>).payload.first_commit).toEqual({ outcome: 'failed', door43_status: 500 });
   });
 
   test('X1: a commit whose outcome is unknown is not retried: one contents call, setup incomplete, and a repeated apply answers the same receipt without writing', async () => {
@@ -256,6 +285,7 @@ describe('a first commit that fails', () => {
     sent = [];
     expect(await apply(planned.id)).toEqual(receipt);
     expect(writesSent()).toEqual([]);
+    expect((JSON.parse(kv.entries.get(`plan:${planned.id}`)!.value) as StoredPlan<ProjectCreatePayload>).payload.first_commit).toEqual({ outcome: 'unknown', door43_status: null });
   });
 
   test('X1: a commit whose status arrives but whose body breaks off is an unknown outcome: setup incomplete, the receipt stored, and a repeated apply writes nothing', async () => {
@@ -269,6 +299,7 @@ describe('a first commit that fails', () => {
     sent = [];
     expect(await apply(planned.id)).toEqual(receipt);
     expect(writesSent()).toEqual([]);
+    expect((JSON.parse(kv.entries.get(`plan:${planned.id}`)!.value) as StoredPlan<ProjectCreatePayload>).payload.first_commit).toEqual({ outcome: 'unknown', door43_status: 201 });
   });
 });
 

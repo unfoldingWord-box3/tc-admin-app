@@ -8,7 +8,9 @@
 // §1 rule 6). When the repository was created but the commit failed, or its
 // outcome is unknown, nothing is retried (X1) and nothing is deleted (W4): the
 // receipt says the setup is incomplete, and the plan is kept for the retry
-// (#31). The report is built from what was written, because Door43's catalog
+// (#31) with the created repository, recorded the moment Door43 answered 201
+// and before the commit, and with what became of the commit. The report is
+// built from what was written, because Door43's catalog
 // reads the new repository a few seconds later (E28), and says so: coverage
 // from the metadata just written, health never checked (H3).
 
@@ -65,6 +67,13 @@ export function createdProjectReport(
 
 const expired = (stored: StoredPlan, now: Date) => new Date(stored.plan.expires_at).getTime() <= now.getTime();
 
+/** What became of a first commit that did not return one: `unknown` when Door43 may have made it anyway (X1). */
+function commitOutcome(error: CatalogError): NonNullable<ProjectCreatePayload['first_commit']> {
+  const status = typeof error.details.door43_status === 'number' ? error.details.door43_status : null;
+  const unknown = error.code === 'door43_unavailable' || error.details.outcome === 'unknown';
+  return { outcome: unknown ? 'unknown' : 'failed', door43_status: status };
+}
+
 export async function projectCreateApply(input: ParsedInput<'project.create.apply'>, context: OperationContext): Promise<ProjectCreateReceipt> {
   const client = signedIn(context);
   const { account } = await readAccount(client);
@@ -106,8 +115,9 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
       files: payload.files,
     });
   } catch (error) {
-    // The repository exists and is never deleted (W4); the commit is not retried (X1). Setup is incomplete, and the retry is #31.
+    // The repository exists and is never deleted (W4); the commit is not retried (X1). Setup is incomplete, and the retry (#31) learns what became of it.
     if (!(error instanceof CatalogError)) throw error;
+    await context.plans.putPlan({ ...stored, payload: { ...marked, first_commit: commitOutcome(error) } }, RECEIPT_SECONDS);
   }
 
   const receipt = receiptFor(input.plan_id, context, marked, repository, commit, started);

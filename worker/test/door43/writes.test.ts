@@ -84,6 +84,29 @@ describe('one write', () => {
   });
 });
 
+describe('a created repository whose answer broke off', () => {
+  test('X1, W4: Door43 said 201 and the body broke off: the repository is read back once instead of being lost', async () => {
+    const urls: string[] = [];
+    const fetch: Fetch = async (url, init) => {
+      urls.push(`${init?.method ?? 'GET'} ${new URL(url).pathname}`);
+      return (init?.method ?? 'GET') === 'POST'
+        ? new Response(new ReadableStream({ start: controller => controller.error(new TypeError('terminated')) }), { status: 201 })
+        : json(createdRepo.response.json, 200);
+    };
+    const repository = await createRepository(client(fetch), { login: 'tc-admin-qa-org', kind: 'organization' }, { name: 'tca-probe-20260922194921', description: '' });
+    expect(repository.id).toBe(96475);
+    expect(urls).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'GET /api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921']);
+  });
+
+  test('X1: a refused commit is a failed outcome with its status; a created commit Door43 did not name is an unknown one', async () => {
+    const refused = (await failure(commitFiles(client(async () => json({ message: 'no' }, 500)), 'o', 'r', { message: 'm', files: [] })))!;
+    expect(refused.details).toMatchObject({ outcome: 'failed', door43_status: 500 });
+    const unnamed = (await failure(commitFiles(client(async () => json({ files: [] }, 201)), 'o', 'r', { message: 'm', files: [] })))!;
+    expect(unnamed.code).toBe('commit_failed');
+    expect(unnamed.details).toMatchObject({ outcome: 'unknown', door43_status: 201 });
+  });
+});
+
 describe('createRepository', () => {
   test('A3: sends CreateRepoOption to the organization route, public and not initialized, and maps the recorded 201 (E27)', async () => {
     const seen: { url: string; body: unknown }[] = [];

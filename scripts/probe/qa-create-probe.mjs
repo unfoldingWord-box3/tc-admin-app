@@ -8,8 +8,8 @@
 // Usage:  node --env-file=.env scripts/probe/qa-create-probe.mjs [--owner <login>] [--abbreviation <abbr>]
 //                [--language <code> --language-title <name>] [--scope nt|ot|full] [--plan]
 // Env:    DOOR43_ORIGIN (default https://qa.door43.org; production is refused), TEST_TOKEN (required),
-//         TEST_USER (the default owner: the token's own namespace, as AGENTS.md says; pass --owner for
-//         an organization such as tc-admin-qa-org, E23).
+//         TEST_USER (the default owner: the token's own namespace, which needs a token with write:user,
+//         E26; pass --owner tc-admin-qa-org, where the QA probes create, E23).
 // Output: fixtures/door43/<host>/<date>/project-create/<owner>/NN-<METHOD>-<path>.json (Authorization and
 //         the account's email redacted; the first-commit request body replaced by a note, its files being
 //         plan.json and metadata.json), plan.json, metadata.json (the generated file, the Q4 fixture),

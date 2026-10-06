@@ -39,6 +39,8 @@ export interface ProjectCreatePayload {
   repository_created?: boolean;
   /** The repository the apply created, stored on the plan before its first commit, so a later apply of this plan never reads it as `name_taken`. */
   created_repository?: CreatedRepository;
+  /** What became of the first commit when it did not return one: `unknown` when Door43 may have made it anyway (X1), for the retry (#31). */
+  first_commit?: { outcome: 'failed' | 'unknown'; door43_status: number | null };
 }
 
 const validation = (field: string, message: string) => new CatalogError('validation_failed', { message: `${field}: ${message}`, details: { fields: [{ path: field, message }] } });

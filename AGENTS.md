@@ -70,7 +70,7 @@ The live Door43 write probes are `node --env-file=.env scripts/probe/qa-write-pr
 
 - QA Door43 (`https://qa.door43.org`) is the development target. Production (`https://git.door43.org`) is for sign-in verification, the Milestone 1 demo, and the pilot. Never mutate a production repository outside the demo and pilot plans.
 - Configuration comes from a root `.env` (ignored by Git); `.env.example` names every variable. The QA test user's credentials are `TEST_ORG`, `TEST_USER`, `TEST_PASSWORD`, and `TEST_TOKEN` (E23); an agent session has them only when the environment is configured with them. Never commit a client id, secret, or token. Never print one in a log, a test, a fixture, or a chat message.
-- Seed repositories and their formats are listed in evidence.md (E9). The `tc-admin-qa-org` organization exists on production and is copied to QA at each reset (E23); QA probes create repositories there (`TEST_ORG`), never in the `tc-admin-qa` user's own namespace, which the token cannot create in (E26, Q28).
+- Seed repositories and their formats are listed in evidence.md (E9). The `tc-admin-qa-org` organization exists on production and is copied to QA at each reset (E23); QA probes create repositories there (`--owner tc-admin-qa-org`, E23), because the `TEST_TOKEN` API token cannot create in the `tc-admin-qa` user's own namespace, the probe's default owner (E26, Q28).
 - The translationCore 4 design system lives in https://github.com/unfoldingWord/translationCore4 (#8).
 
 ## Conventions

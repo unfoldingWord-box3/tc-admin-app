@@ -11,6 +11,11 @@ describe('requests', () => {
     expect(operationRequest('project.read', { owner: 'a b', repo: 'c/d' }).url).toBe('/api/projects/a%20b/c%2Fd');
   });
 
+  test('an apply names its plan as the Idempotency-Key header too', () => {
+    expect(new Headers(operationRequest('project.create.apply', { plan_id: 'p1' }).init.headers).get('idempotency-key')).toBe('p1');
+    expect(new Headers(operationRequest('project.create.plan', { owner: 'o', project_type: 'bible', title: 't', abbreviation: 'a', language: { code: 'en', title: 'English' }, testament_scope: 'nt', license: 'cc-by-sa-4.0' }).init.headers).has('idempotency-key')).toBe(false);
+  });
+
   test('a POST sends the fields that are not in the path as a JSON body', () => {
     const { url, init } = operationRequest('release.prepare', { owner: 'o', repo: 'r', plan_id: 'p1', selection: { mat: 'include' }, unknown_included: [], version: null });
     expect(url).toBe('/api/projects/o/r/preparations');

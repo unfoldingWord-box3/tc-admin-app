@@ -137,7 +137,7 @@ Issues: #12, #15, #51.
 Before repository creation, any commit, branch change, release creation, or promotion, the Worker re-reads the repository permission from Door43. Ambiguity fails closed. A project the user lost access to leaves the writable portfolio.
 Source: product spec §2; architecture §3 authorization.
 Enforced in: `worker/src/operations` shared precondition used by every apply operation; for creation, `ownerForCreation` in `project-create-plan` reads the account's creation right in the owner (E43) at plan and again at apply; the per-repository precondition is #14.
-Verified by: each apply operation with a fixture lacking push permission returns `permission_denied` and writes nothing; a missing `permissions` object is treated as no permission. So far: the `A2:` tests in `worker/test/operations/project-create-plan.test.ts` and `project-create-apply.test.ts` (an owner that grants no creation right, a team without it, or a non-boolean grant is `permission_denied` at plan and at apply, and nothing is written).
+Verified by: each apply operation with a fixture lacking push permission returns `permission_denied` and writes nothing; a missing `permissions` object is treated as no permission. So far: the `A2:` tests in `worker/test/operations/project-create-plan.test.ts` and `project-create-apply.test.ts` (an owner that grants no creation right, a team without it, a non-boolean grant, or no team at all is `permission_denied` at plan and at apply, and nothing is written; a granting team on a later page grants).
 Issues: #14, #30.
 
 ### A3 — Every write is attributed to the signed-in user
@@ -181,7 +181,7 @@ Issues: #28, #46.
 tC Admin never deletes a repository. A partially created project is shown as setup incomplete with a retry path.
 Source: product spec §6; architecture §8.
 Enforced in: the Door43 adapter has no repository-delete method (`worker/src/door43/writes.ts`); `project-create-apply` keeps the repository and answers `setup_incomplete` when the first commit fails.
-Verified by: the `W4:` tests in `worker/test/door43/writes.test.ts` (the adapter exports no delete) and `worker/test/operations/project-create-apply.test.ts` (a failed first commit leaves the repository, lists it in the receipt, warns `setup_incomplete`, and keeps the plan for the retry).
+Verified by: the `W4:` tests in `worker/test/door43/writes.test.ts` (the adapter exports no delete) and `worker/test/operations/project-create-apply.test.ts` (a failed first commit leaves the repository, lists it in the receipt, warns `setup_incomplete`, and keeps the plan for the retry; a replay of a plan whose repository exists answers setup incomplete for that repository and writes nothing).
 Issues: #30, #31, #49.
 
 ### W5 — One operation, one commit
@@ -234,7 +234,7 @@ Issues: #26.
 A mutation whose outcome is unknown is not retried automatically. The operation returns `release_outcome_unknown` or `commit_failed` with the recovery action, and any retry is explicit.
 Source: architecture §7.
 Enforced in: `worker/src/door43` (`writeDoor43` sends a write once; no automatic retry); `worker/src/operations/*-apply`.
-Verified by: the `X1:` tests in `worker/test/door43/writes.test.ts` (a write that times out raises after one request) and `worker/test/operations/project-create-apply.test.ts` (a first commit whose outcome is unknown is not retried, is reported as setup incomplete, and a repeated apply answers the same receipt without writing).
+Verified by: the `X1:` tests in `worker/test/door43/writes.test.ts` (a write that times out raises after one request; a body that cannot be read keeps the status and is not sent again; a commit whose answer could not be read is an unknown outcome) and `worker/test/operations/project-create-apply.test.ts` (a first commit whose outcome is unknown, by a network failure or an unreadable answer, is not retried, is reported as setup incomplete with the outcome recorded on the plan, and a repeated apply answers the same receipt without writing).
 Issues: #30, #40.
 
 ### X2 — Every failure is typed and recoverable
