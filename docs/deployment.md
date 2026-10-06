@@ -51,7 +51,7 @@ Nothing here can happen before #7 merges a Wrangler configuration and a minimal 
 
 **After #7 merges (Rich, from a clone of the repository, once):**
 
-3. **Create the two Workers with Wrangler.** Cloudflare's documented path for Wrangler environments is to deploy once with Wrangler so the environment Workers exist, then connect the repository to each:
+3. **Create the two Workers with Wrangler.** Cloudflare's documented path for Wrangler environments is to deploy once with Wrangler so the environment Workers exist, then connect the repository to each. **Done for QA on 6 October 2026 (#9):** after `npx wrangler login` as Rich, `npx wrangler deploy --env qa` from `main` created `tc-admin-qa` in the unfoldingWord account with the `SESSIONS` and `PLANS` bindings, and `wrangler secret put --env qa` set `DOOR43_CLIENT_ID`, `DOOR43_CLIENT_SECRET` (piped from `.env`, never shown), and a generated `SESSION_SIGNING_KEY`; `https://tc-admin-qa.unfoldingword.workers.dev/api/situation` answered with `configured: true`. The account is pinned as `account_id` in `wrangler.jsonc`, since the deploying credentials reach two Cloudflare accounts. The production Worker is not created yet.
 
    ```
    npm ci

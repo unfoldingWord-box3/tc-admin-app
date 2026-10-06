@@ -7,6 +7,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tc-admin-qa",
+  // The unfoldingWord account, which holds the KV namespaces below; pinned because the deploying credentials reach more than one account.
+  "account_id": "5a3ffd86280d3ed086be76d955829242",
   "main": "worker/src/index.ts",
   "compatibility_date": "2026-10-01",
   "assets": {
