@@ -48,8 +48,8 @@ Each document answers one question. Read downward for "why", upward for "how".
 2. Implement in the layer the architecture's module map names. Keep Door43 shapes in the adapter; keep glossary identifiers everywhere else.
 3. Add tests: unit tests for the model, contract tests against `fixtures/door43/` for operations, an invariant test for every invariant the issue cites.
 4. Update the documents the change affects: identifiers in CONTEXT.md, the operation entry, the evidence register, the ADR if a decision changed.
-5. Run the checks (below). Open the pull request with the template; fill the invariants and evidence sections truthfully.
-6. Done means: acceptance criteria met, tests green, documents updated, evidence recorded. Not "code pushed".
+5. Run the checks (below). Open the pull request with the template; fill the invariants and evidence sections truthfully. Then ask for the bench's review (Reviews, below).
+6. Done means: acceptance criteria met, tests green, documents updated, evidence recorded, the bench clean on the head a person merges. Not "code pushed".
 
 ## Checks
 
@@ -65,6 +65,16 @@ The parts, when one is enough: `node scripts/check-docs.mjs` (relative links; ev
 `npm run build` builds `web/dist`; `npm run dev` builds it and runs `wrangler dev` (the root `wrangler.jsonc`, against QA). Open it at `http://127.0.0.1:8787`, not `localhost`: sign-in returns to `<address>/auth/callback`, and only the 127.0.0.1 callbacks are registered (E38). For reloads while editing the interface, run `npx wrangler dev` and `npm run dev --workspace web` together; Vite sends `/api/` and `/auth/` to the Worker with the Worker's own origin, so the same-origin check on mutations passes (A4), and a sign-in started there ends on the 8787 page, signed in on both.
 
 The live Door43 write probes are `node --env-file=.env scripts/probe/qa-write-probe.mjs` (the release writes) and `node --env-file=.env scripts/probe/qa-create-probe.mjs` (`project.create.plan` and `project.create.apply` through the Worker's own code, bundled with esbuild); each needs a `TEST_TOKEN` issued by the QA host, refuses production, and prints the server's message on any failing step. Planned with #10: `npm run e2e` (one Playwright sign-in on QA).
+
+## Reviews
+
+Every pull request is reviewed by the unfoldingWord review bench (`uwreview`), which this repository opts into per pull request: Frank (Codex) and George (Grok) each review the head; a fix lane commits one small repair for a blocking finding, within the pull request's own files; a person merges. The bench's guide, shared by Rich, is the authority on its process and may change; this section says only what the repository needs from its agents.
+
+- Open the pull request when `npm run check` is green, mark it ready for review, and add `uwreview` as a reviewer. Every push after that is reviewed on its own about five minutes later, so push finished work only. A pull request over 800 changed lines needs both reviewers clean.
+- A finding needs nothing from you unless it is yours to decide. Do not fix a blocking finding yourself: the fix lane does, and pushes to the branch, so pull before any further push. Revert its commit, saying why on the pull request, only when you disagree with it.
+- A `needs-author` row is a decision for Rich: ask, then answer on the pull request, by a comment or by a push that meets the stated exit condition. A deferred follow-up is the author's, taken after the round closes, in one push.
+- Approval is pinned to a head, and a push after it starts a new round. A stacked pull request is rebased only after the one below it merges, so a parent's review never restarts its children's.
+- The bench's commits are another author's: pull them, never force-push over them, and keep their fixes when merging yours.
 
 ## Hosts and credentials
 
