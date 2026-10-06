@@ -4,27 +4,38 @@
 // with many repositories; "Show all projects" adds every unsupported writable
 // repository with its reason (ADR 0014). An editable project opens; an
 // unsupported one does not (P1). The open project is named in the address
-// (`#/<owner>/<repo>`) so a reload keeps it. Filters and sorting are #24,
-// refresh is #26, and the full project report (`project.read`) is #25.
+// (`#/<owner>/<repo>`) so a reload keeps it, and `#/new` is the creation
+// wizard (#28), whose owners come from the loaded portfolio until
+// `owner.search` is built; a project it creates is listed at once, since
+// Door43's catalog lists a new repository a few seconds later (E28, S1).
+// Filters and sorting are #24, refresh is #26, and the full project report
+// (`project.read`) is #25.
 
 import { useEffect, useState } from 'react';
 import type { OperationOutput, ProjectSummary } from '@tc-admin/shared/schema';
 import { callOperation } from './api/client';
+import { CreateProject } from './CreateProject';
+import { CREATE_HASH, withCreated } from './create-project';
+import { ProjectView } from './ProjectView';
 import { canOpen, coverageLabel, formatLabel, hashRef, healthLabel, projectHash, typeLabel } from './portfolio-labels';
 
 type PortfolioList = OperationOutput<'portfolio.list'>;
 type Show = 'supported' | 'all';
 
 interface Props {
+  account: { login: string; name: string };
   /** Shows a failure; a `session_expired` failure also ends the signed-in view. */
   onFailure: (failure: unknown) => void;
 }
 
-export function Portfolio({ onFailure }: Props) {
+export function Portfolio({ account, onFailure }: Props) {
   const [show, setShow] = useState<Show>('supported');
   // The portfolio with the `show` it was read for; a different `show` is still loading.
   const [result, setResult] = useState<{ show: Show; portfolio: PortfolioList } | null>(null);
   const [hash, setHash] = useState(() => window.location.hash);
+  // A project created in this view, listed until Door43's catalog lists it; a creation also reads the portfolio again.
+  const [created, setCreated] = useState<ProjectSummary | null>(null);
+  const [reads, setReads] = useState(0);
 
   useEffect(() => {
     let current = true;
@@ -35,7 +46,7 @@ export function Portfolio({ onFailure }: Props) {
     return () => {
       current = false;
     };
-  }, [show, onFailure]);
+  }, [show, onFailure, reads]);
 
   useEffect(() => {
     const follow = () => setHash(window.location.hash);
@@ -44,17 +55,38 @@ export function Portfolio({ onFailure }: Props) {
   }, []);
 
   const portfolio = result?.show === show ? result.portfolio : null;
-  const projects = portfolio?.organizations.flatMap(group => group.projects) ?? [];
+  const organizations = withCreated(portfolio?.organizations ?? [], created, account.login);
+  const projects = organizations.flatMap(group => group.projects);
   const wanted = hashRef(hash);
   const open = wanted && projects.find(project => project.ref.owner === wanted.owner && project.ref.repo === wanted.repo && canOpen(project));
   if (open) return <ProjectView project={open} />;
 
+  if (hash === CREATE_HASH) {
+    if (!portfolio) return <p>Loading your projects…</p>;
+    return (
+      <CreateProject
+        account={account}
+        organizations={portfolio.organizations}
+        onCreated={project => {
+          setCreated(project);
+          setReads(count => count + 1);
+        }}
+        onFailure={onFailure}
+      />
+    );
+  }
+
   return (
     <>
-      <label className="show-all">
-        <input type="checkbox" checked={show === 'all'} onChange={event => setShow(event.target.checked ? 'all' : 'supported')} /> Show all projects,
-        including unsupported ones
-      </label>
+      <div className="toolbar">
+        <label className="show-all">
+          <input type="checkbox" checked={show === 'all'} onChange={event => setShow(event.target.checked ? 'all' : 'supported')} /> Show all projects,
+          including unsupported ones
+        </label>
+        <a className="button" href={CREATE_HASH}>
+          Create a project
+        </a>
+      </div>
       {!portfolio && <p>Loading your projects…</p>}
       {portfolio && wanted && <p role="alert">That project is not one you can open here. Choose a project from the list.</p>}
       {portfolio && projects.length === 0 && (
@@ -64,16 +96,17 @@ export function Portfolio({ onFailure }: Props) {
             : 'You have no Bible or Open Bible Stories projects in Scripture Burrito that you can write to on this Door43 host. Show all projects to see the others.'}
         </p>
       )}
-      {portfolio?.organizations.map(group => (
-        <section key={group.name} className="owner">
-          <h2>{group.name}</h2>
-          <ul className="projects">
-            {group.projects.map(project => (
-              <ProjectRow key={project.ref.id} project={project} />
-            ))}
-          </ul>
-        </section>
-      ))}
+      {portfolio &&
+        organizations.map(group => (
+          <section key={group.name} className="owner">
+            <h2>{group.name}</h2>
+            <ul className="projects">
+              {group.projects.map(project => (
+                <ProjectRow key={project.ref.id} project={project} />
+              ))}
+            </ul>
+          </section>
+        ))}
       {portfolio && <p className="freshness">Read from Door43 at {new Date(portfolio.freshness.read_at).toLocaleTimeString()}.</p>}
     </>
   );
@@ -104,42 +137,5 @@ function ProjectRow({ project }: { project: ProjectSummary }) {
         </a>
       )}
     </li>
-  );
-}
-
-function ProjectView({ project }: { project: ProjectSummary }) {
-  const { coverage } = project;
-  return (
-    <section>
-      <p>
-        <a href="#">All projects</a>
-      </p>
-      <h2>{project.title}</h2>
-      <p className="muted">
-        {project.ref.owner}/{project.ref.repo} ·{' '}
-        <a href={project.ref.url} target="_blank" rel="noreferrer">
-          View on Door43
-        </a>
-      </p>
-      <dl className="report">
-        <dt>Project type</dt>
-        <dd>{typeLabel(project.project_type)}</dd>
-        <dt>Language</dt>
-        <dd>{[project.language.title, project.language.code].filter(Boolean).join(' · ') || 'Not stated'}</dd>
-        <dt>Coverage</dt>
-        <dd>{coverageLabel(project)}</dd>
-        <dt>Health</dt>
-        <dd>{healthLabel(project.health.state)}</dd>
-      </dl>
-      {coverage.units.length > 0 && (
-        <ul className="units" aria-label="Books and stories in scope">
-          {coverage.units.map(unit => (
-            <li key={unit.id} className={unit.present ? 'present' : 'absent'}>
-              {unit.id.toUpperCase()} <span className="muted">{unit.present ? 'present' : 'not present'}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
   );
 }

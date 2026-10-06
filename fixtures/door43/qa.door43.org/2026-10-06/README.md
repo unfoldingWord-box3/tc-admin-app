@@ -1,6 +1,6 @@
 # Door43 fixtures, qa.door43.org, 6 October 2026
 
-`project-create/` was recorded by `node --env-file=.env scripts/probe/qa-create-probe.mjs` (#30, ADR 0012) run in the `tc-admin-qa` user's own namespace with the API token Rich reissued with `write:user` (E23, Q28); the token is redacted in every file as `token [redacted]` and the account's email as `[redacted]`. `languages/` was recorded read-only from public endpoints with no credentials (#28). DCS `1.27.3+dcs.13-g23ba3c3ef9`.
+`project-create/` was recorded by `node --env-file=.env scripts/probe/qa-create-probe.mjs` (#30, ADR 0012) run in the `tc-admin-qa` user's own namespace with the API token Rich reissued with `write:user` (E23, Q28); the token is redacted in every file as `token [redacted]` and the account's email as `[redacted]`. `languages/` and `wizard-create/` were recorded read-only from public endpoints with no credentials (#28). DCS `1.27.3+dcs.13-g23ba3c3ef9`.
 
 | Folder | Run | Result |
 | --- | --- | --- |
@@ -13,5 +13,6 @@
 | `languages/catalog__list__languages__owner=tc-admin-qa-org__stage=latest.json` | `GET /api/v1/catalog/list/languages?owner=tc-admin-qa-org&stage=latest`: one language, `id` |
 | `languages/catalog__list__languages__owner=bahtraku__stage=latest.json` | the same for `bahtraku`: 37 languages |
 | `languages/catalog__list__languages__owner=no-such-owner-xyz__stage=latest.json` | the same for an owner Door43 does not know: `{ ok: true, data: null }` |
+| `wizard-create/01-GET-repos_catalog-view.json`, `02-GET-catalog_entry_master.json`, `03-health-master.json`, `04-GET-commits.json`, `metadata.json` | the public re-reads of `tc-admin-qa-org/ums_tcaw2030`, the Bible the creation wizard created from the browser through `wrangler dev` (E51): the repository view, the catalog entry for `master`, the health result, the commits, and the committed `metadata.json` (`GET /tc-admin-qa-org/ums_tcaw2030/raw/branch/master/metadata.json`) |
 
-The facts derived are E49 (the user's namespace), E50 (the translation details), and the 6 October re-read of E25 (the language lists) in `docs/evidence.md`. The same creation refused the day before, with the token as it then was, is `../2026-10-05/project-create/tc-admin-qa-refused/` (E45).
+The facts derived are E49 (the user's namespace), E50 (the translation details), E51 (the wizard from the browser), and the 6 October re-read of E25 (the language lists) in `docs/evidence.md`. The same creation refused the day before, with the token as it then was, is `../2026-10-05/project-create/tc-admin-qa-refused/` (E45).

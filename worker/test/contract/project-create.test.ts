@@ -287,3 +287,41 @@ describe('the recorded QA creation with translation details other than the defau
   });
 });
 
+describe('the Bible the creation wizard created from the browser (E51, S1)', () => {
+  const dir = new URL('../../2026-10-06/wizard-create/', runs);
+  const committed = read('metadata.json', dir);
+
+  test('W1: the committed metadata.json is byte for byte what the writer generates for what the wizard sent', () => {
+    const generated = newProjectFiles(
+      {
+        owner: 'tc-admin-qa-org',
+        repo_name: 'ums_tcaw2030',
+        project_type: 'bible',
+        title: 'tC Admin wizard 2026-10-06',
+        abbreviation: 'tcaw2030',
+        language: { code: 'ums', title: 'Pendau', direction: 'ltr' },
+        testament_scope: 'full',
+        flavor: { translationType: 'newTranslation', audience: 'common-literary' },
+        license: 'cc-by-sa-4.0',
+      },
+      GENERATOR,
+      new Date((JSON.parse(committed) as { meta: { dateCreated: string } }).meta.dateCreated),
+    );
+    expect(generated.files.find(file => file.path === METADATA_PATH)!.content).toBe(committed);
+    expect(generated.files.map(file => [file.path, file.size])).toEqual([[METADATA_PATH, 2888], ['ingredients/license.md', 18535], ['README.md', 226]]);
+  });
+
+  test('A3, H1: Door43 recorded the one commit as the signed-in manager\'s and read the project as a valid Scripture Burrito Bible in Pendau, health info', () => {
+    const commits = recorded<{ sha: string; commit: { author: { name: string }; committer: { name: string }; message: string } }[]>('04-GET-commits.json', dir);
+    expect(commits).toHaveLength(1);
+    expect(commits[0]).toMatchObject({ commit: { author: { name: 'tc-admin-qa' }, committer: { name: 'tc-admin-qa' } } });
+    expect(commits[0]!.commit.message.startsWith('Create tC Admin wizard 2026-10-06')).toBe(true);
+    const view = recorded<Door43Repository>('01-GET-repos_catalog-view.json', dir);
+    expect(view).toMatchObject({ metadata_type: 'sb', flavor: 'textTranslation', language: 'ums', default_branch: 'master' });
+    expect(classifyProject(projectCatalog(view))).toMatchObject({ project_type: 'bible', metadata_format: 'sb', editability: { state: 'editable' } });
+    const health = recorded<{ data: { overall_severity_level: string; issues: Record<string, unknown[]> } }>('03-health-master.json', dir);
+    expect(health.data.overall_severity_level).toBe('info');
+    expect(Object.entries(health.data.issues).filter(([, issues]) => issues.length).map(([rule]) => rule)).toEqual(['release_needed']);
+    expect(recorded<{ is_valid: boolean }>('02-GET-catalog_entry_master.json', dir).is_valid).toBe(true);
+  });
+});

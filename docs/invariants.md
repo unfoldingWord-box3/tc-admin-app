@@ -173,7 +173,7 @@ Issues: #21, #45, #46, #47.
 ### W3 — Project purpose is protected after the first save
 The Scripture Burrito flavor is chosen in the wizard and cannot be changed through normal editing after the first valid metadata is saved.
 Source: ADR 0006.
-Enforced in: `worker/src/operations/metadata-apply` (Milestone 2) rejects flavor changes; the wizard sets it once.
+Enforced in: `worker/src/operations/metadata-apply` (Milestone 2) rejects flavor changes; the wizard (`web/src/CreateProject.tsx`) asks the project type once, right after the owner, and `project.create.plan` writes the flavor from it.
 Verified by: metadata plan that changes the flavor returns `validation_failed`.
 Issues: #28, #46.
 
@@ -241,7 +241,7 @@ Issues: #30, #40.
 Every failure returns an error code from the catalog in [operations.md](operations.md), the user-facing message the specification fixes for it, whether it is retryable, the next action, and a request id.
 Source: product spec §11; architecture §7.
 Enforced in: `worker/src/http/errors` maps every thrown error to the catalog; unknown errors become `unexpected` with a request id.
-Verified by: every catalog code has a test producing it; no route returns an uncataloged shape. So far: the `X2:` tests in `shared/test/catalog.test.ts` (the schema's codes, statuses, and messages are the catalog's), `worker/test/http/app.test.ts` (unknown routes and methods and unbuilt operations answer `unknown_operation`; invalid input and an output outside its schema all answer with the error shape), and `web/test/client.test.ts`.
+Verified by: every catalog code has a test producing it; no route returns an uncataloged shape. So far: the `X2:` tests in `shared/test/catalog.test.ts` (the schema's codes, statuses, and messages are the catalog's), `worker/test/http/app.test.ts` (unknown routes and methods and unbuilt operations answer `unknown_operation`; invalid input and an output outside its schema all answer with the error shape), `web/test/client.test.ts`, and `web/test/create-project.test.ts` (the wizard shows a `validation_failed` at the field its `details.fields` path names, `name_taken` at the abbreviation, and `permission_denied` at the owner, each with the catalog message).
 Issues: #15, #31, #40.
 
 ### X3 — Diagnostics never carry secrets or content

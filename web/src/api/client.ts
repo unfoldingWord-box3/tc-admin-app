@@ -22,6 +22,9 @@ export class ApiError extends Error {
 
 export type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
+/** The message to show for a failure: the catalog's for an `ApiError`; a network failure reads as Door43 unavailable. */
+export const failureMessage = (failure: unknown): string => (failure instanceof ApiError ? failure.error.message : catalogMessage('door43_unavailable'));
+
 let csrfToken: string | null = null;
 
 /** Keeps the CSRF token a response carries, if any (A4). */

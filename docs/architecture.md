@@ -287,6 +287,8 @@ worker/
 web/
   src/api/client.ts  typed client: one call per operation, from shared/schema
   src/               the application shell; portfolio, wizard, stepper, design system (#8)
+  src/CreateProject.tsx, src/create-project.ts  the creation wizard, and its form logic, owners, language search, and field errors as pure functions (#28)
+  src/ProjectView.tsx  one project's report, shown from the portfolio and after creation
   test/
 fixtures/
   door43/            recorded responses and archives, each with host, ref, and date (ADR 0012)
