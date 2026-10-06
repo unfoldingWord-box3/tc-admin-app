@@ -9,8 +9,13 @@ import { door43Request, readDoor43 } from './api';
 import type { Door43Client, Fetch } from './api';
 import type { Door43Host } from './host';
 
-/** The token permissions every Milestone 1 operation needs (Q10, E26, E27). */
-export const SCOPES = 'read:user write:repository write:organization';
+/**
+ * The token permissions every Milestone 1 operation needs (Q10, E26, E27), sent as one
+ * space-separated `scope` at sign-in and shown to the manager on Door43's consent page:
+ * `write:user` is what lets a manager create a project under their own account
+ * (`POST /user/repos`, E26, Q28); Gitea grants a token full access when `scope` is absent.
+ */
+export const SCOPES = 'read:user write:repository write:organization write:user';
 
 /** The longest a Door43 token is held, whatever Door43 grants: eight hours. */
 const MAX_TOKEN_SECONDS = 28_800;

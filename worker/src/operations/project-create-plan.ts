@@ -58,9 +58,10 @@ const TRIMMED_TEXT = /^\S(.*\S)?$/u;
 
 /**
  * The owner to create in, or `permission_denied`. The account itself cannot be
- * checked ahead of the write (Q28): Door43 answers at apply. An organization is
- * allowed only when a team of the account there may create repositories (E43):
- * any one such team is enough, whatever order Door43 lists the teams in.
+ * checked ahead of the write: sign-in requests `write:user` for it (Q28) and
+ * Door43 answers at apply. An organization is allowed only when a team of the
+ * account there may create repositories (E43): any one such team is enough,
+ * whatever order Door43 lists the teams in.
  */
 export async function ownerForCreation(client: Door43Client, accountLogin: string, owner: string): Promise<PlannedOwner> {
   if (owner.toLowerCase() === accountLogin.toLowerCase()) return { login: accountLogin, kind: 'account' };

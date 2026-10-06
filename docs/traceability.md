@@ -62,7 +62,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#28](https://github.com/unfoldingWord-box3/tc-admin-app/issues/28) Creation wizard | §6 | 0006, 0013 | W3, A2 | E37, Q20, Q25 | `project.create.plan` | web, operations | S1 |
 | [#29](https://github.com/unfoldingWord-box3/tc-admin-app/issues/29) Generate metadata.json | §6, §7; domain §8 | 0008, 0011 | W1, R10, A2 | E17, E24, E25, E37, E43, E44, Q4, Q20, Q28 | `project.create.plan` | model/burrito, operations | S1 |
-| [#30](https://github.com/unfoldingWord-box3/tc-admin-app/issues/30) Create repository and first commit | §6 | 0004, 0011 | A2, A3, W4, W5, X1 | E21, E26, E27, E28, E43, E45, Q3, Q4, Q10, Q28 | `project.create.apply` | door43/writes, operations | S1 |
+| [#30](https://github.com/unfoldingWord-box3/tc-admin-app/issues/30) Create repository and first commit | §6 | 0004, 0011 | A2, A3, W4, W5, X1 | E21, E26, E27, E28, E43, E45, E48, Q3, Q4, Q10, Q28 | `project.create.apply` | door43/writes, operations | S1 |
 | [#31](https://github.com/unfoldingWord-box3/tc-admin-app/issues/31) Setup incomplete | §6; §11 `setup_incomplete` | — | W4, X2 | — | `project.create.retry` | operations, web | — |
 
 ### EPIC: Selective release ([#41](https://github.com/unfoldingWord-box3/tc-admin-app/issues/41))
