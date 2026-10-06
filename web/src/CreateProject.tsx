@@ -74,7 +74,9 @@ export function CreateProject({ account, organizations, onCreated, onFailure }: 
   const [attempt, setAttempt] = useState(0);
   const [languages, setLanguages] = useState<{ owner: string; list: LanguageList } | null>(null);
   const [query, setQuery] = useState('');
-  const [plan, setPlan] = useState<Plan | null>(null);
+  // The plan with the form it was asked for: the review describes what the plan writes, even when the form changed while it was prepared.
+  const [planned, setPlanned] = useState<{ plan: Plan; form: Form } | null>(null);
+  const plan = planned?.plan ?? null;
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -144,7 +146,8 @@ export function CreateProject({ account, organizations, onCreated, onFailure }: 
     setBusy(true);
     setProblem(null);
     try {
-      setPlan(await callOperation('project.create.plan', planInput({ ...form, language: form.language })));
+      const submitted = form;
+      setPlanned({ plan: await callOperation('project.create.plan', planInput({ ...submitted, language: form.language })), form: submitted });
     } catch (failure) {
       if (!expired(failure)) {
         const fields = fieldsOf(failure);
@@ -170,7 +173,7 @@ export function CreateProject({ account, organizations, onCreated, onFailure }: 
         // The owner's right or the name changed since the plan: back to the form, at the field (A2).
         if (fields) {
           setErrors(fields);
-          setPlan(null);
+          setPlanned(null);
         } else setProblem(failureMessage(failure));
       }
     } finally {
@@ -204,7 +207,8 @@ export function CreateProject({ account, organizations, onCreated, onFailure }: 
     );
   }
 
-  if (plan) {
+  if (planned) {
+    const { plan, form: submitted } = planned;
     return (
       <section>
         <p>
@@ -215,13 +219,13 @@ export function CreateProject({ account, organizations, onCreated, onFailure }: 
         {problem && <p role="alert">{problem}</p>}
         <dl className="report">
           <dt>Owner</dt>
-          <dd>{form.owner}</dd>
+          <dd>{submitted.owner}</dd>
           <dt>Repository name</dt>
           <dd>
             <code>{plan.preview.repo_name}</code>
           </dd>
           <dt>Project type</dt>
-          <dd>{typeLabel(form.project_type)}</dd>
+          <dd>{typeLabel(submitted.project_type)}</dd>
           <dt>Plan valid until</dt>
           <dd>{time(plan.expires_at)}</dd>
         </dl>
@@ -272,7 +276,7 @@ export function CreateProject({ account, organizations, onCreated, onFailure }: 
             className="secondary"
             disabled={busy}
             onClick={() => {
-              setPlan(null);
+              setPlanned(null);
               setProblem(null);
             }}
           >

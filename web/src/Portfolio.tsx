@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import type { OperationOutput, ProjectSummary } from '@tc-admin/shared/schema';
 import { callOperation } from './api/client';
 import { CreateProject } from './CreateProject';
-import { CREATE_HASH, withCreated } from './create-project';
+import { CREATE_HASH, retireCreated, withCreated } from './create-project';
 import { ProjectView } from './ProjectView';
 import { canOpen, coverageLabel, formatLabel, hashRef, healthLabel, projectHash, typeLabel } from './portfolio-labels';
 
@@ -33,14 +33,18 @@ export function Portfolio({ account, onFailure }: Props) {
   // The portfolio with the `show` it was read for; a different `show` is still loading.
   const [result, setResult] = useState<{ show: Show; portfolio: PortfolioList } | null>(null);
   const [hash, setHash] = useState(() => window.location.hash);
-  // A project created in this view, listed until Door43's catalog lists it; a creation also reads the portfolio again.
+  // A project created in this view, listed until a read of Door43's catalog lists it (then retired, so a later read rules); a creation also reads the portfolio again.
   const [created, setCreated] = useState<ProjectSummary | null>(null);
   const [reads, setReads] = useState(0);
 
   useEffect(() => {
     let current = true;
     callOperation('portfolio.list', { show }).then(
-      portfolio => current && setResult({ show, portfolio }),
+      portfolio => {
+        if (!current) return;
+        setResult({ show, portfolio });
+        setCreated(previous => retireCreated(portfolio.organizations, previous));
+      },
       failure => current && onFailure(failure),
     );
     return () => {

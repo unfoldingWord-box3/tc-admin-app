@@ -19,6 +19,7 @@ import {
   ownersFromSearch,
   planInput,
   repositoryNameOf,
+  retireCreated,
   searchLanguages,
   tagRefused,
   withCreated,
@@ -236,5 +237,20 @@ describe('the project just created in the portfolio (S1)', () => {
     const own = withCreated([portfolio[0]!], summary('TC-Admin-QA', 'id_new'), 'tc-admin-qa');
     expect(own.map(group => group.name)).toEqual(['bahtraku', 'TC-Admin-QA']);
     expect(withCreated(portfolio, summary('bahtraku', 'id_tb1'), 'tc-admin-qa')).toBe(portfolio);
+  });
+
+  test('is retired once a read lists it, so a later read that leaves it out is not overridden (absent, listed, absent)', () => {
+    const created = summary('bahtraku', 'id_ult');
+    // Absent: Door43's catalog does not list it yet, so it is kept and shown.
+    const kept = retireCreated(portfolio, created);
+    expect(kept).toBe(created);
+    expect(withCreated(portfolio, kept, 'tc-admin-qa')[0]!.projects.map(p => p.ref.repo)).toContain('id_ult');
+    // Listed: the read rules from now on.
+    const listed = [{ name: 'bahtraku', projects: [...portfolio[0]!.projects, { ...created, permissions: { push: true, admin: false, checked_at: '' } }] }, portfolio[1]!];
+    const retired = retireCreated(listed, kept);
+    expect(retired).toBeNull();
+    // Absent again (access removed): the project stays out.
+    expect(withCreated(portfolio, retired, 'tc-admin-qa')).toBe(portfolio);
+    expect(retireCreated(portfolio, null)).toBeNull();
   });
 });

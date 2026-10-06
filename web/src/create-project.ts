@@ -253,6 +253,18 @@ export const WRITE_LABELS: Readonly<Record<WriteKind, string>> = { repo: 'Reposi
 
 const byName = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' });
 
+const isListed = (organizations: Organizations, created: ProjectSummary) =>
+  organizations.some(group => group.projects.some(project => sameLogin(project.ref.owner, created.ref.owner) && project.ref.repo === created.ref.repo));
+
+/**
+ * The project just created after a portfolio read: kept while Door43's catalog does
+ * not list it yet, and retired once a read lists it, so a later read that leaves it
+ * out (access removed, repository archived) is not overridden by the creation.
+ */
+export function retireCreated(organizations: Organizations, created: ProjectSummary | null): ProjectSummary | null {
+  return created && isListed(organizations, created) ? null : created;
+}
+
 /**
  * The portfolio with a project just created shown in its owner's group, since
  * Door43's catalog lists a new repository a few seconds after it is created (E28,
@@ -261,9 +273,7 @@ const byName = (a: string, b: string) => a.localeCompare(b, undefined, { sensiti
  * before the account's own, which the portfolio lists last.
  */
 export function withCreated(organizations: Organizations, created: ProjectSummary | null, accountLogin: string): Organizations {
-  if (!created) return organizations;
-  const listed = organizations.some(group => group.projects.some(project => sameLogin(project.ref.owner, created.ref.owner) && project.ref.repo === created.ref.repo));
-  if (listed) return organizations;
+  if (!created || isListed(organizations, created)) return organizations;
   const group = organizations.find(entry => sameLogin(entry.name, created.ref.owner));
   if (group) {
     return organizations.map(entry => (entry === group ? { ...entry, projects: [...entry.projects, created].sort((a, b) => byName(a.ref.repo, b.ref.repo)) } : entry));
