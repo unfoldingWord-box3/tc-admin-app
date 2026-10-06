@@ -188,3 +188,46 @@ describe('the recorded creation under the signed-in account (E48, Q28)', () => {
     expect(recorded<{ is_valid: boolean }>('04-GET-catalog_entry_master.json', own).is_valid).toBe(true);
   });
 });
+
+describe('the recorded creation in the user\'s own namespace with the API token (E49)', () => {
+  const own = new URL('../../../fixtures/door43/qa.door43.org/2026-10-06/project-create/tc-admin-qa/', import.meta.url);
+  const summary = JSON.parse(read('summary.json', own)) as { input: { owner: string; title: string; abbreviation: string; language: { code: string; title: string; direction: 'ltr' } } };
+  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', own)));
+  const receipt = OPERATIONS['project.create.apply'].output.parse(JSON.parse(read('receipt.json', own)));
+  const committed = read('metadata.json', own);
+
+  test('W1: the metadata.json committed is byte for byte what the writer generates for the recorded inputs and time', () => {
+    const generated = newProjectFiles(
+      {
+        owner: summary.input.owner,
+        repo_name: plan.preview.repo_name,
+        project_type: 'bible',
+        title: summary.input.title,
+        abbreviation: summary.input.abbreviation,
+        language: summary.input.language,
+        testament_scope: 'nt',
+        license: 'cc-by-sa-4.0',
+      },
+      GENERATOR,
+      new Date((JSON.parse(committed) as { meta: { dateCreated: string } }).meta.dateCreated),
+    );
+    expect(generated.files.find(file => file.path === METADATA_PATH)!.content).toBe(committed);
+  });
+
+  test('A3, W5: the repository was created through /user/repos and committed once by the token\'s user, as the plan announced', () => {
+    const create = JSON.parse(read('05-POST-user_repos.json', own)) as { request: { url: string }; response: { status: number } };
+    expect(create.request.url).toBe('https://qa.door43.org/api/v1/user/repos');
+    expect(create.response.status).toBe(201);
+    expect(receipt.wrote.map(({ kind, target }) => ({ kind, target }))).toEqual(plan.would_write);
+    expect(receipt.wrote[0]!.target).toBe('tc-admin-qa/id_tcap0633');
+    const commit = recorded<{ commit: { author: { name: string } } }>('06-POST-repos_tc-admin-qa_id_tcap0633_contents.json', own);
+    expect(commit.commit.author.name).toBe('tc-admin-qa');
+  });
+
+  test('H1: health is info with only release_needed, and the catalog entry is a valid Scripture Burrito Bible', () => {
+    const health = recorded<{ data: { overall_severity_level: string; issues: Record<string, unknown[]> } }>('07-health-master.json', own);
+    expect(health.data.overall_severity_level).toBe('info');
+    expect(Object.entries(health.data.issues).filter(([, issues]) => issues.length).map(([rule]) => rule)).toEqual(['release_needed']);
+    expect(recorded<{ is_valid: boolean; flavor: string; metadata_type: string }>('09-GET-catalog_entry_master.json', own)).toMatchObject({ is_valid: true, flavor: 'textTranslation', metadata_type: 'sb' });
+  });
+});
