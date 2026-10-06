@@ -1,0 +1,186 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-10-06T20:14:23.546Z",
+  "input": {
+    "owner": "tc-admin-qa",
+    "project_type": "bible",
+    "title": "tC Admin probe 2026-10-06 2014",
+    "abbreviation": "tcaf2014",
+    "language": {
+      "code": "id",
+      "title": "Bahasa Indonesia",
+      "direction": "ltr"
+    },
+    "testament_scope": "nt",
+    "license": "cc-by-sa-4.0",
+    "flavor": {
+      "projectType": "daughter",
+      "translationType": "revision",
+      "audience": "literary"
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 194
+    },
+    {
+      "step": 2,
+      "name": "GET-repos_tc-admin-qa_id_tcaf2014",
+      "status": 404,
+      "ms": 124
+    },
+    {
+      "step": 3,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 122
+    },
+    {
+      "step": 4,
+      "name": "GET-repos_tc-admin-qa_id_tcaf2014",
+      "status": 404,
+      "ms": 121
+    },
+    {
+      "step": 5,
+      "name": "POST-user_repos",
+      "status": 201,
+      "ms": 427
+    },
+    {
+      "step": 6,
+      "name": "POST-repos_tc-admin-qa_id_tcaf2014_contents",
+      "status": 201,
+      "ms": 1128
+    },
+    {
+      "step": 7,
+      "name": "health-master",
+      "status": 200,
+      "ms": 5473,
+      "sequence": [
+        {
+          "t_ms": 116,
+          "status": 422,
+          "level": null,
+          "error": "no metadata found for repo [tc-admin-qa/id_tcaf2014] and ref [master]",
+          "issues": null
+        },
+        {
+          "t_ms": 5473,
+          "status": 200,
+          "level": "info",
+          "error": null,
+          "issues": {
+            "release_needed": 1
+          }
+        }
+      ],
+      "latency_ms": 5473
+    },
+    {
+      "step": 8,
+      "name": "GET-repos_catalog-view",
+      "status": 200,
+      "ms": 197
+    },
+    {
+      "step": 9,
+      "name": "GET-catalog_entry_master",
+      "status": 200,
+      "ms": 121
+    }
+  ],
+  "dcs_version": "1.27.3+dcs.13-g23ba3c3ef9",
+  "plan": {
+    "id": "ee82d6fc-0e59-47d8-9e97-59baac81a508",
+    "repo_name": "id_tcaf2014",
+    "would_write": [
+      {
+        "kind": "repo",
+        "target": "tc-admin-qa/id_tcaf2014"
+      },
+      {
+        "kind": "commit",
+        "target": "tc-admin-qa/id_tcaf2014@master"
+      }
+    ],
+    "files": [
+      {
+        "path": "metadata.json",
+        "size": 2142,
+        "md5": "e88b9ad28b353035b13f1732a6cc211f"
+      },
+      {
+        "path": "ingredients/license.md",
+        "size": 18535,
+        "md5": "0bf7ef1533f6486c8362dcb8bc19bdd1"
+      },
+      {
+        "path": "README.md",
+        "size": 239,
+        "md5": "7f3e009c5bffa062366d8a10ae8fcf7d"
+      }
+    ]
+  },
+  "receipt": {
+    "wrote": [
+      {
+        "kind": "repo",
+        "target": "tc-admin-qa/id_tcaf2014",
+        "url": "https://qa.door43.org/tc-admin-qa/id_tcaf2014"
+      },
+      {
+        "kind": "commit",
+        "target": "tc-admin-qa/id_tcaf2014@master",
+        "sha": "57f7d7bbf96fbfd2f1c6fe95c01c8b5503fa96f5",
+        "url": "https://qa.door43.org/tc-admin-qa/id_tcaf2014/commit/57f7d7bbf96fbfd2f1c6fe95c01c8b5503fa96f5"
+      }
+    ],
+    "warnings": [],
+    "setup": {
+      "state": "complete",
+      "failed_step": null
+    },
+    "started_at": "2026-10-06T20:14:24.715Z",
+    "finished_at": "2026-10-06T20:14:26.547Z"
+  },
+  "repository": "tc-admin-qa/id_tcaf2014",
+  "health_master": {
+    "level": "info",
+    "issues": {
+      "release_needed": 1
+    },
+    "latency_ms": 5475
+  },
+  "catalog_view": {
+    "metadata_type": "sb",
+    "flavor_type": "scripture",
+    "flavor": "textTranslation",
+    "subject": "Bible",
+    "language": "id",
+    "title": "tC Admin probe 2026-10-06 2014",
+    "abbreviation": "tcaf2014",
+    "ingredients": [],
+    "healthcheck_severity": "info",
+    "catalog": {
+      "prod": null,
+      "preprod": null,
+      "latest": {
+        "branch_or_tag_name": "master",
+        "release_url": null,
+        "commit_sha": "57f7d7bbf96fbfd2f1c6fe95c01c8b5503fa96f5",
+        "released": "2026-10-06T20:14:25Z",
+        "zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcaf2014/archive/57f7d7bbf9.zip",
+        "tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcaf2014/archive/57f7d7bbf9.tar.gz",
+        "sb_zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcaf2014/sb/57f7d7bbf9.zip",
+        "sb_tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcaf2014/sb/57f7d7bbf9.tar.gz",
+        "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcaf2014/git/trees/57f7d7bbf9?recursive=1&per_page=99999",
+        "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcaf2014/contents?ref=57f7d7bbf9"
+      }
+    }
+  }
+}

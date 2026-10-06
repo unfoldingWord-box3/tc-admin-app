@@ -127,6 +127,7 @@ error
 | `project.create.plan` | plan | 1 | — | W1, W3 | #28, #29 |
 | `project.create.apply` | apply | 1 | repo, commit | A2, A3, W1, W4, W5 | #30 |
 | `project.create.retry` | apply | 1 | commit | W4 | #31 |
+| `language.list` | read | 1 | — | — | #28 |
 | `release.plan` | plan | 1 | — | R1, R2, R4, R9 | #33, #37, #38 |
 | `release.prepare` | apply | 1 | branch, commit | R1, R2, R3, R5, R7, R10, W2, A2 | #34, #35 |
 | `preparation.read` | read | 1 | — | H1, H2, H3 | #36 |
@@ -184,9 +185,9 @@ The orientation call. One request tells a client who is signed in, which host, a
 
 ### `project.create.plan`
 
-- Inputs: `{ owner, project_type: bible | obs, title, abbreviation, language: { code, title, direction: ltr | rtl | null }, testament_scope: nt | ot | full | null, license }`. `owner` is one of the account's organizations or the account itself. `testament_scope` is required for `bible` and sets `currentScope`; it is null for `obs`. `language.direction` is the script direction when Door43's language list gives it (E25) and becomes the language's `scriptDirection`. `license` is `cc-by-sa-4.0` in Milestone 1 (Q20).
-- Computes: `repo_name = lowercase(language.code) + "_" + lowercase(abbreviation)`, as in `en_ult`; the `metadata.json` the schema requires (E37, E44, Q4), written by `worker/src/model/burrito` and by nothing else (W1): the flavor `scripture/textTranslation` or `gloss/textStories`; `identification.name` and `abbreviation` from the inputs and `identification.primary.dcs` naming `<owner>/<repo_name>` at revision `master`; the `dcs` id authority as `https://git.door43.org` (E24); tC Admin as generator with its version and the signed-in manager as user; `currentScope` with every book of the testament scope; `copyright.licenses` naming the license ingredient; the license text as `ingredients/license.md`, the one ingredient, with the size and md5 of the file (R10); and no `relationships` until an import adds one (E24). The files are `metadata.json`, `ingredients/license.md`, and `README.md`. An Open Bible Stories project (`obs`, #82) has no testament scope, and a non-null one is `validation_failed`; its `type` is `gloss/textStories` with the fixed `currentScope` Door43 writes for every Open Bible Stories repository, the passages the fifty stories draw on (E46, Q4; `worker/src/model/obs-scope.ts`), since the schema allows no empty scope (E44).
-- Checks: the account is signed in (read live from `/user`); the owner allows repository creation for this account: for an organization, a team of the account there is the owner team or may create repositories (`GET /user/teams`, E43), and anything less fails closed (A2); the account itself is accepted, since sign-in requests `write:user` for `POST /user/repos` (Q28), and Door43 decides at apply; `repo_name` is valid for Door43 and free in that owner (`GET /repos/{owner}/{repo}` answers 404; a repository there is `name_taken`); `abbreviation`, `title`, and a language present.
+- Inputs: `{ owner, project_type: bible | obs, title, abbreviation, language: { code, title, direction: ltr | rtl | null }, testament_scope: nt | ot | full | null, flavor: { projectType, translationType, audience } | null, license }`. `owner` is one of the account's organizations or the account itself. `testament_scope` is required for `bible` and sets `currentScope`; it is null for `obs`. `language.direction` is the script direction when Door43's language list gives it (E25) and becomes the language's `scriptDirection`. `flavor` is a Bible's translation details (CONTEXT.md), each field optional and spelled as the Scripture Burrito `textTranslation` flavor spells it with the values the schema enumerates (E44), because they are written to `type.flavorType.flavor` as given; what a client does not send is written as the defaults `standard`, `firstTranslation`, and `common` (decided 5 October 2026, Q4). For `obs` it is absent, null, or empty. `license` is `cc-by-sa-4.0` in Milestone 1 (Q20).
+- Computes: `repo_name = lowercase(language.code) + "_" + lowercase(abbreviation)`, as in `en_ult`; the `metadata.json` the schema requires (E37, E44, Q4), written by `worker/src/model/burrito` and by nothing else (W1): the flavor `scripture/textTranslation`, with the translation details given and the defaults for the rest and `usfmVersion` `3.0` (Q4), or `gloss/textStories`; `identification.name` and `abbreviation` from the inputs and `identification.primary.dcs` naming `<owner>/<repo_name>` at revision `master`; the `dcs` id authority as `https://git.door43.org` (E24); tC Admin as generator with its version and the signed-in manager as user; `currentScope` with every book of the testament scope; `copyright.licenses` naming the license ingredient; the license text as `ingredients/license.md`, the one ingredient, with the size and md5 of the file (R10); and no `relationships` until an import adds one (E24). The files are `metadata.json`, `ingredients/license.md`, and `README.md`. An Open Bible Stories project (`obs`, #82) has no testament scope, and a non-null one is `validation_failed`; its `type` is `gloss/textStories` with the fixed `currentScope` Door43 writes for every Open Bible Stories repository, the passages the fifty stories draw on (E46, Q4; `worker/src/model/obs-scope.ts`), since the schema allows no empty scope (E44).
+- Checks: the account is signed in (read live from `/user`); the owner allows repository creation for this account: for an organization, a team of the account there is the owner team or may create repositories (`GET /user/teams`, E43), and anything less fails closed (A2); the account itself is accepted, since sign-in requests `write:user` for `POST /user/repos` (Q28), and Door43 decides at apply; `repo_name` is valid for Door43 and free in that owner (`GET /repos/{owner}/{repo}` answers 404; a repository there is `name_taken`); `abbreviation`, `title`, and a language present, the language's tag one the schema accepts (`model/language.ts`; Door43 lists tags it refuses, Q30); a Bible's translation details, when given, values the schema enumerates, and none for an Open Bible Stories project.
 - Returns: `plan.preview = { repo_name, metadata_json, files: [{ path, size, md5 }] }`, `would_write = [repo, commit]`, `bound_to.default_branch_sha = null`. The plan is stored with the exact file contents, so the apply writes what the manager reviewed.
 - Errors: `validation_failed`, `permission_denied`, `name_taken`, `session_expired`, `door43_unavailable`.
 
@@ -203,6 +204,15 @@ The orientation call. One request tells a client who is signed in, which host, a
 - Inputs: `{ owner, repo }` of a setup-incomplete project.
 - Effect: re-attempts the first commit from the recorded plan. Milestone 2 generalizes this into `project.create.resume` from any step.
 - Errors: `commit_failed`, `permission_denied`, `not_found`.
+
+### `language.list`
+
+The wizard's language field (Q20): every language Door43 lists, for the browser to search by tag, native name, English name, and alternate names, since the list is one read and a plain dropdown of nine thousand entries is no field.
+
+- Inputs: `{ owner | null }`.
+- Door43 reads: `GET /languages/langnames.json` (E25), every entry in Door43's order; with `owner`, also `GET /catalog/list/languages?owner=<owner>&stage=latest` (E25), the languages that owner has repositories in, so the wizard can show those first.
+- Returns: `{ languages: [{ code, title, english, direction: ltr | rtl | null, alternates: [name], tag_accepted }], owner_languages: [code] | null, freshness }`. `title` is the native name and `english` the English name, empty when Door43 has none. `tag_accepted` says whether the Scripture Burrito schema accepts the tag as a language tag (E44, `worker/src/model/language.ts`): Door43's list carries tags it refuses (472 of 9,166 on 6 October 2026, Q30), and the wizard offers such a language as not choosable, saying why, since `project.create.plan` refuses the tag (W1). `owner_languages` is `null` when no owner was named and empty for an owner with no catalog entry.
+- Errors: `session_expired`, `door43_unavailable`.
 
 ### `release.plan`
 
@@ -381,6 +391,7 @@ POST /api/projects/{owner}/{repo}/refresh                             project.re
 POST /api/projects/plan                                               project.create.plan
 POST /api/projects                                                    project.create.apply
 POST /api/projects/{owner}/{repo}/setup/retry                         project.create.retry
+GET  /api/languages?owner=                                            language.list
 POST /api/projects/{owner}/{repo}/releases/plan                       release.plan
 POST /api/projects/{owner}/{repo}/preparations                        release.prepare
 GET  /api/projects/{owner}/{repo}/preparations/{preparation_id}       preparation.read

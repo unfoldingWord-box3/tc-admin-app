@@ -86,9 +86,10 @@ The manager provides:
 - Abbreviation, such as ULT, required
 - Target language
 - Testament scope for Bible projects, which sets the metadata's `currentScope` and the coverage target
+- Translation details for Bible projects: the kind of project, the translation type, and the audience the Scripture Burrito `textTranslation` flavor requires, shown with the defaults preselected (decided 5 October 2026, Q4)
 - License (CC BY-SA 4.0 in Milestone 1, Q20)
 
-The repository name is derived, not asked: `<language>_<abbreviation>` in lowercase, as in `en_ult`. The wizard shows it and checks that no repository of that name exists in the owner (decided 1 October 2026). The wizard generates complete Scripture Burrito metadata for the selected type (E37 lists what the schema requires), with tC Admin recorded as generator. The manager reviews the generated metadata before creation. Every project tC Admin creates is Scripture Burrito (ADR 0008).
+The repository name is derived, not asked: `<language>_<abbreviation>` in lowercase, as in `en_ult`. The wizard shows it and checks that no repository of that name exists in the owner (decided 1 October 2026). The language is searched in Door43's full list by tag, native name, English name, and alternate names, the owner's own languages first (Q20); a language whose tag the Scripture Burrito schema does not accept is shown as not choosable, with the reason (Q30). The wizard generates complete Scripture Burrito metadata for the selected type (E37 lists what the schema requires), with tC Admin recorded as generator. The manager reviews the generated metadata before creation. Every project tC Admin creates is Scripture Burrito (ADR 0008).
 
 After the owner is selected, project type is the first protected project-purpose choice. Once the first valid metadata is saved, it cannot be changed through normal editing. A purpose transition is a major repository change and is outside the normal version-one edit flow.
 

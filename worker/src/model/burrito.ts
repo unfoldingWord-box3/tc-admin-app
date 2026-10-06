@@ -8,7 +8,8 @@
 // (E44), and the test in `worker/test/model/burrito.test.ts` validates the
 // output against it.
 
-import type { ProjectType } from '@tc-admin/shared/schema';
+import { TEXT_TRANSLATION_FLAVOR_DEFAULTS } from '@tc-admin/shared/schema';
+import type { ProjectType, TextTranslationFlavor } from '@tc-admin/shared/schema';
 import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT } from './books';
 import { CC_BY_SA_4_0_TEXT } from './license-cc-by-sa-4.0';
 import { md5 } from './md5';
@@ -52,8 +53,27 @@ interface NewProjectBase {
   license: 'cc-by-sa-4.0';
 }
 
-/** What a new project is made from: the wizard's inputs plus the owner and repository name. A Bible has a testament scope; Open Bible Stories has none (Q25). */
-export type NewProject = NewProjectBase & ({ project_type: 'bible'; testament_scope: TestamentScope } | { project_type: 'obs'; testament_scope: null });
+/**
+ * What a new project is made from: the wizard's inputs plus the owner and repository
+ * name. A Bible has a testament scope and, when the wizard gave them, its translation
+ * details (Q4); Open Bible Stories has neither (Q25).
+ */
+export type NewProject = NewProjectBase &
+  ({ project_type: 'bible'; testament_scope: TestamentScope; flavor?: TextTranslationFlavor | null | undefined } | { project_type: 'obs'; testament_scope: null });
+
+/** The USFM version every new Bible project declares: Scribe's, without its patch level (E17, Q4). */
+export const USFM_VERSION = '3.0';
+
+/** The `textTranslation` flavor block: the translation details given, the defaults for the rest (Q4), and the USFM version. */
+export function textTranslationFlavor(details: TextTranslationFlavor | null | undefined): Record<string, string> {
+  return {
+    name: 'textTranslation',
+    projectType: details?.projectType ?? TEXT_TRANSLATION_FLAVOR_DEFAULTS.projectType,
+    translationType: details?.translationType ?? TEXT_TRANSLATION_FLAVOR_DEFAULTS.translationType,
+    audience: details?.audience ?? TEXT_TRANSLATION_FLAVOR_DEFAULTS.audience,
+    usfmVersion: USFM_VERSION,
+  };
+}
 
 /** Who generated the metadata: tC Admin, with its version, as the signed-in manager (`meta.generator`). */
 export interface Generator {
@@ -107,11 +127,8 @@ export function readme(project: NewProject): string {
 /** The `type` of the metadata: the flavor, and the scope (E37, E44). */
 function projectTypeBlock(project: NewProject): Record<string, unknown> {
   const { flavorType } = FLAVOR_BY_TYPE[project.project_type];
-  // The textTranslation flavor's required `projectType`, `translationType`, and `audience` are the defaults recorded in Q4; textStories takes only its name.
-  const flavor =
-    project.project_type === 'bible'
-      ? { name: 'textTranslation', projectType: 'standard', translationType: 'firstTranslation', audience: 'common', usfmVersion: '3.0' }
-      : { name: 'textStories' };
+  // The textTranslation flavor's required `projectType`, `translationType`, and `audience` are the wizard's, or the defaults recorded in Q4; textStories takes only its name.
+  const flavor = project.project_type === 'bible' ? textTranslationFlavor(project.flavor) : { name: 'textStories' };
   return { flavorType: { name: flavorType, flavor, currentScope: projectScope(project) } };
 }
 

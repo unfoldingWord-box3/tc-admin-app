@@ -1,0 +1,186 @@
+{
+  "operation": "project.create.apply",
+  "request_id": "probe-1791317664147",
+  "plan_id": "ee82d6fc-0e59-47d8-9e97-59baac81a508",
+  "started_at": "2026-10-06T20:14:24.715Z",
+  "finished_at": "2026-10-06T20:14:26.547Z",
+  "wrote": [
+    {
+      "kind": "repo",
+      "target": "tc-admin-qa/id_tcaf2014",
+      "url": "https://qa.door43.org/tc-admin-qa/id_tcaf2014"
+    },
+    {
+      "kind": "commit",
+      "target": "tc-admin-qa/id_tcaf2014@master",
+      "sha": "57f7d7bbf96fbfd2f1c6fe95c01c8b5503fa96f5",
+      "url": "https://qa.door43.org/tc-admin-qa/id_tcaf2014/commit/57f7d7bbf96fbfd2f1c6fe95c01c8b5503fa96f5"
+    }
+  ],
+  "result": {
+    "ref": {
+      "owner": "tc-admin-qa",
+      "repo": "id_tcaf2014",
+      "id": 96898,
+      "url": "https://qa.door43.org/tc-admin-qa/id_tcaf2014"
+    },
+    "title": "tC Admin probe 2026-10-06 2014",
+    "description": "tC Admin probe 2026-10-06 2014",
+    "default_branch": "master",
+    "language": {
+      "code": "id",
+      "title": "Bahasa Indonesia"
+    },
+    "project_type": "bible",
+    "metadata_format": "sb",
+    "editability": {
+      "state": "editable",
+      "reason": "Scripture Burrito project. Release and editing are available."
+    },
+    "coverage": {
+      "present": 0,
+      "target": 27,
+      "scope": "nt",
+      "basis": "archive",
+      "units": [
+        {
+          "id": "mat",
+          "present": false
+        },
+        {
+          "id": "mrk",
+          "present": false
+        },
+        {
+          "id": "luk",
+          "present": false
+        },
+        {
+          "id": "jhn",
+          "present": false
+        },
+        {
+          "id": "act",
+          "present": false
+        },
+        {
+          "id": "rom",
+          "present": false
+        },
+        {
+          "id": "1co",
+          "present": false
+        },
+        {
+          "id": "2co",
+          "present": false
+        },
+        {
+          "id": "gal",
+          "present": false
+        },
+        {
+          "id": "eph",
+          "present": false
+        },
+        {
+          "id": "php",
+          "present": false
+        },
+        {
+          "id": "col",
+          "present": false
+        },
+        {
+          "id": "1th",
+          "present": false
+        },
+        {
+          "id": "2th",
+          "present": false
+        },
+        {
+          "id": "1ti",
+          "present": false
+        },
+        {
+          "id": "2ti",
+          "present": false
+        },
+        {
+          "id": "tit",
+          "present": false
+        },
+        {
+          "id": "phm",
+          "present": false
+        },
+        {
+          "id": "heb",
+          "present": false
+        },
+        {
+          "id": "jas",
+          "present": false
+        },
+        {
+          "id": "1pe",
+          "present": false
+        },
+        {
+          "id": "2pe",
+          "present": false
+        },
+        {
+          "id": "1jn",
+          "present": false
+        },
+        {
+          "id": "2jn",
+          "present": false
+        },
+        {
+          "id": "3jn",
+          "present": false
+        },
+        {
+          "id": "jud",
+          "present": false
+        },
+        {
+          "id": "rev",
+          "present": false
+        }
+      ]
+    },
+    "health": {
+      "state": "never_checked",
+      "severity_raw": null,
+      "ref": "master",
+      "checked_at": null,
+      "issue_count": null,
+      "source": "door43"
+    },
+    "latest_full_release": null,
+    "default_branch_head": {
+      "sha": "57f7d7bbf96fbfd2f1c6fe95c01c8b5503fa96f5",
+      "committed_at": "2026-10-06T20:14:25Z"
+    },
+    "active_preparation": null,
+    "setup": {
+      "state": "complete",
+      "failed_step": null
+    },
+    "permissions": {
+      "push": true,
+      "admin": true,
+      "checked_at": "2026-10-06T20:14:26.547Z"
+    },
+    "freshness": {
+      "read_at": "2026-10-06T20:14:26.547Z",
+      "source": "live",
+      "age_seconds": 0
+    }
+  },
+  "warnings": []
+}

@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
+import { TEXT_TRANSLATION_AUDIENCES, TEXT_TRANSLATION_FLAVOR_DEFAULTS, TEXT_TRANSLATION_PROJECT_TYPES, TEXT_TRANSLATION_TYPES } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT } from '../../src/model/books';
 import {
@@ -14,12 +15,15 @@ import {
   LICENSE_PATH,
   METADATA_PATH,
   README_PATH,
+  USFM_VERSION,
   currentScope,
   newProjectFiles,
   repositoryName,
+  textTranslationFlavor,
   validRepositoryName,
 } from '../../src/model/burrito';
 import type { Generator, NewProject } from '../../src/model/burrito';
+import type { TextTranslationFlavor } from '@tc-admin/shared/schema';
 import { OBS_SCOPE } from '../../src/model/obs-scope';
 
 const SCHEMA_DIR = new URL('../../../fixtures/scripture-burrito/2026-10-05/schema/', import.meta.url);
@@ -43,7 +47,7 @@ const reference = (bytes: Uint8Array) => createHash('md5').update(bytes).digest(
 
 const generator: Generator = { name: 'tC Admin', version: '0.1.0', user: { login: 'tc-admin-qa', name: 'tc-admin-qa' } };
 /** Overrides a test may give: every field but the type and its scope, which `project` and `stories` set. */
-type Overrides = Partial<{ owner: string; repo_name: string; title: string; abbreviation: string; language: NewProject['language']; testament_scope: 'nt' | 'ot' | 'full' }>;
+type Overrides = Partial<{ owner: string; repo_name: string; title: string; abbreviation: string; language: NewProject['language']; testament_scope: 'nt' | 'ot' | 'full'; flavor: TextTranslationFlavor | null }>;
 const project = (extra: Overrides = {}): NewProject => ({
   owner: 'tc-admin-qa-org',
   repo_name: 'id_tcap',
@@ -116,6 +120,28 @@ describe('the metadata of a new Bible project', () => {
       idAuthorities: { dcs: { id: 'https://git.door43.org', name: { en: 'Door43 Content Service' } } },
       identification: { primary: { dcs: { 'tc-admin-qa-org/id_tcap': { revision: 'master', timestamp: '2026-10-05T15:00:00.000Z' } } } },
     });
+  });
+
+  test('Q4: the translation details default to Scribe\'s values for a new project when the wizard gives none, with USFM 3.0', () => {
+    expect(TEXT_TRANSLATION_FLAVOR_DEFAULTS).toEqual({ projectType: 'standard', translationType: 'firstTranslation', audience: 'common' });
+    expect(USFM_VERSION).toBe('3.0');
+    const defaults = { name: 'textTranslation', ...TEXT_TRANSLATION_FLAVOR_DEFAULTS, usfmVersion: '3.0' };
+    expect(textTranslationFlavor(undefined)).toEqual(defaults);
+    expect(textTranslationFlavor(null)).toEqual(defaults);
+    expect(textTranslationFlavor({})).toEqual(defaults);
+    expect(textTranslationFlavor({ audience: 'children' })).toEqual({ ...defaults, audience: 'children' });
+    const { metadata } = newProjectFiles(project({ flavor: { projectType: 'daughter', translationType: 'revision', audience: 'literary' } }), generator, now);
+    expect((metadata.type as { flavorType: { flavor: object } }).flavorType.flavor).toEqual({ name: 'textTranslation', projectType: 'daughter', translationType: 'revision', audience: 'literary', usfmVersion: '3.0' });
+  });
+
+  test.each([
+    ...TEXT_TRANSLATION_PROJECT_TYPES.map(value => ['projectType', value] as const),
+    ...TEXT_TRANSLATION_TYPES.map(value => ['translationType', value] as const),
+    ...TEXT_TRANSLATION_AUDIENCES.map(value => ['audience', value] as const),
+  ])('W1: a Bible with %s %s validates against the recorded schema', (field, value) => {
+    const { metadata } = newProjectFiles(project({ flavor: { [field]: value } }), generator, now);
+    expect(validateSource(metadata), JSON.stringify(validateSource.errors, null, 2)).toBe(true);
+    expect((metadata.type as { flavorType: { flavor: Record<string, string> } }).flavorType.flavor[field]).toBe(value);
   });
 
   test('scriptDirection is written only when the language direction is known', () => {

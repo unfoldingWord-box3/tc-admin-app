@@ -43,6 +43,35 @@ export interface OperationDefinition {
 const Language = z.object({ code: z.string(), title: z.string() });
 /** The wizard's language, with the script direction when Door43's language list gives it (E25), for the metadata's `scriptDirection`. */
 const ChosenLanguage = Language.extend({ direction: z.enum(['ltr', 'rtl']).nullish() });
+
+/**
+ * The translation details of a Bible project: the three fields the Scripture Burrito
+ * `textTranslation` flavor requires beyond its books (E44), spelled as the schema
+ * spells them because they are written to `type.flavorType.flavor` as given. The
+ * wizard shows them with the defaults preselected, and a client that sends none
+ * gets the defaults (decided 5 October 2026 by Rich, Q4).
+ */
+export const TEXT_TRANSLATION_PROJECT_TYPES = ['standard', 'daughter', 'studyBible', 'studyBibleAdditions', 'backTranslation', 'auxiliary', 'transliterationManual', 'transliterationWithEncoder'] as const;
+export const TEXT_TRANSLATION_TYPES = ['firstTranslation', 'newTranslation', 'revision', 'studyOrHelpMaterial'] as const;
+export const TEXT_TRANSLATION_AUDIENCES = ['basic', 'common', 'common-literary', 'literary', 'liturgical', 'children'] as const;
+export const TextTranslationFlavor = z.object({
+  projectType: z.enum(TEXT_TRANSLATION_PROJECT_TYPES).optional(),
+  translationType: z.enum(TEXT_TRANSLATION_TYPES).optional(),
+  audience: z.enum(TEXT_TRANSLATION_AUDIENCES).optional(),
+});
+export type TextTranslationFlavor = z.infer<typeof TextTranslationFlavor>;
+/** What is written when a client sends none: Scribe's values for a new project (E17, Q4). */
+export const TEXT_TRANSLATION_FLAVOR_DEFAULTS = { projectType: 'standard', translationType: 'firstTranslation', audience: 'common' } as const satisfies Required<TextTranslationFlavor>;
+
+/** One language as `language.list` offers it (E25), with whether the Scripture Burrito schema accepts its tag (E44, Q30). */
+const ListedLanguage = z.object({
+  code: z.string(),
+  title: z.string(),
+  english: z.string(),
+  direction: z.enum(['ltr', 'rtl']).nullable(),
+  alternates: z.array(z.string()),
+  tag_accepted: z.boolean(),
+});
 const Account = z.object({ login: z.string(), name: z.string() });
 const Unit = z.union([z.object({ book: z.string() }), z.object({ story: z.string() })]);
 const PlanId = z.object({ plan_id: z.string().min(1) });
@@ -128,6 +157,8 @@ export const OPERATIONS = {
       abbreviation: z.string().min(1),
       language: ChosenLanguage,
       testament_scope: CoverageScope.extract(['nt', 'ot', 'full']).nullable(),
+      /** Bible only; absent fields take the defaults. For an Open Bible Stories project it is absent, `null`, or empty. */
+      flavor: TextTranslationFlavor.nullish(),
       license: z.literal('cc-by-sa-4.0'),
     }),
     output: plan(
@@ -151,6 +182,14 @@ export const OPERATIONS = {
     route: { method: 'POST', path: '/api/projects/{owner}/{repo}/setup/retry' },
     input: RepoRef,
     output: receipt(ProjectReport),
+  },
+  'language.list': {
+    kind: 'read',
+    milestone: 1,
+    route: { method: 'GET', path: '/api/languages' },
+    /** With an owner, the tags of the languages that owner already has repositories in are returned too, for the wizard to show first (Q20). */
+    input: z.object({ owner: z.string().nullish() }),
+    output: z.object({ languages: z.array(ListedLanguage), owner_languages: z.array(z.string()).nullable(), freshness: Freshness }),
   },
   'release.plan': {
     kind: 'plan',

@@ -174,6 +174,31 @@ describe('a Bible plan', () => {
     expect(stored.payload.project).toMatchObject({ project_type: 'obs', testament_scope: null });
   });
 
+  test('Q4: the translation details given are written, the rest take the defaults, and an Open Bible Stories plan takes none', async () => {
+    const plan = OPERATIONS['project.create.plan'].output.parse(await projectCreatePlan(parsed({ flavor: { translationType: 'revision', audience: 'liturgical' } }), context()));
+    const flavor = (plan.preview.metadata_json.type as { flavorType: { flavor: Record<string, string> } }).flavorType.flavor;
+    expect(flavor).toEqual({ name: 'textTranslation', projectType: 'standard', translationType: 'revision', audience: 'liturgical', usfmVersion: '3.0' });
+    const stored = JSON.parse(kv.entries.get(`plan:${plan.id}`)!.value) as StoredPlan<ProjectCreatePayload>;
+    expect(stored.payload.project).toMatchObject({ project_type: 'bible', flavor: { translationType: 'revision', audience: 'liturgical' } });
+    const written = JSON.parse(stored.payload.files[0]!.content) as unknown;
+    expect(validateSource(written), JSON.stringify(validateSource.errors, null, 2)).toBe(true);
+    // None, null, or empty: the defaults, and nothing recorded on the plan.
+    for (const flavor of [undefined, null, {}]) {
+      const planned = await projectCreatePlan(parsed({ flavor }), context());
+      expect((planned.preview.metadata_json.type as { flavorType: { flavor: Record<string, string> } }).flavorType.flavor).toMatchObject({ projectType: 'standard', translationType: 'firstTranslation', audience: 'common' });
+      expect((JSON.parse(kv.entries.get(`plan:${planned.id}`)!.value) as StoredPlan<ProjectCreatePayload>).payload.project).toMatchObject({ flavor: null });
+    }
+    const obs = await projectCreatePlan(parsed({ project_type: 'obs', testament_scope: null, flavor: {} }), context());
+    expect((obs.preview.metadata_json.type as { flavorType: { flavor: object } }).flavorType.flavor).toEqual({ name: 'textStories' });
+  });
+
+  test('X2: a value outside the schema\'s enumeration is refused by the input schema, naming the field', () => {
+    const raw: Record<string, unknown> = { ...input(), flavor: { audience: 'everyone' } };
+    const result = OPERATIONS['project.create.plan'].input.safeParse(raw);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map(issue => issue.path.join('.'))).toEqual(['flavor.audience']);
+  });
+
   test('two plans have two ids', async () => {
     const first = await projectCreatePlan(parsed(), context());
     const second = await projectCreatePlan(parsed(), context());
@@ -251,6 +276,7 @@ describe('what a plan refuses', () => {
   test.each([
     ['testament_scope', { testament_scope: null }],
     ['testament_scope', { project_type: 'obs' as const }],
+    ['flavor', { project_type: 'obs' as const, testament_scope: null, flavor: { audience: 'children' as const } }],
     ['title', { title: '   ' }],
     ['abbreviation', { abbreviation: ' ' }],
     ['abbreviation', { abbreviation: 'my ult' }],

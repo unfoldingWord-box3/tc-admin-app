@@ -8,7 +8,9 @@
 // the files come from the model (W1, R10) and are stored with the plan in
 // Workers KV for thirty minutes, so the apply writes exactly what was shown.
 // An Open Bible Stories project has no testament scope (Q25); its metadata
-// carries the fixed scope Door43 writes for every one (E46, Q4; #82).
+// carries the fixed scope Door43 writes for every one (E46, Q4; #82). A Bible
+// may carry the translation details the wizard shows with the defaults
+// preselected (Q4, #28); what it does not carry is written as the defaults.
 
 import { CatalogError } from '@tc-admin/shared/schema';
 import type { OperationOutput, ParsedInput } from '@tc-admin/shared/schema';
@@ -18,6 +20,7 @@ import { creationRights, repositoryExists } from '../door43/repos';
 import type { CreatedRepository } from '../door43/writes';
 import { newProjectFiles, repositoryName, validRepositoryName } from '../model/burrito';
 import type { NewProject, ProjectFile } from '../model/burrito';
+import { validLanguageTag } from '../model/language';
 import type { OperationContext } from './context';
 import { signedIn } from './context';
 import { PLAN_SECONDS, newPlanId } from './plans';
@@ -44,14 +47,6 @@ export interface ProjectCreatePayload {
 }
 
 const validation = (field: string, message: string) => new CatalogError('validation_failed', { message: `${field}: ${message}`, details: { fields: [{ path: field, message }] } });
-
-/**
- * A BCP 47 tag as the Scripture Burrito schema accepts it: `languageTag` in
- * `common.schema.json` (E44), so a tag that passes here validates in
- * `metadata.json` (W1). Door43's list spells them `id`, `es-419`, `el-x-koine` (E25).
- */
-const LANGUAGE_TAG =
-  /^(((en-GB-oed|i-ami|i-bnn|i-default|i-enochian|i-hak|i-klingon|i-lux|i-mingo|i-navajo|i-pwn|i-tao|i-tay|i-tsu|sgn-BE-FR|sgn-BE-NL|sgn-CH-DE)|(art-lojban|cel-gaulish|no-bok|no-nyn|zh-guoyu|zh-hakka|zh-min|zh-min-nan|zh-xiang))|((([A-Za-z]{2,3}(-([A-Za-z]{3}(-[A-Za-z]{3}){0,2}))?)|[A-Za-z]{4}|[A-Za-z]{5,8})(-([A-Za-z]{4}))?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*(-([0-9A-WY-Za-wy-z](-[A-Za-z0-9]{2,8})+))*(-(x(-[A-Za-z0-9]{1,8})+))?)|(x(-[A-Za-z0-9]{1,8})+))$/u;
 
 /** A `localizedText` value as the schema accepts it: `trimmedText` (E44), which also refuses a line break inside the text. */
 const TRIMMED_TEXT = /^\S(.*\S)?$/u;
@@ -82,10 +77,14 @@ export async function projectCreatePlan(input: ParsedInput<'project.create.plan'
   const abbreviation = input.abbreviation.trim();
   if (!abbreviation) throw validation('abbreviation', 'Give the project an abbreviation, such as ULT.');
   if (!TRIMMED_TEXT.test(abbreviation)) throw validation('abbreviation', 'Use letters, digits, hyphens, underscores, and dots only.');
-  if (!LANGUAGE_TAG.test(input.language.code.trim())) throw validation('language.code', 'Choose a language from the list.');
+  // The tag must be one the schema accepts (E44, `model/language.ts`): Door43's list has tags it refuses (Q30), and `language.list` marks them.
+  if (!validLanguageTag(input.language.code.trim())) throw validation('language.code', 'Choose a language from the list.');
   if (!TRIMMED_TEXT.test(input.language.title.trim())) throw validation('language.title', 'Choose a language from the list.');
   if (input.project_type === 'bible' && !input.testament_scope) throw validation('testament_scope', 'Choose a testament scope for a Bible project.');
   if (input.project_type === 'obs' && input.testament_scope) throw validation('testament_scope', 'An Open Bible Stories project has no testament scope.');
+  const flavor = input.flavor ?? null;
+  const detailed = flavor !== null && Object.values(flavor).some(value => value !== undefined);
+  if (input.project_type === 'obs' && detailed) throw validation('flavor', 'An Open Bible Stories project has no translation details.');
   const repo_name = repositoryName(input.language.code, abbreviation);
   if (!validRepositoryName(repo_name)) throw validation('abbreviation', 'Use letters, digits, hyphens, underscores, and dots only.');
 
@@ -103,7 +102,7 @@ export async function projectCreatePlan(input: ParsedInput<'project.create.plan'
   };
   const project: NewProject =
     input.project_type === 'bible' && input.testament_scope
-      ? { ...base, project_type: 'bible', testament_scope: input.testament_scope }
+      ? { ...base, project_type: 'bible', testament_scope: input.testament_scope, flavor: detailed ? flavor : null }
       : { ...base, project_type: 'obs', testament_scope: null };
   const now = context.now();
   const { metadata, files } = newProjectFiles(project, { ...context.application, user: account }, now);

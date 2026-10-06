@@ -1,0 +1,631 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/catalog/list/languages?owner=bahtraku&stage=latest",
+    "headers": {
+      "accept": "application/json"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 148,
+    "headers": {
+      "content-type": "application/json;charset=utf-8",
+      "cache-control": "max-age=0, private, must-revalidate",
+      "access-control-allow-origin": "*",
+      "content-encoding": "gzip"
+    },
+    "json": {
+      "ok": true,
+      "data": [
+        {
+          "ld": "ltr",
+          "ang": "Adang",
+          "pk": 81,
+          "hc": "ID",
+          "alt": [
+            "Alor"
+          ],
+          "gw": false,
+          "lc": "adn",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Adang",
+          "lr": "Asia"
+        },
+        {
+          "cc": [
+            "ID"
+          ],
+          "ln": "Atohwaim",
+          "lr": "Asia",
+          "pk": 328,
+          "gw": false,
+          "lc": "aqm",
+          "hc": "ID",
+          "alt": [
+            "Kaugat"
+          ],
+          "ld": "ltr",
+          "ang": "Atohwaim"
+        },
+        {
+          "pk": 720,
+          "hc": "ID",
+          "alt": [
+            "Bandjarese",
+            "Banjar Malay",
+            "Banjarese",
+            "Hulu"
+          ],
+          "gw": false,
+          "lc": "bjn",
+          "ld": "ltr",
+          "ang": "Banjar",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Banjar",
+          "lr": "Asia"
+        },
+        {
+          "ld": "ltr",
+          "ang": "Dusun Kalahien",
+          "lc": "bkr-x-kalahien",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Dusun Kalahien",
+          "lr": "Asia",
+          "hc": "ID",
+          "alt": [],
+          "gw": false,
+          "pk": 8521
+        },
+        {
+          "hc": "ID",
+          "alt": [],
+          "ld": "ltr",
+          "lc": "bkr-x-pajuepat",
+          "cc": [
+            "ID"
+          ],
+          "lr": "Asia",
+          "pk": 8516,
+          "gw": false,
+          "ang": "Paju Epat",
+          "ln": "Paju Epat"
+        },
+        {
+          "ld": "ltr",
+          "ang": "Batak Mandailing",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Batak Mandailing",
+          "pk": 956,
+          "hc": "ID",
+          "alt": [
+            "Batta",
+            "Mandailing Batak"
+          ],
+          "gw": false,
+          "lc": "btm",
+          "lr": "Asia"
+        },
+        {
+          "gw": false,
+          "ld": "ltr",
+          "ang": "Dusun Deyah",
+          "lc": "dun",
+          "cc": [
+            "ID"
+          ],
+          "alt": [
+            "Deah",
+            "Dejah"
+          ],
+          "ln": "Dusun Deyah",
+          "lr": "Asia",
+          "pk": 1663,
+          "hc": "ID"
+        },
+        {
+          "cc": [
+            "ID"
+          ],
+          "hc": "ID",
+          "gw": false,
+          "ld": "ltr",
+          "lc": "iba-x-salako",
+          "ln": "Dayak Salako",
+          "lr": "Asia",
+          "pk": 8284,
+          "alt": [],
+          "ang": "Dayak Salako"
+        },
+        {
+          "ld": "ltr",
+          "ang": "Indonesian",
+          "cc": [
+            "CN",
+            "ID",
+            "MY",
+            "NL",
+            "US",
+            "AU",
+            "CA",
+            "SG"
+          ],
+          "ln": "Bahasa Indonesia",
+          "pk": 2418,
+          "alt": [],
+          "gw": true,
+          "lc": "id",
+          "lr": "Asia",
+          "hc": "ID"
+        },
+        {
+          "ang": "Keijar",
+          "lc": "kdy",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Keder",
+          "lr": "Asia",
+          "hc": "ID",
+          "alt": [],
+          "gw": false,
+          "ld": "ltr",
+          "pk": 2781
+        },
+        {
+          "ang": "Kodi",
+          "pk": 3041,
+          "hc": "ID",
+          "alt": [
+            "Kudi",
+            "Nggaro (Nggaura)"
+          ],
+          "gw": false,
+          "ld": "ltr",
+          "lc": "kod",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Kodi",
+          "lr": "Asia"
+        },
+        {
+          "ln": "Kaigar",
+          "lr": "Asia",
+          "alt": [],
+          "ld": "ltr",
+          "ang": "Kaigar",
+          "cc": [
+            "ID"
+          ],
+          "pk": 8463,
+          "hc": "ID",
+          "gw": false,
+          "lc": "kps-x-kaigar"
+        },
+        {
+          "gw": false,
+          "ang": "Kubu",
+          "lc": "kvb",
+          "lr": "Asia",
+          "hc": "ID",
+          "ld": "ltr",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Kubu",
+          "pk": 3209,
+          "alt": [
+            "Orang Hutan",
+            "Orang Rimba",
+            "Jambi"
+          ]
+        },
+        {
+          "ln": "Lawangan",
+          "lr": "Asia",
+          "hc": "ID",
+          "alt": [
+            "Luwangan",
+            "Northeast Barito",
+            "Karau (Beloh)",
+            "Pasir",
+            "Bantian (Bentian)",
+            "Bakoi (Lampung)",
+            "Bawu (Bawo)"
+          ],
+          "gw": false,
+          "ld": "ltr",
+          "lc": "lbx",
+          "cc": [
+            "ID"
+          ],
+          "pk": 3376,
+          "ang": "Lawangan"
+        },
+        {
+          "lr": "Asia",
+          "hc": "ID",
+          "alt": [
+            "Moar"
+          ],
+          "ang": "Liki",
+          "ln": "Liki",
+          "pk": 3465,
+          "gw": false,
+          "ld": "ltr",
+          "lc": "lio",
+          "cc": [
+            "ID"
+          ]
+        },
+        {
+          "ang": "Lamboya",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Lamboya",
+          "lr": "Asia",
+          "alt": [],
+          "gw": false,
+          "ld": "ltr",
+          "lc": "lmy",
+          "pk": 3533,
+          "hc": "ID"
+        },
+        {
+          "lr": "Asia",
+          "pk": 3579,
+          "hc": "MY",
+          "ld": "ltr",
+          "ang": "Bakati’, Rara",
+          "alt": [
+            "Bekati' Kendayan",
+            "Bekati' Nyam-Pelayo",
+            "Bekatiq",
+            "Lara'",
+            "Luru",
+            "Bina'e"
+          ],
+          "gw": false,
+          "lc": "lra",
+          "cc": [
+            "ID",
+            "MY"
+          ],
+          "ln": "Rara Bakati'"
+        },
+        {
+          "hc": "ID",
+          "alt": [
+            "Laora",
+            "Mbukambero (Bukambero)"
+          ],
+          "gw": false,
+          "ld": "ltr",
+          "lc": "lur",
+          "ang": "Laura",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Laura",
+          "lr": "Asia",
+          "pk": 3629
+        },
+        {
+          "pk": 4171,
+          "hc": "ID",
+          "gw": false,
+          "ld": "ltr",
+          "ang": "Mamboru",
+          "alt": [
+            "Memboro"
+          ],
+          "lc": "mvd",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Mamboru",
+          "lr": "Asia"
+        },
+        {
+          "gw": false,
+          "ld": "ltr",
+          "ang": "",
+          "lc": "ors-x-oranglau",
+          "lr": "Asia",
+          "pk": 7646,
+          "alt": [],
+          "cc": [
+            "ID"
+          ],
+          "ln": "Suku Laut; Orang Laut",
+          "hc": "ID"
+        },
+        {
+          "gw": false,
+          "ang": "Raran'kwa",
+          "ln": "Raran'kwa",
+          "pk": 8204,
+          "hc": "ID",
+          "ld": "ltr",
+          "lc": "orz-x-rarankwa",
+          "cc": [
+            "ID"
+          ],
+          "lr": "Asia",
+          "alt": []
+        },
+        {
+          "gw": false,
+          "ld": "ltr",
+          "ang": "Paku",
+          "cc": [
+            "ID"
+          ],
+          "lr": "Asia",
+          "alt": [],
+          "lc": "pku",
+          "ln": "Paku",
+          "pk": 5060,
+          "hc": "ID"
+        },
+        {
+          "cc": [
+            "ID"
+          ],
+          "hc": "ID",
+          "alt": [],
+          "gw": false,
+          "ld": "ltr",
+          "ang": "Reta",
+          "ln": "Retta",
+          "lr": "Asia",
+          "pk": 5345,
+          "lc": "ret"
+        },
+        {
+          "ang": "Sawi",
+          "lc": "saw",
+          "cc": [
+            "ID"
+          ],
+          "lr": "Asia",
+          "pk": 5475,
+          "hc": "ID",
+          "alt": [
+            "Aejauroh",
+            "Sawuy"
+          ],
+          "gw": false,
+          "ln": "Sawi",
+          "ld": "ltr"
+        },
+        {
+          "gw": false,
+          "ld": "ltr",
+          "ang": "Skou",
+          "lc": "skv",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Skou",
+          "lr": "Asia",
+          "pk": 5677,
+          "hc": "ID",
+          "alt": [
+            "Sekol",
+            "Sekou",
+            "Sko",
+            "Skouw",
+            "Skow",
+            "Sukou",
+            "Te Mawo",
+            "Tumawo"
+          ]
+        },
+        {
+          "ld": "ltr",
+          "ang": "Sobei",
+          "lc": "sob",
+          "ln": "Sobei",
+          "lr": "Asia",
+          "pk": 5751,
+          "gw": false,
+          "cc": [
+            "ID"
+          ],
+          "hc": "ID",
+          "alt": [
+            "Imasi",
+            "Liki"
+          ]
+        },
+        {
+          "hc": "ID",
+          "gw": false,
+          "ld": "ltr",
+          "ang": "Saweru",
+          "lc": "swr",
+          "lr": "Asia",
+          "alt": [],
+          "cc": [
+            "ID"
+          ],
+          "ln": "Saweru",
+          "pk": 5917
+        },
+        {
+          "gw": false,
+          "ld": "ltr",
+          "lc": "tdt",
+          "cc": [
+            "ID",
+            "TL"
+          ],
+          "lr": "Asia",
+          "pk": 6047,
+          "hc": "TL",
+          "ang": "Tetun Dili",
+          "ln": "Tetun Dili",
+          "alt": [
+            "Dili Tetum",
+            "Tetum",
+            "Tetum Dili",
+            "Tetum Praça",
+            "Tetun"
+          ]
+        },
+        {
+          "ang": "Tabla",
+          "lc": "tnm",
+          "ln": "Tabla",
+          "hc": "ID",
+          "gw": false,
+          "ld": "ltr",
+          "cc": [
+            "ID"
+          ],
+          "lr": "Asia",
+          "pk": 6229,
+          "alt": [
+            "Jakari",
+            "Tabi",
+            "Tanah Merah",
+            "Tanahmerah 2",
+            "Yokari"
+          ]
+        },
+        {
+          "ang": "Yokari",
+          "lc": "tnm-x-yokari",
+          "cc": [
+            "ID"
+          ],
+          "pk": 8446,
+          "hc": "ID",
+          "alt": [],
+          "gw": false,
+          "ld": "ltr",
+          "ln": "Yokari",
+          "lr": "Asia"
+        },
+        {
+          "ang": "Tarpia",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Tarpia",
+          "lr": "Asia",
+          "pk": 6268,
+          "gw": false,
+          "ld": "ltr",
+          "lc": "tpf",
+          "hc": "ID",
+          "alt": [
+            "Sufrai",
+            "Tarfia"
+          ]
+        },
+        {
+          "pk": 6524,
+          "alt": [
+            "Ndaoe",
+            "Ndau",
+            "Umalasa"
+          ],
+          "ld": "ltr",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Pendau",
+          "hc": "ID",
+          "gw": false,
+          "ang": "Pendau",
+          "lc": "ums",
+          "lr": "Asia"
+        },
+        {
+          "hc": "ID",
+          "ld": "ltr",
+          "cc": [
+            "ID"
+          ],
+          "alt": [],
+          "gw": false,
+          "ang": "Loli",
+          "lc": "wew-x-loli",
+          "ln": "Loli",
+          "lr": "Asia",
+          "pk": 9097
+        },
+        {
+          "gw": false,
+          "ang": "Wanukaka",
+          "lc": "wnk",
+          "ln": "Wanukaka",
+          "lr": "Asia",
+          "pk": 6781,
+          "hc": "ID",
+          "ld": "ltr",
+          "cc": [
+            "ID"
+          ],
+          "alt": [
+            "Wanokaka"
+          ]
+        },
+        {
+          "lr": "Asia",
+          "pk": 7992,
+          "hc": "ID",
+          "alt": [],
+          "gw": false,
+          "ang": "",
+          "lc": "xdy-x-tamuan",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Dayak Tamuan",
+          "ld": "ltr"
+        },
+        {
+          "ld": "ltr",
+          "lc": "xem-x-hibun",
+          "lr": "Asia",
+          "alt": [],
+          "ang": "Hibun",
+          "cc": [
+            "ID"
+          ],
+          "ln": "Hibun",
+          "pk": 8103,
+          "hc": "ID",
+          "gw": false
+        },
+        {
+          "ld": "ltr",
+          "ang": "",
+          "cc": [
+            "ID"
+          ],
+          "pk": 7544,
+          "hc": "ID",
+          "alt": [],
+          "gw": false,
+          "lc": "zlm-x-akit",
+          "ln": "Akit",
+          "lr": "Asia"
+        }
+      ]
+    }
+  }
+}

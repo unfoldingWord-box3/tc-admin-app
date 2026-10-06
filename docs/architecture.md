@@ -254,10 +254,12 @@ worker/
     auth.ts          OAuth with PKCE, code exchange, the signed-in account from /user
     repos.ts         repository search and permissions read strictly (P2); whether a name is taken; the account's creation rights (E43)
     catalog.ts       the catalog view of a repository (#19)
+    languages.ts     the full language list and an owner's languages, in glossary names (E25; #28)
     writes.ts        repository creation and the multi-file commit, sent once and never retried, no delete (W5, X1, A3, W4; #30)
                      planned: archive (#18), health (#36), branches, tags, releases (#34, #39)
   src/model/         no I/O
     books.ts         book and story ids (#19)
+    language.ts      the language tag rule of the Scripture Burrito schema (E44, Q30; #28)
     project.ts       type, editability, coverage (#19)
     health.ts        Door43 severity to health state (H1, H3)
     burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10); the release merge is #35
@@ -274,6 +276,7 @@ worker/
     plans.ts         plans and receipts in Workers KV, by plan id (operations.md §2)
     project-create-plan.ts  project.create.plan (#29)
     project-create-apply.ts  project.create.apply: the first Door43 writes, idempotent by plan id (#30)
+    language-list.ts  language.list: the wizard's language list, each tag marked as accepted or not (#28)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)
