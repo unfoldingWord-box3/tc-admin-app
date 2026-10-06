@@ -2,6 +2,7 @@
 // the Scripture Burrito schema accepts its tag (Q30), the owner's languages when
 // an owner is named, and the read's freshness (P3).
 import { readFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
 import { CatalogError, OPERATIONS } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import type { Fetch } from '../../src/door43/api';
@@ -11,8 +12,12 @@ import type { OperationContext } from '../../src/operations';
 import { languageList } from '../../src/operations/language-list';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/2026-10-06/languages/', import.meta.url);
-const recorded = <T>(name: string): T => (JSON.parse(readFileSync(new URL(name, fixtures), 'utf8')) as { response: { json: T } }).response.json;
-const list = recorded<unknown[]>('langnames.json');
+/** A recording, inflated when it is stored gzipped (the full list is 1.5 MB). */
+const recorded = <T>(name: string): T => {
+  const bytes = readFileSync(new URL(name, fixtures));
+  return (JSON.parse((name.endsWith('.gz') ? gunzipSync(bytes) : bytes).toString('utf8')) as { response: { json: T } }).response.json;
+};
+const list = recorded<unknown[]>('langnames.json.gz');
 const owners: Record<string, unknown> = {
   'tc-admin-qa-org': recorded('catalog__list__languages__owner=tc-admin-qa-org__stage=latest.json'),
   bahtraku: recorded('catalog__list__languages__owner=bahtraku__stage=latest.json'),

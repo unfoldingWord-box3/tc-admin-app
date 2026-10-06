@@ -2,13 +2,18 @@
 // names, read strictly, and the owner-scoped list's `data: null` for an owner
 // Door43 does not know.
 import { readFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
 import { describe, expect, test } from 'vitest';
 import type { Fetch } from '../../src/door43/api';
 import { door43Host } from '../../src/door43/host';
 import { languageEntry, readLanguages, readOwnerLanguageCodes } from '../../src/door43/languages';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/2026-10-06/languages/', import.meta.url);
-const recorded = <T>(name: string): T => (JSON.parse(readFileSync(new URL(name, fixtures), 'utf8')) as { response: { json: T } }).response.json;
+/** A recording, inflated when it is stored gzipped (the full list is 1.5 MB). */
+const recorded = <T>(name: string): T => {
+  const bytes = readFileSync(new URL(name, fixtures));
+  return (JSON.parse((name.endsWith('.gz') ? gunzipSync(bytes) : bytes).toString('utf8')) as { response: { json: T } }).response.json;
+};
 const qa = door43Host('https://qa.door43.org');
 const client = (fetch: Fetch) => ({ host: qa, token: 'test-only', fetch });
 
@@ -32,7 +37,7 @@ describe('one entry', () => {
 });
 
 describe('the recorded lists (E25)', () => {
-  const list = recorded<unknown[]>('langnames.json');
+  const list = recorded<unknown[]>('langnames.json.gz');
   const ownerList = (name: string) => recorded<unknown>(`catalog__list__languages__owner=${name}__stage=latest.json`);
 
   test('the full list is read from /languages/langnames.json with the session token and every entry is offered', async () => {

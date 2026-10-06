@@ -9,7 +9,7 @@
 
 | File | Request |
 | --- | --- |
-| `languages/langnames.json` | `GET /api/v1/languages/langnames.json`: the full language list, 9,166 entries, written one entry per line |
+| `languages/langnames.json.gz` | `GET /api/v1/languages/langnames.json`: the full language list, 9,166 entries, in the usual request and response wrapper, gzipped (1.5 MB and nine thousand lines plain); `gunzip -c` reads it, as the tests do |
 | `languages/catalog__list__languages__owner=tc-admin-qa-org__stage=latest.json` | `GET /api/v1/catalog/list/languages?owner=tc-admin-qa-org&stage=latest`: one language, `id` |
 | `languages/catalog__list__languages__owner=bahtraku__stage=latest.json` | the same for `bahtraku`: 37 languages |
 | `languages/catalog__list__languages__owner=no-such-owner-xyz__stage=latest.json` | the same for an owner Door43 does not know: `{ ok: true, data: null }` |
