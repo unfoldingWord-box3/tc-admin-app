@@ -62,7 +62,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#28](https://github.com/unfoldingWord-box3/tc-admin-app/issues/28) Creation wizard | §6 | 0006, 0013 | W3, A2 | E37, Q20, Q25 | `project.create.plan` | web, operations | S1 |
 | [#29](https://github.com/unfoldingWord-box3/tc-admin-app/issues/29) Generate metadata.json | §6, §7; domain §8 | 0008, 0011 | W1, R10, A2 | E17, E24, E25, E37, E43, E44, Q4, Q20, Q28 | `project.create.plan` | model/burrito, operations | S1 |
-| [#30](https://github.com/unfoldingWord-box3/tc-admin-app/issues/30) Create repository and first commit | §6 | 0004 | A2, A3, W5 | Q3, Q10 | `project.create.apply` | door43/api, operations | S1 |
+| [#30](https://github.com/unfoldingWord-box3/tc-admin-app/issues/30) Create repository and first commit | §6 | 0004, 0011 | A2, A3, W4, W5, X1 | E21, E26, E27, E28, E43, E45, E48, Q3, Q4, Q10, Q28, Q29 | `project.create.apply` | door43/writes, operations | S1 |
 | [#31](https://github.com/unfoldingWord-box3/tc-admin-app/issues/31) Setup incomplete | §6; §11 `setup_incomplete` | — | W4, X2 | — | `project.create.retry` | operations, web | — |
 
 ### EPIC: Selective release ([#41](https://github.com/unfoldingWord-box3/tc-admin-app/issues/41))
@@ -105,7 +105,7 @@ Moved into Milestone 1 on 1 October 2026 (Q25). Child issues created 5 October 2
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#48](https://github.com/unfoldingWord-box3/tc-admin-app/issues/48) Open Bible Stories | §5, §6, §8, §10 | 0008, 0013 | H5, W1, R10 | E36, E37, Q4, Q24 | every project operation with `obs`; `release.plan` with no selection | model, operations, web | S1, S9 |
-| [#82](https://github.com/unfoldingWord-box3/tc-admin-app/issues/82) Create an Open Bible Stories project | §6 | 0006, 0013 | W1, W3, H5 | E36, E37, Q4, Q25 | `project.create.plan`, `project.create.apply` | model/metadata, operations/create, web | S1 |
+| [#82](https://github.com/unfoldingWord-box3/tc-admin-app/issues/82) Create an Open Bible Stories project | §6 | 0006, 0013 | W1, W3, H5 | E36, E37, E44, E46, E47, Q4, Q25 | `project.create.plan`, `project.create.apply` | model/burrito, operations | S1 |
 | [#83](https://github.com/unfoldingWord-box3/tc-admin-app/issues/83) Stories in uploads, imports, archives | §5, §8 | 0013 | H3, H5, W1 | E35, E36 | `upload.plan`, `import.plan`, `project.read` | model/books, model/upload, door43/archive | S2, S9 |
 | [#84](https://github.com/unfoldingWord-box3/tc-admin-app/issues/84) Release Open Bible Stories whole | §10 | 0003, 0005, 0010, 0013 | R1, R3, R4, R10, H5 | E36, Q24 | `release.plan`, `release.prepare`, `release.create` | operations/release, web | S3 |
 

@@ -121,8 +121,8 @@ Issues: #8, #25, #50.
 Coverage counts recognized books present against the testament-scope target (27, 39, 66) for a Bible project, or stories against 50 for an Open Bible Stories project. It is never presented as translation completeness. It is computed from catalog metadata (E12), and it is distinct from a release's `currentScope`, which lists only released books (Q7).
 Source: CONTEXT.md "Coverage"; product spec §5.
 Enforced in: `worker/src/model/project` (coverage carries `basis` and `target`); `web` copy uses the glossary wording.
-Verified by: the `H5:` tests in `worker/test/model/project.test.ts` over each scope and in `worker/test/contract/project-catalog.test.ts` over the seed repositories (E32); UI copy review against CONTEXT.md.
-Issues: #19, #24.
+Verified by: the `H5:` tests in `worker/test/model/project.test.ts` over each scope, in `worker/test/contract/project-catalog.test.ts` over the seed repositories (E32), and in `worker/test/operations/project-create-apply.test.ts` (a new Open Bible Stories project's report counts 0 of 50 stories); UI copy review against CONTEXT.md.
+Issues: #19, #24, #82.
 
 ## A — Access and identity
 
@@ -136,15 +136,15 @@ Issues: #12, #15, #51.
 ### A2 — Permission is checked live before every mutation
 Before repository creation, any commit, branch change, release creation, or promotion, the Worker re-reads the repository permission from Door43. Ambiguity fails closed. A project the user lost access to leaves the writable portfolio.
 Source: product spec §2; architecture §3 authorization.
-Enforced in: `worker/src/operations` shared precondition used by every apply operation.
-Verified by: each apply operation with a fixture lacking push permission returns `permission_denied` and writes nothing; a missing `permissions` object is treated as no permission.
-Issues: #14.
+Enforced in: `worker/src/operations` shared precondition used by every apply operation; for creation, `ownerForCreation` in `project-create-plan` reads the account's creation right in the owner (E43) at plan and again at apply; the per-repository precondition is #14.
+Verified by: each apply operation with a fixture lacking push permission returns `permission_denied` and writes nothing; a missing `permissions` object is treated as no permission. So far: the `A2:` tests in `worker/test/operations/project-create-plan.test.ts` and `project-create-apply.test.ts` (an owner that grants no creation right, a team without it, a non-boolean grant, or no team at all is `permission_denied` at plan and at apply, and nothing is written; in the plan tests, a granting team on a later page grants).
+Issues: #14, #30.
 
 ### A3 — Every write is attributed to the signed-in user
 Every Door43 commit, tag, and release tC Admin creates is made with the signed-in manager's credential and carries their identity.
 Source: ADR 0004; product spec §7.
-Enforced in: `worker/src/door43` (no service account; requests use the session's token only).
-Verified by: adapter test that every write request carries the session bearer token and no other credential.
+Enforced in: `worker/src/door43` (no service account; requests use the session's token only; `writes.ts` sends no author or committer, so Door43 attributes every commit to the token's user).
+Verified by: the `A3:` tests in `worker/test/door43/api.test.ts`, `writes.test.ts`, `worker/test/http/session.test.ts`, and `worker/test/operations/project-create-apply.test.ts` (every read and write carries the session bearer token and no other credential, and names no author or committer).
 Issues: #12, #30, #39.
 
 ### A4 — Browser mutations are same-origin with a CSRF token
@@ -160,8 +160,8 @@ Issues: #13.
 Every project tC Admin creates is Scripture Burrito with tC Admin recorded as generator. tC Admin never writes Resource Container, translationStudio, or translationCore metadata.
 Source: ADR 0008.
 Enforced in: `worker/src/model/burrito` is the only metadata writer.
-Verified by: the `W1:` tests in `worker/test/model/burrito.test.ts` (a new Bible project's metadata validates against the recorded Scripture Burrito source schema, E44, for every testament scope, and names tC Admin as generator with the flavor `scripture/textTranslation`) and in `worker/test/operations/project-create-plan.test.ts`; no writer for other formats exists.
-Issues: #17, #29.
+Verified by: the `W1:` tests in `worker/test/model/burrito.test.ts` (a new Bible project's metadata validates against the recorded Scripture Burrito source schema, E44, for every testament scope, and names tC Admin as generator with the flavor `scripture/textTranslation`; a new Open Bible Stories project's validates with `gloss/textStories` and the fixed scope, E46) and in `worker/test/operations/project-create-plan.test.ts`; no writer for other formats exists.
+Issues: #17, #29, #82.
 
 ### W2 — Only a Scripture Burrito project is ever written
 tC Admin writes only to repositories it manages: Scripture Burrito Bible and Open Bible Stories projects. A repository in any other format, of any other type, or without recognized metadata is read for import and never written, released, or converted in place (amended 1 October 2026, ADR 0013).
@@ -180,15 +180,15 @@ Issues: #28, #46.
 ### W4 — No automatic repository deletion
 tC Admin never deletes a repository. A partially created project is shown as setup incomplete with a retry path.
 Source: product spec §6; architecture §8.
-Enforced in: the Door43 adapter has no repository-delete method.
-Verified by: adapter surface test; setup-incomplete fixture leaves the repository.
-Issues: #31, #49.
+Enforced in: the Door43 adapter has no repository-delete method (`worker/src/door43/writes.ts`); `project-create-apply` keeps the repository and answers `setup_incomplete` when the first commit fails.
+Verified by: the `W4:` tests in `worker/test/door43/writes.test.ts` (the adapter exports no delete) and `worker/test/operations/project-create-apply.test.ts` (a failed first commit leaves the repository, lists it in the receipt, warns `setup_incomplete`, and keeps the plan for the retry; a replay of a plan whose repository is recorded on it, with no receipt yet, answers setup incomplete for that repository and writes nothing; a store that refuses the record does not stop the apply; a repository the plan could not learn of reads as a taken name, the accepted window of Q29).
+Issues: #30, #31, #49.
 
 ### W5 — One operation, one commit
 The accepted changes of one operation are committed together as one Door43 commit: the first commit of a new project and, in Milestone 2, an upload batch or a metadata edit with its proposed ingredient entries. The exception is a release snapshot whose selected books exceed one Worker request, which is prepared by several commits on the temporary branch and is still one release (Q22, ADR 0010).
 Source: product spec §8; ADR 0004; ADR 0010.
-Enforced in: `worker/src/door43` multi-file contents call used by every committing operation.
-Verified by: recorded-request tests assert exactly one contents call per apply, except `release.prepare`, where the number of contents calls equals the plan's announced commit count.
+Enforced in: `worker/src/door43/writes.ts` `commitFiles`, the multi-file contents call used by every committing operation.
+Verified by: recorded-request tests assert exactly one contents call per apply, except `release.prepare`, where the number of contents calls equals the plan's announced commit count. So far: the `W5:` tests in `worker/test/door43/writes.test.ts` and `worker/test/operations/project-create-apply.test.ts` (one contents call with the plan's three files; the receipt's `wrote` equals the plan's `would_write`).
 Issues: #30, #34, #45, #46.
 
 ### W6 — Upload paths are safe
@@ -233,9 +233,9 @@ Issues: #26.
 ### X1 — Unknown outcomes are never silently retried
 A mutation whose outcome is unknown is not retried automatically. The operation returns `release_outcome_unknown` or `commit_failed` with the recovery action, and any retry is explicit.
 Source: architecture §7.
-Enforced in: `worker/src/door43` (no automatic retry on writes); `worker/src/operations/*-apply`.
-Verified by: adapter test that a write timeout raises rather than retries.
-Issues: #40.
+Enforced in: `worker/src/door43` (`writeDoor43` sends a write once; no automatic retry); `worker/src/operations/*-apply`.
+Verified by: the `X1:` tests in `worker/test/door43/writes.test.ts` (a write that times out raises after one request; a body that cannot be read keeps the status and is not sent again; a commit whose answer could not be read is an unknown outcome) and `worker/test/operations/project-create-apply.test.ts` (a first commit whose outcome is unknown, by a network failure or an unreadable answer, is not retried, is reported as setup incomplete with the outcome recorded on the plan, and a repeated apply answers the same receipt without writing).
+Issues: #30, #40.
 
 ### X2 — Every failure is typed and recoverable
 Every failure returns an error code from the catalog in [operations.md](operations.md), the user-facing message the specification fixes for it, whether it is retryable, the next action, and a request id.

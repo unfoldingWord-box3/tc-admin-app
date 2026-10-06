@@ -5,7 +5,7 @@
 // a response header; the client keeps it in memory only and sends it on every
 // `POST` (A4, A1).
 
-import { CSRF_HEADER, ERROR_CATALOG, OPERATIONS, OperationErrorShape, catalogMessage, routeParams } from '@tc-admin/shared/schema';
+import { CSRF_HEADER, ERROR_CATALOG, IDEMPOTENCY_HEADER, OPERATIONS, OperationErrorShape, catalogMessage, routeParams } from '@tc-admin/shared/schema';
 import type { OperationDefinition, OperationInput, OperationOutput, RoutedOperation } from '@tc-admin/shared/schema';
 
 export class ApiError extends Error {
@@ -52,10 +52,10 @@ export function operationRequest(name: RoutedOperation, input: Readonly<Record<s
     const query = new URLSearchParams(rest.filter(([, value]) => value !== null).map(([field, value]): [string, string] => [field, String(value)])).toString();
     return { url: query ? `${path}?${query}` : path, init: { method: 'GET', headers: { accept: 'application/json' } } };
   }
-  return {
-    url: path,
-    init: { method: 'POST', headers: { accept: 'application/json', 'content-type': 'application/json' }, body: JSON.stringify(Object.fromEntries(rest)) },
-  };
+  // An apply names its plan in the body and as the idempotency key (operations.md §7).
+  const headers: Record<string, string> = { accept: 'application/json', 'content-type': 'application/json' };
+  if (typeof input.plan_id === 'string') headers[IDEMPOTENCY_HEADER] = input.plan_id;
+  return { url: path, init: { method: 'POST', headers, body: JSON.stringify(Object.fromEntries(rest)) } };
 }
 
 /** The error a response without the catalog shape stands for (X2). */

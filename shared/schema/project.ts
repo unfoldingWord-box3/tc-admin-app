@@ -93,7 +93,8 @@ export const ProjectReport = z.object({
   latest_full_release: z
     .object({ tag: z.string(), version: z.string(), sha: z.string(), published_at: z.string(), author: z.string() })
     .nullable(),
-  default_branch_head: z.object({ sha: z.string(), committed_at: z.string() }),
+  /** `null` for a repository without a commit: a project whose setup is incomplete, or an empty repository (E10). */
+  default_branch_head: z.object({ sha: z.string(), committed_at: z.string() }).nullable(),
   active_preparation: z.object({ id: z.string(), state: PreparationState, version: z.string() }).nullable(),
   setup: z.object({ state: SetupState, failed_step: z.string().nullable() }),
   permissions: z.object({ push: z.boolean(), admin: z.boolean(), checked_at: z.string() }),

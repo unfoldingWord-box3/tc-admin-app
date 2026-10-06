@@ -7,16 +7,17 @@
 // abbreviation and must be free in the owner (`name_taken`). The metadata and
 // the files come from the model (W1, R10) and are stored with the plan in
 // Workers KV for thirty minutes, so the apply writes exactly what was shown.
-// Open Bible Stories projects are #82: the flavor's required `currentScope`
-// cannot be empty (E44), and what a new one carries is open in Q4.
+// An Open Bible Stories project has no testament scope (Q25); its metadata
+// carries the fixed scope Door43 writes for every one (E46, Q4; #82).
 
 import { CatalogError } from '@tc-admin/shared/schema';
 import type { OperationOutput, ParsedInput } from '@tc-admin/shared/schema';
 import type { Door43Client } from '../door43/api';
 import { readAccount } from '../door43/auth';
 import { creationRights, repositoryExists } from '../door43/repos';
-import { newBibleProjectFiles, repositoryName, validRepositoryName } from '../model/burrito';
-import type { NewBibleProject, ProjectFile } from '../model/burrito';
+import type { CreatedRepository } from '../door43/writes';
+import { newProjectFiles, repositoryName, validRepositoryName } from '../model/burrito';
+import type { NewProject, ProjectFile } from '../model/burrito';
 import type { OperationContext } from './context';
 import { signedIn } from './context';
 import { PLAN_SECONDS, newPlanId } from './plans';
@@ -29,12 +30,17 @@ export interface PlannedOwner {
   kind: 'organization' | 'account';
 }
 
-/** What the apply needs from the plan: the owner, the name, and the exact files. */
+/** What the apply needs from the plan: the owner, the name, and the exact files. The apply marks the plan once the repository exists (#31). */
 export interface ProjectCreatePayload {
   owner: PlannedOwner;
   repo_name: string;
-  project: NewBibleProject;
+  project: NewProject;
   files: { path: string; content: string }[];
+  repository_created?: boolean;
+  /** The repository the apply created, stored on the plan before its first commit, so a later apply of this plan never reads it as `name_taken`. */
+  created_repository?: CreatedRepository;
+  /** What became of the first commit when it did not return one: `unknown` when Door43 may have made it anyway (X1), for the retry (#31). */
+  first_commit?: { outcome: 'failed' | 'unknown'; door43_status: number | null };
 }
 
 const validation = (field: string, message: string) => new CatalogError('validation_failed', { message: `${field}: ${message}`, details: { fields: [{ path: field, message }] } });
@@ -52,9 +58,10 @@ const TRIMMED_TEXT = /^\S(.*\S)?$/u;
 
 /**
  * The owner to create in, or `permission_denied`. The account itself cannot be
- * checked ahead of the write (Q28): Door43 answers at apply. An organization is
- * allowed only when a team of the account there may create repositories (E43):
- * any one such team is enough, whatever order Door43 lists the teams in.
+ * checked ahead of the write: sign-in requests `write:user` for it (Q28) and
+ * Door43 answers at apply. An organization is allowed only when a team of the
+ * account there may create repositories (E43): any one such team is enough,
+ * whatever order Door43 lists the teams in.
  */
 export async function ownerForCreation(client: Door43Client, accountLogin: string, owner: string): Promise<PlannedOwner> {
   if (owner.toLowerCase() === accountLogin.toLowerCase()) return { login: accountLogin, kind: 'account' };
@@ -69,7 +76,6 @@ export async function projectCreatePlan(input: ParsedInput<'project.create.plan'
 
   // The inputs are checked before Door43 is asked anything, so an invalid input
   // is `validation_failed` even when Door43 is unavailable (X2).
-  if (input.project_type === 'obs') throw validation('project_type', 'Open Bible Stories projects cannot be created yet.');
   const title = input.title.trim();
   if (!title) throw validation('title', 'Give the project a title.');
   if (!TRIMMED_TEXT.test(title)) throw validation('title', 'Write the title on one line.');
@@ -78,7 +84,8 @@ export async function projectCreatePlan(input: ParsedInput<'project.create.plan'
   if (!TRIMMED_TEXT.test(abbreviation)) throw validation('abbreviation', 'Use letters, digits, hyphens, underscores, and dots only.');
   if (!LANGUAGE_TAG.test(input.language.code.trim())) throw validation('language.code', 'Choose a language from the list.');
   if (!TRIMMED_TEXT.test(input.language.title.trim())) throw validation('language.title', 'Choose a language from the list.');
-  if (!input.testament_scope) throw validation('testament_scope', 'Choose a testament scope for a Bible project.');
+  if (input.project_type === 'bible' && !input.testament_scope) throw validation('testament_scope', 'Choose a testament scope for a Bible project.');
+  if (input.project_type === 'obs' && input.testament_scope) throw validation('testament_scope', 'An Open Bible Stories project has no testament scope.');
   const repo_name = repositoryName(input.language.code, abbreviation);
   if (!validRepositoryName(repo_name)) throw validation('abbreviation', 'Use letters, digits, hyphens, underscores, and dots only.');
 
@@ -86,17 +93,20 @@ export async function projectCreatePlan(input: ParsedInput<'project.create.plan'
   const owner = await ownerForCreation(client, account.login, input.owner.trim());
   if (await repositoryExists(client, owner.login, repo_name)) throw new CatalogError('name_taken', { values: { repo_name, owner: owner.login }, details: { owner: owner.login, repo_name } });
 
-  const project: NewBibleProject = {
+  const base = {
     owner: owner.login,
     repo_name,
     title,
     abbreviation,
     language: { code: input.language.code.trim(), title: input.language.title.trim(), direction: input.language.direction ?? null },
-    testament_scope: input.testament_scope,
     license: input.license,
   };
+  const project: NewProject =
+    input.project_type === 'bible' && input.testament_scope
+      ? { ...base, project_type: 'bible', testament_scope: input.testament_scope }
+      : { ...base, project_type: 'obs', testament_scope: null };
   const now = context.now();
-  const { metadata, files } = newBibleProjectFiles(project, { ...context.application, user: account }, now);
+  const { metadata, files } = newProjectFiles(project, { ...context.application, user: account }, now);
   const target = `${owner.login}/${repo_name}`;
   const plan: ProjectCreatePlan = {
     id: newPlanId(),

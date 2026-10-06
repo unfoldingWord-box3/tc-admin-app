@@ -1,0 +1,181 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-10-06T06:33:48.204Z",
+  "input": {
+    "owner": "tc-admin-qa",
+    "project_type": "bible",
+    "title": "tC Admin probe 2026-10-06 0633",
+    "abbreviation": "tcap0633",
+    "language": {
+      "code": "id",
+      "title": "Bahasa Indonesia",
+      "direction": "ltr"
+    },
+    "testament_scope": "nt",
+    "license": "cc-by-sa-4.0"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 136
+    },
+    {
+      "step": 2,
+      "name": "GET-repos_tc-admin-qa_id_tcap0633",
+      "status": 404,
+      "ms": 126
+    },
+    {
+      "step": 3,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 130
+    },
+    {
+      "step": 4,
+      "name": "GET-repos_tc-admin-qa_id_tcap0633",
+      "status": 404,
+      "ms": 122
+    },
+    {
+      "step": 5,
+      "name": "POST-user_repos",
+      "status": 201,
+      "ms": 553
+    },
+    {
+      "step": 6,
+      "name": "POST-repos_tc-admin-qa_id_tcap0633_contents",
+      "status": 201,
+      "ms": 1122
+    },
+    {
+      "step": 7,
+      "name": "health-master",
+      "status": 200,
+      "ms": 5439,
+      "sequence": [
+        {
+          "t_ms": 112,
+          "status": 422,
+          "level": null,
+          "error": "no metadata found for repo [tc-admin-qa/id_tcap0633] and ref [master]",
+          "issues": null
+        },
+        {
+          "t_ms": 5439,
+          "status": 200,
+          "level": "info",
+          "error": null,
+          "issues": {
+            "release_needed": 1
+          }
+        }
+      ],
+      "latency_ms": 5439
+    },
+    {
+      "step": 8,
+      "name": "GET-repos_catalog-view",
+      "status": 200,
+      "ms": 113
+    },
+    {
+      "step": 9,
+      "name": "GET-catalog_entry_master",
+      "status": 200,
+      "ms": 108
+    }
+  ],
+  "dcs_version": "1.27.3+dcs.13-g23ba3c3ef9",
+  "plan": {
+    "id": "11810d97-2902-4c1a-a5d1-6eb0467a85cf",
+    "repo_name": "id_tcap0633",
+    "would_write": [
+      {
+        "kind": "repo",
+        "target": "tc-admin-qa/id_tcap0633"
+      },
+      {
+        "kind": "commit",
+        "target": "tc-admin-qa/id_tcap0633@master"
+      }
+    ],
+    "files": [
+      {
+        "path": "metadata.json",
+        "size": 2148,
+        "md5": "42bd82e96f4d65c4864cb7805200df07"
+      },
+      {
+        "path": "ingredients/license.md",
+        "size": 18535,
+        "md5": "0bf7ef1533f6486c8362dcb8bc19bdd1"
+      },
+      {
+        "path": "README.md",
+        "size": 197,
+        "md5": "9f59ce9355b544a76e2edfb8589a00b0"
+      }
+    ]
+  },
+  "receipt": {
+    "wrote": [
+      {
+        "kind": "repo",
+        "target": "tc-admin-qa/id_tcap0633",
+        "url": "https://qa.door43.org/tc-admin-qa/id_tcap0633"
+      },
+      {
+        "kind": "commit",
+        "target": "tc-admin-qa/id_tcap0633@master",
+        "sha": "4d1e5de577de76034dba1ce4da37ce4cfb912057",
+        "url": "https://qa.door43.org/tc-admin-qa/id_tcap0633/commit/4d1e5de577de76034dba1ce4da37ce4cfb912057"
+      }
+    ],
+    "warnings": [],
+    "setup": {
+      "state": "complete",
+      "failed_step": null
+    },
+    "started_at": "2026-10-06T06:33:49.311Z",
+    "finished_at": "2026-10-06T06:33:51.098Z"
+  },
+  "repository": "tc-admin-qa/id_tcap0633",
+  "health_master": {
+    "level": "info",
+    "issues": {
+      "release_needed": 1
+    },
+    "latency_ms": 5440
+  },
+  "catalog_view": {
+    "metadata_type": "sb",
+    "flavor_type": "scripture",
+    "flavor": "textTranslation",
+    "subject": "Bible",
+    "language": "id",
+    "title": "tC Admin probe 2026-10-06 0633",
+    "abbreviation": "tcap0633",
+    "ingredients": [],
+    "healthcheck_severity": "info",
+    "catalog": {
+      "prod": null,
+      "preprod": null,
+      "latest": {
+        "branch_or_tag_name": "master",
+        "release_url": null,
+        "commit_sha": "4d1e5de577de76034dba1ce4da37ce4cfb912057",
+        "released": "2026-10-06T06:33:50Z",
+        "zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcap0633/archive/4d1e5de577.zip",
+        "tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcap0633/archive/4d1e5de577.tar.gz",
+        "sb_zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcap0633/sb/4d1e5de577.zip",
+        "sb_tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcap0633/sb/4d1e5de577.tar.gz",
+        "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcap0633/git/trees/4d1e5de577?recursive=1&per_page=99999",
+        "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcap0633/contents?ref=4d1e5de577"
+      }
+    }
+  }
+}

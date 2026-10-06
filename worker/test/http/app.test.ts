@@ -1,6 +1,6 @@
 // The HTTP projection: routes come from the shared schema, inputs and outputs
 // are validated against it, and every failure is the catalog's error shape.
-import { OPERATIONS, OperationErrorShape } from '@tc-admin/shared/schema';
+import { IDEMPOTENCY_HEADER, OPERATIONS, OperationErrorShape } from '@tc-admin/shared/schema';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { Env, KVNamespace } from '../../src/env';
 import worker from '../../src/index';
@@ -122,6 +122,32 @@ describe('failures', () => {
     const line = JSON.parse(String(log.mock.calls[0]![0]));
     expect(Object.keys(line).sort()).toEqual(['code', 'details', 'kind', 'request_id']);
     expect(JSON.stringify(line)).not.toContain('example.org');
+  });
+});
+
+describe('the idempotency key', () => {
+  const seen: unknown[] = [];
+  beforeEach(() => {
+    seen.length = 0;
+    HANDLERS['project.create.apply'] = (async (input: unknown) => (seen.push(input), { not: 'a receipt' })) as never;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    delete HANDLERS['project.create.apply'];
+  });
+  const apply = (headers: Record<string, string>) => call('/api/projects', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://tc-admin.test', ...headers }, body: JSON.stringify({ plan_id: 'p1' }) });
+
+  test('an Idempotency-Key that names another plan is validation_failed before the operation runs', async () => {
+    const body = OperationErrorShape.parse(await (await apply({ [IDEMPOTENCY_HEADER]: 'p2' })).json());
+    expect(body.code).toBe('validation_failed');
+    expect(body.message).toContain('Idempotency-Key');
+    expect(seen).toEqual([]);
+  });
+
+  test('a matching key, or none, lets the operation run', async () => {
+    await apply({ [IDEMPOTENCY_HEADER]: 'p1' });
+    await apply({});
+    expect(seen).toEqual([{ plan_id: 'p1' }, { plan_id: 'p1' }]);
   });
 });
 

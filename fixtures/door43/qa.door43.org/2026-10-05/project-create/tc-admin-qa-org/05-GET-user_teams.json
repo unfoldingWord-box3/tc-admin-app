@@ -1,0 +1,65 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/user/teams",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 126,
+    "json": [
+      {
+        "id": 451,
+        "name": "Owners",
+        "description": "",
+        "organization": {
+          "id": 53536,
+          "name": "tc-admin-qa-org",
+          "full_name": "",
+          "email": "",
+          "avatar_url": "https://qa.door43.org/avatars/88aa03889f005577f41f98bd8e2e04ed",
+          "description": "",
+          "website": "",
+          "location": "",
+          "visibility": "public",
+          "repo_admin_change_team_access": true,
+          "username": "tc-admin-qa-org",
+          "repo_languages": null,
+          "repo_subjects": null,
+          "repo_metadata_types": null
+        },
+        "includes_all_repositories": true,
+        "permission": "owner",
+        "units": [
+          "repo.issues",
+          "repo.ext_issues",
+          "repo.pulls",
+          "repo.releases",
+          "repo.ext_wiki",
+          "repo.code",
+          "repo.wiki",
+          "repo.projects",
+          "repo.packages",
+          "repo.actions"
+        ],
+        "units_map": {
+          "repo.pulls": "owner",
+          "repo.releases": "owner",
+          "repo.packages": "owner",
+          "repo.issues": "owner",
+          "repo.ext_issues": "owner",
+          "repo.ext_wiki": "owner",
+          "repo.code": "owner",
+          "repo.wiki": "owner",
+          "repo.projects": "owner",
+          "repo.actions": "owner"
+        },
+        "can_create_org_repo": true,
+        "visibility": "limited"
+      }
+    ]
+  }
+}

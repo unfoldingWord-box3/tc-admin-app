@@ -211,7 +211,7 @@ Diagnostics may include request ID, project, commit SHA, version, target ref, he
 - Secure, HttpOnly, SameSite session cookie.
 - CSRF protection on browser mutations.
 - No token in URL, local storage, IndexedDB, or client logs.
-- Least-privilege Door43 scopes.
+- Least-privilege Door43 scopes: `read:user write:repository write:organization write:user`, each needed by a Milestone 1 operation (Q10; `write:user` for a project under the manager's own account, Q28), requested explicitly at sign-in because Gitea grants full access when none is asked.
 - Live permission checks at mutation boundaries.
 - Path traversal and symlink defenses for uploads.
 - No automatic repository deletion.
@@ -252,14 +252,16 @@ worker/
     host.ts          the configured host, QA or production only
     api.ts           reads with the session token, pagination (P1)
     auth.ts          OAuth with PKCE, code exchange, the signed-in account from /user
-    repos.ts         repository search and permissions read strictly (P2)
+    repos.ts         repository search and permissions read strictly (P2); whether a name is taken; the account's creation rights (E43)
     catalog.ts       the catalog view of a repository (#19)
-                     planned: archive (#18), health (#36), writes (#30, #34, #39)
+    writes.ts        repository creation and the multi-file commit, sent once and never retried, no delete (W5, X1, A3, W4; #30)
+                     planned: archive (#18), health (#36), branches, tags, releases (#34, #39)
   src/model/         no I/O
     books.ts         book and story ids (#19)
     project.ts       type, editability, coverage (#19)
     health.ts        Door43 severity to health state (H1, H3)
-    burrito.ts       the Scripture Burrito writer: a new Bible project's metadata and files (#29, W1, R10); the release merge is #35, Open Bible Stories #82
+    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10); the release merge is #35
+    obs-scope.ts     the fixed currentScope of every Open Bible Stories project (E46)
     md5.ts           ingredient checksums (R10)
     license-cc-by-sa-4.0.ts  the license text of ingredients/license.md (Q20)
                      planned: burrito reader (#17), classify (#20, #45), candidates (#33), version (#37), states
@@ -271,6 +273,7 @@ worker/
     portfolio-list.ts  the writable filter (P1, P2); the operation: #23
     plans.ts         plans and receipts in Workers KV, by plan id (operations.md §2)
     project-create-plan.ts  project.create.plan (#29)
+    project-create-apply.ts  project.create.apply: the first Door43 writes, idempotent by plan id (#30)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)
@@ -286,7 +289,8 @@ fixtures/
   door43/            recorded responses and archives, each with host, ref, and date (ADR 0012)
 scripts/
   check-docs.mjs     the document check
-  probe/             live Door43 probes that write to docs/evidence.md
+  probe/             live Door43 probes that write to docs/evidence.md: qa-write-probe (the release writes),
+                     qa-create-probe (project.create.plan and apply through the Worker's own code, #30)
                      planned: seed-qa (#3)
 docs/                this tower
 prototypes/door43-mcp  a Door43 MCP proof of concept, not a deliverable; prototypes/tc-admin was retired by #7

@@ -16,6 +16,7 @@ import { HANDLERS, operationContext } from '../operations';
 import type { OperationContext } from '../operations';
 import { csrf } from './csrf';
 import { errorResponse, logFailure } from './errors';
+import { checkIdempotencyKey } from './idempotency';
 import { auth, endSession, readSession, signInFailed } from './session';
 import type { ActiveSession } from './session';
 
@@ -72,6 +73,7 @@ async function runOperation(c: Context<App>, name: RoutedOperation): Promise<Res
   const definition: OperationDefinition = OPERATIONS[name];
   const parsed = definition.input!.safeParse(await readInput(c));
   if (!parsed.success) throw validationError(parsed.error);
+  checkIdempotencyKey(c, parsed.data as Record<string, unknown>);
   const output = definition.output!.safeParse(await handler(parsed.data, context));
   if (!output.success) throw new CatalogError('unexpected', { details: { reason: 'output does not match the schema', operation: name } });
   return answer(c, 200, output.data);
