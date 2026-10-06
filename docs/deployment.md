@@ -85,7 +85,7 @@ Never paste a secret into a chat with an agent. If a value must reach an agent s
 
 ## 5. Local development
 
-Copy `.env.example` to `.env` with the QA OAuth client, then `npm run dev` builds the web app and runs the Worker locally (`wrangler dev`, the top level of `wrangler.jsonc`) against QA, with local KV. For reloads while editing the interface, run `npx wrangler dev` and `npm run dev --workspace web` side by side; Vite sends `/api/` to the Worker. The QA test user's credentials (`TEST_ORG`, `TEST_USER`, `TEST_PASSWORD`, `TEST_TOKEN`, E23) are for probes and the Playwright smoke test, never for the application itself, which always acts as the signed-in manager (A3).
+Copy `.env.example` to `.env` with the QA OAuth client, then `npm run dev` builds the web app and runs the Worker locally (`wrangler dev`, the top level of `wrangler.jsonc`) against QA, with local KV. For reloads while editing the interface, run `npx wrangler dev` and `npm run dev --workspace web` side by side; Vite sends `/api/` and `/auth/` to the Worker, presenting the Worker's own origin so the same-origin check on mutations passes (A4). The QA test user's credentials (`TEST_ORG`, `TEST_USER`, `TEST_PASSWORD`, `TEST_TOKEN`, E23) are for probes and the Playwright smoke test, never for the application itself, which always acts as the signed-in manager (A3).
 
 ## Appendix: deploying from GitHub Actions instead
 

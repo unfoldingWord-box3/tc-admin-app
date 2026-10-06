@@ -3,10 +3,10 @@
 // input is validated against the operation's schema, the operation runs, its
 // output is validated, and the answer is the output or the error shape (X2).
 // Sign-in is `/auth/` (session.ts); every `/api/` request carries the session
-// its cookie names, if any. Everything else is the built web app. CSRF (#13)
-// joins here as Hono middleware.
+// its cookie names, if any, and every `POST` passes the same-origin and CSRF
+// token checks first (csrf.ts, A4). Everything else is the built web app.
 
-import { CatalogError, OPERATIONS, OPERATION_NAMES } from '@tc-admin/shared/schema';
+import { CSRF_HEADER, CatalogError, OPERATIONS, OPERATION_NAMES } from '@tc-admin/shared/schema';
 import type { OperationDefinition, RoutedOperation } from '@tc-admin/shared/schema';
 import { Hono } from 'hono';
 import type { Context } from 'hono';
@@ -14,6 +14,7 @@ import type { z } from 'zod';
 import type { Env } from '../env';
 import { HANDLERS, operationContext } from '../operations';
 import type { OperationContext } from '../operations';
+import { csrf } from './csrf';
 import { errorResponse, logFailure } from './errors';
 import { auth, endSession, readSession, signInFailed } from './session';
 import type { ActiveSession } from './session';
@@ -80,14 +81,35 @@ export const app = new Hono<App>();
 // Every request the Worker answers itself carries a request id (X2); sign-in routes too.
 app.use('/auth/*', async (c, next) => {
   c.set('requestId', crypto.randomUUID());
+  c.set('session', null);
   await next();
 });
 
-app.use('/api/*', async (c, next) => {
-  c.set('requestId', crypto.randomUUID());
+// Logout is the one mutation under `/auth/`: it ends the session the request carries (A4).
+app.use('/auth/logout', async (c, next) => {
   c.set('session', await readSession(c));
   await next();
 });
+app.use('/auth/logout', csrf);
+
+/**
+ * A request a browser marks as its own site, or one no browser sent. Browsers send
+ * `Sec-Fetch-Site` on every request; a cross-site one is never issued the token, so a
+ * CORS rule added later could not hand it to another site's script (A4).
+ */
+function sameSite(site: string | undefined): boolean {
+  return site === undefined || site === 'same-origin' || site === 'none';
+}
+
+app.use('/api/*', async (c, next) => {
+  c.set('requestId', crypto.randomUUID());
+  const session = await readSession(c);
+  c.set('session', session);
+  // The signed-in browser learns its CSRF token from any same-site API response (A4); it is never in a cookie or a body.
+  if (session && sameSite(c.req.header('sec-fetch-site'))) c.header(CSRF_HEADER, session.record.csrf);
+  await next();
+});
+app.use('/api/*', csrf);
 
 app.route('/auth', auth);
 
