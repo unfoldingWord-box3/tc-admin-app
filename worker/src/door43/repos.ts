@@ -64,7 +64,7 @@ export async function repositoryExists(client: Door43Client, owner: string, repo
 /** One of the account's teams as `GET /user/teams` returns it (E43). Only the fields read. */
 interface Door43Team {
   id: number;
-  organization?: { username?: unknown; name?: unknown } | null;
+  organization?: { username?: unknown; name?: unknown; full_name?: unknown } | null;
   permission?: unknown;
   can_create_org_repo?: unknown;
 }
@@ -72,6 +72,8 @@ interface Door43Team {
 /** Whether the account may create repositories in an organization, in glossary terms. */
 export interface CreationRight {
   organization: string;
+  /** The organization's display name, the login when Door43 has none. */
+  name: string;
   can_create: boolean;
 }
 
@@ -87,6 +89,8 @@ export async function creationRights(client: Door43Client): Promise<CreationRigh
   return teams.flatMap(team => {
     const organization = team.organization?.username ?? team.organization?.name;
     if (typeof organization !== 'string' || !organization) return [];
-    return [{ organization, can_create: team.permission === 'owner' || team.can_create_org_repo === true }];
+    const fullName = team.organization?.full_name;
+    const name = typeof fullName === 'string' && fullName.trim() ? fullName.trim() : organization;
+    return [{ organization, name, can_create: team.permission === 'owner' || team.can_create_org_repo === true }];
   });
 }

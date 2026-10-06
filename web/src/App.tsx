@@ -7,14 +7,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { OperationOutput } from '@tc-admin/shared/schema';
-import { ApiError, callOperation, signOut } from './api/client';
+import { ApiError, callOperation, failureMessage, signOut } from './api/client';
 import { Portfolio } from './Portfolio';
 import { signInFailure } from './sign-in';
 
 type Situation = OperationOutput<'situation.read'>;
-
-const UNREACHABLE = 'Door43 is unavailable currently. Please refresh later.';
-const messageOf = (failure: unknown) => (failure instanceof ApiError ? failure.error.message : UNREACHABLE);
 
 interface Reading {
   situation?: Situation;
@@ -27,11 +24,11 @@ async function readSituation(): Promise<Reading> {
   try {
     return { situation: await callOperation('situation.read', {}) };
   } catch (failure) {
-    if (!(failure instanceof ApiError) || failure.error.code !== 'session_expired') return { error: messageOf(failure) };
+    if (!(failure instanceof ApiError) || failure.error.code !== 'session_expired') return { error: failureMessage(failure) };
     try {
       return { situation: await callOperation('situation.read', {}), notice: failure.error.message };
     } catch (again) {
-      return { error: messageOf(again), notice: failure.error.message };
+      return { error: failureMessage(again), notice: failure.error.message };
     }
   }
 }
@@ -62,7 +59,7 @@ export function App() {
         setSituation(null);
         void readSituation().then(apply);
       } else {
-        setError(messageOf(failure));
+        setError(failureMessage(failure));
       }
     },
     [apply],
@@ -73,7 +70,7 @@ export function App() {
       await signOut();
       window.location.assign('/');
     } catch (failure) {
-      setNotice(messageOf(failure));
+      setNotice(failureMessage(failure));
     }
   };
 
@@ -134,7 +131,7 @@ export function App() {
             )}
           </>
         )}
-        {situation?.account && !error && <Portfolio onFailure={portfolioFailed} />}
+        {situation?.account && !error && <Portfolio account={situation.account} onFailure={portfolioFailed} />}
       </main>
     </>
   );

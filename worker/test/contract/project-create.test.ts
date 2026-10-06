@@ -1,5 +1,6 @@
 // Contract tests over the recorded QA runs of project creation (E45 a Bible,
-// E47 Open Bible Stories; ADR 0012): the file committed is the one the writer
+// E47 Open Bible Stories, E50 a Bible with translation details other than the
+// defaults; ADR 0012): the file committed is the one the writer
 // generates for the same inputs and time (W1, R10); the plan and the receipt
 // recorded are the catalog's shapes; Door43 read each new repository as a
 // Scripture Burrito project of its type.
@@ -229,5 +230,98 @@ describe('the recorded creation in the user\'s own namespace with the API token 
     expect(health.data.overall_severity_level).toBe('info');
     expect(Object.entries(health.data.issues).filter(([, issues]) => issues.length).map(([rule]) => rule)).toEqual(['release_needed']);
     expect(recorded<{ is_valid: boolean; flavor: string; metadata_type: string }>('09-GET-catalog_entry_master.json', own)).toMatchObject({ is_valid: true, flavor: 'textTranslation', metadata_type: 'sb' });
+  });
+});
+
+describe('the recorded QA creation with translation details other than the defaults (E50, #28)', () => {
+  const dir = new URL('../../2026-10-06/project-create/tc-admin-qa-flavor/', runs);
+  const summary = JSON.parse(read('summary.json', dir)) as {
+    input: { owner: string; title: string; abbreviation: string; language: { code: string; title: string; direction: 'ltr' }; testament_scope: 'nt'; flavor: { projectType: 'daughter'; translationType: 'revision'; audience: 'literary' } };
+  };
+  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', dir)));
+  const receipt = OPERATIONS['project.create.apply'].output.parse(JSON.parse(read('receipt.json', dir)));
+  const committed = read('metadata.json', dir);
+
+  test('W1: the metadata.json committed carries the details given and is byte for byte what the writer generates for them', () => {
+    expect(summary.input.flavor).toEqual({ projectType: 'daughter', translationType: 'revision', audience: 'literary' });
+    const generated = newProjectFiles(
+      {
+        owner: summary.input.owner,
+        repo_name: plan.preview.repo_name,
+        project_type: 'bible',
+        title: summary.input.title,
+        abbreviation: summary.input.abbreviation,
+        language: summary.input.language,
+        testament_scope: summary.input.testament_scope,
+        flavor: summary.input.flavor,
+        license: 'cc-by-sa-4.0',
+      },
+      GENERATOR,
+      new Date((JSON.parse(committed) as { meta: { dateCreated: string } }).meta.dateCreated),
+    );
+    expect(generated.files.find(file => file.path === METADATA_PATH)!.content).toBe(committed);
+    expect(generated.metadata).toEqual(plan.preview.metadata_json);
+    expect((JSON.parse(committed) as { type: { flavorType: { flavor: object } } }).type.flavorType.flavor).toEqual({
+      name: 'textTranslation',
+      projectType: 'daughter',
+      translationType: 'revision',
+      audience: 'literary',
+      usfmVersion: '3.0',
+    });
+  });
+
+  test('W5, A3: the receipt lists the repository and one commit, equal to the plan, attributed to the token\'s user', () => {
+    expect(receipt.wrote.map(({ kind, target }) => ({ kind, target }))).toEqual(plan.would_write);
+    expect(receipt.warnings).toEqual([]);
+    const commit = recorded<{ commit: { author: { name: string } } }>('06-POST-repos_tc-admin-qa_id_tcaf2014_contents.json', dir);
+    expect(commit.commit.author.name).toBe('tc-admin-qa');
+  });
+
+  test('H1: Door43 read the file as a valid Scripture Burrito Bible with health info and only release_needed, as with the defaults (E45)', () => {
+    const health = recorded<{ data: { overall_severity_level: string; issues: Record<string, unknown[]> } }>('07-health-master.json', dir);
+    expect(health.data.overall_severity_level).toBe('info');
+    expect(Object.entries(health.data.issues).filter(([, issues]) => issues.length).map(([rule]) => rule)).toEqual(['release_needed']);
+    const entry = recorded<{ is_valid: boolean; is_healthy_without_warnings: boolean; metadata_type: string; flavor: string }>('09-GET-catalog_entry_master.json', dir);
+    expect(entry).toMatchObject({ is_valid: true, is_healthy_without_warnings: true, metadata_type: 'sb', flavor: 'textTranslation' });
+    expect(classifyProject(projectCatalog(recorded<Door43Repository>('08-GET-repos_catalog-view.json', dir)))).toMatchObject({ project_type: 'bible', metadata_format: 'sb', editability: { state: 'editable' } });
+  });
+});
+
+describe('the Bible the creation wizard created from the browser (E51, S1)', () => {
+  const dir = new URL('../../2026-10-06/wizard-create/', runs);
+  const committed = read('metadata.json', dir);
+
+  test('W1: the committed metadata.json is byte for byte what the writer generates for what the wizard sent', () => {
+    const generated = newProjectFiles(
+      {
+        owner: 'tc-admin-qa-org',
+        repo_name: 'ums_tcaw2030',
+        project_type: 'bible',
+        title: 'tC Admin wizard 2026-10-06',
+        abbreviation: 'tcaw2030',
+        language: { code: 'ums', title: 'Pendau', direction: 'ltr' },
+        testament_scope: 'full',
+        flavor: { translationType: 'newTranslation', audience: 'common-literary' },
+        license: 'cc-by-sa-4.0',
+      },
+      GENERATOR,
+      new Date((JSON.parse(committed) as { meta: { dateCreated: string } }).meta.dateCreated),
+    );
+    expect(generated.files.find(file => file.path === METADATA_PATH)!.content).toBe(committed);
+    expect(generated.files.map(file => [file.path, file.size])).toEqual([[METADATA_PATH, 2888], ['ingredients/license.md', 18535], ['README.md', 226]]);
+  });
+
+  test('A3, H1: Door43 recorded the one commit as the signed-in manager\'s and read the project as a valid Scripture Burrito Bible in Pendau, health info', () => {
+    const commits = recorded<{ sha: string; commit: { author: { name: string }; committer: { name: string }; message: string } }[]>('04-GET-commits.json', dir);
+    expect(commits).toHaveLength(1);
+    expect(commits[0]).toMatchObject({ commit: { author: { name: 'tc-admin-qa' }, committer: { name: 'tc-admin-qa' } } });
+    expect(commits[0]!.commit.message.startsWith('Create tC Admin wizard 2026-10-06')).toBe(true);
+    const view = recorded<Door43Repository>('01-GET-repos_catalog-view.json', dir);
+    expect(view).toMatchObject({ metadata_type: 'sb', flavor: 'textTranslation', language: 'ums', default_branch: 'master' });
+    expect(classifyProject(projectCatalog(view))).toMatchObject({ project_type: 'bible', metadata_format: 'sb', editability: { state: 'editable' } });
+    const health = recorded<{ data: { overall_severity_level: string; issues: Record<string, unknown[]> } }>('03-health-master.json', dir);
+    expect(health.data.overall_severity_level).toBe('info');
+    expect(Object.entries(health.data.issues).filter(([, issues]) => issues.length).map(([rule]) => rule)).toEqual(['release_needed']);
+    expect(recorded<{ is_valid: boolean }>('02-GET-catalog_entry_master.json', dir).is_valid).toBe(true);
   });
 });

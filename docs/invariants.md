@@ -136,8 +136,8 @@ Issues: #12, #15, #51.
 ### A2 — Permission is checked live before every mutation
 Before repository creation, any commit, branch change, release creation, or promotion, the Worker re-reads the repository permission from Door43. Ambiguity fails closed. A project the user lost access to leaves the writable portfolio.
 Source: product spec §2; architecture §3 authorization.
-Enforced in: `worker/src/operations` shared precondition used by every apply operation; for creation, `ownerForCreation` in `project-create-plan` reads the account's creation right in the owner (E43) at plan and again at apply; the per-repository precondition is #14.
-Verified by: each apply operation with a fixture lacking push permission returns `permission_denied` and writes nothing; a missing `permissions` object is treated as no permission. So far: the `A2:` tests in `worker/test/operations/project-create-plan.test.ts` and `project-create-apply.test.ts` (an owner that grants no creation right, a team without it, a non-boolean grant, or no team at all is `permission_denied` at plan and at apply, and nothing is written; in the plan tests, a granting team on a later page grants).
+Enforced in: `worker/src/operations` shared precondition used by every apply operation; for creation, `ownerForCreation` in `project-create-plan` reads the account's creation right in the owner (E43) at plan and again at apply, and `owner-list` offers the wizard only the owners that read allows, so the interface never shows a choice the Worker would refuse (the Worker still decides); the per-repository precondition is #14.
+Verified by: each apply operation with a fixture lacking push permission returns `permission_denied` and writes nothing; a missing `permissions` object is treated as no permission. So far: the `A2:` tests in `worker/test/operations/project-create-plan.test.ts` and `project-create-apply.test.ts` (an owner that grants no creation right, a team without it, a non-boolean grant, or no team at all is `permission_denied` at plan and at apply, and nothing is written; in the plan tests, a granting team on a later page grants) and in `worker/test/operations/owner-list.test.ts` (an organization without the right is not offered, whatever the team order; a granting team on a later page is).
 Issues: #14, #30.
 
 ### A3 — Every write is attributed to the signed-in user
@@ -173,8 +173,8 @@ Issues: #21, #45, #46, #47.
 ### W3 — Project purpose is protected after the first save
 The Scripture Burrito flavor is chosen in the wizard and cannot be changed through normal editing after the first valid metadata is saved.
 Source: ADR 0006.
-Enforced in: `worker/src/operations/metadata-apply` (Milestone 2) rejects flavor changes; the wizard sets it once.
-Verified by: metadata plan that changes the flavor returns `validation_failed`.
+Enforced in: `worker/src/operations/metadata-apply` (Milestone 2) rejects flavor changes; the wizard (`web/src/CreateProject.tsx`) asks the project type once, right after the owner, and `project.create.plan` writes the flavor from it.
+Verified by: a metadata plan that changes the flavor returns `validation_failed` (Milestone 2, #46). Until then: the `W1:` tests in `worker/test/model/burrito.test.ts` and `worker/test/operations/project-create-plan.test.ts` prove the flavor is written from the project type the wizard sends, and the review screen renders the project type the plan was asked for, not a later edit (`web/src/CreateProject.tsx`, bench round 1).
 Issues: #28, #46.
 
 ### W4 — No automatic repository deletion
@@ -241,7 +241,7 @@ Issues: #30, #40.
 Every failure returns an error code from the catalog in [operations.md](operations.md), the user-facing message the specification fixes for it, whether it is retryable, the next action, and a request id.
 Source: product spec §11; architecture §7.
 Enforced in: `worker/src/http/errors` maps every thrown error to the catalog; unknown errors become `unexpected` with a request id.
-Verified by: every catalog code has a test producing it; no route returns an uncataloged shape. So far: the `X2:` tests in `shared/test/catalog.test.ts` (the schema's codes, statuses, and messages are the catalog's), `worker/test/http/app.test.ts` (unknown routes and methods and unbuilt operations answer `unknown_operation`; invalid input and an output outside its schema all answer with the error shape), and `web/test/client.test.ts`.
+Verified by: every catalog code has a test producing it; no route returns an uncataloged shape. So far: the `X2:` tests in `shared/test/catalog.test.ts` (the schema's codes, statuses, and messages are the catalog's), `worker/test/http/app.test.ts` (unknown routes and methods and unbuilt operations answer `unknown_operation`; invalid input and an output outside its schema all answer with the error shape), `web/test/client.test.ts`, and `web/test/create-project.test.ts` (the wizard shows a `validation_failed` at the field its `details.fields` path names, `name_taken` at the abbreviation, and `permission_denied` at the owner, each with the catalog message).
 Issues: #15, #31, #40.
 
 ### X3 — Diagnostics never carry secrets or content

@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/catalog/list/languages?owner=no-such-owner-xyz&stage=latest",
+    "headers": {
+      "accept": "application/json"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 108,
+    "headers": {
+      "content-type": "application/json;charset=utf-8",
+      "cache-control": "max-age=0, private, must-revalidate",
+      "access-control-allow-origin": "*",
+      "content-length": "23"
+    },
+    "json": {
+      "ok": true,
+      "data": null
+    }
+  }
+}

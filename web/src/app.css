@@ -34,3 +34,27 @@ a { color: var(--uw-ocean); }
 .units .absent { color: #5b6770; }
 .show-all { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .project > .button { flex-shrink: 0; white-space: nowrap; }
+/* The creation wizard (#28), until the design system (#8). */
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.toolbar > .button { flex-shrink: 0; }
+form.create fieldset { border: 1px solid #dde3e8; border-radius: 12px; padding: 12px 16px 16px; margin: 0 0 16px; background: #fff; }
+form.create legend { font-weight: 700; color: var(--uw-ocean); padding: 0 6px; }
+form.create .field { display: block; margin: 10px 0 4px; font-weight: 600; font-size: 14px; }
+form.create input[type='text'], form.create select { display: block; font: inherit; padding: 8px 10px; border: 1px solid #b9c3cb; border-radius: 8px; width: 100%; max-width: 440px; box-sizing: border-box; background: #fff; margin-top: 4px; }
+form.create .choice { display: block; margin: 6px 0; }
+form.create p { margin: 6px 0; }
+.field-error { color: #a4262c; font-size: 14px; margin: 4px 0 0; }
+.derived { font-size: 14px; color: #5b6770; }
+.languages { list-style: none; margin: 4px 0 0; padding: 0; max-width: 440px; border: 1px solid #dde3e8; border-radius: 8px; max-height: 280px; overflow-y: auto; }
+.languages li + li { border-top: 1px solid #eef1f4; }
+.languages li button { all: unset; display: block; width: 100%; box-sizing: border-box; padding: 8px 10px; cursor: pointer; }
+.languages li button:hover, .languages li button:focus-visible { background: #e8f4fb; outline: 2px solid var(--uw-ocean); }
+.languages li.refused { padding: 8px 10px; color: #5b6770; font-size: 14px; }
+.chosen { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.writes { padding-left: 20px; }
+.files { border-collapse: collapse; font-size: 14px; }
+.files th, .files td { text-align: left; padding: 4px 16px 4px 0; border-bottom: 1px solid #dde3e8; }
+pre.metadata { background: #fff; border: 1px solid #dde3e8; border-radius: 12px; padding: 12px; max-height: 360px; overflow: auto; font-size: 13px; }
+.actions { display: flex; gap: 16px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
+button.secondary, a.button.secondary { background: #fff; color: var(--uw-ocean); border: 1px solid var(--uw-ocean); }
+code { font-size: 0.95em; }

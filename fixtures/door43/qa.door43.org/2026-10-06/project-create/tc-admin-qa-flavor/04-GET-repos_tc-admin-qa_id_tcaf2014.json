@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcaf2014",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 404,
+    "ms": 121,
+    "json": {
+      "message": "not found",
+      "url": "https://qa.door43.org/api/swagger"
+    }
+  }
+}

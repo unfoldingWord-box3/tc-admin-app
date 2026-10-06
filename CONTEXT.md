@@ -142,6 +142,10 @@ _Avoid_: Namespace, org (in user-facing copy)
 The short name of a project, such as ULT for unfoldingWord Literal Text, written to the metadata's `identification.abbreviation`. With the language code it forms the repository name, `<language>_<abbreviation>` in lowercase, which the wizard derives and checks for uniqueness in the owner.
 _Avoid_: Repository name (as a wizard field), slug, code
 
+**Translation details**:
+The three facts about a Bible project that the Scripture Burrito `textTranslation` flavor requires beyond its books: the kind of project (`projectType`), the translation type (`translationType`), and the audience (`audience`), written to the metadata's `type.flavorType.flavor` with the values the schema enumerates (E44). The wizard asks them with the defaults preselected, `standard`, `firstTranslation`, and `common` (Q4). An Open Bible Stories project has none.
+_Avoid_: Flavor fields (in user-facing copy), project type (for `projectType`, which is not the project type)
+
 ## System language
 
 **Operation**:
@@ -190,6 +194,7 @@ The identifier is the only spelling used in code, API payloads, tests, logs, and
 | Metadata format | `metadata_format` | `sb`, `rc`, `ts`, `tc`, `none` |
 | Editability | `editability.state` | `editable`, `unsupported` |
 | Testament scope | `coverage.scope` | `nt`, `ot`, `full`, `obs`, `unknown` |
+| Translation details | `flavor` | `projectType`, `translationType`, `audience`, each with the values the Scripture Burrito `textTranslation` flavor enumerates (E44) |
 | Coverage basis | `coverage.basis` | `catalog`, `archive` |
 | Health state | `health.state` | `healthy`, `info`, `warning`, `failing`, `never_checked`, `checking`, `door43_unavailable`, `health_error`, `unsupported` |
 | Content inclusion state | inclusion | `unreleased`, `released`, `changed_released`, `selected`, `carried_forward`, `excluded`, `removed`, `administrative`, `unknown` |

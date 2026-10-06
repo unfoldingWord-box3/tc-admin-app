@@ -1,0 +1,45 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/catalog/list/languages?owner=tc-admin-qa-org&stage=latest",
+    "headers": {
+      "accept": "application/json"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 140,
+    "headers": {
+      "content-type": "application/json;charset=utf-8",
+      "cache-control": "max-age=0, private, must-revalidate",
+      "access-control-allow-origin": "*",
+      "content-length": "184"
+    },
+    "json": {
+      "ok": true,
+      "data": [
+        {
+          "ld": "ltr",
+          "ang": "Indonesian",
+          "cc": [
+            "CN",
+            "ID",
+            "MY",
+            "NL",
+            "US",
+            "AU",
+            "CA",
+            "SG"
+          ],
+          "ln": "Bahasa Indonesia",
+          "pk": 2418,
+          "alt": [],
+          "gw": true,
+          "lc": "id",
+          "lr": "Asia",
+          "hc": "ID"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "format": "scripture burrito",
+  "meta": {
+    "version": "1.0.0",
+    "category": "source",
+    "generator": {
+      "softwareName": "tC Admin",
+      "softwareVersion": "0.1.0",
+      "userId": "dcs::tc-admin-qa",
+      "userName": "tc-admin-qa"
+    },
+    "defaultLocale": "en",
+    "dateCreated": "2026-10-06T20:26:14.021Z",
+    "normalization": "NFC"
+  },
+  "idAuthorities": {
+    "dcs": {
+      "id": "https://git.door43.org",
+      "name": {
+        "en": "Door43 Content Service"
+      }
+    }
+  },
+  "identification": {
+    "name": {
+      "en": "tC Admin wizard 2026-10-06"
+    },
+    "abbreviation": {
+      "en": "tcaw2030"
+    },
+    "primary": {
+      "dcs": {
+        "tc-admin-qa-org/ums_tcaw2030": {
+          "revision": "master",
+          "timestamp": "2026-10-06T20:26:14.021Z"
+        }
+      }
+    }
+  },
+  "confidential": false,
+  "languages": [
+    {
+      "tag": "ums",
+      "name": {
+        "en": "Pendau"
+      },
+      "scriptDirection": "ltr"
+    }
+  ],
+  "type": {
+    "flavorType": {
+      "name": "scripture",
+      "flavor": {
+        "name": "textTranslation",
+        "projectType": "standard",
+        "translationType": "newTranslation",
+        "audience": "common-literary",
+        "usfmVersion": "3.0"
+      },
+      "currentScope": {
+        "GEN": [],
+        "EXO": [],
+        "LEV": [],
+        "NUM": [],
+        "DEU": [],
+        "JOS": [],
+        "JDG": [],
+        "RUT": [],
+        "1SA": [],
+        "2SA": [],
+        "1KI": [],
+        "2KI": [],
+        "1CH": [],
+        "2CH": [],
+        "EZR": [],
+        "NEH": [],
+        "EST": [],
+        "JOB": [],
+        "PSA": [],
+        "PRO": [],
+        "ECC": [],
+        "SNG": [],
+        "ISA": [],
+        "JER": [],
+        "LAM": [],
+        "EZK": [],
+        "DAN": [],
+        "HOS": [],
+        "JOL": [],
+        "AMO": [],
+        "OBA": [],
+        "JON": [],
+        "MIC": [],
+        "NAM": [],
+        "HAB": [],
+        "ZEP": [],
+        "HAG": [],
+        "ZEC": [],
+        "MAL": [],
+        "MAT": [],
+        "MRK": [],
+        "LUK": [],
+        "JHN": [],
+        "ACT": [],
+        "ROM": [],
+        "1CO": [],
+        "2CO": [],
+        "GAL": [],
+        "EPH": [],
+        "PHP": [],
+        "COL": [],
+        "1TH": [],
+        "2TH": [],
+        "1TI": [],
+        "2TI": [],
+        "TIT": [],
+        "PHM": [],
+        "HEB": [],
+        "JAS": [],
+        "1PE": [],
+        "2PE": [],
+        "1JN": [],
+        "2JN": [],
+        "3JN": [],
+        "JUD": [],
+        "REV": []
+      }
+    }
+  },
+  "copyright": {
+    "licenses": [
+      {
+        "ingredient": "ingredients/license.md"
+      }
+    ]
+  },
+  "ingredients": {
+    "ingredients/license.md": {
+      "checksum": {
+        "md5": "0bf7ef1533f6486c8362dcb8bc19bdd1"
+      },
+      "mimeType": "text/markdown",
+      "size": 18535,
+      "role": "x-license"
+    }
+  }
+}

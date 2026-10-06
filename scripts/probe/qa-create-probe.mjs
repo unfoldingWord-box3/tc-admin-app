@@ -6,7 +6,11 @@
 // and records the creation and first-commit request and response shapes (Q3, E27).
 //
 // Usage:  node --env-file=.env scripts/probe/qa-create-probe.mjs [--owner <login>] [--type bible|obs] [--abbreviation <abbr>]
-//                [--language <code> --language-title <name>] [--scope nt|ot|full] [--plan]
+//                [--language <code> --language-title <name>] [--scope nt|ot|full]
+//                [--project-type <projectType> --translation-type <translationType> --audience <audience>] [--out <folder>] [--plan]
+//         The three flavor flags are a Bible's translation details (Q4, #28), spelled as the Scripture Burrito schema spells
+//         their values; without them the plan writes the defaults. `--out` names the recording folder under project-create/
+//         (default: the owner, with `-obs` for Open Bible Stories), so a second run in a day does not overwrite the first.
 // Env:    DOOR43_ORIGIN (default https://qa.door43.org; production is refused), TEST_TOKEN (required),
 //         TEST_USER (the default owner: the token's own namespace, which needs a token with write:user,
 //         E26, E49; or pass --owner tc-admin-qa-org, E23).
@@ -66,6 +70,8 @@ const input = {
   testament_scope: type === 'obs' ? null : flag('--scope', 'nt'),
   license: 'cc-by-sa-4.0',
 };
+const flavor = { projectType: flag('--project-type'), translationType: flag('--translation-type'), audience: flag('--audience') };
+if (Object.values(flavor).some(Boolean)) input.flavor = Object.fromEntries(Object.entries(flavor).filter(([, value]) => value));
 
 // 00: the Worker's operations, as a module Node can import.
 const bundle = join(tmpdir(), 'tc-admin-probe', 'operations.mjs');
@@ -165,7 +171,7 @@ const memoryKV = () => {
     input.owner = me.login;
     summary.input.owner = me.login;
   }
-  outDir = resolve(root, 'fixtures/door43', HOST, today, 'project-create', type === 'obs' ? `${input.owner}-obs` : input.owner);
+  outDir = resolve(root, 'fixtures/door43', HOST, today, 'project-create', flag('--out', type === 'obs' ? `${input.owner}-obs` : input.owner));
   mkdirSync(outDir, { recursive: true });
   console.log(`Owner ${input.owner}, repository ${input.language.code.toLowerCase()}_${input.abbreviation.toLowerCase()}, recordings in ${outDir}`);
 

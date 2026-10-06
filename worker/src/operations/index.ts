@@ -3,6 +3,8 @@
 
 import type { OperationOutput, ParsedInput, RoutedOperation } from '@tc-admin/shared/schema';
 import type { OperationContext } from './context';
+import { languageList } from './language-list';
+import { ownerList } from './owner-list';
 import { portfolioList } from './portfolio-list';
 import { projectCreateApply } from './project-create-apply';
 import { projectCreatePlan } from './project-create-plan';
@@ -17,6 +19,8 @@ export const HANDLERS: OperationHandlers = {
   'portfolio.list': portfolioList,
   'project.create.plan': projectCreatePlan,
   'project.create.apply': projectCreateApply,
+  'language.list': languageList,
+  'owner.list': ownerList,
 };
 
 export { operationContext, signedIn } from './context';
