@@ -9,7 +9,10 @@
 // outcome is unknown, nothing is retried (X1) and nothing is deleted (W4): the
 // receipt says the setup is incomplete, and the plan is kept for the retry
 // (#31) with the created repository, recorded the moment Door43 answered 201
-// and before the commit, and with what became of the commit. The report is
+// and before the commit, and with what became of the commit. What the plan
+// cannot learn (a create whose answer never arrived, a record the store refused
+// or does not show yet) reads as a taken name until the retry reconciles it:
+// the accepted window of Q29. The report is
 // built from what was written, because Door43's catalog
 // reads the new repository a few seconds later (E28), and says so: coverage
 // from the metadata just written, 0 of the testament scope's books or of the
@@ -125,8 +128,14 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
   const started = context.now();
   const repository = await createRepository(client, owner, { name: payload.repo_name, description: payload.project.title });
   // Recorded before the commit, and kept with the receipt for the retry (#31), so a later apply of this plan finds it.
+  // A store that refuses this write does not stop the apply: the repository exists and the commit is what matters;
+  // until the receipt is stored, a replay would read the name as taken, the accepted window of Q29.
   const marked = { ...payload, repository_created: true, created_repository: repository };
-  await context.plans.putPlan({ ...stored, payload: marked }, RECEIPT_SECONDS);
+  try {
+    await context.plans.putPlan({ ...stored, payload: marked }, RECEIPT_SECONDS);
+  } catch {
+    // Q29: the window stays open until the receipt below is stored.
+  }
   const markedAt = Date.now();
 
   let commit: Commit | null = null;

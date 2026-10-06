@@ -137,7 +137,7 @@ Issues: #12, #15, #51.
 Before repository creation, any commit, branch change, release creation, or promotion, the Worker re-reads the repository permission from Door43. Ambiguity fails closed. A project the user lost access to leaves the writable portfolio.
 Source: product spec §2; architecture §3 authorization.
 Enforced in: `worker/src/operations` shared precondition used by every apply operation; for creation, `ownerForCreation` in `project-create-plan` reads the account's creation right in the owner (E43) at plan and again at apply; the per-repository precondition is #14.
-Verified by: each apply operation with a fixture lacking push permission returns `permission_denied` and writes nothing; a missing `permissions` object is treated as no permission. So far: the `A2:` tests in `worker/test/operations/project-create-plan.test.ts` and `project-create-apply.test.ts` (an owner that grants no creation right, a team without it, a non-boolean grant, or no team at all is `permission_denied` at plan and at apply, and nothing is written; a granting team on a later page grants).
+Verified by: each apply operation with a fixture lacking push permission returns `permission_denied` and writes nothing; a missing `permissions` object is treated as no permission. So far: the `A2:` tests in `worker/test/operations/project-create-plan.test.ts` and `project-create-apply.test.ts` (an owner that grants no creation right, a team without it, a non-boolean grant, or no team at all is `permission_denied` at plan and at apply, and nothing is written; in the plan tests, a granting team on a later page grants).
 Issues: #14, #30.
 
 ### A3 — Every write is attributed to the signed-in user
@@ -181,7 +181,7 @@ Issues: #28, #46.
 tC Admin never deletes a repository. A partially created project is shown as setup incomplete with a retry path.
 Source: product spec §6; architecture §8.
 Enforced in: the Door43 adapter has no repository-delete method (`worker/src/door43/writes.ts`); `project-create-apply` keeps the repository and answers `setup_incomplete` when the first commit fails.
-Verified by: the `W4:` tests in `worker/test/door43/writes.test.ts` (the adapter exports no delete) and `worker/test/operations/project-create-apply.test.ts` (a failed first commit leaves the repository, lists it in the receipt, warns `setup_incomplete`, and keeps the plan for the retry; a replay of a plan whose repository exists answers setup incomplete for that repository and writes nothing).
+Verified by: the `W4:` tests in `worker/test/door43/writes.test.ts` (the adapter exports no delete) and `worker/test/operations/project-create-apply.test.ts` (a failed first commit leaves the repository, lists it in the receipt, warns `setup_incomplete`, and keeps the plan for the retry; a replay of a plan whose repository is recorded on it, with no receipt yet, answers setup incomplete for that repository and writes nothing; a store that refuses the record does not stop the apply; a repository the plan could not learn of reads as a taken name, the accepted window of Q29).
 Issues: #30, #31, #49.
 
 ### W5 — One operation, one commit

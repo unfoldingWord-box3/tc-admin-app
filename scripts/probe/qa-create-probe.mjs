@@ -29,8 +29,9 @@ const flag = (name, fallback) => {
   return index > -1 ? argv[index + 1] : fallback;
 };
 const ORIGIN = (process.env.DOOR43_ORIGIN || 'https://qa.door43.org').replace(/\/+$/, '');
-if (new URL(ORIGIN).host === 'git.door43.org') {
-  console.error('Refusing to run against production: projects are never created there outside the demo and pilot plans.');
+// Only QA may receive the token and the writes: production is never written outside the demo and pilot plans, and a mistyped origin gets nothing.
+if (ORIGIN !== 'https://qa.door43.org') {
+  console.error(`Refusing to run against ${ORIGIN}: this probe writes to https://qa.door43.org only.`);
   process.exit(2);
 }
 const TOKEN = process.env.TEST_TOKEN;

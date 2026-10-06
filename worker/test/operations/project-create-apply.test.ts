@@ -282,6 +282,44 @@ describe('what an apply refuses before writing', () => {
   });
 });
 
+describe('the accepted window (Q29)', () => {
+  test('W4: a store that refuses the marker write does not stop the apply: the commit is made, the receipt stored, and a replay answers it', async () => {
+    const planned = await plan();
+    const put = kv.put.bind(kv);
+    let refused = 0;
+    kv.put = async (key, value, options) => {
+      if (key === `plan:${planned.id}` && refused++ === 0) throw new Error('KV PUT failed: 429 Too Many Requests');
+      return put(key, value, options);
+    };
+    sent = [];
+    const receipt = OPERATIONS['project.create.apply'].output.parse(await apply(planned.id));
+    expect(writesSent()).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'POST /api/v1/repos/tc-admin-qa-org/id_tcap/contents']);
+    expect(receipt.wrote.map(write => write.kind)).toEqual(['repo', 'commit']);
+    expect(receipt.warnings).toEqual([]);
+    expect(kv.entries.has(`receipt:${planned.id}`)).toBe(true);
+    sent = [];
+    expect(await apply(planned.id)).toEqual(receipt);
+    expect(writesSent()).toEqual([]);
+  });
+
+  test('Q29: a repository the plan could not learn of, no receipt and no record, reads as a taken name, and nothing is written', async () => {
+    const planned = await plan();
+    const put = kv.put.bind(kv);
+    kv.put = async (key, value, options) => {
+      if (key.startsWith(`plan:${planned.id}`) || key.startsWith(`receipt:${planned.id}`)) throw new Error('store unavailable');
+      return put(key, value, options);
+    };
+    sent = [];
+    // The first apply created the repository and committed, and could store neither the record nor the receipt.
+    await expect(apply(planned.id)).rejects.toMatchObject({ message: 'store unavailable' });
+    expect(writesSent()).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'POST /api/v1/repos/tc-admin-qa-org/id_tcap/contents']);
+    kv.put = put;
+    sent = [];
+    expect((await failure(apply(planned.id)))!.code).toBe('name_taken');
+    expect(writesSent()).toEqual([]);
+  });
+});
+
 describe('a repository whose creation answer broke off', () => {
   test('X1, W4: Door43 said 201 and the body broke off: the repository is read back, recorded on the plan, and the apply completes', async () => {
     const planned = await plan();
