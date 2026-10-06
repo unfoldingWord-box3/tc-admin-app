@@ -194,6 +194,19 @@ describe('a successful apply', () => {
     expect(kv.entries.get(`receipt:${planned.id}`)!.ttl).toBe(86_400);
   });
 
+  test('H5: a Bible plan stored before #82, with a testament scope and no project_type, is applied as a Bible: 0 of its testament\'s books, and the receipt is kept', async () => {
+    const planned = await plan();
+    const key = `plan:${planned.id}`;
+    const stored = JSON.parse(kv.entries.get(key)!.value) as StoredPlan<{ project: Record<string, unknown> }>;
+    delete stored.payload.project.project_type;
+    kv.entries.set(key, { ...kv.entries.get(key)!, value: JSON.stringify(stored) });
+    sent = [];
+    const receipt = OPERATIONS['project.create.apply'].output.parse(await apply(planned.id));
+    expect(writesSent()).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'POST /api/v1/repos/tc-admin-qa-org/id_tcap/contents']);
+    expect(receipt.result).toMatchObject({ project_type: 'bible', coverage: { present: 0, target: 27, scope: 'nt', basis: 'archive' }, setup: { state: 'complete', failed_step: null } });
+    expect(kv.entries.has(`receipt:${planned.id}`)).toBe(true);
+  });
+
   test('the account itself is created under /user/repos (Q28)', async () => {
     const planned = await plan({ owner: 'tc-admin-qa' });
     sent = [];
@@ -236,6 +249,18 @@ describe('what an apply refuses before writing', () => {
     clock = new Date('2026-10-05T15:00:00.000Z');
     const key = `plan:${planned.id}`;
     kv.entries.set(key, { ...kv.entries.get(key)!, value: JSON.stringify({ ...JSON.parse(kv.entries.get(key)!.value), account: 'someone-else' }) });
+    expect((await failure(apply(planned.id)))!.code).toBe('plan_expired');
+    expect(writesSent()).toEqual([]);
+  });
+
+  test('plan_expired for a stored plan with neither a project type nor a testament scope, and nothing is written', async () => {
+    const planned = await plan();
+    const key = `plan:${planned.id}`;
+    const stored = JSON.parse(kv.entries.get(key)!.value) as StoredPlan<{ project: Record<string, unknown> }>;
+    delete stored.payload.project.project_type;
+    stored.payload.project.testament_scope = null;
+    kv.entries.set(key, { ...kv.entries.get(key)!, value: JSON.stringify(stored) });
+    sent = [];
     expect((await failure(apply(planned.id)))!.code).toBe('plan_expired');
     expect(writesSent()).toEqual([]);
   });

@@ -80,6 +80,19 @@ function commitOutcome(error: CatalogError): NonNullable<ProjectCreatePayload['f
   return { outcome: unknown ? 'unknown' : 'failed', door43_status: status };
 }
 
+/**
+ * The stored payload with its project type. A plan stored before #82 has no
+ * `project_type`: it was a Bible, with a testament scope. A payload with
+ * neither cannot be read, and is refused before anything is written.
+ */
+export function storedPayload(payload: ProjectCreatePayload): ProjectCreatePayload | null {
+  const project: { project_type?: unknown; testament_scope?: unknown } = payload.project;
+  if (project.project_type === 'bible' || project.project_type === 'obs') return payload;
+  const scope = project.testament_scope;
+  if (project.project_type !== undefined || (scope !== 'nt' && scope !== 'ot' && scope !== 'full')) return null;
+  return { ...payload, project: { ...payload.project, project_type: 'bible', testament_scope: scope } };
+}
+
 export async function projectCreateApply(input: ParsedInput<'project.create.apply'>, context: OperationContext): Promise<ProjectCreateReceipt> {
   const client = signedIn(context);
   const { account } = await readAccount(client);
@@ -92,7 +105,8 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
   if (!stored || stored.plan.operation !== 'project.create.plan' || stored.account !== account.login) {
     throw new CatalogError('plan_expired', { details: { plan_id: input.plan_id } });
   }
-  const { payload } = stored;
+  const payload = storedPayload(stored.payload);
+  if (!payload) throw new CatalogError('plan_expired', { details: { plan_id: input.plan_id } });
 
   // This plan already created its repository, but no receipt is stored: the earlier apply ended before storing one, or is
   // still committing. The repository is not created again, nor is the commit retried (X1): setup is incomplete, the retry is #31.
