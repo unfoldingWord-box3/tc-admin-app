@@ -1,7 +1,8 @@
 // The Scripture Burrito writer (ADR 0008): the only module that writes
 // project metadata (W1). The metadata and files of a new project, a Bible
 // (`scripture/textTranslation`, #29) or Open Bible Stories
-// (`gloss/textStories`, #82); and the merge for a release snapshot (#35,
+// (`gloss/textStories`, #82); the path and ingredient entry of a book or
+// story an upload or import adds (#72); and the merge for a release snapshot (#35,
 // ADR 0010): ingredient entries from the previous release for carried-forward
 // books and from the default branch for included books and administrative
 // ingredients, every top-level field from the default branch (Q8), the scope
@@ -14,7 +15,7 @@
 
 import { TEXT_TRANSLATION_FLAVOR_DEFAULTS } from '@tc-admin/shared/schema';
 import type { ProjectType, SelectionState, TextTranslationFlavor } from '@tc-admin/shared/schema';
-import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT, STORIES } from './books';
+import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT, STORIES, bookId, storyId } from './books';
 import { MetadataError, unitIngredients } from './burrito-reader';
 import type { MetadataIngredient, ProjectMetadata } from './burrito-reader';
 import { CC_BY_SA_4_0_TEXT } from './license-cc-by-sa-4.0';
@@ -122,6 +123,39 @@ export function projectScope(project: NewProject): Record<string, readonly strin
 export function projectFile(path: string, content: string): ProjectFile {
   const bytes = new TextEncoder().encode(content);
   return { path, content, bytes, size: bytes.length, md5: md5(bytes) };
+}
+
+/** A book or story an upload or import adds: a book id (`gen` … `rev`) or a story id (`01` … `50`), as `books.ts` spells them. */
+export type Unit = { book: string } | { story: string };
+
+/** A book's or story's ingredient entry, as `metadata.json` lists it under the file's path (E37). */
+export interface UnitIngredient {
+  checksum: { md5: string };
+  mimeType: 'text/x-usfm' | 'text/markdown';
+  size: number;
+  /** A book's scope names the whole book, as Scribe writes it (`{ "MAT": [] }`, E17). A story has none: the per-story passages Door43's converter writes (E36) are a table tC Admin does not hold. */
+  scope?: Record<string, []>;
+}
+
+/** The unit in canonical spelling, or a thrown error: a path is only ever built from a recognized book or story (W1). */
+function canonicalUnit(unit: Unit): Unit {
+  const id = 'book' in unit ? bookId(unit.book) : storyId(unit.story);
+  if (id === null || id !== ('book' in unit ? unit.book : unit.story)) throw new RangeError(`${JSON.stringify(unit)} is not a book or story id`);
+  return unit;
+}
+
+/** The Scripture Burrito path of a book or story, whatever name it was uploaded under (W1): `ingredients/<BOOK>.usfm` or `ingredients/content/<NN>.md` (E36). */
+export function unitPath(unit: Unit): string {
+  const known = canonicalUnit(unit);
+  return 'book' in known ? `ingredients/${known.book.toUpperCase()}.usfm` : `ingredients/content/${known.story}.md`;
+}
+
+/** The ingredient entry of a book or story, with the size and md5 of the bytes that will be written (R10). */
+export function unitIngredient(unit: Unit, bytes: Uint8Array): UnitIngredient {
+  const known = canonicalUnit(unit);
+  const checksum = { md5: md5(bytes) };
+  if ('book' in known) return { checksum, mimeType: 'text/x-usfm', size: bytes.length, scope: { [known.book.toUpperCase()]: [] } };
+  return { checksum, mimeType: 'text/markdown', size: bytes.length };
 }
 
 /** The repository's README: the project in glossary words; not an ingredient. */
