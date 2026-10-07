@@ -17,6 +17,7 @@ import { CreateProject } from './CreateProject';
 import { CREATE_HASH, retireCreated, withCreated } from './create-project';
 import { ProjectView } from './ProjectView';
 import { ReleaseStepper } from './ReleaseStepper';
+import { ReleaseView } from './ReleaseView';
 import { canOpen, coverageLabel, formatLabel, hashRef, healthLabel, projectHash, typeLabel } from './portfolio-labels';
 
 type PortfolioList = OperationOutput<'portfolio.list'>;
@@ -63,6 +64,8 @@ export function Portfolio({ account, onFailure }: Props) {
   const projects = organizations.flatMap(group => group.projects);
   const wanted = hashRef(hash);
   const open = wanted && projects.find(project => project.ref.owner === wanted.owner && project.ref.repo === wanted.repo && canOpen(project));
+  // Keyed by the release's identity: a change of tag mounts a fresh page, so no lookup, alert, or late answer of another release survives it.
+  if (open && wanted.view === 'tag') return <ReleaseView key={`${open.ref.owner}/${open.ref.repo}/${wanted.tag}`} project={open} tag={wanted.tag} onFailure={onFailure} />;
   if (open) return wanted.view === 'release' ? <ReleaseStepper project={open} onFailure={onFailure} /> : <ProjectView project={open} />;
 
   if (hash === CREATE_HASH) {

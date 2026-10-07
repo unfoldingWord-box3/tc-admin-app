@@ -119,3 +119,12 @@ export const RESTART_MESSAGE = catalogMessage('source_changed');
 
 /** A preparation may be discarded until it is released (Q14). */
 export const canDiscard = (preparation: Pick<Preparation, 'state'>): boolean => preparation.state !== 'pre_release' && preparation.state !== 'full_release' && preparation.state !== 'discarded';
+
+/** A link to Door43 is shown only when it is on the project's own host: a URL from an answer never sends the manager elsewhere. */
+export function onProjectHost(url: string, projectUrl: string): boolean {
+  try {
+    return new URL(url).origin === new URL(projectUrl).origin && new URL(url).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
