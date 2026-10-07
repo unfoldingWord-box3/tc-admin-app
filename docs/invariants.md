@@ -20,8 +20,8 @@ Groups: **R** release safety, **H** health and coverage truthfulness, **A** acce
 ### R1 — Unselected changes never enter a release
 Changes on the default branch enter a release snapshot only through books the manager set to include. An included book comes from the default branch; a carried-forward book is the file from the release tag, untouched.
 Source: product spec §10 snapshot rules; ADR 0003, ADR 0005.
-Enforced in: `worker/src/operations/release-prepare` (snapshot assembly); `worker/src/model/candidates` (source of each file).
-Verified by: contract test with a fixture where an unselected released book differs between tag and default branch; the snapshot must contain the tag version byte for byte. So far: the `R1:` test in `worker/test/model/classify.test.ts`, over one ref at a time (a listed file without a scope, a root file, and a `.gitea/` file are administrative; an unlisted file under `ingredients/` and a path that cannot name one file inside the project are unknown and never carried, S5); the two-ref comparison and the carry are #33 and #34.
+Enforced in: `worker/src/operations/release-prepare` (snapshot assembly); `worker/src/model/candidates` (source of each file: a book comes from the branch only when its selection is `include`; `administrativeFiles` takes the root files and `.gitea/` from the default branch alone).
+Verified by: contract test with a fixture where an unselected released book differs between tag and default branch; the snapshot must contain the tag version byte for byte. So far: the `R1:` tests in `worker/test/model/candidates.test.ts` and `worker/test/operations/release-plan.test.ts` (a changed book stays carried forward until included; the administrative files are the default branch's, never the baseline's); and the `R1:` test in `worker/test/model/classify.test.ts`, over one ref at a time (a listed file without a scope, a root file, and a `.gitea/` file are administrative; an unlisted file under `ingredients/` and a path that cannot name one file inside the project are unknown and never carried, S5); the two-ref comparison and the carry are #33 and #34.
 Issues: #33, #34.
 
 ### R2 — Removal is explicit and listed
@@ -29,6 +29,7 @@ A book present in the latest full release leaves a later release only when the m
 Source: ADR 0013; CONTEXT.md "Removed content", "Selection state".
 Enforced in: `worker/src/operations/release-plan` (default selection carries every released book forward); `release-prepare` (deletes only books whose selection is `leave_out`); `worker/src/model/burrito` (metadata merge drops exactly the removed ingredients).
 Verified by: the default selection on a project with a release contains no `leave_out`; a `leave_out` on a released book appears in `preview.removals`, is absent from the snapshot tree and the merged metadata, and every other released book is present byte for byte. So far: the `R2:` tests in `worker/test/model/burrito-merge.test.ts` (every book of the previous release is in the merged metadata when carried forward; one left out is gone from the entries and the scope and is listed as removed; a lost Open Bible Stories story is listed).
+Verified by: the default selection on a project with a release contains no `leave_out`; a `leave_out` on a released book appears in `preview.removals`, is absent from the snapshot tree and the merged metadata, and every other released book is present byte for byte. So far: the `R2:` tests in `worker/test/model/candidates.test.ts` (no released book is left out by default, so the plan's removals are empty; one set to leave out is listed; an Open Bible Stories story the branch lost is listed) and `worker/test/model/notes.test.ts` (every removed book is named in the draft).
 Issues: #33, #35, #38.
 
 ### R3 — A release never writes to the default branch
@@ -42,14 +43,14 @@ Issues: #34, #39.
 A first release starts with every book present included. A later release starts with every previously released book carried forward, changed or not, and every new book left out, so nothing new or changed is published unless the manager includes it. A release needs at least one included or carried-forward book (amended 1 October 2026, ADR 0013).
 Source: product spec §10; CONTEXT.md "Selection state".
 Enforced in: `worker/src/operations/release-plan` (default selection); `release-prepare` (rejects a selection with no included or carried-forward book).
-Verified by: plan output on a project with a release has `carry_forward` for every released book and `leave_out` for every new one; on a project without a release, `include` for every book; a selection with nothing included or carried forward returns `invalid_selection`.
+Verified by: plan output on a project with a release has `carry_forward` for every released book and `leave_out` for every new one; on a project without a release, `include` for every book; a selection with nothing included or carried forward returns `invalid_selection`. So far: the `R4:` tests in `worker/test/model/candidates.test.ts` and `worker/test/operations/release-plan.test.ts` over the recorded Pendau refs (E52) and a synthetic changed and added pair; `invalid_selection` is #34.
 Issues: #33.
 
 ### R5 — Preparation is bound to the source commit
 Every release preparation records the default-branch commit SHA it was planned from. Before the snapshot is written and again before the release is created, the Worker re-reads the SHA. If it moved, the preparation becomes `restart_required` and is never silently merged with the new state.
 Source: product spec §10 "Project has been edited"; architecture §6 stale source protection.
 Enforced in: `worker/src/operations/release-prepare`, `release-create` (precondition check).
-Verified by: fixture where the default-branch head changes between plan and apply; apply returns `source_changed` and writes nothing.
+Verified by: fixture where the default-branch head changes between plan and apply; apply returns `source_changed` and writes nothing. So far: the `R5` binding in `worker/test/operations/release-plan.test.ts` (the plan carries the default-branch SHA and the baseline tag and SHA it compared, and reads each tree at that commit); the re-check is #34 and #39.
 Issues: #34, #40.
 
 ### R6 — Never a duplicate release
@@ -77,7 +78,7 @@ Issues: #39.
 The final version is valid semver and greater than the latest full release on Door43, whichever tool created that release. Loose tags are coerced before comparison; a bare year or no release yields `v1.0.0`; a release that removes a book forces a major increment (ADR 0013, Q19).
 Source: product spec §10 versioning; domain model §7.
 Enforced in: `worker/src/model/version`; `worker/src/operations/release-create` (precondition).
-Verified by: table-driven tests over the coercion and bump rules; edited version not greater than baseline returns `invalid_version`.
+Verified by: table-driven tests over the coercion and bump rules; edited version not greater than baseline returns `invalid_version`. So far: the `R9:` tests in `worker/test/model/version.test.ts` (`1974` and no release give `v1.0.0`; `v1.2` with a revision `v1.2.1`, with a new book `v1.3.0`, with a released book left out `v2.0.0`; `v105` coerces); `invalid_version` is #39.
 Issues: #37.
 
 ### R10 — Every release is Scripture Burrito with true sizes and checksums
