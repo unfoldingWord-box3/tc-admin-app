@@ -17,7 +17,7 @@ import type { OperationErrorShape, OperationOutput, ParsedInput, Preparation } f
 import { readAccount } from '../door43/auth';
 import { deleteBranch } from '../door43/branches';
 import { repositoryRefs } from '../door43/catalog';
-import { createRelease, ReleaseWriteError } from '../door43/releases';
+import { createRelease, readReleaseByTag, ReleaseWriteError } from '../door43/releases';
 import { readRepository, repositoryAccess } from '../door43/repos';
 import { releasable } from '../model/health';
 import { compareVersions, parseVersion } from '../model/version';
@@ -87,6 +87,7 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
   const refs = repositoryRefs(repository);
   const bound = stored.bound_to;
   const now = { default_branch_sha: refs.default_branch?.sha ?? null, release_tag: refs.latest_full_release?.tag ?? null, release_tag_sha: refs.latest_full_release?.sha ?? null };
+  if (now.default_branch_sha === null) throw new CatalogError('door43_unavailable', { details: { owner, repo, reason: 'the default-branch head could not be read from the catalog' } });
   if (now.default_branch_sha !== bound.default_branch_sha || now.release_tag !== bound.release_tag || now.release_tag_sha !== bound.release_tag_sha) {
     await context.plans.putPreparation(owner, repo, id, { ...stored, state: 'restart_required', history: [...stored.history, { at: at(), from: stored.state, to: 'restart_required', event: 'source changed before release creation' }] });
     throw new CatalogError('source_changed', { details: { owner, repo, bound, now } });
@@ -107,7 +108,21 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
   } catch (error) {
     if (!(error instanceof ReleaseWriteError)) throw error;
     // The branch is kept whatever happened (R7); nothing is sent again (X1).
-    if (error.kind === 'exists') throw new CatalogError('release_exists', { details: { owner, repo, tag: version, reason: error.reason } });
+    if (error.kind === 'exists') {
+      // Door43 has the tag already (decided 7 October 2026 by Rich): looked up, it is either this snapshot's release, which the preparation
+      // records and whose branch is then deleted as after any release (R7), or another's, which the preparation records as its last error.
+      const found = await readReleaseByTag(client, owner, repo, version);
+      if (found && found.target_sha === stored.snapshot.commit_sha) {
+        const state = found.prerelease ? 'pre_release' : 'full_release';
+        await context.plans.putPreparation(owner, repo, id, { ...stored, state, version: { ...stored.version, confirmed: version }, notes: { ...stored.notes, confirmed: notes }, release: { tag: found.tag, url: found.url, prerelease: found.prerelease }, last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: state, event: 'release.create: Door43 had the release already' }] });
+        await context.plans.putReceipt(releaseTagKey(owner, repo, version), { receipt: { preparation_id: id }, account: account.login }, PREPARATION_SECONDS);
+        const deletion = branch === temporaryBranch(id) ? await deleteBranch(client, owner, repo, branch) : { deleted: false as const };
+        throw new CatalogError('release_exists', { details: { owner, repo, tag: version, url: found.url, target_sha: found.target_sha, snapshot_sha: stored.snapshot.commit_sha, branch_deleted: deletion.deleted } });
+      }
+      const exists = new CatalogError('release_exists', { details: { owner, repo, tag: version, reason: error.reason, url: found?.url ?? null, target_sha: found?.target_sha ?? null, snapshot_sha: stored.snapshot.commit_sha } });
+      await context.plans.putPreparation(owner, repo, id, { ...stored, last_error: errorShape(exists, context.requestId), history: [...stored.history, { at: at(), from: stored.state, to: stored.state, event: `release.create: ${version} is already on Door43${found ? ` on ${found.target_sha.slice(0, 10)}` : ''}` }] });
+      throw exists;
+    }
     if (error.kind === 'failed') return failed(new CatalogError('release_failed', { values: { 'error message': error.reason }, details: { owner, repo, tag: version, door43_status: error.status } }), `release.create: ${error.reason}`);
     return failed(new CatalogError('release_outcome_unknown', { details: { owner, repo, tag: version, reason: error.reason } }), 'release.create: outcome unknown');
   }

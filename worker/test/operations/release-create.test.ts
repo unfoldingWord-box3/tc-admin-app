@@ -335,4 +335,28 @@ describe('release.create (#39)', () => {
     expect((await failure(releaseCreate(input(), door43().context)))?.code).toBe('release_exists');
     expect((await failure(releaseCreate(input({ preparation_id: 'v9.9.9' }), door43().context)))?.code).toBe('not_found');
   });
+  test('R6, R7: a 409 at creation is looked up (decided 7 October 2026): this snapshot\'s release is recorded, its branch deleted, and the answer release_exists; a tag on another commit is release_exists with the error recorded and nothing deleted; no second POST', async () => {
+    await put(ready());
+    const ours = door43({ releaseAnswer: () => Response.json({ message: 'Release is has no Tag' }, { status: 409 }), lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT, html_url: 'https://qa.door43.org/ours' }) });
+    const exists = await failure(releaseCreate(input(), ours.context));
+    expect(exists).toMatchObject({ code: 'release_exists' });
+    expect(exists?.details).toMatchObject({ url: 'https://qa.door43.org/ours', target_sha: COMMIT, branch_deleted: true });
+    expect(ours.writes.map(write => write.method)).toEqual(['POST', 'DELETE']);
+    expect(await get()).toMatchObject({ state: 'full_release', release: { tag: 'v1.3.0', url: 'https://qa.door43.org/ours' }, last_error: null });
+    kv = new MemoryKV();
+    await put(ready());
+    const foreign = door43({ releaseAnswer: () => Response.json({ message: 'Release is has no Tag' }, { status: 409 }), lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: 'f000000000000000000000000000000000000000' }) });
+    expect((await failure(releaseCreate(input(), foreign.context)))?.code).toBe('release_exists');
+    expect(foreign.writes.map(write => write.method)).toEqual(['POST']);
+    expect(await get()).toMatchObject({ state: 'ready_for_release', release: null, last_error: { code: 'release_exists' } });
+  });
+
+  test('R5: a repository whose catalog names no default-branch head is door43_unavailable and nothing is written or restarted (decided 7 October 2026)', async () => {
+    await put(ready());
+    const { context, writes } = door43({ head: '' });
+    expect((await failure(releaseCreate(input(), context)))?.code).toBe('door43_unavailable');
+    expect(writes).toEqual([]);
+    expect((await get())?.state).toBe('ready_for_release');
+  });
+
 });
