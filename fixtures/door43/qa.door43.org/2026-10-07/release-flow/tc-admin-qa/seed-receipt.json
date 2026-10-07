@@ -1,0 +1,187 @@
+{
+  "operation": "project.create.apply",
+  "request_id": "probe-1791387997129",
+  "plan_id": "917f3850-296a-47e6-a07a-8ad818c6abd6",
+  "started_at": "2026-10-07T15:46:38.160Z",
+  "finished_at": "2026-10-07T15:46:41.831Z",
+  "wrote": [
+    {
+      "kind": "repo",
+      "target": "tc-admin-qa/id_tcar1546",
+      "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546"
+    },
+    {
+      "kind": "commit",
+      "target": "tc-admin-qa/id_tcar1546@master",
+      "sha": "333a0ec350b675f88433c903e3d156d165583f82",
+      "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/commit/333a0ec350b675f88433c903e3d156d165583f82"
+    }
+  ],
+  "result": {
+    "ref": {
+      "owner": "tc-admin-qa",
+      "repo": "id_tcar1546",
+      "id": 96921,
+      "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546"
+    },
+    "title": "tC Admin release probe 2026-10-07 1546",
+    "description": "tC Admin release probe 2026-10-07 1546",
+    "default_branch": "master",
+    "language": {
+      "code": "id",
+      "title": "Bahasa Indonesia"
+    },
+    "project_type": "bible",
+    "metadata_format": "sb",
+    "editability": {
+      "state": "editable",
+      "reason": "Scripture Burrito project. Release and editing are available."
+    },
+    "coverage": {
+      "present": 0,
+      "target": 27,
+      "scope": "nt",
+      "basis": "archive",
+      "units": [
+        {
+          "id": "mat",
+          "present": false
+        },
+        {
+          "id": "mrk",
+          "present": false
+        },
+        {
+          "id": "luk",
+          "present": false
+        },
+        {
+          "id": "jhn",
+          "present": false
+        },
+        {
+          "id": "act",
+          "present": false
+        },
+        {
+          "id": "rom",
+          "present": false
+        },
+        {
+          "id": "1co",
+          "present": false
+        },
+        {
+          "id": "2co",
+          "present": false
+        },
+        {
+          "id": "gal",
+          "present": false
+        },
+        {
+          "id": "eph",
+          "present": false
+        },
+        {
+          "id": "php",
+          "present": false
+        },
+        {
+          "id": "col",
+          "present": false
+        },
+        {
+          "id": "1th",
+          "present": false
+        },
+        {
+          "id": "2th",
+          "present": false
+        },
+        {
+          "id": "1ti",
+          "present": false
+        },
+        {
+          "id": "2ti",
+          "present": false
+        },
+        {
+          "id": "tit",
+          "present": false
+        },
+        {
+          "id": "phm",
+          "present": false
+        },
+        {
+          "id": "heb",
+          "present": false
+        },
+        {
+          "id": "jas",
+          "present": false
+        },
+        {
+          "id": "1pe",
+          "present": false
+        },
+        {
+          "id": "2pe",
+          "present": false
+        },
+        {
+          "id": "1jn",
+          "present": false
+        },
+        {
+          "id": "2jn",
+          "present": false
+        },
+        {
+          "id": "3jn",
+          "present": false
+        },
+        {
+          "id": "jud",
+          "present": false
+        },
+        {
+          "id": "rev",
+          "present": false
+        }
+      ]
+    },
+    "health": {
+      "state": "never_checked",
+      "severity_raw": null,
+      "ref": "master",
+      "checked_at": null,
+      "issue_count": null,
+      "issues": null,
+      "source": "door43"
+    },
+    "latest_full_release": null,
+    "default_branch_head": {
+      "sha": "333a0ec350b675f88433c903e3d156d165583f82",
+      "committed_at": "2026-10-07T15:46:40Z"
+    },
+    "active_preparation": null,
+    "setup": {
+      "state": "complete",
+      "failed_step": null
+    },
+    "permissions": {
+      "push": true,
+      "admin": true,
+      "checked_at": "2026-10-07T15:46:41.831Z"
+    },
+    "freshness": {
+      "read_at": "2026-10-07T15:46:41.831Z",
+      "source": "live",
+      "age_seconds": 0
+    }
+  },
+  "warnings": []
+}

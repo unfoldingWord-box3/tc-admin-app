@@ -1,0 +1,79 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]",
+      "content-type": "application/json"
+    },
+    "body": "{\"message\":\"Release v1.0.0: snapshot\\n\\nPrepared by tC Admin 0.1.0 from master at 00767589bc.\",\"files\":[{\"operation\":\"upload\",\"path\":\"metadata.json\",\"content\":\"ewogICJmb3JtYXQiOiAic2NyaXB0dXJlIGJ1cnJpdG8iLAogICJtZXRhIjogewogICAgInZlcnNpb24iOiAiMS4wLjAiLAogICAgImNhdGVnb3J5IjogInNvdXJjZSIsCiAgICAiZ2VuZXJhdG9yIjogewogICAgICAic29mdHdhcmVOYW1lIjogInRDIEFkbWluIiwKICAgICAgInNvZnR3YXJlVmVyc2lvbiI6ICIwLjEuMCIsCiAgICAgICJ1c2VySWQiOiAiZGNzOjp0Yy1hZG1pbi1xYSIsCiAgICAgICJ1c2VyTmFtZSI6ICJ0Yy1hZG1pbi1xYSIKICAgIH0sCiAgICAiZGVmYXVsdExvY2FsZSI6ICJlbiIsCiAgICAiZGF0ZUNyZWF0ZWQiOiAiMjAyNi0xMC0wN1QxNTo0NjozNy43MDZaIiwKICAgICJub3JtYWxpemF0aW9uIjogIk5GQyIKICB9LAogICJpZEF1dGhvcml0aWVzIjogewogICAgImRjcyI6IHsKICAgICAgImlkIjogImh0dHBzOi8vZ2l0LmRvb3I0My5vcmciLAogICAgICAibmFtZSI6IHsKICAgICAgICAiZW4iOiAiRG9vcjQzIENvbnRlbnQgU2VydmljZSIKICAgICAgfQogICAgfQogIH0sCiAgImlkZW50aWZpY2F0aW9uIjogewogICAgIm5hbWUiOiB7CiAgICAgICJlbiI6ICJ0QyBBZG1pbiByZWxlYXNlIHByb2JlIDIwMjYtMTAtMDcgMTU0NiIKICAgIH0sCiAgICAiYWJicmV2aWF0aW9uIjogewogICAgICAiZW4iOiAidGNhcjE1NDYiCiAgICB9LAogICAgInByaW1hcnkiOiB7CiAgICAgICJkY3MiOiB7CiAgICAgICAgInRjLWFkbWluLXFhL2lkX3RjYXIxNTQ2IjogewogICAgICAgICAgInJldmlzaW9uIjogIm1hc3RlciIsCiAgICAgICAgICAidGltZXN0YW1wIjogIjIwMjYtMTAtMDdUMTU6NDY6MzcuNzA2WiIKICAgICAgICB9CiAgICAgIH0KICAgIH0KICB9LAogICJjb25maWRlbnRpYWwiOiBmYWxzZSwKICAibGFuZ3VhZ2VzIjogWwogICAgewogICAgICAidGFnIjogImlkIiwKICAgICAgIm5hbWUiOiB7CiAgICAgICAgImVuIjogIkJhaGFzYSBJbmRvbmVzaWEiCiAgICAgIH0sCiAgICAgICJzY3JpcHREaXJlY3Rpb24iOiAibHRyIgogICAgfQogIF0sCiAgInR5cGUiOiB7CiAgICAiZmxhdm9yVHlwZSI6IHsKICAgICAgIm5hbWUiOiAic2NyaXB0dXJlIiwKICAgICAgImZsYXZvciI6IHsKICAgICAgICAibmFtZSI6ICJ0ZXh0VHJhbnNsYXRpb24iLAogICAgICAgICJwcm9qZWN0VHlwZSI6ICJzdGFuZGFyZCIsCiAgICAgICAgInRyYW5zbGF0aW9uVHlwZSI6ICJmaXJzdFRyYW5zbGF0aW9uIiwKICAgICAgICAiYXVkaWVuY2UiOiAiY29tbW9uIiwKICAgICAgICAidXNmbVZlcnNpb24iOiAiMy4wIgogICAgICB9LAogICAgICAiY3VycmVudFNjb3BlIjogewogICAgICAgICJNQVQiOiBbXSwKICAgICAgICAiSkhOIjogW10KICAgICAgfQogICAgfQogIH0sCiAgImNvcHlyaWdodCI6IHsKICAgICJsaWNlbnNlcyI6IFsKICAgICAgewogICAgICAgICJpbmdyZWRpZW50IjogImluZ3JlZGllbnRzL2xpY2Vuc2UubWQiCiAgICAgIH0KICAgIF0KICB9LAogICJpbmdyZWRpZW50cyI6IHsKICAgICJpbmdyZWRpZW50cy9NQVQudXNmbSI6IHsKICAgICAgImNoZWNrc3VtIjogewogICAgICAgICJtZDUiOiAiNGZkZGNjM2RkMTYxMThlNzVjYWM2MTk1OGQ5YzFkYjMiCiAgICAgIH0sCiAgICAgICJtaW1lVHlwZSI6ICJ0ZXh0L3gtdXNmbSIsCiAgICAgICJzaXplIjogMTQ3OTkyLAogICAgICAic2NvcGUiOiB7CiAgICAgICAgIk1BVCI6IFtdCiAgICAgIH0KICAgIH0sCiAgICAiaW5ncmVkaWVudHMvSkhOLnVzZm0iOiB7CiAgICAgICJjaGVja3N1bSI6IHsKICAgICAgICAibWQ1IjogImU0NmEzMmVkZmJkYmY4NzQ3YzgzYmJlYzE0ODA5MmQxIgogICAgICB9LAogICAgICAibWltZVR5cGUiOiAidGV4dC94LXVzZm0iLAogICAgICAic2l6ZSI6IDEyMTM0OCwKICAgICAgInNjb3BlIjogewogICAgICAgICJKSE4iOiBbXQogICAgICB9CiAgICB9LAogICAgImluZ3JlZGllbnRzL2xpY2Vuc2UubWQiOiB7CiAgICAgICJjaGVja3N1bSI6IHsKICAgICAgICAibWQ1IjogIjBiZjdlZjE1MzNmNjQ4NmM4MzYyZGNiOGJjMTliZGQxIgogICAgICB9LAogICAgICAibWltZVR5cGUiOiAidGV4dC9tYXJrZG93biIsCiAgICAgICJzaXplIjogMTg1MzUsCiAgICAgICJyb2xlIjogIngtbGljZW5zZSIKICAgIH0KICB9LAogICJsb2NhbGl6ZWROYW1lcyI6IHsKICAgICJNQVQiOiB7CiAgICAgICJzaG9ydCI6IHsKICAgICAgICAiaWQiOiAiTWF0aXVzIgogICAgICB9LAogICAgICAibG9uZyI6IHsKICAgICAgICAiaWQiOiAiSW5qaWwgTWF0aXVzIgogICAgICB9LAogICAgICAiYWJiciI6IHsKICAgICAgICAiaWQiOiAiTWF0IgogICAgICB9CiAgICB9LAogICAgIkpITiI6IHsKICAgICAgInNob3J0IjogewogICAgICAgICJpZCI6ICJZb2hhbmVzIgogICAgICB9LAogICAgICAibG9uZyI6IHsKICAgICAgICAiaWQiOiAiSW5qaWwgWW9oYW5lcyIKICAgICAgfSwKICAgICAgImFiYnIiOiB7CiAgICAgICAgImlkIjogIllvaCIKICAgICAgfQogICAgfQogIH0KfQo=\"}],\"branch\":\"temp-tca-release/v1.0.0\"}"
+  },
+  "response": {
+    "status": 201,
+    "ms": 549,
+    "json": {
+      "files": [
+        {
+          "name": "metadata.json",
+          "path": "metadata.json",
+          "sha": "44b533d54da471882abc870063625e242569d169",
+          "last_commit_sha": "25d92e0f3b85a4ba92ace38c413d3751f363e42d",
+          "last_committer_date": "2026-10-07T15:46:52Z",
+          "last_author_date": "2026-10-07T15:46:52Z",
+          "type": "file",
+          "size": 2471,
+          "encoding": "base64",
+          "content": "[3296 base64 characters omitted]",
+          "target": null,
+          "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents/metadata.json?ref=temp-tca-release%2Fv1.0.0",
+          "html_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/src/branch/temp-tca-release/v1.0.0/metadata.json",
+          "git_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/blobs/44b533d54da471882abc870063625e242569d169",
+          "download_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/raw/branch/temp-tca-release/v1.0.0/metadata.json",
+          "submodule_git_url": null,
+          "_links": {
+            "self": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents/metadata.json?ref=temp-tca-release%2Fv1.0.0",
+            "git": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/blobs/44b533d54da471882abc870063625e242569d169",
+            "html": "https://qa.door43.org/tc-admin-qa/id_tcar1546/src/branch/temp-tca-release/v1.0.0/metadata.json"
+          }
+        }
+      ],
+      "commit": {
+        "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/commits/25d92e0f3b85a4ba92ace38c413d3751f363e42d",
+        "sha": "25d92e0f3b85a4ba92ace38c413d3751f363e42d",
+        "created": "0001-01-01T00:00:00Z",
+        "html_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/commit/25d92e0f3b85a4ba92ace38c413d3751f363e42d",
+        "author": {
+          "name": "tc-admin-qa",
+          "email": "[redacted]",
+          "date": "2026-10-07T15:46:52Z"
+        },
+        "committer": {
+          "name": "tc-admin-qa",
+          "email": "[redacted]",
+          "date": "2026-10-07T15:46:52Z"
+        },
+        "parents": [
+          {
+            "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/commits/00767589bc8e7283320a3bc6b2667105cb02abca",
+            "sha": "00767589bc8e7283320a3bc6b2667105cb02abca",
+            "created": "0001-01-01T00:00:00Z"
+          }
+        ],
+        "message": "Release v1.0.0: snapshot\n\nPrepared by tC Admin 0.1.0 from master at 00767589bc.\n",
+        "tree": {
+          "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/trees/89086f30e1dfed15f2fc300986a92fd4e72fa669",
+          "sha": "89086f30e1dfed15f2fc300986a92fd4e72fa669",
+          "created": "0001-01-01T00:00:00Z"
+        }
+      },
+      "verification": {
+        "verified": false,
+        "reason": "gpg.error.not_signed_commit",
+        "signature": "",
+        "signer": null,
+        "payload": ""
+      }
+    }
+  }
+}

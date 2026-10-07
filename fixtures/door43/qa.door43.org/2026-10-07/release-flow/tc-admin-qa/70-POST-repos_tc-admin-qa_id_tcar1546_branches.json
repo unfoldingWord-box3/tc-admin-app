@@ -1,0 +1,52 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/branches",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]",
+      "content-type": "application/json"
+    },
+    "body": "{\"new_branch_name\":\"temp-tca-release/v1.1.1\",\"old_ref_name\":\"785766a4a9db81c72178a5e21fd616c5479db8b6\"}"
+  },
+  "response": {
+    "status": 201,
+    "ms": 1179,
+    "json": {
+      "name": "temp-tca-release/v1.1.1",
+      "commit": {
+        "id": "785766a4a9db81c72178a5e21fd616c5479db8b6",
+        "message": "Release v1.1.0: snapshot\n\nPrepared by tC Admin 0.1.0 from master at 8e3fcd0a47.\n",
+        "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/commit/785766a4a9db81c72178a5e21fd616c5479db8b6",
+        "author": {
+          "name": "tc-admin-qa",
+          "email": "[redacted]",
+          "username": "tc-admin-qa"
+        },
+        "committer": {
+          "name": "tc-admin-qa",
+          "email": "[redacted]",
+          "username": "tc-admin-qa"
+        },
+        "verification": {
+          "verified": false,
+          "reason": "gpg.error.not_signed_commit",
+          "signature": "",
+          "signer": null,
+          "payload": ""
+        },
+        "timestamp": "2026-10-07T15:47:13Z",
+        "added": null,
+        "removed": null,
+        "modified": null
+      },
+      "protected": false,
+      "required_approvals": 0,
+      "enable_status_check": false,
+      "status_check_contexts": [],
+      "user_can_push": true,
+      "user_can_merge": true,
+      "effective_branch_protection_name": ""
+    }
+  }
+}

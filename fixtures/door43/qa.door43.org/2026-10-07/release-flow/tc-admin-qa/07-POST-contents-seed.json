@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents",
+    "body": "[two books and metadata.json as base64]"
+  },
+  "response": {
+    "status": 201,
+    "ms": 1772,
+    "json": {
+      "commit": {
+        "sha": "00767589bc8e7283320a3bc6b2667105cb02abca"
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/healthcheck?ref=temp-tca-release%2Fv1.0.0",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 422,
+    "ms": 186,
+    "json": {
+      "ok": false,
+      "error": "no metadata found for repo [tc-admin-qa/id_tcar1546] and ref [temp-tca-release/v1.0.0]"
+    }
+  }
+}
