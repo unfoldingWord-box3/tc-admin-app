@@ -263,10 +263,11 @@ worker/
     branches.ts      the temporary branch a release is prepared on, created from a commit; one already there is preparation_active (E21, E27; #34); its deletion after the release, reported and never thrown (R7; #39, #58)
     health.ts        the health check of one ref, read once per call: a result with its issues, pending, unavailable, or an error (E15, E28; #36)
     releases.ts      one release by its tag, with the commit it targets (E21, E20, R6; #40); the release created on the snapshot commit, tag and all, and the one edit that promotes it (E27, R8; #39)
+    catalog-search.ts  an owner's Bible and Open Bible Stories catalog entries at a stage, every page, with each repository's stages (E35, E14; #78)
   src/model/         no I/O
     books.ts         book and story ids (#19)
     language.ts      the language tag rule of the Scripture Burrito schema (E44, Q30; #28)
-    project.ts       type, editability, coverage (#19)
+    project.ts       type, editability, coverage (#19); the books or stories a ref offers as an import source (H3; #78)
     health.ts        Door43 severity to health state, and one health-check read to a health value (H1, H3; #25, #36)
     burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10), and the release merge (#35, Q7, Q8)
     burrito-reader.ts  the Scripture Burrito reader: a project's metadata.json as read, every ingredient classified as book, story, or administrative (#17)
@@ -297,6 +298,7 @@ worker/
     release-promote.ts  release.promote: one edit of the pre-release flag (R8; #39)
     preparation-discard.ts  preparation.discard: the manager's confirmed abandonment, one branch deletion, the preparation discarded (R7, A2, Q14; #58)
     preparation-read.ts  preparation.read: the stored preparation, restart_required when the default branch moved (R5), the branch's health and the state it moves to (H1, H2; #36)
+    source-search.ts  source.search: an owner's Bible and Open Bible Stories repositories as import sources, at the last release or the default branch (E35, Q25; #78)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)

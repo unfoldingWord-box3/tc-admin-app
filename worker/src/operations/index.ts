@@ -16,6 +16,7 @@ import { releasePlan } from './release-plan';
 import { releasePrepare } from './release-prepare';
 import { releasePromote } from './release-promote';
 import { situationRead } from './situation-read';
+import { sourceSearch } from './source-search';
 
 export type OperationHandler<Name extends RoutedOperation> = (input: ParsedInput<Name>, context: OperationContext) => Promise<OperationOutput<Name>>;
 
@@ -35,6 +36,7 @@ export const HANDLERS: OperationHandlers = {
   'preparation.discard': preparationDiscard,
   'release.create': releaseCreate,
   'release.promote': releasePromote,
+  'source.search': sourceSearch,
 };
 
 export { operationContext, signedIn } from './context';

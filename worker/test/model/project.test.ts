@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { PROJECT_TYPES } from '@tc-admin/shared/schema';
 import type { CoverageScope, ProjectType } from '@tc-admin/shared/schema';
 import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT, STORIES } from '../../src/model/books';
-import { SUPPORTED_FLAVORS, classifyProject, coverage, editability, projectTypeFromFlavor, testamentScope } from '../../src/model/project';
+import { SUPPORTED_FLAVORS, classifyProject, coverage, editability, offeredUnits, projectTypeFromFlavor, testamentScope } from '../../src/model/project';
 import type { CatalogIngredient, ProjectCatalog } from '../../src/model/project';
 
 const file = (id: string, exists = true): CatalogIngredient => ({ id, path: `./${id}.usfm`, exists, is_dir: false });
@@ -192,5 +192,28 @@ describe('classifyProject', () => {
     expect(result.project_type).toBe('other');
     expect(result.editability).toEqual({ state: 'unsupported', reason: 'tC Admin manages Bible and Open Bible Stories projects only. Release and editing are not available.' });
     expect(result.coverage).toMatchObject({ present: null, target: null, scope: 'unknown' });
+  });
+});
+
+describe('the books or stories a ref offers (source.search, #78)', () => {
+  test('H3: a container with no itemized unit, or no ingredients at all, offers null, never an empty list', () => {
+    expect(offeredUnits(bible(null), 'bible')).toBeNull();
+    expect(offeredUnits({ flavor: 'textStories', metadata_format: 'rc', ingredients: [dir('obs', './content')] }, 'obs')).toBeNull();
+    expect(offeredUnits(bible([file('frt')]), 'bible')).toEqual([]);
+    expect(offeredUnits(bible([file('gen')]), 'other')).toBeNull();
+  });
+
+  test('each unit whose file exists, once, in canonical order, titled by Door43 or by its id', () => {
+    const ingredients = [{ ...file('rev'), title: 'Revelation' }, file('GEN'), { ...file('mat'), title: 'Matthew' }, file('exo', false), { ...file('mat'), title: 'Again' }];
+    expect(offeredUnits(bible(ingredients), 'bible')).toEqual([
+      { id: 'gen', title: 'gen' },
+      { id: 'mat', title: 'Matthew' },
+      { id: 'rev', title: 'Revelation' },
+    ]);
+    const stories = [{ id: '02', path: './content/02.md', exists: true, is_dir: false, title: 'Sin' }, { id: '01', path: './content/01.md', exists: true, is_dir: false }];
+    expect(offeredUnits({ flavor: 'textStories', metadata_format: 'sb', ingredients: stories }, 'obs')).toEqual([
+      { id: '01', title: '01' },
+      { id: '02', title: 'Sin' },
+    ]);
   });
 });

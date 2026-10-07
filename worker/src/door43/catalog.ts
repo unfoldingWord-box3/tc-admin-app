@@ -115,7 +115,7 @@ function ingredient(entry: Door43Ingredient): CatalogIngredient {
 }
 
 /** The model's catalog view of a repository. Absent `ingredients` is unknown, not empty (H3). */
-export function projectCatalog(repo: Door43Repository): ProjectCatalog {
+export function projectCatalog(repo: Pick<Door43Repository, 'flavor' | 'metadata_type' | 'ingredients'>): ProjectCatalog {
   return {
     flavor: repo.flavor || null,
     metadata_format: metadataFormat(repo.metadata_type),
