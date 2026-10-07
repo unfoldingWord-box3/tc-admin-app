@@ -71,7 +71,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#33](https://github.com/unfoldingWord-box3/tc-admin-app/issues/33) Candidate detection and selection states | §10; domain §4 | 0005, 0010, 0013 | R1, R2, R4 | E18, E19, Q24 | `release.plan` | model/candidates | S3, S4, S5, S8 |
 | [#34](https://github.com/unfoldingWord-box3/tc-admin-app/issues/34) Snapshot assembly | §10; arch §3 | 0003, 0010, 0013 | R1, R2, R3, R5, R7, W2, W5 | E4, Q3, Q12, Q13, Q22, Q24 | `release.prepare` | operations/release-prepare | S3, S8 |
-| [#35](https://github.com/unfoldingWord-box3/tc-admin-app/issues/35) Metadata merge | §7, §10 | 0008, 0010, 0013 | R2, R10 | E5, Q1, Q7, Q8, Q24 | `release.prepare` | model/burrito | S3, S4, S8 |
+| [#35](https://github.com/unfoldingWord-box3/tc-admin-app/issues/35) Metadata merge | §7, §10 | 0008, 0010, 0013 | R2, R10, W1 | E5, E16, E17, E46, Q1, Q7, Q8, Q24 | `release.prepare` (the metadata it writes; wired by #34) | model/burrito, model/burrito-reader | S3, S4, S8 |
 | [#36](https://github.com/unfoldingWord-box3/tc-admin-app/issues/36) Health poll | §9; arch §3 | 0007 | H1, H2 | Q2, Q6 | `preparation.read` | door43/health, operations | S6 |
 | [#37](https://github.com/unfoldingWord-box3/tc-admin-app/issues/37) Version calculation | §10; domain §7 | 0013 | R9 | E9, Q19, Q24 | `release.plan`, `release.create` | model/version | S8 |
 | [#38](https://github.com/unfoldingWord-box3/tc-admin-app/issues/38) Release notes | §10 | 0013 | R2 | Q24 | `release.plan`, `release.create` | operations, web | S4, S5, S8 |

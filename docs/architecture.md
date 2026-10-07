@@ -263,7 +263,7 @@ worker/
     language.ts      the language tag rule of the Scripture Burrito schema (E44, Q30; #28)
     project.ts       type, editability, coverage (#19)
     health.ts        Door43 severity to health state (H1, H3)
-    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10); the release merge is #35
+    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10), and the release merge (#35, Q7, Q8)
     burrito-reader.ts  the Scripture Burrito reader: a project's metadata.json as read, every ingredient classified as book, story, or administrative (#17)
     obs-scope.ts     the fixed currentScope of every Open Bible Stories project (E46)
     md5.ts           ingredient checksums (R10)

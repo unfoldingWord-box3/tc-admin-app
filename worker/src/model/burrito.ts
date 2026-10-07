@@ -1,16 +1,22 @@
 // The Scripture Burrito writer (ADR 0008): the only module that writes
-// project metadata (W1). Here, the metadata and files of a new project, a
-// Bible (`scripture/textTranslation`, #29) or Open Bible Stories
-// (`gloss/textStories`, #82); the merge for a release snapshot is #35. Pure:
-// no I/O, no Door43 shape. Every ingredient entry carries the size and md5
-// computed from the bytes that will be written (R10). What the schema
-// requires is E37; the recorded schema is `fixtures/scripture-burrito/2026-10-05/`
-// (E44), and the test in `worker/test/model/burrito.test.ts` validates the
+// project metadata (W1). The metadata and files of a new project, a Bible
+// (`scripture/textTranslation`, #29) or Open Bible Stories
+// (`gloss/textStories`, #82); and the merge for a release snapshot (#35,
+// ADR 0010): ingredient entries from the previous release for carried-forward
+// books and from the default branch for included books and administrative
+// ingredients, every top-level field from the default branch (Q8), the scope
+// set to the released books (Q7), and the size and md5 of every entry
+// recomputed from the bytes in the snapshot, never copied from a base whose
+// checksums may be stale (E5, R10). Pure: no I/O, no Door43 shape. What the
+// schema requires is E37; the recorded schema is
+// `fixtures/scripture-burrito/2026-10-05/` (E44), and the tests validate the
 // output against it.
 
 import { TEXT_TRANSLATION_FLAVOR_DEFAULTS } from '@tc-admin/shared/schema';
-import type { ProjectType, TextTranslationFlavor } from '@tc-admin/shared/schema';
-import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT } from './books';
+import type { ProjectType, SelectionState, TextTranslationFlavor } from '@tc-admin/shared/schema';
+import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT, STORIES } from './books';
+import { MetadataError, unitIngredients } from './burrito-reader';
+import type { MetadataIngredient, ProjectMetadata } from './burrito-reader';
 import { CC_BY_SA_4_0_TEXT } from './license-cc-by-sa-4.0';
 import { md5 } from './md5';
 import { OBS_SCOPE } from './obs-scope';
@@ -180,4 +186,114 @@ export function newProjectFiles(project: NewProject, generator: Generator, now: 
     metadata,
     files: [projectFile(METADATA_PATH, `${JSON.stringify(metadata, null, 2)}\n`), license, projectFile(README_PATH, readme(project))],
   };
+}
+
+/** A file under `ingredients/` in a release snapshot, with the size and md5 computed from its bytes (R10). */
+export interface SnapshotFile {
+  path: string;
+  size: number;
+  md5: string;
+}
+
+export interface ReleaseMerge {
+  /** The default branch's metadata: every top-level field of the release comes from it (Q8). */
+  current: ProjectMetadata;
+  /** The previous release's metadata, whose entries carried-forward books keep; `null` for a first release. */
+  base: ProjectMetadata | null;
+  /** Each unit's selection state. A unit on neither side is ignored; an Open Bible Stories release may give none, since every story on the default branch is included (ADR 0013). */
+  selection: Readonly<Record<string, SelectionState>>;
+  /** Every file under `ingredients/` in the snapshot (R10). */
+  files: readonly SnapshotFile[];
+  /** Unknown files the manager included: in the snapshot without an entry (product spec §8). */
+  unknown_included?: readonly string[];
+}
+
+export interface MergedRelease {
+  metadata: Record<string, unknown>;
+  /** The books or stories the release carries, in canonical order: its `currentScope` (Q7). */
+  released: string[];
+  /** The units of the previous release this one leaves out (R2). */
+  removed: string[];
+}
+
+const ORDER_BY_TYPE: Readonly<Record<ProjectType, readonly string[]>> = { bible: BIBLE_BOOKS, obs: STORIES, other: [] };
+const canonical = (type: ProjectType, ids: Iterable<string>) => {
+  const index = new Map(ORDER_BY_TYPE[type].map((id, i) => [id, i]));
+  return [...new Set(ids)].sort((a, b) => (index.get(a) ?? Infinity) - (index.get(b) ?? Infinity) || a.localeCompare(b));
+};
+
+/** The entry as written in its document, with the size and md5 of the file in the snapshot (R10). */
+function entryFor(ingredient: MetadataIngredient, source: ProjectMetadata, file: SnapshotFile): Record<string, unknown> {
+  const ingredients = source.document.ingredients as Record<string, unknown>;
+  const written = ingredients[ingredient.path];
+  const entry: Record<string, unknown> = typeof written === 'object' && written !== null ? { ...(written as Record<string, unknown>) } : {};
+  const checksum = typeof entry.checksum === 'object' && entry.checksum !== null ? { ...(entry.checksum as Record<string, unknown>) } : {};
+  return { ...entry, checksum: { ...checksum, md5: file.md5 }, size: file.size };
+}
+
+/**
+ * The release snapshot's `metadata.json` (ADR 0010, #35): the default branch's
+ * document with its ingredients replaced by exactly the released units and the
+ * default branch's administrative ingredients, each with the size and md5 of
+ * the file in the snapshot, and its `currentScope` set to the released books; an
+ * Open Bible Stories release keeps the fixed scope every one carries (E46). A
+ * carried-forward unit keeps the previous release's entry at its previous path;
+ * an included one takes the default branch's. Every snapshot file must have an
+ * entry, unless the manager included it as an unknown file, and every entry a
+ * file; otherwise the merge refuses, since Door43 verifies both ways on a tag
+ * (E16, R10).
+ */
+export function mergeReleaseMetadata(merge: ReleaseMerge): MergedRelease {
+  const { current, base } = merge;
+  const type = current.project_type;
+  if (type === 'other') throw new MetadataError('not a Bible or Open Bible Stories project');
+  if (base && base.project_type !== type) throw new MetadataError(`the previous release is ${base.project_type}, the default branch ${type}`);
+  const files = new Map(merge.files.map(file => [file.path, file]));
+  const onBranch = unitIngredients(current);
+  const inBase = base ? unitIngredients(base) : new Map<string, MetadataIngredient>();
+  const chosen = (unit: string): SelectionState => merge.selection[unit] ?? (type === 'obs' ? (onBranch.has(unit) ? 'include' : 'leave_out') : 'leave_out');
+
+  const entries = new Map<string, Record<string, unknown>>();
+  const released: string[] = [];
+  const removed: string[] = [];
+  for (const unit of canonical(type, [...onBranch.keys(), ...inBase.keys()])) {
+    const selection = chosen(unit);
+    if (selection === 'leave_out') {
+      if (inBase.has(unit)) removed.push(unit);
+      continue;
+    }
+    const [ingredient, source] = selection === 'include' ? [onBranch.get(unit), current] : [inBase.get(unit), base];
+    if (!ingredient || !source) throw new MetadataError(`${unit} cannot be ${selection === 'include' ? 'included: it is not on the default branch' : 'carried forward: it is not in the previous release'}`);
+    const file = files.get(ingredient.path);
+    if (!file) throw new MetadataError(`${ingredient.path} is listed for ${unit} but is not in the snapshot`);
+    entries.set(ingredient.path, entryFor(ingredient, source, file));
+    released.push(unit);
+  }
+  for (const ingredient of current.ingredients) {
+    if (ingredient.kind !== 'administrative') continue;
+    const file = files.get(ingredient.path);
+    if (!file) throw new MetadataError(`${ingredient.path} is an administrative ingredient but is not in the snapshot`);
+    entries.set(ingredient.path, entryFor(ingredient, current, file));
+  }
+  const unknown = new Set(merge.unknown_included ?? []);
+  for (const file of merge.files) {
+    if (!entries.has(file.path) && !unknown.has(file.path)) throw new MetadataError(`${file.path} is in the snapshot but has no ingredient entry`);
+  }
+
+  // The scope: for a Bible exactly the released books, each with the ranges its entry declares (Q7); Open Bible Stories keeps the fixed scope (E46).
+  const typeBlock = { ...(current.document.type as Record<string, unknown>) };
+  const flavorType = { ...(typeBlock.flavorType as Record<string, unknown>) };
+  if (type === 'bible') {
+    const scope: Record<string, readonly string[]> = {};
+    for (const unit of released) {
+      const entry = merge.selection[unit] === 'carry_forward' ? inBase.get(unit) : onBranch.get(unit);
+      const code = unit.toUpperCase();
+      scope[code] = entry?.scope?.[code] ?? [];
+    }
+    flavorType.currentScope = scope;
+  }
+  typeBlock.flavorType = flavorType;
+
+  const metadata: Record<string, unknown> = { ...current.document, type: typeBlock, ingredients: Object.fromEntries(entries) };
+  return { metadata, released, removed };
 }
