@@ -86,7 +86,7 @@ function door43(options: Door43Options = {}) {
       const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : null;
       writes.push({ method, path: pathname, body });
       if (pathname.endsWith('/releases')) return options.releaseAnswer ? options.releaseAnswer(body!) : Response.json({ ...probeRelease, door43_metadata: null, tag_name: body!.tag_name, name: body!.tag_name, body: body!.body, target_commitish: body!.target_commitish, prerelease: body!.prerelease, html_url: `https://qa.door43.org/${PENDAU.owner}/${PENDAU.repo}/releases/tag/${String(body!.tag_name)}` }, { status: 201 });
-      if (/\/releases\/\d+$/.test(pathname)) return options.promoteAnswer ? options.promoteAnswer(body!) : Response.json({ ...probeRelease, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT });
+      if (/\/releases\/\d+$/.test(pathname)) return options.promoteAnswer ? options.promoteAnswer(body!) : Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT });
       if (pathname.includes('/branches/')) return options.deleteAnswer ? options.deleteAnswer() : new Response(null, { status: 204 });
       return new Response('', { status: 404 });
     }
@@ -303,6 +303,29 @@ describe('release.create (#39)', () => {
     expect(await get()).toMatchObject({ id: 'v1.3.0', state: 'full_release', release: { tag: 'v1.4.0', prerelease: false } });
     const other = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: false, target_commitish: 'f'.repeat(40) }) });
     expect((await failure(releasePromote({ ...PENDAU, tag: 'v1.4.0' }, other.context)))?.code).toBe('not_prerelease');
+  });
+
+  test('R8, X1: a promotion answered 200 for another tag or commit is promotion_failed, and the preparation does not follow', async () => {
+    await put(ready());
+    await releaseCreate(input({ prerelease: true }), door43().context);
+    const lookup = () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: true, target_commitish: COMMIT });
+    for (const answer of [{ tag_name: 'v9.9.9', target_commitish: COMMIT }, { tag_name: 'v1.3.0', target_commitish: 'f'.repeat(40) }]) {
+      const lying = door43({ lookup, promoteAnswer: () => Response.json({ ...probeRelease, door43_metadata: null, prerelease: false, ...answer }) });
+      expect((await failure(releasePromote({ ...PENDAU, tag: 'v1.3.0' }, lying.context)))?.code).toBe('promotion_failed');
+      expect((await get())?.state).toBe('pre_release');
+    }
+  });
+
+  test('§1 rule 6: a preparation prepared again under the same id after its pre-release is not answered the old receipt; its own release is created', async () => {
+    await put(ready());
+    const first = await releaseCreate(input({ version: 'v1.4.0', prerelease: true }), door43().context);
+    const again = 'e000000000000000000000000000000000000002';
+    await put(ready({ snapshot: { ...ready().snapshot!, commit_sha: again } }));
+    const second = door43();
+    const receipt = await releaseCreate(input({ version: 'v1.5.0', prerelease: true }), second.context);
+    expect(receipt).not.toEqual(first);
+    expect(receipt.result).toMatchObject({ state: 'pre_release', release: { tag: 'v1.5.0' } });
+    expect(second.writes[0]).toMatchObject({ method: 'POST', body: { tag_name: 'v1.5.0', target_commitish: again } });
   });
 
   test('R9, X1: a refused release leaves the prepare-time version as the floor; a retry at it performs the POST', async () => {
