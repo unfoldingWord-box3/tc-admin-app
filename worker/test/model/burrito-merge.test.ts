@@ -218,4 +218,17 @@ describe('an Open Bible Stories release', () => {
     expect(scopeOf(lost.metadata)).toEqual(scopeOf(obs.document));
     expect(validateSource(lost.metadata), JSON.stringify(validateSource.errors)).toBe(true);
   });
+  test('R2, Q7: localizedNames keeps the released books only, so a removed book leaves the names as it leaves the ingredients and the scope; a key that is no book code stays', async () => {
+    const { metadata, files } = await pendau();
+    const document = structuredClone(metadata.document) as Record<string, unknown>;
+    (document.localizedNames as Record<string, unknown>).note = { short: { id: 'catatan' } };
+    const merged = mergeReleaseMetadata({ current: { ...metadata, document }, base: metadata, selection: { mrk: 'leave_out' }, files: files.filter(f => !/MRK/.test(f.path)) });
+    const names = merged.metadata.localizedNames as Record<string, unknown>;
+    expect(merged.removed).toEqual(['mrk']);
+    expect(names.MRK).toBeUndefined();
+    expect(Object.keys(names)).toContain('MAT');
+    expect(names.note).toEqual({ short: { id: 'catatan' } });
+    expect(Object.keys(names).filter(key => key !== 'note').map(key => key.toLowerCase()).sort()).toEqual([...merged.released].sort());
+  });
+
 });

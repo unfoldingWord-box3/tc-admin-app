@@ -207,3 +207,19 @@ describe('the adapter surface', () => {
     expect(Object.keys(writes).filter(name => /delete|remove/i.test(name))).toEqual([]);
   });
 });
+
+describe('a commit that deletes a file (E55)', () => {
+  test('R2: Door43 lists the deleted file as null in its answer; the commit is read with the files it left, and the null is skipped', async () => {
+    const deleting = JSON.parse(readFileSync(new URL('../../2026-10-07/contents-delete/POST-contents-delete-MRK.json', fixtures), 'utf8')) as { response: { status: number; json: unknown } };
+    const commit = await commitFiles(client(async () => Response.json(deleting.response.json, { status: deleting.response.status })), 'tc-admin-qa', 'id_tcar1546', {
+      message: 'm',
+      branch: 'temp-tca-release/v2.0.0',
+      files: [
+        { path: 'ingredients/MRK.usfm', operation: 'delete', sha: '0000000000000000000000000000000000000000' },
+        { path: 'metadata.json', content: new Uint8Array([123, 125]), operation: 'upload' },
+      ],
+    });
+    expect(commit.sha).toBe('ad7c29a9ea1ba6e6fc4da6f67fbbdf84da2b5fb7');
+    expect(commit.files).toEqual([{ path: 'metadata.json', sha: '91baa09de40914344e92dccbacf85d60877d2932' }]);
+  });
+});
