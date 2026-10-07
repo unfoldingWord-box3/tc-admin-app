@@ -4,7 +4,7 @@
 // each state, from CONTEXT.md. No I/O; the component calls the operations.
 
 import { catalogMessage } from '@tc-admin/shared/schema';
-import type { CandidateGroup, HealthState, OperationOutput, Preparation, PreparationState, SelectionState } from '@tc-admin/shared/schema';
+import type { CandidateGroup, OperationOutput, Preparation, PreparationState, SelectionState } from '@tc-admin/shared/schema';
 
 export type ReleasePlan = OperationOutput<'release.plan'>;
 export type Book = ReleasePlan['preview']['books'][number];
@@ -53,12 +53,21 @@ export function counts(books: readonly Book[], selection: Selection): Record<Sel
   return result;
 }
 
-/** A version the manager typed, or `null` to take the calculated one; a typed version is sent trimmed, with the `v` the catalog spells. */
+/** A typed version, trimmed, with the `v` the catalog spells: `2.0.1` and `V2.0.1` are `v2.0.1`; only a `v` before a digit is taken as already spelled. */
+export function spellVersion(typed: string): string {
+  const text = typed.trim();
+  return /^v\d/i.test(text) ? `v${text.slice(1)}` : `v${text}`;
+}
+
+/** A version the manager typed, or `null` to take the calculated one (`release.prepare`). */
 export function versionToSend(typed: string, proposed: string): string | null {
   const text = typed.trim();
   if (!text || text === proposed) return null;
-  return /^v/i.test(text) ? `v${text.slice(1)}` : `v${text}`;
+  return spellVersion(text);
 }
+
+/** The selection `release.prepare` takes: an Open Bible Stories release takes the whole default branch, so it sends none (ADR 0013). */
+export const selectionToSend = (projectType: string | null | undefined, selection: Selection): Selection => (projectType === 'obs' ? {} : selection);
 
 export const STEPS = ['Select books', 'Review the snapshot', 'Health check', 'Notes, version, and release', 'Released'] as const;
 export type Step = (typeof STEPS)[number];
@@ -104,9 +113,6 @@ export const releaseGate = (preparation: Pick<Preparation, 'state' | 'health' | 
   if (preparation.state !== 'ready_for_release' && preparation.state !== 'retryable_failure') return 'blocked';
   return preparation.requires_acknowledgement ? 'acknowledge' : 'ready';
 };
-
-/** The health states that block, for the copy that says so (H2). */
-export const blocksRelease = (state: HealthState): boolean => !['healthy', 'info', 'warning'].includes(state);
 
 /** The message the spec fixes for a project edited during preparation (R5). */
 export const RESTART_MESSAGE = catalogMessage('source_changed');
