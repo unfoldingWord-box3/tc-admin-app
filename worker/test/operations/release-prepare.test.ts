@@ -292,6 +292,21 @@ describe('what the prepare refuses, writing nothing', () => {
     expect(stored).toMatchObject({ state: 'retryable_failure', last_error: { code: 'door43_unavailable' }, snapshot: { branch: 'temp-tca-release/v1.3.0' } });
   });
 
+  test('R5: a preparation already stored under the version, here a full release a QA reset removed from Door43 (E58), is replaced unconditionally by one bound to the commits read now, with nothing of the old one kept', async () => {
+    const key = `preparation:${PENDAU.owner.toLowerCase()}/${PENDAU.repo}/v1.3.0`;
+    const first = await prepare({}, carried({ gen: 'include' }));
+    const old = OPERATIONS['release.prepare'].output.parse(await first.run()).result;
+    const stale: Preparation = { ...old, state: 'full_release', snapshot: { ...old.snapshot!, commit_sha: 'f000000000000000000000000000000000000000' }, release: { tag: 'v1.3.0', url: 'https://qa.door43.org/r/v1.3.0', prerelease: false }, history: [...old.history, { at: NOW.toISOString(), from: 'pre_release', to: 'full_release', event: 'release.promote' }] };
+    kv.entries.set(key, JSON.stringify(stale));
+    const again = await prepare({}, carried({ gen: 'include' }));
+    const fresh = OPERATIONS['release.prepare'].output.parse(await again.run()).result;
+    expect(again.writes.map(write => `${write.method} ${write.path}`)).toEqual(['POST /api/v1/repos/bahtraku/Perjanjian-Baru-Pendau/branches', 'POST /api/v1/repos/bahtraku/Perjanjian-Baru-Pendau/contents']);
+    expect(fresh).toMatchObject({ id: 'v1.3.0', state: 'health_checking', release: null, last_error: null, bound_to: { default_branch_sha: BRANCH_SHA, release_tag: 'v1.2', release_tag_sha: TAG_SHA } });
+    expect(fresh.snapshot!.commit_sha).toBe('e000000000000000000000000000000000000001');
+    expect(fresh.history.map(event => event.to)).toEqual(['selecting', 'snapshot_prepared', 'health_checking']);
+    expect(JSON.parse(kv.entries.get(key)!) as Preparation).toEqual(fresh);
+  });
+
   test('R7: a branch already on Door43 (409) with no preparation naming it stores one as retryable_failure, so the manager can discard it; one already stored is left as it is (decided 7 October 2026)', async () => {
     const first = await prepare({ branchAnswer: () => Response.json({ message: 'branch already exists' }, { status: 409 }) }, carried({ gen: 'include' }));
     expect((await failure(first.run()))!.code).toBe('preparation_active');
