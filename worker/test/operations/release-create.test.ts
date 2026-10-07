@@ -240,7 +240,8 @@ describe('release.create (#39)', () => {
     const exists = await failure(releaseCreate(input(), found.context));
     expect(exists).toMatchObject({ code: 'release_exists' });
     expect(exists?.details).toMatchObject({ tag: 'v1.3.0', url: 'https://qa.door43.org/found', target_sha: COMMIT });
-    expect(found.writes).toEqual([]);
+    expect(found.writes.map(write => write.method)).toEqual(['DELETE']);
+    expect(exists?.details).toMatchObject({ branch_deleted: true });
     expect(await get()).toMatchObject({ state: 'full_release', release: { tag: 'v1.3.0', url: 'https://qa.door43.org/found', prerelease: false }, last_error: null });
     await put(ready({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'run `release.lookup` for the tag before retrying', request_id: 'r', details: {}, invariant: 'R6' } }));
     const other = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: 'f000000000000000000000000000000000000000' }) });

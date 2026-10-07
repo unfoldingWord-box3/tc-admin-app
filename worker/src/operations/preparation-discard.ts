@@ -59,9 +59,15 @@ export async function preparationDiscard(input: ParsedInput<'preparation.discard
     const tag = stored.version.confirmed ?? id;
     const found = await readReleaseByTag(client, owner, repo, tag);
     if (found && found.target_sha === stored.snapshot.commit_sha) {
+      // This snapshot's release: recorded, its branch deleted as after any release (R7), and the discard refused (decided 7 October 2026 by Rich).
       const state = found.prerelease ? 'pre_release' : 'full_release';
       await context.plans.putPreparation(owner, repo, id, { ...stored, state, release: { tag: found.tag, url: found.url, prerelease: found.prerelease }, last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: state, event: 'release.lookup found the release of the unconfirmed attempt' }] });
-      throw new CatalogError('already_released', { details: { owner, repo, preparation_id: id, tag: found.tag } });
+      const deletion = await deleteBranch(client, owner, repo, stored.snapshot.branch);
+      throw new CatalogError('already_released', { details: { owner, repo, preparation_id: id, tag: found.tag, branch_deleted: deletion.deleted } });
+    }
+    if (found) {
+      // A release on another commit under this tag: not this preparation's, so nothing is deleted or stored; the manager resolves it on Door43 (R6, R7).
+      throw new CatalogError('release_exists', { details: { owner, repo, preparation_id: id, tag: found.tag, target_sha: found.target_sha, snapshot_sha: stored.snapshot.commit_sha } });
     }
   }
 

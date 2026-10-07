@@ -23,6 +23,7 @@ import { releasable } from '../model/health';
 import { compareVersions, parseVersion } from '../model/version';
 import { signedIn } from './context';
 import type { OperationContext } from './context';
+import { temporaryBranch } from './release-plan';
 import { errorShape, validation } from './release-prepare';
 
 type ReleaseCreateReceipt = OperationOutput<'release.create'>;
@@ -71,9 +72,12 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
     const found = await readReleaseByTag(client, owner, repo, tag);
     if (found) {
       if (found.target_sha === stored.snapshot.commit_sha) {
-        // It is this preparation's release: the preparation records it, and nothing new is created.
+        // It is this preparation's release: the preparation records it, nothing new is created, and the temporary branch is
+        // deleted as after any release (R7; decided 7 October 2026 by Rich).
         const state = found.prerelease ? 'pre_release' : 'full_release';
         await context.plans.putPreparation(owner, repo, id, { ...stored, state, release: { tag: found.tag, url: found.url, prerelease: found.prerelease }, last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: state, event: 'release.lookup found the release of the unconfirmed attempt' }] });
+        const deletion = stored.snapshot.branch === temporaryBranch(id) ? await deleteBranch(client, owner, repo, stored.snapshot.branch) : { deleted: false as const };
+        throw new CatalogError('release_exists', { details: { owner, repo, tag, url: found.url, target_sha: found.target_sha, snapshot_sha: stored.snapshot.commit_sha, branch_deleted: deletion.deleted } });
       }
       throw new CatalogError('release_exists', { details: { owner, repo, tag, url: found.url, target_sha: found.target_sha, snapshot_sha: stored.snapshot.commit_sha } });
     }

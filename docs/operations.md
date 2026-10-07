@@ -281,7 +281,7 @@ Candidate detection and everything the manager needs to decide, with no writes.
 - Checks: a receipt already stored for this preparation by this account is answered as it is while the preparation is still `discarded` (§1 rule 6; a replacement prepared under the same version is discarded on its own); the preparation exists and has no release (`state` is not `pre_release` or `full_release`, else `already_released`); permission re-read, strictly (A2); one whose last release attempt was not confirmed is looked up by tag first (R6): a release on the snapshot commit is recorded on the preparation and answered as `already_released`, nothing deleted. The UI asks the manager to confirm first.
 - Door43 writes: delete the temporary branch (E21), the one write; none for a preparation never pushed (no snapshot) or already discarded.
 - Returns: `receipt.result = preparation` in state `discarded`, terminal; `wrote` lists the branch when one was deleted.
-- Errors: `not_found`, `already_released`, `permission_denied`, `door43_unavailable` (the deletion Door43 did not do, with its reason: the branch stays and the preparation is `retryable_failure` with the error, and the retry is `preparation.discard` again, R7).
+- Errors: `not_found`, `already_released` (also when the lookup after an unconfirmed attempt finds this snapshot's release: it is recorded and its branch deleted, R7), `release_exists` (the lookup finds a release on another commit under the tag: nothing deleted or stored; the manager resolves it on Door43), `permission_denied`, `door43_unavailable` (the deletion Door43 did not do, with its reason: the branch stays and the preparation is `retryable_failure` with the error, and the retry is `preparation.discard` again, R7).
 
 ### `upload.plan`
 
