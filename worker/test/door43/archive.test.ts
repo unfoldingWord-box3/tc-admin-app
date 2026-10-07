@@ -10,7 +10,7 @@ import { crc32 } from 'node:zlib';
 import { CatalogError } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import type { Fetch } from '../../src/door43/api';
-import { openArchive, readArchive, topLevelFolder, zipEntries } from '../../src/door43/archive';
+import { MAX_ARCHIVE_BYTES, MAX_ENTRY_BYTES, openArchive, readArchive, topLevelFolder, zipEntries } from '../../src/door43/archive';
 import { door43Host } from '../../src/door43/host';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/', import.meta.url);
@@ -217,5 +217,40 @@ describe('the download', () => {
       expect(await code(readArchive(counting, owner, repo, ref))).toBe('unexpected');
     }
     expect(calls).toBe(0);
+  });
+});
+
+describe('the ceilings (Q22, decided 7 October 2026)', () => {
+  const client = (fetch: Fetch) => ({ host: door43Host('https://qa.door43.org'), token: 'test-only', fetch });
+  const reason = async (promise: Promise<unknown>) => promise.then(() => null, (error: unknown) => (error instanceof CatalogError ? { code: error.code, reason: error.details.reason } : error));
+
+  test('a download that declares more than 64 MB is refused before its body is read; one that streams more is refused as it passes the limit', async () => {
+    expect(MAX_ARCHIVE_BYTES).toBe(64 * 1024 * 1024);
+    // A body that cannot be read: were it read, the reason would be 'unreadable response body', not the limit.
+    const broken = () => new ReadableStream<Uint8Array>({ pull() { throw new Error('read'); } });
+    const declared = await reason(readArchive(client(async () => new Response(broken(), { status: 200, headers: { 'content-length': String(MAX_ARCHIVE_BYTES + 1) } })), 'o', 'r', 'main'));
+    expect(declared).toEqual({ code: 'door43_unavailable', reason: 'archive larger than the limit' });
+    expect(await reason(readArchive(client(async () => new Response(broken(), { status: 200 })), 'o', 'r', 'main'))).toEqual({ code: 'door43_unavailable', reason: 'unreadable response body' });
+    let sent = 0;
+    const chunk = new Uint8Array(1024 * 1024);
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        sent += chunk.length;
+        controller.enqueue(chunk);
+      },
+    });
+    const streamed = await reason(readArchive(client(async () => new Response(endless, { status: 200 })), 'o', 'r', 'main'));
+    expect(streamed).toEqual({ code: 'door43_unavailable', reason: 'archive larger than the limit' });
+    expect(sent).toBeLessThanOrEqual(MAX_ARCHIVE_BYTES + 2 * chunk.length);
+  });
+
+  test('an entry that declares more than 32 MB is refused before any byte of it is copied or inflated', async () => {
+    expect(MAX_ENTRY_BYTES).toBe(32 * 1024 * 1024);
+    const lying = storedZip([['r/big.usfm', 'abc']]);
+    // The one central entry starts after the local header (30 bytes and the 10-byte name) and the 3 data bytes; its uncompressed size is 24 bytes in.
+    new DataView(lying.buffer).setUint32(30 + 10 + 3 + 24, MAX_ENTRY_BYTES + 1, true);
+    const archive = openArchive(lying);
+    expect(archive.entries).toEqual([{ path: 'big.usfm', size: MAX_ENTRY_BYTES + 1 }]);
+    expect(await reason(archive.bytes('big.usfm'))).toEqual({ code: 'door43_unavailable', reason: 'malformed archive: entry larger than the limit' });
   });
 });

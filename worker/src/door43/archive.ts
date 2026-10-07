@@ -35,6 +35,16 @@ interface RawEntry extends ArchiveEntry {
   crc: number;
 }
 
+/**
+ * The most tC Admin holds of one archive, and of one file in it, before it
+ * refuses (decided 7 October 2026 by Rich, Q22): six times the largest
+ * project measured, an aligned Bible's 10.8 MB zip with a 5.4 MB book (E30),
+ * and well inside the Worker's 128 MB. Both are checked before anything is
+ * buffered or inflated.
+ */
+export const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
+export const MAX_ENTRY_BYTES = 32 * 1024 * 1024;
+
 const SIG_LOCAL = 0x04034b50;
 const SIG_CENTRAL = 0x02014b50;
 const SIG_END = 0x06054b50;
@@ -160,6 +170,8 @@ export function openArchive(zip: Uint8Array): Archive {
     async bytes(path) {
       const entry = files.get(path);
       if (!entry) throw new CatalogError('not_found', { details: { reason: 'no such file in the archive', path } });
+      // Refused before any byte is copied or inflated: a declared size, or a compressed one, over the limit (Q22).
+      if (entry.size > MAX_ENTRY_BYTES || entry.compressed > MAX_ENTRY_BYTES) throw malformed('entry larger than the limit', { path, declared: entry.size, compressed: entry.compressed, limit: MAX_ENTRY_BYTES });
       const data = zip.subarray(entry.offset, entry.offset + entry.compressed);
       let out: Uint8Array;
       // A copy, so a caller that changes the bytes changes neither the archive nor a later read.
@@ -179,6 +191,6 @@ export async function readArchive(client: Door43Client, owner: string, repo: str
   if ([owner, repo, ref].some(segment => segment === '' || segment === '.' || segment === '..')) {
     throw new CatalogError('unexpected', { details: { reason: 'invalid owner, repository or ref' } });
   }
-  const zip = await readDoor43Bytes(client, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/sb/${encodeURIComponent(ref)}.zip`);
+  const zip = await readDoor43Bytes(client, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/sb/${encodeURIComponent(ref)}.zip`, MAX_ARCHIVE_BYTES);
   return openArchive(zip);
 }
