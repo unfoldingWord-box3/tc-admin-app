@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import type { OperationOutput, ProjectSummary } from '@tc-admin/shared/schema';
 import { ApiError, callOperation, failureMessage } from './api/client';
 import { projectHash, releaseHash } from './portfolio-labels';
+import { onProjectHost } from './release-stepper';
 
 type Lookup = OperationOutput<'release.lookup'>;
 
@@ -88,9 +89,13 @@ export function ReleaseView({ project, tag, onFailure }: Props) {
             </dd>
             <dt>On Door43</dt>
             <dd>
-              <a href={release.url} target="_blank" rel="noreferrer">
-                {release.url}
-              </a>
+              {onProjectHost(release.url, project.ref.url) ? (
+                <a href={release.url} target="_blank" rel="noreferrer">
+                  {release.url}
+                </a>
+              ) : (
+                <span className="muted">a link outside the project's Door43 host is not shown</span>
+              )}
             </dd>
           </dl>
           {promoted.length > 0 && <p className="muted">Written: {promoted.join(' · ')}</p>}
