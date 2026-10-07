@@ -5,7 +5,7 @@
 // during preparation restarts from the selection with the fixed message (R5);
 // an unreleased preparation can be discarded after a confirmation (Q14).
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { HEALTH_POLL } from '@tc-admin/shared/schema';
 import type { Preparation, ProjectSummary, SelectionState } from '@tc-admin/shared/schema';
 import { ApiError, callOperation, failureMessage } from './api/client';
@@ -24,6 +24,8 @@ import {
   releaseGate,
   removalsOf,
   selectionOf,
+  selectionToSend,
+  spellVersion,
   statesFor,
   stepOf,
   versionToSend,
@@ -53,6 +55,8 @@ export function ReleaseStepper({ project, onFailure }: Props) {
   const [problem, setProblem] = useState<string | null>(null);
   const [restart, setRestart] = useState(false);
   const [written, setWritten] = useState<string[]>([]);
+  // Bumped by every discard, re-plan, and write: a `preparation.read` that answers after one is stale and is not shown.
+  const generation = useRef(0);
 
   const fail = useCallback(
     (failure: unknown) => {
@@ -68,17 +72,22 @@ export function ReleaseStepper({ project, onFailure }: Props) {
   );
 
   // Step 1: the plan, which writes nothing (ADR 0011). State changes only once Door43 has answered.
+  // A notice, such as why the plan was read again, stays up once the new plan is shown.
   const readPlan = useCallback(
-    () =>
+    (notice: string | null = null) =>
       callOperation('release.plan', { owner, repo }).then(
         planned => {
+          generation.current += 1;
           setPlan(planned);
           setSelection(selectionOf(planned));
           setVersion(planned.preview.version.proposed);
           setNotes(planned.preview.notes_draft);
           setPreparation(null);
+          setPrerelease(false);
+          setAcknowledged(false);
+          setWritten([]);
           setRestart(false);
-          setProblem(null);
+          setProblem(notice);
         },
         (failure: unknown) => fail(failure),
       ),
@@ -89,7 +98,22 @@ export function ReleaseStepper({ project, onFailure }: Props) {
     void readPlan();
   }, [readPlan]);
 
-  const startAgain = () => {
+  // R5: the preparation a source change invalidated is discarded first, so its temporary branch does not block the next one; if the discard fails, the preparation stays and Start again can be tried again.
+  const startAgain = async () => {
+    generation.current += 1;
+    if (preparation && canDiscard(preparation)) {
+      setBusy('Discarding the preparation…');
+      setProblem(null);
+      try {
+        await callOperation('preparation.discard', { owner, repo, preparation_id: preparation.id });
+      } catch (failure) {
+        fail(failure);
+        setRestart(true);
+        return;
+      } finally {
+        setBusy(null);
+      }
+    }
     setPlan(null);
     setPreparation(null);
     setRestart(false);
@@ -100,16 +124,20 @@ export function ReleaseStepper({ project, onFailure }: Props) {
   // Step 3: the health of the temporary branch, read every HEALTH_POLL.interval_ms for HEALTH_POLL.window_ms after the push, then on refresh.
   const read = useCallback(
     async (id: string) => {
+      const ticket = generation.current;
       try {
         const current = await callOperation('preparation.read', { owner, repo, preparation_id: id });
+        if (ticket !== generation.current) return null;
         setPreparation(current);
+        // A health read again may carry other warnings: the acknowledgement is asked for again (H2).
+        setAcknowledged(false);
         if (current.state === 'restart_required') {
           setRestart(true);
           setProblem(RESTART_MESSAGE);
         }
         return current;
       } catch (failure) {
-        fail(failure);
+        if (ticket === generation.current) fail(failure);
         return null;
       }
     },
@@ -119,8 +147,9 @@ export function ReleaseStepper({ project, onFailure }: Props) {
   useEffect(() => {
     if (!preparation || preparation.state !== 'health_checking') return;
     const pushedAt = preparation.history.find(entry => entry.to === 'health_checking')?.at;
-    const since = pushedAt ? Date.now() - new Date(pushedAt).getTime() : 0;
-    if (since > HEALTH_POLL.window_ms) return;
+    // No push time, or one that does not parse, counts as the window elapsed: Refresh stays.
+    const since = pushedAt ? Date.now() - new Date(pushedAt).getTime() : Number.NaN;
+    if (!(since <= HEALTH_POLL.window_ms)) return;
     const timer = window.setTimeout(() => void read(preparation.id), HEALTH_POLL.interval_ms);
     return () => window.clearTimeout(timer);
   }, [preparation, read]);
@@ -130,17 +159,19 @@ export function ReleaseStepper({ project, onFailure }: Props) {
     if (!plan) return;
     setBusy('Preparing the snapshot on Door43…');
     setProblem(null);
+    generation.current += 1;
     try {
-      const receipt = await callOperation('release.prepare', { owner, repo, plan_id: plan.id, selection, unknown_included: [], version: versionToSend(version, plan.preview.version.proposed) });
+      const receipt = await callOperation('release.prepare', { owner, repo, plan_id: plan.id, selection: selectionToSend(project.project_type, selection), unknown_included: [], version: versionToSend(version, plan.preview.version.proposed) });
       setWritten(receipt.wrote.map(write => `${WRITE_LABELS[write.kind]} ${write.target}`));
       setPreparation(receipt.result);
+      setAcknowledged(false);
       setNotes(receipt.result.notes.draft);
       setVersion(receipt.result.version.confirmed ?? receipt.result.version.proposed);
     } catch (failure) {
       if (codeOf(failure) === 'plan_expired') {
         setProblem('The plan expired. The selection is read again.');
         setPlan(null);
-        void readPlan();
+        void readPlan('The plan expired. The selection was read again: check it before preparing.');
       } else fail(failure);
     } finally {
       setBusy(null);
@@ -152,8 +183,9 @@ export function ReleaseStepper({ project, onFailure }: Props) {
     if (!preparation) return;
     setBusy('Creating the release on Door43…');
     setProblem(null);
+    generation.current += 1;
     try {
-      const receipt = await callOperation('release.create', { owner, repo, preparation_id: preparation.id, version: version.trim(), notes, prerelease, acknowledge_warnings: acknowledged });
+      const receipt = await callOperation('release.create', { owner, repo, preparation_id: preparation.id, version: spellVersion(version), notes, prerelease, acknowledge_warnings: acknowledged });
       setWritten(current => [...current, ...receipt.wrote.map(write => `${WRITE_LABELS[write.kind]} ${write.target}`), ...receipt.warnings.map(warning => warning.message)]);
       setPreparation(receipt.result);
     } catch (failure) {
@@ -169,9 +201,12 @@ export function ReleaseStepper({ project, onFailure }: Props) {
     if (!preparation?.release) return;
     setBusy('Promoting the pre-release…');
     setProblem(null);
+    generation.current += 1;
+    const id = preparation.id;
+    const tag = preparation.release.tag;
     try {
-      const receipt = await callOperation('release.promote', { owner, repo, tag: preparation.release.tag });
-      setPreparation({ ...preparation, state: 'full_release', release: receipt.result });
+      const receipt = await callOperation('release.promote', { owner, repo, tag });
+      setPreparation(current => (current?.id === id && current.release?.tag === tag ?{ ...current, state: 'full_release', release: receipt.result } : current));
     } catch (failure) {
       fail(failure);
     } finally {
@@ -184,6 +219,7 @@ export function ReleaseStepper({ project, onFailure }: Props) {
     setBusy('Discarding the preparation…');
     setProblem(null);
     setConfirmingDiscard(false);
+    generation.current += 1;
     try {
       await callOperation('preparation.discard', { owner, repo, preparation_id: preparation.id });
       await readPlan();
@@ -221,7 +257,7 @@ export function ReleaseStepper({ project, onFailure }: Props) {
       )}
       {restart && (
         <p className="actions">
-          <button type="button" onClick={startAgain} disabled={busy !== null}>
+          <button type="button" onClick={() => void startAgain()} disabled={busy !== null}>
             Start again from the selection
           </button>
         </p>

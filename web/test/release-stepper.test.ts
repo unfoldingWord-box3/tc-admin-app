@@ -6,7 +6,7 @@ import { catalogMessage } from '@tc-admin/shared/schema';
 import type { Preparation } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import { hashRef, releaseHash } from '../src/portfolio-labels';
-import { RESTART_MESSAGE, STEPS, canDiscard, canPrepare, counts, releaseGate, removalsOf, selectionOf, statesFor, stepOf, versionToSend } from '../src/release-stepper';
+import { RESTART_MESSAGE, STEPS, canDiscard, canPrepare, counts, releaseGate, removalsOf, selectionOf, selectionToSend, spellVersion, statesFor, stepOf, versionToSend } from '../src/release-stepper';
 import type { Book } from '../src/release-stepper';
 
 const books: Book[] = [
@@ -47,12 +47,32 @@ describe('the selection (product spec §10)', () => {
     expect(versionToSend(' 2.0.0 ', 'v1.3.0')).toBe('v2.0.0');
     expect(versionToSend('V2.0.0', 'v1.3.0')).toBe('v2.0.0');
   });
+
+  test('R9: release.create gets the same v spelling as release.prepare; only a v before a digit counts as spelled', () => {
+    expect(spellVersion(' 2.0.1 ')).toBe('v2.0.1');
+    expect(spellVersion('V2.0.1')).toBe('v2.0.1');
+    expect(spellVersion('v2')).toBe('v2');
+    expect(spellVersion('2')).toBe(versionToSend('2', 'v1.3.0'));
+    expect(spellVersion('version 2')).toBe('vversion 2');
+  });
+
+  test('R4, ADR 0013: an Open Bible Stories plan with stories sends no selection to release.prepare; a Bible sends its own', () => {
+    const stories: Book[] = [
+      { id: '01', group: 'changed_released', selection: 'include' },
+      { id: '02', group: 'new', selection: 'include' },
+    ];
+    const obsSelection = selectionOf({ preview: { books: stories } });
+    expect(Object.keys(obsSelection)).toHaveLength(2);
+    expect(selectionToSend('obs', obsSelection)).toEqual({});
+    expect(selectionToSend('bible', selectionOf(plan))).toEqual(selectionOf(plan));
+  });
 });
 
 describe('the steps (domain model §6)', () => {
   test('every preparation state is at a step, and no preparation is the selection', () => {
     expect(STEPS).toHaveLength(5);
     expect(stepOf(null)).toBe('Select books');
+    expect(stepOf({ state: 'selecting' })).toBe('Review the snapshot');
     expect(stepOf({ state: 'snapshot_prepared' })).toBe('Review the snapshot');
     expect(stepOf({ state: 'health_checking' })).toBe('Health check');
     expect(stepOf({ state: 'health_blocked' })).toBe('Health check');
