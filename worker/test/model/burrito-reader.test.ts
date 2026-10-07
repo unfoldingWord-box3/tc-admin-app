@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { openArchive } from '../../src/door43/archive';
 import { newProjectFiles } from '../../src/model/burrito';
+import { OBS_SCOPE } from '../../src/model/obs-scope';
 import { MetadataError, administrativeIngredients, classifyIngredient, parseMetadata, readMetadata, unitIngredients } from '../../src/model/burrito-reader';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/', import.meta.url);
@@ -101,6 +102,7 @@ describe('what tC Admin writes', () => {
     const stories = parseMetadata(newProjectFiles({ ...base, project_type: 'obs', testament_scope: null, abbreviation: 'OBS', repo_name: 'id_obs' }, generator, new Date()).files[0]!.content);
     expect(stories).toMatchObject({ project_type: 'obs', flavor: 'textStories' });
     expect(unitIngredients(stories).size).toBe(0);
+    expect(stories.current_scope).toEqual(OBS_SCOPE);
     expect(administrativeIngredients(stories)).toHaveLength(1);
   });
 });
@@ -125,11 +127,22 @@ describe('classification and refusals', () => {
     expect(() => readMetadata({ format: 'scripture burrito', ingredients: {} })).toThrow(/no type.flavorType/);
     expect(() => readMetadata({ format: 'scripture burrito', type: { flavorType: { name: 'scripture', flavor: { name: 'textTranslation' } } } })).toThrow(/no ingredients/);
     expect(() => parseMetadata('{not json')).toThrow(/not JSON/);
-    // Lenient where the schema is optional: no identification, no languages, odd entries.
-    const sparse = readMetadata({ format: 'scripture burrito', type: { flavorType: { name: 'scripture', flavor: { name: 'textTranslation' } } }, ingredients: { 'a.usfm': 'not an entry', 'ingredients/MAT.usfm': { scope: { MAT: 'bad' }, size: -1 } } });
+    // Structure is refused, never coerced: a bad scope, a non-object entry, a primary that is not one id, bytes that are not UTF-8.
+    const type = { flavorType: { name: 'scripture', flavor: { name: 'textTranslation' } } };
+    expect(() => readMetadata({ format: 'scripture burrito', type, ingredients: { 'ingredients/MAT.usfm': { scope: { MAT: 'bad' } } } })).toThrow(/scope\.MAT is not an array of strings/);
+    expect(() => readMetadata({ format: 'scripture burrito', type, ingredients: { 'ingredients/MAT.usfm': { scope: 'MAT' } } })).toThrow(/scope is not an object/);
+    expect(() => readMetadata({ format: 'scripture burrito', type: { flavorType: { ...type.flavorType, currentScope: ['MAT'] } }, ingredients: {} })).toThrow(/currentScope is not an object/);
+    expect(() => readMetadata({ format: 'scripture burrito', type, ingredients: { 'a.usfm': 'not an entry' } })).toThrow(/ingredient "a.usfm" is not an object/);
+    expect(() => readMetadata({ format: 'scripture burrito', type, identification: { primary: { a: { x: {} }, b: { y: {} } } }, ingredients: {} })).toThrow(/exactly one authority/);
+    expect(() => parseMetadata(new Uint8Array([0x7b, 0xff, 0x7d]))).toThrow(/not UTF-8/);
+    const twice = readMetadata({ format: 'scripture burrito', type: { flavorType: { name: 'gloss', flavor: { name: 'textStories' } } }, ingredients: { 'ingredients/content/7.md': {}, 'ingredients/content/07.md': {} } });
+    expect(() => unitIngredients(twice)).toThrow(/both 07/);
+    // Lenient where the schema is optional: no identification, no languages, no scope, an odd size.
+    const sparse = readMetadata({ format: 'scripture burrito', type, ingredients: { 'ingredients/MAT.usfm': { scope: { MAT: [] }, size: -1 } } });
     expect(sparse.identification).toEqual({ name: {}, abbreviation: {}, description: {}, primary: null });
     expect(sparse.languages).toEqual([]);
     expect(sparse.generator).toBeNull();
+    expect(sparse.current_scope).toEqual({});
     expect(sparse.ingredients).toEqual([{ path: 'ingredients/MAT.usfm', size: null, md5: null, mime_type: null, role: null, scope: { MAT: [] }, kind: 'book', unit: 'mat' }]);
   });
 });

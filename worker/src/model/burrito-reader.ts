@@ -67,9 +67,14 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 const text = (value: unknown): string | null => (typeof value === 'string' && value ? value : null);
 const localized = (value: unknown): LocalizedText => (isRecord(value) ? Object.fromEntries(Object.entries(value).flatMap(([key, v]) => (typeof v === 'string' ? [[key, v]] : []))) : {});
 
-function scopeOf(value: unknown): Scope | null {
-  if (!isRecord(value)) return null;
-  return Object.fromEntries(Object.entries(value).map(([book, ranges]) => [book, Array.isArray(ranges) ? ranges.filter((range): range is string => typeof range === 'string') : []]));
+/** A scope as written, or `null` when absent. A scope present in any other shape is a `MetadataError`: coercing it could turn chapters into the whole book. */
+function scopeOf(value: unknown, where: string): Scope | null {
+  if (value === undefined || value === null) return null;
+  if (!isRecord(value)) throw new MetadataError(`${where} is not an object`);
+  for (const [book, ranges] of Object.entries(value)) {
+    if (!Array.isArray(ranges) || ranges.some(range => typeof range !== 'string')) throw new MetadataError(`${where}.${book} is not an array of strings`);
+  }
+  return value as Scope;
 }
 
 /** The story a path under `ingredients/content/` names (E36): `01.md` or `1.md` for story 1. */
@@ -108,9 +113,12 @@ export function readMetadata(document: unknown): ProjectMetadata {
 
   const identification = isRecord(document.identification) ? document.identification : {};
   let primary: ProjectMetadata['identification']['primary'] = null;
-  if (isRecord(identification.primary)) {
-    const [authority, ids] = Object.entries(identification.primary)[0] ?? [];
-    const [id, detail] = isRecord(ids) ? (Object.entries(ids)[0] ?? []) : [];
+  if (identification.primary !== undefined && identification.primary !== null) {
+    const authorities = isRecord(identification.primary) ? Object.entries(identification.primary) : [];
+    const [authority, ids] = authorities[0] ?? [];
+    const idEntries = isRecord(ids) ? Object.entries(ids) : [];
+    if (authorities.length !== 1 || idEntries.length !== 1) throw new MetadataError('identification.primary does not hold exactly one authority and one id (E44)');
+    const [id, detail] = idEntries[0]!;
     if (authority && id) primary = { authority, id, revision: text(isRecord(detail) ? detail.revision : null), timestamp: text(isRecord(detail) ? detail.timestamp : null) };
   }
 
@@ -124,8 +132,8 @@ export function readMetadata(document: unknown): ProjectMetadata {
   });
 
   const ingredients = Object.entries(document.ingredients).flatMap(([path, entry]): MetadataIngredient[] => {
-    if (!isRecord(entry)) return [];
-    const scope = scopeOf(entry.scope);
+    if (!isRecord(entry)) throw new MetadataError(`ingredient ${JSON.stringify(path)} is not an object`);
+    const scope = scopeOf(entry.scope, `ingredients[${JSON.stringify(path)}].scope`);
     const checksum = isRecord(entry.checksum) ? entry.checksum : {};
     return [
       {
@@ -148,7 +156,7 @@ export function readMetadata(document: unknown): ProjectMetadata {
     generator,
     identification: { name: localized(identification.name), abbreviation: localized(identification.abbreviation), description: localized(identification.description), primary },
     languages,
-    current_scope: scopeOf(type?.currentScope) ?? {},
+    current_scope: scopeOf(type?.currentScope, 'type.flavorType.currentScope') ?? {},
     ingredients,
     document,
   };
@@ -156,7 +164,12 @@ export function readMetadata(document: unknown): ProjectMetadata {
 
 /** The metadata from the file's bytes or text. Throws `MetadataError` for text that is not JSON. */
 export function parseMetadata(file: Uint8Array | string): ProjectMetadata {
-  const source = typeof file === 'string' ? file : new TextDecoder().decode(file);
+  let source: string;
+  try {
+    source = typeof file === 'string' ? file : new TextDecoder('utf-8', { fatal: true }).decode(file);
+  } catch {
+    throw new MetadataError('not UTF-8');
+  }
   let document: unknown;
   try {
     document = JSON.parse(source);
@@ -166,11 +179,14 @@ export function parseMetadata(file: Uint8Array | string): ProjectMetadata {
   return readMetadata(document);
 }
 
-/** The book or story ingredients by unit id, each once (the first listed wins). */
+/** The book or story ingredients by unit id. Two ingredients for one unit is a `MetadataError`: neither is dropped silently. */
 export function unitIngredients(metadata: ProjectMetadata): Map<string, MetadataIngredient> {
   const units = new Map<string, MetadataIngredient>();
   for (const ingredient of metadata.ingredients) {
-    if (ingredient.unit !== null && !units.has(ingredient.unit)) units.set(ingredient.unit, ingredient);
+    if (ingredient.unit === null) continue;
+    const first = units.get(ingredient.unit);
+    if (first) throw new MetadataError(`ingredients ${JSON.stringify(first.path)} and ${JSON.stringify(ingredient.path)} are both ${ingredient.unit}`);
+    units.set(ingredient.unit, ingredient);
   }
   return units;
 }
