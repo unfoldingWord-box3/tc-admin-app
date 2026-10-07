@@ -166,6 +166,42 @@ describe('a first release', () => {
   });
 });
 
+/** `id_obs1948`, the Open Bible Stories project tC Admin created on QA with no story (E47): its repository view and catalog entry as recorded, its tree the blobs the creating commit wrote. */
+const OBS_RUN = '2026-10-05/project-create/tc-admin-qa-org-obs/';
+const OBS = { owner: 'tc-admin-qa-org', repo: 'id_obs1948' };
+const storyless = () => {
+  const repo = recorded<Repo>(`${OBS_RUN}10-GET-repos_catalog-view.json`);
+  const head = repo.catalog.latest!.commit_sha;
+  const written = recorded<{ files: { path: string; sha: string }[] }>(`${OBS_RUN}08-POST-repos_tc-admin-qa-org_id_obs1948_contents.json`);
+  const tree: Tree = { sha: head, tree: written.files.map(file => ({ path: file.path, type: 'blob', sha: file.sha })), truncated: false };
+  return { repo, head, entries: { master: recorded<unknown>(`${OBS_RUN}11-GET-catalog_entry_master.json`) }, tree };
+};
+
+describe('an Open Bible Stories release (#84)', () => {
+  test('R4, ADR 0013: every story on the default branch is included and there is nothing to select; front and back matter are not stories', async () => {
+    const { repo, head, entries, tree } = storyless();
+    const stories = Array.from({ length: 50 }, (_, i) => ({ path: `ingredients/content/${String(i + 1).padStart(2, '0')}.md`, type: 'blob', sha: `${String(i + 1).padStart(2, '0')}${'0'.repeat(38)}` }));
+    const front = { path: 'ingredients/content/front.md', type: 'blob', sha: 'f'.repeat(40) };
+    const { fetch } = door43({ repo, entries, trees: { [head]: { ...tree, tree: [...tree.tree, ...stories, front] } } });
+    const plan = OPERATIONS['release.plan'].output.parse(await releasePlan(OBS, context(fetch)));
+    expect(plan.preview.books).toHaveLength(50);
+    expect(plan.preview.books.every(story => story.group === 'new' && story.selection === 'include')).toBe(true);
+    expect(plan.preview.books.map(story => story.id).slice(0, 2)).toEqual(['01', '02']);
+    expect(plan.preview.removals).toEqual([]);
+    expect(plan.preview.version).toEqual({ baseline_tag: null, proposed: 'v1.0.0', rule_applied: 'first' });
+    expect(stored(plan.id).payload.project_type).toBe('obs');
+  });
+
+  test('R4: a project with no story on its default branch has nothing to release and is not_releasable, and no plan is stored', async () => {
+    const { repo, head, entries, tree } = storyless();
+    const { fetch } = door43({ repo, entries, trees: { [head]: tree } });
+    const error = (await failure(releasePlan(OBS, context(fetch))))!;
+    expect(error.code).toBe('not_releasable');
+    expect(error.message).toBe('This project has no story on its default branch yet. Add stories before releasing.');
+    expect(kv.entries.size).toBe(0);
+  });
+});
+
 describe('what a plan refuses', () => {
   test('W2: a Resource Container project is not releasable, with its reason, before any tree is read', async () => {
     const { fetch, calls } = door43({ repo: recorded<Repo>('2026-10-07/repos/bahtraku__id_tb1.json.gz'), entries: {}, trees: {} });

@@ -67,12 +67,14 @@ async function metadataOf(archive: Archive, ref: string): Promise<ProjectMetadat
  * branch has it and carried forward only when the release has it, and at least
  * one book is included or carried forward. Open Bible Stories: no selection is
  * sent; every story on the default branch is included, one the branch no longer
- * has is left out (ADR 0013).
+ * has is left out, and the branch needs at least one story (ADR 0013).
  */
 export function confirmedSelection(payload: ReleasePlanPayload, sent: Readonly<Record<string, SelectionState>>): Record<string, SelectionState> {
   const ids = new Set(payload.candidates.map(candidate => candidate.id));
   if (payload.project_type === 'obs') {
     if (Object.keys(sent).length > 0) throw validation('selection', 'An Open Bible Stories release takes the whole default branch; send no selection.');
+    // `release.plan` refuses a branch with no story; a plan stored before it did is refused here, before any write (R4).
+    if (!payload.candidates.some(candidate => candidate.default_branch)) throw new CatalogError('invalid_selection');
     return Object.fromEntries(payload.candidates.map(candidate => [candidate.id, candidate.default_branch ? 'include' : 'leave_out']));
   }
   for (const id of Object.keys(sent)) if (!ids.has(id)) throw validation('selection', `${id} is not a book of this plan.`);

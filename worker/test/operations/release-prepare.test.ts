@@ -394,3 +394,109 @@ describe('the snapshot model', () => {
     expect(commitsForAll([10, null, 10])).toBe(3);
   });
 });
+
+describe('an Open Bible Stories release (#84)', () => {
+  // `id_obs1948` as created on QA (E47), its default branch holding the files of en_obs v9's archive (E36).
+  const OBS = { owner: 'tc-admin-qa-org', repo: 'id_obs1948' };
+  const OBS_RUN = '2026-10-05/project-create/tc-admin-qa-org-obs/';
+  const obsView = recorded<Repo>(`${OBS_RUN}10-GET-repos_catalog-view.json`);
+  const OBS_SHA = obsView.catalog.latest!.commit_sha;
+  const obsZip = new Uint8Array(readFileSync(new URL('../../../fixtures/door43/qa.door43.org/2026-10-01/sb-archives/unfoldingWord__en_obs__v9.zip', import.meta.url)));
+
+  /** The default branch as an archive and a tree, its metadata carrying a stale size and md5 for story 01, as real repositories do (E5), and no entry for the stories `unlisted` names. */
+  async function obsBranch(unlisted: readonly string[] = []) {
+    const archive = openArchive(obsZip);
+    const entries: [string, string][] = [['en_obs/', '']];
+    const blobs: Tree['tree'] = [];
+    for (const entry of archive.entries) {
+      let bytes = await archive.bytes(entry.path);
+      if (entry.path === 'metadata.json') {
+        const metadata = JSON.parse(decoder.decode(bytes)) as { ingredients: Record<string, object> };
+        metadata.ingredients['ingredients/content/01.md'] = { ...metadata.ingredients['ingredients/content/01.md'], size: 1, checksum: { md5: 'stale' } };
+        for (const path of unlisted) delete metadata.ingredients[path];
+        bytes = encoder.encode(`${JSON.stringify(metadata, null, 2)}\n`);
+      }
+      entries.push([`en_obs/${entry.path}`, decoder.decode(bytes)]);
+      blobs.push({ path: entry.path, type: 'blob', sha: md5(bytes).padEnd(40, '0'), size: bytes.length });
+    }
+    return { zip: storedZip(entries), tree: { sha: OBS_SHA, tree: blobs, truncated: false } satisfies Tree };
+  }
+
+  /** A Door43 of that project: reads from the branch above, writes answered as QA did (E27) and recorded. */
+  function obsDoor43(branch: Awaited<ReturnType<typeof obsBranch>>) {
+    const writes: { method: string; path: string; body: Record<string, unknown> }[] = [];
+    const base = `/api/v1/repos/${OBS.owner}/${OBS.repo}`;
+    const fetch: Fetch = async (url, init) => {
+      const { pathname } = new URL(url);
+      const method = init?.method ?? 'GET';
+      if (method !== 'GET') {
+        writes.push({ method, path: pathname, body: JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown> });
+        if (pathname === `${base}/branches`) return Response.json({ name: (writes.at(-1)!.body as { new_branch_name: string }).new_branch_name, commit: { id: OBS_SHA } }, { status: 201 });
+        if (pathname === `${base}/contents`) return Response.json({ commit: { sha: 'e'.repeat(40), html_url: `https://qa.door43.org/c/${'e'.repeat(40)}`, author: { date: '2026-10-07T15:00:00Z' } }, files: [] }, { status: 201 });
+        return new Response('', { status: 404 });
+      }
+      if (pathname === '/api/v1/user') return Response.json(user);
+      if (pathname === base) return Response.json({ ...obsView, permissions: { push: true, admin: false, pull: true } });
+      if (pathname === `/api/v1/catalog/entry/${OBS.owner}/${OBS.repo}/master`) return Response.json(recorded<unknown>(`${OBS_RUN}11-GET-catalog_entry_master.json`));
+      if (pathname === `${base}/git/trees/${OBS_SHA}`) return Response.json(branch.tree);
+      if (pathname === `${base}/sb/${OBS_SHA}.zip`) return new Response(branch.zip);
+      return new Response('', { status: 404 });
+    };
+    return { fetch, writes };
+  }
+
+  test("R10, R1, R3: the snapshot starts from the default-branch head and writes only the merged metadata, so its ingredients/content/ is the default branch's byte for byte, and every ingredient carries the size and md5 of its file, recomputed", async () => {
+    const branch = await obsBranch();
+    const plan = await releasePlan(OBS, context(obsDoor43(branch).fetch));
+    expect(plan.preview.books).toHaveLength(50);
+    const live = obsDoor43(branch);
+    const input = OPERATIONS['release.prepare'].input.parse({ ...OBS, plan_id: plan.id, selection: {}, unknown_included: [], version: null });
+    const receipt = OPERATIONS['release.prepare'].output.parse(await releasePrepare(input, context(live.fetch)));
+    // The branch is the default branch's head, and the one commit on it touches nothing under ingredients/ (ADR 0013).
+    expect(live.writes.map(write => `${write.method} ${write.path.split('/').pop()}`)).toEqual(['POST branches', 'POST contents']);
+    expect(live.writes[0]!.body).toEqual({ new_branch_name: 'temp-tca-release/v1.0.0', old_ref_name: OBS_SHA });
+    expect((live.writes[1]!.body.files as { path: string; operation: string }[]).map(file => `${file.operation} ${file.path}`)).toEqual(['upload metadata.json']);
+    const content = branch.tree.tree.map(entry => entry.path).filter(path => path.startsWith('ingredients/content/')).sort();
+    expect(content).toHaveLength(52);
+    expect(receipt.result.snapshot!.files.filter(file => file.path.startsWith('ingredients/content/')).map(file => file.path).sort()).toEqual(content);
+    expect(receipt.result.snapshot!.files.every(file => file.source === 'default_branch')).toBe(true);
+    expect(receipt.result.version).toEqual({ baseline_tag: null, proposed: 'v1.0.0', confirmed: 'v1.0.0' });
+    // Every ingredient's size and md5 are those of the bytes on the branch, the stale story 01 included (E5).
+    const metadata = JSON.parse(decodeContent(fileOf(live.writes[1]!.body, 'metadata.json')!)) as { ingredients: Record<string, { size: number; checksum: { md5: string } }> };
+    const files = openArchive(branch.zip);
+    expect(Object.keys(metadata.ingredients)).toHaveLength(53);
+    for (const [path, entry] of Object.entries(metadata.ingredients)) {
+      const bytes = await files.bytes(path);
+      expect({ path, size: entry.size, md5: entry.checksum.md5 }).toEqual({ path, size: bytes.length, md5: md5(bytes) });
+    }
+    expect(metadata.ingredients['ingredients/content/01.md']!.checksum.md5).not.toBe('stale');
+  });
+
+  test('R10, H1: a story file the default branch\'s metadata does not list is left unlisted, not refused: the prepare writes only the metadata, with no entry for it and the listed stories\' sizes and md5s recomputed (decided 7 October 2026, Q32)', async () => {
+    const unlisted = ['ingredients/content/02.md', 'ingredients/content/03.md'];
+    const branch = await obsBranch(unlisted);
+    const plan = await releasePlan(OBS, context(obsDoor43(branch).fetch));
+    // The plan reads the stories from the tree, so the unlisted ones are counted and included.
+    expect(plan.preview.books.filter(story => story.selection === 'include')).toHaveLength(50);
+    const live = obsDoor43(branch);
+    const input = OPERATIONS['release.prepare'].input.parse({ ...OBS, plan_id: plan.id, selection: {}, unknown_included: [], version: null });
+    const receipt = await releasePrepare(input, context(live.fetch));
+    expect(receipt.result.state).toBe('health_checking');
+    // The story files are already on the branch from the default-branch head: none is written, only the metadata.
+    expect((live.writes[1]!.body.files as { path: string; operation: string }[]).map(file => `${file.operation} ${file.path}`)).toEqual(['upload metadata.json']);
+    const metadata = JSON.parse(decodeContent(fileOf(live.writes[1]!.body, 'metadata.json')!)) as { ingredients: Record<string, { size: number; checksum: { md5: string } }> };
+    for (const path of unlisted) expect(metadata.ingredients).not.toHaveProperty([path]);
+    expect(Object.keys(metadata.ingredients)).toHaveLength(51);
+    const files = openArchive(branch.zip);
+    for (const [path, entry] of Object.entries(metadata.ingredients)) {
+      const bytes = await files.bytes(path);
+      expect({ path, size: entry.size, md5: entry.checksum.md5 }).toEqual({ path, size: bytes.length, md5: md5(bytes) });
+    }
+  });
+
+  test('R4: a stored Open Bible Stories plan with no story on the default branch is invalid_selection, before any write', () => {
+    const lost = { id: '01', group: 'unchanged' as const, selection: 'leave_out' as const, default_branch: null, baseline: { id: '01', path: 'ingredients/content/01.md', title: '', sha: 'a', size: 1 } };
+    expect(() => confirmedSelection({ project_type: 'obs', candidates: [lost] } as never, {})).toThrow(expect.objectContaining({ code: 'invalid_selection' }));
+    expect(() => confirmedSelection({ project_type: 'obs', candidates: [] } as never, {})).toThrow(expect.objectContaining({ code: 'invalid_selection' }));
+  });
+});
