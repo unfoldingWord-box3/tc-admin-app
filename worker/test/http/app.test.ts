@@ -167,6 +167,28 @@ describe('routing', () => {
     ]);
   });
 
+  test('project.create.retry takes its project from the path and its plan from the body, and refuses an Idempotency-Key that names another plan (#31)', async () => {
+    const seen: unknown[] = [];
+    const built = HANDLERS['project.create.retry'];
+    HANDLERS['project.create.retry'] = (async (input: unknown) => (seen.push(input), { not: 'a receipt' })) as never;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const retry = (key: string) =>
+      call('/api/projects/tc-admin-qa-org/id_tcap/setup/retry', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', origin: 'https://tc-admin.test', [IDEMPOTENCY_HEADER]: key },
+        body: JSON.stringify({ plan_id: 'p1' }),
+      });
+    try {
+      expect(OperationErrorShape.parse(await (await retry('p2')).json()).code).toBe('validation_failed');
+      expect(seen).toEqual([]);
+      await retry('p1');
+      expect(seen).toEqual([{ owner: 'tc-admin-qa-org', repo: 'id_tcap', plan_id: 'p1' }]);
+    } finally {
+      if (built) HANDLERS['project.create.retry'] = built;
+      else delete HANDLERS['project.create.retry'];
+    }
+  });
+
   test('portfolio.list without a session is session_expired, and Door43 is not asked', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const fetch = vi.fn<typeof globalThis.fetch>();

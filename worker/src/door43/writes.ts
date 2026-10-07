@@ -3,7 +3,8 @@
 // every committing operation uses (W5). Each is sent once with the session's
 // token and nothing else, so Door43 attributes it to the signed-in manager
 // (A3) and nothing is retried (X1). There is no repository delete here and
-// there will be none (W4). Door43's shapes stop in this module. Branches,
+// there will be none (W4). The retry of a first commit (#31) reads a created
+// repository's state here too. Door43's shapes stop in this module. Branches,
 // tags, and releases join with #34 and #39.
 
 import { CatalogError } from '@tc-admin/shared/schema';
@@ -75,6 +76,34 @@ function repositoryShape(body: unknown): CreatedRepository | null {
     url: repo.html_url,
     default_branch: typeof repo.default_branch === 'string' && repo.default_branch ? repo.default_branch : DEFAULT_BRANCH,
     permissions: { push: repo.permissions?.push === true, admin: repo.permissions?.admin === true },
+  };
+}
+
+/**
+ * A repository as the retry of a first commit reads it (#31): the repository,
+ * its owner, whether it has no commit yet, and when Door43 created it. Door43
+ * answers `empty: true` for a repository created without a commit and `false`
+ * once the contents endpoint has committed to it, and `created_at` to the
+ * second (E45 fixtures `07-POST-orgs_…_repos.json` and `10-GET-repos_catalog-view.json`).
+ * Read strictly: `empty` is `null` unless Door43 said `true` or `false`.
+ */
+export interface RepositoryState {
+  repository: CreatedRepository;
+  owner: string | null;
+  empty: boolean | null;
+  created_at: string | null;
+}
+
+/** `GET /repos/{owner}/{repo}` for the retry of a first commit; a missing repository is `not_found`. */
+export async function readRepositoryState(client: Door43Client, owner: string, repo: string): Promise<RepositoryState> {
+  const body = await readDoor43<{ owner?: { login?: unknown } | null; empty?: unknown; created_at?: unknown } | null>(client, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
+  const repository = repositoryShape(body);
+  if (!repository) throw new CatalogError('door43_unavailable', { details: { reason: 'unexpected repository shape', owner, repo } });
+  return {
+    repository,
+    owner: typeof body?.owner?.login === 'string' && body.owner.login ? body.owner.login : null,
+    empty: typeof body?.empty === 'boolean' ? body.empty : null,
+    created_at: typeof body?.created_at === 'string' && body.created_at ? body.created_at : null,
   };
 }
 

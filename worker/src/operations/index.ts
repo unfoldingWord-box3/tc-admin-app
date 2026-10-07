@@ -10,6 +10,7 @@ import { preparationDiscard } from './preparation-discard';
 import { preparationRead } from './preparation-read';
 import { projectCreateApply } from './project-create-apply';
 import { projectCreatePlan } from './project-create-plan';
+import { projectCreateRetry } from './project-create-retry';
 import { releaseLookup } from './release-lookup';
 import { releaseCreate } from './release-create';
 import { releasePlan } from './release-plan';
@@ -26,6 +27,7 @@ export const HANDLERS: OperationHandlers = {
   'portfolio.list': portfolioList,
   'project.create.plan': projectCreatePlan,
   'project.create.apply': projectCreateApply,
+  'project.create.retry': projectCreateRetry,
   'language.list': languageList,
   'owner.list': ownerList,
   'release.lookup': releaseLookup,
