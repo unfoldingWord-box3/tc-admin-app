@@ -133,9 +133,9 @@ describe('preparation.discard (#58)', () => {
   });
 
   test('a preparation never pushed, or already discarded, is discarded with no Door43 write', async () => {
-    await put(prepared({ state: 'selecting', snapshot: null }));
+    await put(prepared({ state: 'selecting', snapshot: null, last_error: { code: 'door43_unavailable', message: 'Door43 did not answer.', retryable: true, next_action: 'try again', request_id: 'r', details: {}, invariant: null } }));
     const never = door43();
-    expect((await discard(never.context)).result.state).toBe('discarded');
+    expect((await discard(never.context)).result).toMatchObject({ state: 'discarded', last_error: null });
     expect(never.writes).toEqual([]);
     expect((await get())?.state).toBe('discarded');
     kv = new MemoryKV();
@@ -172,5 +172,13 @@ describe('preparation.discard (#58)', () => {
     const absent = door43();
     expect((await discard(absent.context)).result.state).toBe('discarded');
     expect(absent.writes).toHaveLength(1);
+  });
+
+  test('R6, R7: an unconfirmed attempt whose source then moved (restart_required) is still looked up; a release found on the snapshot commit is already_released, recorded, and the branch is not deleted', async () => {
+    await put(prepared({ state: 'restart_required', last_error: { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'look the tag up', request_id: 'r', details: {}, invariant: 'R6' } }));
+    const found = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: 'e000000000000000000000000000000000000001' }) });
+    expect((await failure(discard(found.context)))?.code).toBe('already_released');
+    expect(found.writes).toEqual([]);
+    expect(await get()).toMatchObject({ state: 'full_release', release: { tag: 'v1.3.0', prerelease: false }, last_error: null });
   });
 });

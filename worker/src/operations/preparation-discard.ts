@@ -48,13 +48,14 @@ export async function preparationDiscard(input: ParsedInput<'preparation.discard
   // Already discarded, or never pushed: nothing on Door43 to delete.
   if (stored.state === 'discarded') return receipt(fresh(stored), []);
   if (!stored.snapshot) {
-    const result = fresh({ ...stored, state: 'discarded', history: [...stored.history, { at: at(), from: stored.state, to: 'discarded', event: 'preparation.discard' }] });
+    const result = fresh({ ...stored, state: 'discarded', last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: 'discarded', event: 'preparation.discard' }] });
     await context.plans.putPreparation(owner, repo, id, result);
     return receipt(result, []);
   }
 
-  if (stored.state === 'retryable_failure' && stored.last_error?.code === 'release_outcome_unknown') {
+  if (stored.last_error?.code === 'release_outcome_unknown') {
     // The last release attempt was not confirmed: a release Door43 made of this snapshot makes it released, not discardable (R6, R7).
+    // Whatever the state: a moved source (`restart_required`) keeps the unconfirmed attempt's error, and its release may still exist.
     const tag = stored.version.confirmed ?? id;
     const found = await readReleaseByTag(client, owner, repo, tag);
     if (found && found.target_sha === stored.snapshot.commit_sha) {
