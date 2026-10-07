@@ -172,6 +172,7 @@ describe('what the client refuses', () => {
     expect(error).toBeInstanceOf(CatalogError);
     // The inflater's own error rides along as the cause, as the download path keeps it (#96 follow-up).
     expect((error as CatalogError).cause).toBeInstanceOf(Error);
+    expect((error as CatalogError).cause).not.toBeInstanceOf(CatalogError);
     expect((error as CatalogError).details.reason).toBe('malformed archive: deflate data the inflater refused');
   });
 
