@@ -194,4 +194,13 @@ describe('preparation.read (#36)', () => {
     expect(at('checking')).toBe('health_checking');
     expect((['failing', 'never_checked', 'door43_unavailable', 'health_error', 'unsupported'] as const).map(at)).toEqual(Array(5).fill('health_blocked'));
   });
+  test('R5: a repository whose catalog names no default-branch head is unknown, not a move: the preparation is not restarted and the health is read as usual (decided 7 October 2026)', async () => {
+    await put(stored());
+    const { context, requests } = door43(json(health.success), '');
+    const result = await read(context);
+    expect(result.state).toBe('ready_for_release');
+    expect(result.history.some(entry => entry.to === 'restart_required')).toBe(false);
+    expect(requests.filter(path => path.endsWith('/healthcheck'))).toHaveLength(1);
+  });
+
 });

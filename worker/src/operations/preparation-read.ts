@@ -45,8 +45,9 @@ export async function preparationRead(input: ParsedInput<'preparation.read'>, co
   if (!BOUND.has(stored.state)) return fresh(stored);
 
   // R5: the binding is to the default-branch head the plan read; a head that moved means the release must restart.
+  // A head Door43 does not name (no catalog `latest` stage) is unknown, not a move: nothing is written (decided 7 October 2026 by Rich).
   const head = repositoryRefs(repository).default_branch?.sha ?? null;
-  if (head !== stored.bound_to.default_branch_sha) {
+  if (head !== null && head !== stored.bound_to.default_branch_sha) {
     const restarted = fresh({ ...stored, state: 'restart_required', history: [...stored.history, { at, from: stored.state, to: 'restart_required', event: `default branch moved to ${head ?? 'none'}` }] });
     await context.plans.putPreparation(owner, repo, id, restarted);
     return restarted;
