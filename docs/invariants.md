@@ -21,7 +21,7 @@ Groups: **R** release safety, **H** health and coverage truthfulness, **A** acce
 Changes on the default branch enter a release snapshot only through books the manager set to include. An included book comes from the default branch; a carried-forward book is the file from the release tag, untouched.
 Source: product spec §10 snapshot rules; ADR 0003, ADR 0005.
 Enforced in: `worker/src/operations/release-prepare` (snapshot assembly); `worker/src/model/candidates` (source of each file).
-Verified by: contract test with a fixture where an unselected released book differs between tag and default branch; the snapshot must contain the tag version byte for byte.
+Verified by: contract test with a fixture where an unselected released book differs between tag and default branch; the snapshot must contain the tag version byte for byte. So far: the `R1:` test in `worker/test/model/classify.test.ts` (a listed file without a scope, a root file, and a `.gitea/` file are administrative, computed from the one ref given; an unlisted file under `ingredients/` is unknown and never silently carried, S5).
 Issues: #33, #34.
 
 ### R2 — Removal is explicit and listed
