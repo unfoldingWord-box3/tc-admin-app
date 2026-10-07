@@ -301,6 +301,13 @@ export function mergeReleaseMetadata(merge: ReleaseMerge): MergedRelease {
       scope[code] = [...(releasedEntry.get(unit)?.scope?.[code] ?? [])];
     }
     flavorType.currentScope = scope;
+    // The names travel with the books: `localizedNames` keeps the released books' entries only, so a removed or left-out book
+    // leaves the names as it leaves the ingredients and the scope (Q7, Q8); an entry that is no book code is kept as it is.
+    const names = document.localizedNames as Record<string, unknown> | undefined;
+    if (names && typeof names === 'object') {
+      const codes = new Set(released.map(unit => unit.toUpperCase()));
+      document.localizedNames = Object.fromEntries(Object.entries(names).filter(([key]) => codes.has(key.toUpperCase()) || !BIBLE_BOOKS.includes(key.toLowerCase())));
+    }
   }
 
   const metadata: Record<string, unknown> = { ...document, ingredients: Object.fromEntries(entries) };
