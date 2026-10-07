@@ -8,6 +8,7 @@
 // included only after explicit confirmation (S5). Door43 checks that listed
 // ingredients exist, not the reverse, so this is tC Admin's rule. Pure.
 
+import { MetadataError, unitIngredients } from './burrito-reader';
 import type { ProjectMetadata } from './burrito-reader';
 
 /** A file of a ref, as its git tree lists it (E19) or its archive holds it. */
@@ -61,7 +62,14 @@ export function roleOf(path: string, metadata: ProjectMetadata): Pick<Classified
 export function classifyFiles(metadata: ProjectMetadata, paths: readonly RefPath[]): Classification {
   const files = paths.map(({ path }): ClassifiedFile => ({ path, ...roleOf(path, metadata) }));
   const units = new Map<string, ClassifiedFile>();
-  for (const file of files) if (file.unit !== null && !units.has(file.unit)) units.set(file.unit, file);
+  // The reader refuses metadata that lists two ingredients for one unit, so a unit is held by at most one on-disk file here; a second is refused, never kept or dropped (bench round 1).
+  unitIngredients(metadata);
+  for (const file of files) {
+    if (file.unit === null) continue;
+    const held = units.get(file.unit);
+    if (held) throw new MetadataError(`${file.unit} is held by two files, ${held.path} and ${file.path}`);
+    units.set(file.unit, file);
+  }
   const onDisk = new Set(files.map(file => file.path));
   return {
     files,
