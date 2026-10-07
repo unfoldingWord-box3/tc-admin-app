@@ -50,8 +50,9 @@ export function ReleaseView({ project, tag, onFailure }: Props) {
       if (failure instanceof ApiError && failure.error.code === 'session_expired') onFailure(failure);
       else {
         setProblem(failureMessage(failure));
-        // Door43 may have applied an edit whose answer was lost: the release is read again, nothing is sent twice (X1).
-        void read();
+        // Door43 may have applied an edit whose answer was lost: the release is read again, and the button stays
+        // disabled until that read settles, so nothing is sent twice (X1).
+        await read();
       }
     } finally {
       setBusy(false);
