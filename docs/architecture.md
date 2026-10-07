@@ -306,6 +306,7 @@ web/
   src/api/client.ts  typed client: one call per operation, from shared/schema
   src/               the application shell; portfolio, wizard, stepper, design system (#8)
   src/CreateProject.tsx, src/create-project.ts  the creation wizard, and its form logic, owners, language search, and field errors as pure functions (#28)
+  src/ReleaseStepper.tsx, src/release-stepper.ts  the release stepper: one operation per step, the selection from the plan's defaults, the health poll, the warnings acknowledged, the release and its promotion, the discard; its logic as pure functions (#41)
   src/ProjectView.tsx  one project's report, shown from the portfolio and after creation
   test/
 fixtures/

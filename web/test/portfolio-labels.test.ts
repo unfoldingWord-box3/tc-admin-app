@@ -45,7 +45,7 @@ describe('opening a project', () => {
   test('the address names the open project and reads back', () => {
     const hash = projectHash({ ref: { owner: 'team a', repo: 'en/obs', id: 1, url: '' } });
     expect(hash).toBe('#/team%20a/en%2Fobs');
-    expect(hashRef(hash)).toEqual({ owner: 'team a', repo: 'en/obs' });
+    expect(hashRef(hash)).toEqual({ owner: 'team a', repo: 'en/obs', view: 'project' });
     expect(hashRef('')).toBeNull();
     expect(hashRef('#/only-owner')).toBeNull();
     expect(hashRef('#/%E0%A4/x')).toBeNull();

@@ -1,0 +1,138 @@
+{
+  "format": "scripture burrito",
+  "meta": {
+    "version": "1.0.0",
+    "category": "source",
+    "generator": {
+      "softwareName": "tC Admin",
+      "softwareVersion": "0.1.0",
+      "userId": "dcs::tc-admin-qa",
+      "userName": "tc-admin-qa"
+    },
+    "defaultLocale": "en",
+    "dateCreated": "2026-10-07T15:46:37.706Z",
+    "normalization": "NFC"
+  },
+  "idAuthorities": {
+    "dcs": {
+      "id": "https://git.door43.org",
+      "name": {
+        "en": "Door43 Content Service"
+      }
+    }
+  },
+  "identification": {
+    "name": {
+      "en": "tC Admin release probe 2026-10-07 1546"
+    },
+    "abbreviation": {
+      "en": "tcar1546"
+    },
+    "primary": {
+      "dcs": {
+        "tc-admin-qa/id_tcar1546": {
+          "revision": "master",
+          "timestamp": "2026-10-07T15:46:37.706Z"
+        }
+      }
+    }
+  },
+  "confidential": false,
+  "languages": [
+    {
+      "tag": "id",
+      "name": {
+        "en": "Bahasa Indonesia"
+      },
+      "scriptDirection": "ltr"
+    }
+  ],
+  "type": {
+    "flavorType": {
+      "name": "scripture",
+      "flavor": {
+        "name": "textTranslation",
+        "projectType": "standard",
+        "translationType": "firstTranslation",
+        "audience": "common",
+        "usfmVersion": "3.0"
+      },
+      "currentScope": {
+        "MAT": [],
+        "JHN": []
+      }
+    }
+  },
+  "copyright": {
+    "licenses": [
+      {
+        "ingredient": "ingredients/license.md"
+      }
+    ]
+  },
+  "ingredients": {
+    "ingredients/MAT.usfm": {
+      "checksum": {
+        "md5": "c1250bb78317f626c59cfe3b99fedaa3"
+      },
+      "mimeType": "text/x-usfm",
+      "size": 148038,
+      "scope": {
+        "MAT": []
+      }
+    },
+    "ingredients/JHN.usfm": {
+      "checksum": {
+        "md5": "e46a32edfbdbf8747c83bbec148092d1"
+      },
+      "mimeType": "text/x-usfm",
+      "size": 121348,
+      "scope": {
+        "JHN": []
+      }
+    },
+    "ingredients/license.md": {
+      "checksum": {
+        "md5": "0bf7ef1533f6486c8362dcb8bc19bdd1"
+      },
+      "mimeType": "text/markdown",
+      "size": 18535,
+      "role": "x-license"
+    }
+  },
+  "localizedNames": {
+    "MAT": {
+      "short": {
+        "id": "Matius"
+      },
+      "long": {
+        "id": "Injil Matius"
+      },
+      "abbr": {
+        "id": "Mat"
+      }
+    },
+    "JHN": {
+      "short": {
+        "id": "Yohanes"
+      },
+      "long": {
+        "id": "Injil Yohanes"
+      },
+      "abbr": {
+        "id": "Yoh"
+      }
+    },
+    "MRK": {
+      "short": {
+        "id": "Markus"
+      },
+      "long": {
+        "id": "Injil Markus"
+      },
+      "abbr": {
+        "id": "Mrk"
+      }
+    }
+  }
+}
