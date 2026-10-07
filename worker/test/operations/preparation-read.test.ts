@@ -1,8 +1,9 @@
 // `preparation.read` (#36): the stored preparation, the health of its branch
 // read from Door43 while it waits, and the state the health moves it to (H1,
-// H2); a moved default branch makes it restart_required first (R5); a
-// preparation past the health check, or not yet pushed, is answered as
-// stored with no Door43 read.
+// H2); a moved default branch makes it restart_required first (R5); the
+// repository read is the caller's access check in every state; a preparation
+// past the health check, or not yet pushed, is answered as stored with no
+// health read.
 import { CatalogError, Preparation } from '@tc-admin/shared/schema';
 import { beforeEach, describe, expect, test } from 'vitest';
 import type { Fetch } from '../../src/door43/api';
@@ -159,20 +160,25 @@ describe('preparation.read (#36)', () => {
     expect((await get())?.state).toBe('restart_required');
   });
 
-  test('a preparation that is ready, released, failed before the push, or discarded is answered as stored: no health read, and no Door43 read at all once it is released', async () => {
-    for (const state of ['ready_for_release', 'retryable_failure', 'snapshot_prepared'] as const) {
+  test('a preparation that is ready, released, failed before the push, restart-required, or discarded is answered as stored: the repository read, no health read', async () => {
+    for (const state of ['ready_for_release', 'retryable_failure', 'snapshot_prepared', 'pre_release', 'full_release', 'discarded', 'restart_required'] as const) {
       kv = new MemoryKV();
       await put(stored({ state }));
       const { context, requests } = door43(json(health.warning));
       expect((await read(context)).state).toBe(state);
       expect(requests).toEqual(['/api/v1/repos/bahtraku/Perjanjian-Baru-Pendau']);
     }
-    for (const state of ['pre_release', 'full_release', 'discarded', 'restart_required'] as const) {
+  });
+
+  test('a caller whose token cannot see the repository gets not_found in every state, and the stored preparation is not returned or changed', async () => {
+    for (const state of ['health_checking', 'ready_for_release', 'pre_release', 'full_release', 'discarded', 'restart_required'] as const) {
       kv = new MemoryKV();
       await put(stored({ state }));
-      const { context, requests } = door43(json(health.warning));
-      expect((await read(context)).state).toBe(state);
-      expect(requests).toEqual([]);
+      const { context, requests } = door43(json(health.success));
+      const hidden: Fetch = async url => (requests.push(new URL(url).pathname), Response.json({ message: 'Not Found' }, { status: 404 }));
+      expect((await failure(read({ ...context, door43: { ...context.door43!, fetch: hidden } })))?.code).toBe('not_found');
+      expect(requests).toEqual(['/api/v1/repos/bahtraku/Perjanjian-Baru-Pendau']);
+      expect((await get())?.state).toBe(state);
     }
   });
 
@@ -188,4 +194,13 @@ describe('preparation.read (#36)', () => {
     expect(at('checking')).toBe('health_checking');
     expect((['failing', 'never_checked', 'door43_unavailable', 'health_error', 'unsupported'] as const).map(at)).toEqual(Array(5).fill('health_blocked'));
   });
+  test('R5: a repository whose catalog names no default-branch head is unknown, not a move: the preparation is not restarted and the health is read as usual (decided 7 October 2026)', async () => {
+    await put(stored());
+    const { context, requests } = door43(json(health.success), '');
+    const result = await read(context);
+    expect(result.state).toBe('ready_for_release');
+    expect(result.history.some(entry => entry.to === 'restart_required')).toBe(false);
+    expect(requests.filter(path => path.endsWith('/healthcheck'))).toHaveLength(1);
+  });
+
 });
