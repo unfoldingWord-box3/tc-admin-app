@@ -26,7 +26,7 @@ export interface UploadedFile {
 
 /**
  * Why a file identifies nothing, for the manager's choice:
- * `header_name_mismatch`, the `\id` line names a book the name does not;
+ * `header_name_mismatch`, the `\id` line names a book the name does not, or the name names two books;
  * `no_book_in_header`, a USFM file whose first marker is not `\id` with a book code;
  * `no_book_in_name`, a USFM file whose name names no book to check the header against;
  * `not_a_book_or_story`, neither a USFM file in a Bible project nor a numbered
@@ -73,15 +73,20 @@ export function headerBook(header: Uint8Array): string | null {
   return match ? bookId(match[1]!) : null;
 }
 
+/** A Resource Container book name's `<NN>-<CODE>` pair (E14), as in `41-MAT`. */
+const RC_PAIR = /(?<![A-Za-z0-9])\d{2}-([A-Za-z0-9]+)/g;
+
 /**
- * The books a USFM file's name names: each token of the base name without its
- * extension, split at anything but a letter or digit, that is a book code in any
- * case. `MAT.usfm`, `41-MAT.usfm`, `en_ult_41-MAT.usfm`, and `mat.usfm` each name
- * Matthew; `A0-FRT.usfm` names no book.
+ * The books a USFM file's name names. When the base name without its extension holds
+ * Resource Container `<NN>-<CODE>` pairs naming books, those books; else each token,
+ * split at anything but a letter or digit, that is a book code in any case.
+ * `MAT.usfm`, `41-MAT.usfm`, `en_ult_41-MAT.usfm`, `dan_ult_41-MAT.usfm`, and
+ * `mat.usfm` each name Matthew only; `RUT-JON.usfm` names two books; `A0-FRT.usfm` none.
  */
 export function nameBooks(name: string): Set<string> {
   const stem = baseName(name).replace(USFM_NAME, '');
-  return new Set(stem.split(/[^A-Za-z0-9]+/).flatMap(token => bookId(token) ?? []));
+  const paired = new Set([...stem.matchAll(RC_PAIR)].flatMap(match => bookId(match[1]!) ?? []));
+  return paired.size > 0 ? paired : new Set(stem.split(/[^A-Za-z0-9]+/).flatMap(token => bookId(token) ?? []));
 }
 
 /** The story a name names (E36): `01.md` or `1.md` is story `01`, up to `50.md`; anything else, `00.md` and `051.md` among them, is `null`. */
@@ -99,7 +104,7 @@ const heldBack = (file: UploadedFile, reason: UnidentifiedReason): UnidentifiedF
 /**
  * One file identified for a project of the given type (product spec §8). A USFM
  * file in a Bible project is its `\id` line's book when the name names that book
- * too; when the name names other books only, or none, or the header names none,
+ * and no other; when the name names another book, or none, or the header names none,
  * it is held back. A file named `<N>.md` or `<NN>.md` in an Open Bible Stories
  * project is that story. Anything else identifies nothing.
  */
@@ -113,7 +118,8 @@ export function identifyFile(file: UploadedFile, projectType: CreatableProjectTy
   if (book === null) return heldBack(file, 'no_book_in_header');
   const named = nameBooks(file.name);
   if (named.size === 0) return heldBack(file, 'no_book_in_name');
-  if (!named.has(book)) return heldBack(file, 'header_name_mismatch');
+  // A name naming two books does not agree with either: `est_ult_01-GEN.usfm` is never Esther.
+  if (named.size > 1 || !named.has(book)) return heldBack(file, 'header_name_mismatch');
   return identifiedAs(file, { book });
 }
 

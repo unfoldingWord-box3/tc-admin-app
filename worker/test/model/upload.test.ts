@@ -67,6 +67,19 @@ describe('a USFM file in a Bible project', () => {
   });
 
   test.each([
+    ['est_ult_01-GEN.usfm', 'EST'],
+    ['08-RUT-JON.usfm', 'JON'],
+    ['RUT-JON.usfm', 'JON'],
+  ])('W6: %s with \\id %s names another book or two, and is held back with no path', (name, code) => {
+    expect(identifyFile(file(name, usfm(code)), 'bible')).toEqual({ name, identified: null, reason: 'header_name_mismatch' });
+  });
+
+  test('W1: a single Resource Container pair is the name\'s book, whatever language code precedes it', () => {
+    expect(placed(identifyFile(file('est_ult_01-GEN.usfm', usfm('GEN')), 'bible'))).toEqual({ identified: { book: 'gen' }, path: 'ingredients/GEN.usfm' });
+    expect(placed(identifyFile(file('est_ult_17-EST.usfm', usfm('EST')), 'bible'))).toEqual({ identified: { book: 'est' }, path: 'ingredients/EST.usfm' });
+  });
+
+  test.each([
     ['no \\id line', '\\c 1\n\\v 1 In the beginning.\n'],
     ['an empty file', ''],
     ['\\ide before \\id', '\\ide UTF-8\n\\id MAT\n'],
