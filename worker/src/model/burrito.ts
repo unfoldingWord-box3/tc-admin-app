@@ -226,9 +226,9 @@ const canonical = (type: ProjectType, ids: Iterable<string>) => {
 function entryFor(ingredient: MetadataIngredient, source: ProjectMetadata, file: SnapshotFile): Record<string, unknown> {
   const ingredients = source.document.ingredients as Record<string, unknown>;
   const written = ingredients[ingredient.path];
-  const entry: Record<string, unknown> = typeof written === 'object' && written !== null ? { ...(written as Record<string, unknown>) } : {};
-  const checksum = typeof entry.checksum === 'object' && entry.checksum !== null ? { ...(entry.checksum as Record<string, unknown>) } : {};
-  return { ...entry, checksum: { ...checksum, md5: file.md5 }, size: file.size };
+  const entry: Record<string, unknown> = typeof written === 'object' && written !== null ? structuredClone(written as Record<string, unknown>) : {};
+  // Only the md5 recomputed from the bytes: any other digest the base declares may be as stale as its md5 (E5, R10).
+  return { ...entry, checksum: { md5: file.md5 }, size: file.size };
 }
 
 /**
@@ -251,9 +251,17 @@ export function mergeReleaseMetadata(merge: ReleaseMerge): MergedRelease {
   const files = new Map(merge.files.map(file => [file.path, file]));
   const onBranch = unitIngredients(current);
   const inBase = base ? unitIngredients(base) : new Map<string, MetadataIngredient>();
-  const chosen = (unit: string): SelectionState => merge.selection[unit] ?? (type === 'obs' ? (onBranch.has(unit) ? 'include' : 'leave_out') : 'leave_out');
+  // A unit without a selection: an Open Bible Stories story is included while on the branch (ADR 0013); a released book is carried forward, never removed by omission (R2).
+  const chosen = (unit: string): SelectionState => merge.selection[unit] ?? (type === 'obs' ? (onBranch.has(unit) ? 'include' : 'leave_out') : inBase.has(unit) ? 'carry_forward' : 'leave_out');
 
   const entries = new Map<string, Record<string, unknown>>();
+  const owners = new Map<string, string>();
+  const put = (path: string, owner: string, entry: Record<string, unknown>) => {
+    if (owners.has(path)) throw new MetadataError(`${path} is the entry of both ${owners.get(path)} and ${owner}`);
+    owners.set(path, owner);
+    entries.set(path, entry);
+  };
+  const releasedEntry = new Map<string, MetadataIngredient>();
   const released: string[] = [];
   const removed: string[] = [];
   for (const unit of canonical(type, [...onBranch.keys(), ...inBase.keys()])) {
@@ -266,14 +274,15 @@ export function mergeReleaseMetadata(merge: ReleaseMerge): MergedRelease {
     if (!ingredient || !source) throw new MetadataError(`${unit} cannot be ${selection === 'include' ? 'included: it is not on the default branch' : 'carried forward: it is not in the previous release'}`);
     const file = files.get(ingredient.path);
     if (!file) throw new MetadataError(`${ingredient.path} is listed for ${unit} but is not in the snapshot`);
-    entries.set(ingredient.path, entryFor(ingredient, source, file));
+    put(ingredient.path, unit, entryFor(ingredient, source, file));
+    releasedEntry.set(unit, ingredient);
     released.push(unit);
   }
   for (const ingredient of current.ingredients) {
     if (ingredient.kind !== 'administrative') continue;
     const file = files.get(ingredient.path);
     if (!file) throw new MetadataError(`${ingredient.path} is an administrative ingredient but is not in the snapshot`);
-    entries.set(ingredient.path, entryFor(ingredient, current, file));
+    put(ingredient.path, 'an administrative ingredient', entryFor(ingredient, current, file));
   }
   const unknown = new Set(merge.unknown_included ?? []);
   for (const file of merge.files) {
@@ -281,19 +290,19 @@ export function mergeReleaseMetadata(merge: ReleaseMerge): MergedRelease {
   }
 
   // The scope: for a Bible exactly the released books, each with the ranges its entry declares (Q7); Open Bible Stories keeps the fixed scope (E46).
-  const typeBlock = { ...(current.document.type as Record<string, unknown>) };
-  const flavorType = { ...(typeBlock.flavorType as Record<string, unknown>) };
+  // A deep copy, so the result shares no object with the default branch's document (the writer is pure).
+  const document = structuredClone(current.document) as Record<string, unknown>;
+  const typeBlock = document.type as Record<string, unknown>;
+  const flavorType = typeBlock.flavorType as Record<string, unknown>;
   if (type === 'bible') {
     const scope: Record<string, readonly string[]> = {};
     for (const unit of released) {
-      const entry = merge.selection[unit] === 'carry_forward' ? inBase.get(unit) : onBranch.get(unit);
       const code = unit.toUpperCase();
-      scope[code] = entry?.scope?.[code] ?? [];
+      scope[code] = [...(releasedEntry.get(unit)?.scope?.[code] ?? [])];
     }
     flavorType.currentScope = scope;
   }
-  typeBlock.flavorType = flavorType;
 
-  const metadata: Record<string, unknown> = { ...current.document, type: typeBlock, ingredients: Object.fromEntries(entries) };
+  const metadata: Record<string, unknown> = { ...document, ingredients: Object.fromEntries(entries) };
   return { metadata, released, removed };
 }

@@ -152,6 +152,54 @@ describe('what the merge refuses (R10, R2)', () => {
   });
 });
 
+describe('review round 1 (bench)', () => {
+  test('R2: a released book the selection does not name is carried forward, never removed by omission; leave_out still removes', async () => {
+    const { metadata, files } = await pendau();
+    const partial = everyBook(metadata, 'carry_forward');
+    delete partial.mrk;
+    const merged = mergeReleaseMetadata({ current: metadata, base: metadata, selection: partial, files });
+    expect(merged.removed).toEqual([]);
+    expect(merged.released).toContain('mrk');
+    expect(ingredientsOf(merged.metadata)).toHaveProperty('ingredients/MRK.usfm');
+    expect(scopeOf(merged.metadata)).toHaveProperty('MRK');
+  });
+
+  test('R10: a checksum is exactly the snapshot md5; a stale digest of another algorithm is dropped', async () => {
+    const { metadata: current, files } = await pendau();
+    const base = edited(current, document => {
+      (document.ingredients as Record<string, { checksum: Record<string, string> }>)['ingredients/MAT.usfm']!.checksum.sha256 = 'stale';
+    });
+    const { metadata: merged } = mergeReleaseMetadata({ current, base, selection: everyBook(base, 'carry_forward'), files });
+    expect(ingredientsOf(merged)['ingredients/MAT.usfm']!.checksum).toEqual({ md5: files.find(f => f.path === 'ingredients/MAT.usfm')!.md5 });
+  });
+
+  test('W1: the merged document shares no object with the default branch document', async () => {
+    const { metadata, files } = await pendau();
+    const { metadata: merged } = mergeReleaseMetadata({ current: metadata, base: metadata, selection: everyBook(metadata, 'carry_forward'), files });
+    expect(merged.identification).not.toBe(metadata.document.identification);
+    expect(merged.meta).not.toBe(metadata.document.meta);
+    const entries = metadata.document.ingredients as Record<string, { scope: unknown }>;
+    expect(ingredientsOf(merged)['ingredients/MAT.usfm']!.scope).not.toBe(entries['ingredients/MAT.usfm']!.scope);
+  });
+
+  test('R2: two released units, or a book and an administrative ingredient, at one path are refused', async () => {
+    const { metadata, files } = await pendau();
+    const carried = everyBook(metadata, 'carry_forward');
+    const mrkAtMat = edited(metadata, document => {
+      const ingredients = document.ingredients as Record<string, unknown>;
+      ingredients['ingredients/MAT.usfm'] = ingredients['ingredients/MRK.usfm'];
+      delete ingredients['ingredients/MRK.usfm'];
+    });
+    expect(() => mergeReleaseMetadata({ current: mrkAtMat, base: metadata, selection: { ...carried, mrk: 'include' }, files })).toThrow(/MAT.usfm is the entry of both mat and mrk/);
+    const matAtLicense = edited(metadata, document => {
+      const ingredients = document.ingredients as Record<string, unknown>;
+      ingredients['ingredients/license.md'] = ingredients['ingredients/MAT.usfm'];
+      delete ingredients['ingredients/MAT.usfm'];
+    });
+    expect(() => mergeReleaseMetadata({ current: metadata, base: matAtLicense, selection: carried, files })).toThrow(/license.md is the entry of both mat and an administrative ingredient/);
+  });
+});
+
 describe('an Open Bible Stories release', () => {
   test('ADR 0013, E46: every story on the default branch is included without a selection, a story the branch lost is removed, and the fixed scope stays', () => {
     const obs = parseMetadata(readFileSync(new URL('2026-10-01/sb-archives/unfoldingWord__en_obs__v9.metadata.json', fixtures), 'utf8'));
@@ -167,6 +215,7 @@ describe('an Open Bible Stories release', () => {
     const lost = mergeReleaseMetadata({ current: branch, base: obs, selection: {}, files: files.filter(f => f.path !== 'ingredients/content/50.md') });
     expect(lost.removed).toEqual(['50']);
     expect(lost.released).toHaveLength(49);
+    expect(scopeOf(lost.metadata)).toEqual(scopeOf(obs.document));
     expect(validateSource(lost.metadata), JSON.stringify(validateSource.errors)).toBe(true);
   });
 });
