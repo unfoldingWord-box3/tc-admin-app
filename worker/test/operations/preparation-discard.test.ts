@@ -192,4 +192,31 @@ describe('preparation.discard (#58)', () => {
     expect(after?.history.at(-1)?.event).toContain('could not be deleted: branch is protected');
   });
 
+  test('R6, R7: a release found on another commit under the tag is release_exists: nothing deleted, nothing stored, the preparation kept for the manager', async () => {
+    await put(prepared({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'run `release.lookup` for the tag before retrying', request_id: 'r', details: {}, invariant: 'R6' } }));
+    const foreign = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: 'f000000000000000000000000000000000000000' }) });
+    const error = await failure(discard(foreign.context));
+    expect(error).toMatchObject({ code: 'release_exists' });
+    expect(error?.details).toMatchObject({ target_sha: 'f000000000000000000000000000000000000000', snapshot_sha: 'e000000000000000000000000000000000000001' });
+    expect(foreign.writes).toEqual([]);
+    expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' } });
+  });
+
+  test('R6: a lookup that finds nothing followed by a deletion Door43 did not do keeps the unconfirmed attempt on the record, so the retry looks the tag up again', async () => {
+    await put(prepared({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'run `release.lookup` for the tag before retrying', request_id: 'r', details: {}, invariant: 'R6' } }));
+    const { context } = door43({ deleteAnswer: () => Response.json({ message: 'branch is protected' }, { status: 500 }) });
+    expect((await failure(discard(context)))?.code).toBe('door43_unavailable');
+    expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' } });
+  });
+
+  test('A2: an account whose push right was revoked learns nothing stored: not the receipt of a discard it made, not a released state', async () => {
+    await put(prepared());
+    await discard(door43().context);
+    const revoked = door43({ push: false });
+    expect((await failure(discard(revoked.context)))?.code).toBe('permission_denied');
+    kv = new MemoryKV();
+    await put(prepared({ state: 'full_release', release: { tag: 'v1.3.0', url: 'https://qa.door43.org/r', prerelease: false } }));
+    expect((await failure(discard(door43({ push: false }).context)))?.code).toBe('permission_denied');
+  });
+
 });

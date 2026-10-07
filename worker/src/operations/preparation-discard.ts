@@ -16,6 +16,8 @@ import { readReleaseByTag } from '../door43/releases';
 import { readRepository, repositoryAccess } from '../door43/repos';
 import { signedIn } from './context';
 import type { OperationContext } from './context';
+import { PREPARATION_SECONDS } from './plans';
+import { releaseTagKey } from './release-create';
 import { temporaryBranch } from './release-plan';
 import { errorShape } from './release-prepare';
 
@@ -30,15 +32,16 @@ export async function preparationDiscard(input: ParsedInput<'preparation.discard
   const started = context.now();
   const at = () => context.now().toISOString();
 
+  // The permission first, strictly (A2): nothing stored about the preparation, not even a receipt, is answered to an account that may not push.
+  const access = repositoryAccess(await readRepository(client, owner, repo));
+  if (!access.push && !access.admin) throw new CatalogError('permission_denied', { details: { owner, repo } });
+
   const done = await context.plans.getReceipt<DiscardReceipt>(discardReceiptKey(owner, repo, id));
   const stored = await context.plans.getPreparation<Preparation>(owner, repo, id);
   // The receipt answers only while the preparation it discarded is still discarded: a replacement prepared under the same version is discarded on its own.
   if (done && done.account === account.login && (!stored || stored.state === 'discarded')) return done.receipt;
   if (!stored) throw new CatalogError('not_found', { details: { owner, repo, preparation_id: id } });
   if (stored.state === 'pre_release' || stored.state === 'full_release') throw new CatalogError('already_released', { details: { owner, repo, preparation_id: id, tag: stored.release?.tag ?? id } });
-
-  const access = repositoryAccess(await readRepository(client, owner, repo));
-  if (!access.push && !access.admin) throw new CatalogError('permission_denied', { details: { owner, repo } });
 
   const receipt = async (result: Preparation, wrote: DiscardReceipt['wrote']): Promise<DiscardReceipt> => {
     const answer: DiscardReceipt = { operation: 'preparation.discard', request_id: context.requestId, plan_id: null, started_at: started.toISOString(), finished_at: at(), wrote, result, warnings: [] };
@@ -66,6 +69,8 @@ export async function preparationDiscard(input: ParsedInput<'preparation.discard
       // ever deleted (R3), and a deletion that fails is then put on the record, for the manager to finish on Door43.
       const released: Preparation = { ...stored, state, release: { tag: found.tag, url: found.url, prerelease: found.prerelease }, last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: state, event: 'release.lookup found the release of the unconfirmed attempt' }] };
       await context.plans.putPreparation(owner, repo, id, released);
+      // The tag may be above the preparation id (R9): `release.promote`, which knows only the tag, finds the preparation by this.
+      await context.plans.putReceipt(releaseTagKey(owner, repo, found.tag), { receipt: { preparation_id: id }, account: account.login }, PREPARATION_SECONDS);
       const deletion = stored.snapshot.branch === temporaryBranch(id) ? await deleteBranch(client, owner, repo, stored.snapshot.branch) : { deleted: false as const, reason: 'it is not the temporary branch of this preparation' };
       if (!deletion.deleted) await context.plans.putPreparation(owner, repo, id, { ...released, history: [...released.history, { at: at(), from: state, to: state, event: `the temporary branch could not be deleted: ${deletion.reason}` }] });
       throw new CatalogError('already_released', { details: { owner, repo, preparation_id: id, tag: found.tag, branch_deleted: deletion.deleted, ...(deletion.deleted ? {} : { branch: stored.snapshot.branch, reason: deletion.reason }) } });
@@ -83,7 +88,9 @@ export async function preparationDiscard(input: ParsedInput<'preparation.discard
   if (!deletion.deleted) {
     // The branch stays, and so does the preparation, for the retry (R7).
     const error = new CatalogError('door43_unavailable', { details: { owner, repo, branch, reason: `the temporary branch could not be deleted: ${deletion.reason}` } });
-    await context.plans.putPreparation(owner, repo, id, fresh({ ...stored, state: 'retryable_failure', last_error: errorShape(error, context.requestId), history: [...stored.history, { at: at(), from: stored.state, to: 'retryable_failure', event: `preparation.discard: ${deletion.reason}` }] }));
+    // An unconfirmed release attempt stays on the record, so the retry looks the tag up again before deleting (R6).
+    const lastError = stored.last_error?.code === 'release_outcome_unknown' ? stored.last_error : errorShape(error, context.requestId);
+    await context.plans.putPreparation(owner, repo, id, fresh({ ...stored, state: 'retryable_failure', last_error: lastError, history: [...stored.history, { at: at(), from: stored.state, to: 'retryable_failure', event: `preparation.discard: ${deletion.reason}` }] }));
     throw error;
   }
   const result = fresh({ ...stored, state: 'discarded', last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: 'discarded', event: 'preparation.discard' }] });

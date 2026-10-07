@@ -419,4 +419,14 @@ describe('release.create (#39)', () => {
     expect((await get())?.state).toBe('ready_for_release');
   });
 
+  test('R6, R8, R9: a pre-release above the preparation id found by the lookup after an unconfirmed attempt is recorded with its tag pointer, so its promotion by tag moves the original preparation to full_release', async () => {
+    await put(ready({ state: 'retryable_failure', version: { baseline_tag: 'v1.2', proposed: 'v1.3.0', confirmed: 'v1.4.0' }, last_error: { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'run `release.lookup` for the tag before retrying', request_id: 'r', details: {}, invariant: 'R6' } }));
+    const found = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: true, target_commitish: COMMIT }) });
+    expect((await failure(releaseCreate(input({ version: 'v1.4.0' }), found.context)))?.code).toBe('release_exists');
+    expect(await get()).toMatchObject({ id: 'v1.3.0', state: 'pre_release', release: { tag: 'v1.4.0', prerelease: true } });
+    const promotion = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: true, target_commitish: COMMIT }), promoteAnswer: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: false, target_commitish: COMMIT }) });
+    await releasePromote({ ...PENDAU, tag: 'v1.4.0' }, promotion.context);
+    expect(await get()).toMatchObject({ id: 'v1.3.0', state: 'full_release', release: { tag: 'v1.4.0', prerelease: false } });
+  });
+
 });

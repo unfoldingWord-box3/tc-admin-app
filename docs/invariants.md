@@ -55,7 +55,7 @@ Issues: #34, #40.
 ### R6 — Never a duplicate release
 When release creation returns an ambiguous result, the Worker looks up the expected tag and release on Door43 before any retry. If one exists it is shown and nothing new is created.
 Source: architecture §6 duplicate release protection; product spec §11.
-Enforced in: `worker/src/operations/release-create` (ambiguous result path); `release-lookup` over `GET /repos/{owner}/{repo}/releases/tags/{tag}` (E21).
+Enforced in: `worker/src/operations/release-create` (the lookup before any retry after an unconfirmed attempt, and on a 409) and `preparation-discard` (the lookup before a discard after an unconfirmed attempt); `release-lookup` over `GET /repos/{owner}/{repo}/releases/tags/{tag}` (E21).
 Verified by: simulated lost response followed by a fixture where the tag exists; retry returns `release_exists` and creates no release (the only write is the branch deletion of a release found on the snapshot commit, R7). So far: the `R6, X1` tests in `worker/test/door43/release-writes.test.ts` (a refused, an existing, and an unconfirmed release are told apart, and none is sent twice) and `worker/test/operations/release-create.test.ts` (a release Door43 did not confirm is `release_outcome_unknown`, the preparation says so, the next create looks the tag up first and, finding the release, creates nothing, answers `release_exists`, records a release on the snapshot commit on the preparation and deletes its branch as after any release (R7, decided 7 October 2026); finding none, it creates; a tag Door43 already has is `release_exists`); the lookup itself is `release.lookup` (#100).
 Issues: #39, #40.
 

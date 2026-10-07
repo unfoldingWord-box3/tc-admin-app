@@ -90,6 +90,8 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
         // ever deleted (R3), and a deletion that fails is then put on the record, for the manager to finish on Door43.
         const released: Preparation = { ...stored, state, release: { tag: found.tag, url: found.url, prerelease: found.prerelease }, last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: state, event: 'release.lookup found the release of the unconfirmed attempt' }] };
         await context.plans.putPreparation(owner, repo, id, released);
+        // The tag may be above the preparation id (R9): `release.promote`, which knows only the tag, finds the preparation by this.
+        await context.plans.putReceipt(releaseTagKey(owner, repo, found.tag), { receipt: { preparation_id: id }, account: account.login }, PREPARATION_SECONDS);
         const deletion = stored.snapshot.branch === temporaryBranch(id) ? await deleteBranch(client, owner, repo, stored.snapshot.branch) : { deleted: false as const, reason: 'it is not the temporary branch of this preparation' };
         if (!deletion.deleted) await context.plans.putPreparation(owner, repo, id, { ...released, history: [...released.history, { at: at(), from: state, to: state, event: `the temporary branch could not be deleted: ${deletion.reason}` }] });
         throw new CatalogError('release_exists', { details: { owner, repo, tag, url: found.url, target_sha: found.target_sha, snapshot_sha: stored.snapshot.commit_sha, branch_deleted: deletion.deleted, ...(deletion.deleted ? {} : { branch: stored.snapshot.branch, reason: deletion.reason }) } });
