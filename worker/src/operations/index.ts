@@ -10,8 +10,10 @@ import { preparationRead } from './preparation-read';
 import { projectCreateApply } from './project-create-apply';
 import { projectCreatePlan } from './project-create-plan';
 import { releaseLookup } from './release-lookup';
+import { releaseCreate } from './release-create';
 import { releasePlan } from './release-plan';
 import { releasePrepare } from './release-prepare';
+import { releasePromote } from './release-promote';
 import { situationRead } from './situation-read';
 
 export type OperationHandler<Name extends RoutedOperation> = (input: ParsedInput<Name>, context: OperationContext) => Promise<OperationOutput<Name>>;
@@ -29,6 +31,8 @@ export const HANDLERS: OperationHandlers = {
   'release.plan': releasePlan,
   'release.prepare': releasePrepare,
   'preparation.read': preparationRead,
+  'release.create': releaseCreate,
+  'release.promote': releasePromote,
 };
 
 export { operationContext, signedIn } from './context';

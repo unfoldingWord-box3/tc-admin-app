@@ -4,10 +4,13 @@
 // name for one made on Door43's site (Pendau's `v1.2` says `master`), so the
 // commit comes from the catalog entry Door43 carries on every release as
 // `door43_metadata` (E20), and from the target only when it is a commit. The
-// writes (create, edit) join with #39. Door43's shape stops here.
+// writes: one release created on the snapshot commit, which makes the tag as
+// well (E21, E27), and the one edit that promotes a pre-release and changes
+// nothing else (R8); each sent once and never retried (X1). Door43's shape
+// stops here.
 
 import { CatalogError } from '@tc-admin/shared/schema';
-import { readDoor43 } from './api';
+import { door43Message, readDoor43, writeDoor43 } from './api';
 import type { Door43Client } from './api';
 
 /** One release as Door43 returns it. Only the fields read. */
@@ -60,4 +63,74 @@ export async function readReleaseByTag(client: Door43Client, owner: string, repo
   const release = releaseShape(body);
   if (!release) throw new CatalogError('door43_unavailable', { details: { reason: 'unexpected release shape', owner, repo, tag } });
   return release;
+}
+
+export interface ReleaseToCreate {
+  tag: string;
+  /** The notes, as the release body. */
+  notes: string;
+  /** The snapshot commit the tag and the release target (E27: the release records the SHA). */
+  target_sha: string;
+  prerelease: boolean;
+}
+
+/** How a release write ended when Door43 did not do it: refused as existing, refused otherwise, or not confirmed (X1). */
+export class ReleaseWriteError extends Error {
+  constructor(
+    readonly kind: 'exists' | 'failed' | 'unknown',
+    readonly reason: string,
+    readonly status: number | null,
+  ) {
+    super(reason);
+  }
+}
+
+const unanswered = (error: unknown): ReleaseWriteError | null =>
+  error instanceof CatalogError && error.code === 'door43_unavailable' ? new ReleaseWriteError('unknown', String(error.details.reason ?? 'Door43 did not answer'), null) : null;
+
+/**
+ * `POST /repos/{owner}/{repo}/releases` (`CreateReleaseOption`, E21) with the tag,
+ * the notes, the commit, and the pre-release flag; Door43 creates the tag on that
+ * commit with the release (E27). A 409 means the tag or release is already there
+ * (`exists`, R6); any other 4xx refusal is `failed`; a request Door43 did not answer,
+ * answered unreadably, or answered with a status that does not say it refused (a 5xx
+ * or gateway timeout, a 408, an unexpected success) is `unknown`: whether the release
+ * exists is then for `release.lookup` to settle before anything is sent again (R6, X1).
+ */
+export async function createRelease(client: Door43Client, owner: string, repo: string, release: ReleaseToCreate): Promise<Release> {
+  const path = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases`;
+  const body = { tag_name: release.tag, name: release.tag, body: release.notes, target_commitish: release.target_sha, prerelease: release.prerelease, draft: false };
+  let outcome;
+  try {
+    outcome = await writeDoor43(client, 'POST', path, body);
+  } catch (error) {
+    throw unanswered(error) ?? error;
+  }
+  if (outcome.status === 409) throw new ReleaseWriteError('exists', door43Message(outcome), 409);
+  const refused = outcome.status >= 400 && outcome.status < 500 && outcome.status !== 408;
+  if (outcome.status !== 201) throw new ReleaseWriteError(refused ? 'failed' : 'unknown', door43Message(outcome), outcome.status);
+  const created = releaseShape(outcome.body);
+  if (!created) throw new ReleaseWriteError('unknown', 'unexpected release shape', 201);
+  return created;
+}
+
+/**
+ * `PATCH /repos/{owner}/{repo}/releases/{id}` with `{ prerelease: false }` and nothing
+ * else (`EditReleaseOption`, E21, E27): the promotion changes the flag only (R8). A
+ * release Door43 no longer has is `not_found`; any other answer but 200 is `failed`
+ * with Door43's message; no answer is `unknown`.
+ */
+export async function promoteRelease(client: Door43Client, owner: string, repo: string, id: number): Promise<Release> {
+  const path = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases/${id}`;
+  let outcome;
+  try {
+    outcome = await writeDoor43(client, 'PATCH', path, { prerelease: false });
+  } catch (error) {
+    throw unanswered(error) ?? error;
+  }
+  if (outcome.status === 404) throw new CatalogError('not_found', { details: { owner, repo, release_id: id } });
+  if (outcome.status !== 200) throw new ReleaseWriteError('failed', door43Message(outcome), outcome.status);
+  const edited = releaseShape(outcome.body);
+  if (!edited) throw new ReleaseWriteError('unknown', 'unexpected release shape', 200);
+  return edited;
 }
