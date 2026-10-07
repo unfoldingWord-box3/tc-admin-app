@@ -1,0 +1,38 @@
+[
+  {
+    "name": "master",
+    "commit": {
+      "id": "5b1e85b9f7018efd4a0f6c839c1f167fa72c8f55",
+      "message": "List the three seeded stories in metadata.json (#84)\n",
+      "url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/commit/5b1e85b9f7018efd4a0f6c839c1f167fa72c8f55",
+      "author": {
+        "name": "tc-admin-qa",
+        "email": "[redacted]",
+        "username": "tc-admin-qa"
+      },
+      "committer": {
+        "name": "tc-admin-qa",
+        "email": "[redacted]",
+        "username": "tc-admin-qa"
+      },
+      "verification": {
+        "verified": false,
+        "reason": "gpg.error.not_signed_commit",
+        "signature": "",
+        "signer": null,
+        "payload": ""
+      },
+      "timestamp": "2026-10-07T20:40:30Z",
+      "added": null,
+      "removed": null,
+      "modified": null
+    },
+    "protected": false,
+    "required_approvals": 0,
+    "enable_status_check": false,
+    "status_check_contexts": [],
+    "user_can_push": false,
+    "user_can_merge": false,
+    "effective_branch_protection_name": ""
+  }
+]
