@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { openArchive } from '../../src/door43/archive';
-import { parseMetadata } from '../../src/model/burrito-reader';
+import { classifyIngredient, parseMetadata } from '../../src/model/burrito-reader';
 import { classifyFiles, isRootOrWorkflow, roleOf } from '../../src/model/classify';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/', import.meta.url);
@@ -39,6 +39,22 @@ describe('Pendau (E17)', () => {
     expect(isRootOrWorkflow('README.md')).toBe(true);
     expect(isRootOrWorkflow('.gitea/x.yml')).toBe(true);
     expect(isRootOrWorkflow('ingredients/x')).toBe(false);
+  });
+
+  test('S5: a listed ingredient whose scope names more than one book is unknown, not administrative', async () => {
+    const metadata = parseMetadata(await archive.bytes('metadata.json'));
+    const scope = { GEN: [], EXO: [] };
+    const bible = { path: 'ingredients/bible.usfm', size: null, md5: null, mime_type: null, role: null, scope, ...classifyIngredient('ingredients/bible.usfm', scope, 'bible') };
+    expect(bible.kind).toBe('other');
+    const classified = classifyFiles({ ...metadata, ingredients: [...metadata.ingredients, bible] }, [...archive.entries, { path: bible.path }]);
+    expect(classified.unknown).toEqual(['ingredients/bible.usfm']);
+    expect(classified.administrative).not.toContain('ingredients/bible.usfm');
+  });
+
+  test('S5: a path with a backslash or an empty, . or .. segment is not a root or .gitea/ file', () => {
+    for (const path of ['.', '..', '..\\..\\x', '.gitea/../README.md', '/README.md', 'a//b']) expect(isRootOrWorkflow(path)).toBe(false);
+    expect(isRootOrWorkflow('.gitignore')).toBe(true);
+    expect(isRootOrWorkflow('.gitea/workflows/check.yml')).toBe(true);
   });
 });
 

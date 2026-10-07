@@ -32,7 +32,7 @@ export interface Classification {
   units: Map<string, ClassifiedFile>;
   /** Paths always carried from the default branch (R1). */
   administrative: string[];
-  /** Paths on disk that are neither a unit nor listed nor a root or `.gitea/` file: included only after explicit confirmation. */
+  /** Paths on disk that are neither a unit nor administrative (a listed `other` ingredient is unknown): included only after explicit confirmation. */
   unknown: string[];
   /** Ingredients the metadata lists that are not on disk: what Door43's health check reports as missing. */
   missing: string[];
@@ -40,15 +40,19 @@ export interface Classification {
 
 export const METADATA_FILE = 'metadata.json';
 
-/** A root file (no directory) or a `.gitea/` workflow file: carried with every release, whatever the metadata says (Q22). */
-export const isRootOrWorkflow = (path: string) => !path.includes('/') || path.startsWith('.gitea/');
+/** No backslash, and no empty, `.` or `..` segment: a path that names one file of the ref. */
+const wellFormed = (path: string) => !path.includes('\\') && path.split('/').every(segment => segment !== '' && segment !== '.' && segment !== '..');
+
+/** A root file (no directory) or a `.gitea/` workflow file: carried with every release, whatever the metadata says (Q22). A malformed path is neither. */
+export const isRootOrWorkflow = (path: string) => wellFormed(path) && (!path.includes('/') || path.startsWith('.gitea/'));
 
 /** What one path is, given the metadata. */
 export function roleOf(path: string, metadata: ProjectMetadata): Pick<ClassifiedFile, 'role' | 'unit' | 'listed'> {
   if (path === METADATA_FILE) return { role: 'metadata', unit: null, listed: false };
   const ingredient = metadata.ingredients.find(entry => entry.path === path);
   if (ingredient?.kind === 'book' || ingredient?.kind === 'story') return { role: ingredient.kind, unit: ingredient.unit, listed: true };
-  if (ingredient) return { role: 'administrative', unit: null, listed: true };
+  // A listed ingredient with a scope that names no one book (`other`) is not administrative: it is unknown (S5).
+  if (ingredient) return { role: ingredient.kind === 'administrative' ? 'administrative' : 'unknown', unit: null, listed: true };
   if (isRootOrWorkflow(path)) return { role: 'administrative', unit: null, listed: false };
   return { role: 'unknown', unit: null, listed: false };
 }
