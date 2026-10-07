@@ -41,25 +41,35 @@ export async function door43Request(host: Door43Host, url: string, init: Request
 export type QueryValue = string | number | boolean | readonly string[];
 export type Query = Readonly<Record<string, QueryValue>>;
 
-/** `GET /api/v1<path>` as JSON. 401 is `session_expired`, 403 `permission_denied`, 404 `not_found`, anything else `door43_unavailable`. */
-export async function readDoor43<T = unknown>(client: Door43Client, path: string, query: Query = {}): Promise<T> {
+/** One read of `/api/v1<path>` with the session token. 401 is `session_expired`, 403 `permission_denied`, 404 `not_found`, anything else not ok `door43_unavailable`. */
+async function readResponse(client: Door43Client, path: string, query: Query, accept: string): Promise<Response> {
   if (!path.startsWith('/') || path.startsWith('//')) throw new CatalogError('unexpected', { details: { reason: 'invalid Door43 API path' } });
   const url = new URL(`/api/v1${path}`, client.host.origin);
   url.search = new URLSearchParams(
     Object.entries(query).flatMap(([key, value]): [string, string][] => (Array.isArray(value) ? value.map(item => [key, item]) : [[key, String(value)]])),
   ).toString();
-  const response = await door43Request(
-    client.host,
-    url.href,
-    { headers: { accept: 'application/json', authorization: `Bearer ${client.token}` } },
-    client.fetch,
-  );
+  const response = await door43Request(client.host, url.href, { headers: { accept, authorization: `Bearer ${client.token}` } }, client.fetch);
   const status = { door43_status: response.status };
   if (response.status === 401) throw new CatalogError('session_expired', { details: status });
   if (response.status === 403) throw new CatalogError('permission_denied', { details: status });
   if (response.status === 404) throw new CatalogError('not_found', { details: status });
   if (!response.ok) throw new CatalogError('door43_unavailable', { details: status });
-  return (await response.json()) as T;
+  return response;
+}
+
+/** `GET /api/v1<path>` as JSON. */
+export async function readDoor43<T = unknown>(client: Door43Client, path: string, query: Query = {}): Promise<T> {
+  return (await (await readResponse(client, path, query, 'application/json')).json()) as T;
+}
+
+/** `GET /api/v1<path>` as bytes, for an archive (E34); a body that cannot be read whole is `door43_unavailable`. */
+export async function readDoor43Bytes(client: Door43Client, path: string): Promise<Uint8Array> {
+  const response = await readResponse(client, path, {}, 'application/zip, application/octet-stream');
+  try {
+    return new Uint8Array(await response.arrayBuffer());
+  } catch (cause) {
+    throw new CatalogError('door43_unavailable', { cause, details: { reason: 'unreadable response body' } });
+  }
 }
 
 /** The prototype's read limit: 2000 pages of 50. Beyond it nothing partial is returned (`portfolio_too_large`). */

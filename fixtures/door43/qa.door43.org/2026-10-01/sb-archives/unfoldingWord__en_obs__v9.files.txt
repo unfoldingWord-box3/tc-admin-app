@@ -57,3 +57,4 @@ en_obs/ingredients/content/49.md
 en_obs/ingredients/content/50.md
 en_obs/ingredients/content/back.md
 en_obs/ingredients/content/front.md
+en_obs/metadata.json

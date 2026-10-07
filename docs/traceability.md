@@ -42,7 +42,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#17](https://github.com/unfoldingWord-box3/tc-admin-app/issues/17) Scripture Burrito reader | §7; domain §8 | 0008 | W1, R10 | E2, Q4 | `project.read` | model/burrito | — |
-| [#18](https://github.com/unfoldingWord-box3/tc-admin-app/issues/18) Archive client | arch §3 | 0008, 0010 | R3, R10 | E1–E5, Q12 | `release.plan` | door43/archive | — |
+| [#18](https://github.com/unfoldingWord-box3/tc-admin-app/issues/18) Archive client | arch §3 | 0008, 0010 | R3, R10 | E1–E5, E17, E30, E34, E53, Q12, Q22 | `release.prepare`, `import.plan` | door43/archive | — |
 | [#19](https://github.com/unfoldingWord-box3/tc-admin-app/issues/19) Type and coverage | §5; domain §3 | 0013 | H3, H5 | E7, E12, E14, E32, E33, E42, Q11, Q16, Q17, Q23 | `project.read` | model/project, model/books, door43/catalog, shared/schema | — |
 | [#20](https://github.com/unfoldingWord-box3/tc-admin-app/issues/20) Unknown and administrative files | §8; domain §4 | — | R1 | — | `release.plan` | model/classify | S5 |
 | [#21](https://github.com/unfoldingWord-box3/tc-admin-app/issues/21) Unsupported projects with a reason | §2; domain §3 | 0013, 0014 | P1, W2 | E10, E42, Q11, Q25 | `portfolio.list`, `project.read` | model/project | — |
