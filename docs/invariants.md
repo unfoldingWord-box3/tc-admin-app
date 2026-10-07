@@ -35,7 +35,7 @@ Issues: #33, #35, #38.
 The only Door43 writes a release performs are: create the temporary branch, one or more commits on it (Q22), the tag, and the Door43 release. Nothing else, and nothing on the default branch.
 Source: ADR 0008, ADR 0010; architecture §5.
 Enforced in: `worker/src/operations/release-prepare`, `release-create`; the Door43 adapter exposes no write to a default branch from the release operations.
-Verified by: recorded-request test asserting the exact set of write calls for a release; a plan's `would_write` list contains only those four kinds, and every commit is on the temporary branch. So far: the `R3, W5` tests in `worker/test/operations/release-prepare.test.ts` (the prepare's writes are the branch and the commits on it, no more than the plan announced, and none on the default branch).
+Verified by: recorded-request test asserting the exact set of write calls for a release; a plan's `would_write` list contains only those four kinds, and every commit is on the temporary branch. So far: the `R3, W5` tests in `worker/test/operations/release-prepare.test.ts` (the prepare's writes are the branch and the commits on it, no more than the plan announced, and none on the default branch) and the `R3, R7` test in `worker/test/operations/release-create.test.ts` (the release's writes are one release on the snapshot commit, which makes the tag, and the branch deletion after it).
 Issues: #34, #39.
 
 ### R4 — Defaults publish nothing new, and a release needs a book
@@ -56,28 +56,28 @@ Issues: #34, #40.
 When release creation returns an ambiguous result, the Worker looks up the expected tag and release on Door43 before any retry. If one exists it is shown and nothing new is created.
 Source: architecture §6 duplicate release protection; product spec §11.
 Enforced in: `worker/src/operations/release-create` (ambiguous result path); `release-lookup` over `GET /repos/{owner}/{repo}/releases/tags/{tag}` (E21).
-Verified by: simulated lost response followed by a fixture where the tag exists; retry returns `release_exists` and performs no write.
-Issues: #40.
+Verified by: simulated lost response followed by a fixture where the tag exists; retry returns `release_exists` and performs no write. So far: the `R6, X1` tests in `worker/test/door43/release-writes.test.ts` (a refused, an existing, and an unconfirmed release are told apart, and none is sent twice) and `worker/test/operations/release-create.test.ts` (a release Door43 did not confirm is `release_outcome_unknown`, the preparation says so, a second create writes nothing and points to the lookup; a tag Door43 already has is `release_exists`); the lookup is `release.lookup` (#100), and the recovery that adopts a found release is #40.
+Issues: #39, #40.
 
 ### R7 — The temporary branch outlives failure
 The temporary branch is deleted only after release creation succeeds, or when the manager explicitly discards an unreleased preparation (`preparation.discard`, Q14). On health failure, commit failure, or release failure it is retained for inspection and retry.
 Source: ADR 0003; architecture §6 branch lifecycle.
 Enforced in: `worker/src/operations/release-create` (delete branch is the last step and runs only on success).
-Verified by: failed release fixture leaves the branch; successful release fixture deletes it; deletion failure after success is reported as a warning in the receipt, not as a release failure; discard of a released preparation returns `already_released` and writes nothing. So far: the `R7, X1` test in `worker/test/operations/release-prepare.test.ts` (a commit Door43 refuses leaves the branch, is not retried, and the preparation is stored as `retryable_failure` with the error).
+Verified by: failed release fixture leaves the branch; successful release fixture deletes it; deletion failure after success is reported as a warning in the receipt, not as a release failure; discard of a released preparation returns `already_released` and writes nothing. So far: the `R7, X1` test in `worker/test/operations/release-prepare.test.ts` (a commit Door43 refuses leaves the branch, is not retried, and the preparation is stored as `retryable_failure` with the error) and the `R7` tests in `worker/test/operations/release-create.test.ts` (a release Door43 refuses or does not confirm keeps the branch; the branch is deleted only after the release is confirmed and recorded; a deletion that fails is a `branch_not_deleted` warning on the receipt and the release stands); the discard is #58.
 Issues: #34, #39, #58.
 
 ### R8 — Promotion changes only status
 Promoting a pre-release changes the Door43 release's pre-release flag and nothing else: not the tag, not the version, not the contents.
 Source: product spec §10 versioning and §13 pre-release promotion.
 Enforced in: `worker/src/operations/release-promote` (single PATCH of the pre-release flag).
-Verified by: recorded-request test asserting the PATCH body contains only the pre-release flag.
+Verified by: recorded-request test asserting the PATCH body contains only the pre-release flag. So far: the `R8` tests in `worker/test/door43/release-writes.test.ts` and `worker/test/operations/release-create.test.ts` (the promotion is one PATCH whose body is `{ prerelease: false }`, against the recorded promotion of E27).
 Issues: #39.
 
 ### R9 — The version is valid and moves forward
 The final version is valid semver and greater than the latest full release on Door43, whichever tool created that release. Loose tags are coerced before comparison; a bare year or no release yields `v1.0.0`; a release that removes a book forces a major increment (ADR 0013, Q19).
 Source: product spec §10 versioning; domain model §7.
 Enforced in: `worker/src/model/version`; `worker/src/operations/release-create` (precondition).
-Verified by: table-driven tests over the coercion and bump rules; edited version not greater than baseline returns `invalid_version`. So far: the `R9:` tests in `worker/test/model/version.test.ts` (`1974` and no release give `v1.0.0`; `v1.2` with a revision `v1.2.1`, with a new book `v1.3.0`, with a released book left out `v2.0.0`; `v105` coerces); `invalid_version` is #39.
+Verified by: table-driven tests over the coercion and bump rules; edited version not greater than baseline returns `invalid_version`. So far: the `R9:` tests in `worker/test/model/version.test.ts` (`1974` and no release give `v1.0.0`; `v1.2` with a revision `v1.2.1`, with a new book `v1.3.0`, with a released book left out `v2.0.0`; `v105` coerces) and the `R9` test in `worker/test/operations/release-create.test.ts` (a version that is not valid, not after the baseline, or below the one confirmed at prepare is `invalid_version` and nothing is written).
 Issues: #37.
 
 ### R10 — Every release is Scripture Burrito with true sizes and checksums
@@ -100,7 +100,7 @@ Issues: #25, #36.
 A failing, unavailable, errored, running, or never-run health check on the snapshot branch blocks release creation. A `warning` result does not block, but release creation requires the manager to have seen the warnings and confirmed they want to proceed; without that confirmation it is refused (decided 18 September 2026, Q6).
 Source: ADR 0007 (amended); product spec §9 and §11; domain model §5.
 Enforced in: `worker/src/operations/release-create` (precondition on `preparation.health.state`; `acknowledge_warnings` required when the state is `warning`).
-Verified by: release attempt in each blocking state returns `health_blocked` and writes nothing; release attempt on `warning` without acknowledgement returns `warning_not_acknowledged` and writes nothing; with acknowledgement it proceeds and the receipt records the acknowledgement. So far: the `H2` tests in `worker/test/model/health.test.ts` (only `healthy`, `info`, and `warning` let a preparation go on) and `worker/test/operations/preparation-read.test.ts` (a warning result is `ready_for_release` with `requires_acknowledgement` and the warnings; failing, unavailable, and error results are `health_blocked`; a refresh from `health_blocked` reads again); the refusals are `release.create`'s, #39.
+Verified by: release attempt in each blocking state returns `health_blocked` and writes nothing; release attempt on `warning` without acknowledgement returns `warning_not_acknowledged` and writes nothing; with acknowledgement it proceeds and the receipt records the acknowledgement. So far: the `H2` tests in `worker/test/model/health.test.ts` (only `healthy`, `info`, and `warning` let a preparation go on) and `worker/test/operations/preparation-read.test.ts` (a warning result is `ready_for_release` with `requires_acknowledgement` and the warnings; failing, unavailable, and error results are `health_blocked`; a refresh from `health_blocked` reads again) and the `H2` tests in `worker/test/operations/release-create.test.ts` (every state short of ready is `health_blocked` and writes nothing; a warning without acknowledgement is `warning_not_acknowledged` and writes nothing; with it the release proceeds and the receipt records the acknowledgement).
 Issues: #36, #39.
 
 ### H3 — Unknown is never shown as good
@@ -137,7 +137,7 @@ Issues: #12, #15, #51.
 Before repository creation, any commit, branch change, release creation, or promotion, the Worker re-reads the repository permission from Door43. Ambiguity fails closed. A project the user lost access to leaves the writable portfolio.
 Source: product spec §2; architecture §3 authorization.
 Enforced in: `worker/src/operations` shared precondition used by every apply operation; for creation, `ownerForCreation` in `project-create-plan` reads the account's creation right in the owner (E43) at plan and again at apply, and `owner-list` offers the wizard only the owners that read allows, so the interface never shows a choice the Worker would refuse (the Worker still decides); the per-repository precondition is #14.
-Verified by: each apply operation with a fixture lacking push permission returns `permission_denied` and writes nothing; a missing `permissions` object is treated as no permission. So far: the `A2:` tests in `worker/test/operations/project-create-plan.test.ts` and `project-create-apply.test.ts` (an owner that grants no creation right, a team without it, a non-boolean grant, or no team at all is `permission_denied` at plan and at apply, and nothing is written; in the plan tests, a granting team on a later page grants) and in `worker/test/operations/owner-list.test.ts` (an organization without the right is not offered, whatever the team order; a granting team on a later page is).
+Verified by: each apply operation with a fixture lacking push permission returns `permission_denied` and writes nothing; a missing `permissions` object is treated as no permission. So far: the `A2:` tests in `worker/test/operations/project-create-plan.test.ts` and `project-create-apply.test.ts` (an owner that grants no creation right, a team without it, a non-boolean grant, or no team at all is `permission_denied` at plan and at apply, and nothing is written; in the plan tests, a granting team on a later page grants) and in `worker/test/operations/owner-list.test.ts` (an organization without the right is not offered, whatever the team order; a granting team on a later page is), and the `R5, A2` test in `worker/test/operations/release-create.test.ts` and the promote test beside it (a lost push right is `permission_denied` at release creation and at promotion, and nothing is written).
 Issues: #14, #30.
 
 ### A3 — Every write is attributed to the signed-in user

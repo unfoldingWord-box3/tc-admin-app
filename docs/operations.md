@@ -255,10 +255,10 @@ Candidate detection and everything the manager needs to decide, with no writes.
 ### `release.create`
 
 - Inputs: `{ owner, repo, preparation_id, version, notes, prerelease: boolean, acknowledge_warnings: boolean }`.
-- Checks: preparation in `ready_for_release`: snapshot health `healthy`, or `warning` with `acknowledge_warnings: true` (H2); `notes` non-empty; `version` valid and greater than the baseline (R9); `bound_to` re-read and unchanged (R5); permission re-read (A2).
-- Door43 writes: tag and Door43 release targeting the snapshot commit with the notes and pre-release flag; then delete the temporary branch (R3, R7).
-- Returns: `receipt.result = preparation` in `pre_release` or `full_release` with `release = { tag, url, prerelease }`. When warnings were acknowledged the receipt records it (`acknowledged_warnings: true`). A failed branch deletion after a successful release is a `warnings` entry, not an error.
-- Errors: `health_blocked`, `warning_not_acknowledged`, `invalid_version`, `validation_failed` (empty notes), `source_changed`, `permission_denied`, `release_failed` (branch retained, state `retryable_failure`), `release_outcome_unknown` (next action `release.lookup`), `release_exists`.
+- Checks, in this order and before any write: a receipt already stored for this preparation by this account is answered as it is (§1 rule 6); the preparation exists (`not_found`) and is `ready_for_release`, or `retryable_failure` after a release Door43 refused, which the manager retries; one that is released is `release_exists`, `restart_required` is `source_changed`, one whose last attempt was not confirmed is `release_outcome_unknown` until `release.lookup` settles it (R6), and every other state is `health_blocked` (H2); the snapshot health is `healthy`, `info`, or `warning`, the last with `acknowledge_warnings: true` (H2, Q6); `notes` non-empty after trimming (`validation_failed` naming `notes`); `version` valid, after the baseline, and not below the version confirmed at prepare, which already carried the major increment a removal needs (R9, `invalid_version`); permission re-read, strictly (A2); `bound_to` re-read and unchanged, default-branch head and latest full release both, else `source_changed` and the preparation stored as `restart_required` (R5).
+- Door43 writes: one `POST /releases` on the snapshot commit with the tag, the notes as the body, and the pre-release flag, which creates the tag with the release (E21, E27); only after Door43 has confirmed it, `DELETE` of the temporary branch (R3, R7). The preparation records the release before the deletion is attempted.
+- Returns: `receipt.result = preparation` in `pre_release` or `full_release` with `release = { tag, url, prerelease }`, `version.confirmed` and `notes.confirmed` as sent; `wrote` lists the tag and the release, both on the snapshot commit. When warnings were acknowledged the receipt records it (`acknowledged_warnings: true`) and the history says so. A branch that could not be deleted after the release is a `warnings` entry (`branch_not_deleted`, with Door43's reason), not an error. The receipt is stored for the preparation for a day.
+- Errors: `not_found`, `health_blocked`, `warning_not_acknowledged`, `invalid_version`, `validation_failed` (empty notes), `source_changed`, `permission_denied`, `release_failed` (Door43 refused: branch retained, state `retryable_failure` with the error, the retry is `release.create` again), `release_outcome_unknown` (Door43 did not confirm: branch retained, state `retryable_failure`, nothing retried; next action `release.lookup`, X1), `release_exists` (Door43 has the tag or release already: nothing written, the preparation unchanged).
 
 ### `release.lookup`
 
@@ -270,10 +270,10 @@ Candidate detection and everything the manager needs to decide, with no writes.
 ### `release.promote`
 
 - Inputs: `{ owner, repo, tag }`.
-- Checks: release exists and is a pre-release; permission re-read (A2).
+- Checks: permission re-read, strictly (A2); the release exists under the tag (E21) and is a pre-release.
 - Door43 writes: one edit of the release setting the pre-release flag false and nothing else (R8).
-- Returns: `receipt.result = { tag, url, prerelease: false }`.
-- Errors: `not_found`, `not_prerelease`, `permission_denied`, `promotion_failed`.
+- Returns: `receipt.result = { tag, url, prerelease: false }`. A stored preparation of that version in `pre_release` follows the release to `full_release`.
+- Errors: `not_found`, `not_prerelease`, `permission_denied`, `promotion_failed` (Door43 refused, with its message, or did not answer; nothing retried, X1).
 
 ### `preparation.discard`
 

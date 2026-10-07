@@ -47,7 +47,7 @@ import type { ReleasePlan, ReleasePlanPayload } from './release-plan';
 
 export type ReleasePrepareReceipt = OperationOutput<'release.prepare'>;
 
-const validation = (field: string, message: string) => new CatalogError('validation_failed', { message: `${field}: ${message}`, details: { fields: [{ path: field, message }] } });
+export const validation = (field: string, message: string) => new CatalogError('validation_failed', { message: `${field}: ${message}`, details: { fields: [{ path: field, message }] } });
 
 /** The metadata a ref's archive carries, or `archive_failed` when the archive holds none tC Admin can read. */
 async function metadataOf(archive: Archive, ref: string): Promise<ProjectMetadata> {
@@ -98,7 +98,7 @@ export function confirmedVersion(sent: string | null, baselineTag: string | null
   return `v${version.major}.${version.minor}.${version.patch}`;
 }
 
-const errorShape = (error: CatalogError, requestId: string): OperationErrorShape => ({
+export const errorShape = (error: CatalogError, requestId: string): OperationErrorShape => ({
   code: error.code,
   message: error.code === 'unexpected' ? catalogMessage('unexpected', undefined, { request_id: requestId }) : error.message,
   retryable: ERROR_CATALOG[error.code].retryable,
