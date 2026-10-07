@@ -93,21 +93,21 @@ Issues: #29, #35.
 Door43's health-check result is the health result. tC Admin maps severities to display states and never reinterprets a result into a more permissive release decision.
 Source: ADR 0007; product spec §9.
 Enforced in: `worker/src/model/health` (pure mapping, no local judgement); `worker/src/operations/release-create` (reads the state, adds no exceptions).
-Verified by: mapping tests over every observed severity (the `H1:` test in `worker/test/model/health.test.ts`); no code path sets `healthy` without a Door43 success result.
+Verified by: mapping tests over every observed severity (the `H1:` tests in `worker/test/model/health.test.ts`, over the catalog severity and over one health-check read, with a severity outside the vocabulary as `health_error`); no code path sets `healthy` without a Door43 success result. So far: the `H1` tests in `worker/test/door43/health.test.ts` (the recorded success, info, and warning answers in tC Admin's words, the issues as Door43 wrote them) and `worker/test/operations/preparation-read.test.ts` (each result moves the preparation as domain model §6 says, and the health stored is the read's); the release gate is #39.
 Issues: #25, #36.
 
 ### H2 — Health blocks release, and a warning needs acknowledgement
 A failing, unavailable, errored, running, or never-run health check on the snapshot branch blocks release creation. A `warning` result does not block, but release creation requires the manager to have seen the warnings and confirmed they want to proceed; without that confirmation it is refused (decided 18 September 2026, Q6).
 Source: ADR 0007 (amended); product spec §9 and §11; domain model §5.
 Enforced in: `worker/src/operations/release-create` (precondition on `preparation.health.state`; `acknowledge_warnings` required when the state is `warning`).
-Verified by: release attempt in each blocking state returns `health_blocked` and writes nothing; release attempt on `warning` without acknowledgement returns `warning_not_acknowledged` and writes nothing; with acknowledgement it proceeds and the receipt records the acknowledgement.
+Verified by: release attempt in each blocking state returns `health_blocked` and writes nothing; release attempt on `warning` without acknowledgement returns `warning_not_acknowledged` and writes nothing; with acknowledgement it proceeds and the receipt records the acknowledgement. So far: the `H2` tests in `worker/test/model/health.test.ts` (only `healthy`, `info`, and `warning` let a preparation go on) and `worker/test/operations/preparation-read.test.ts` (a warning result is `ready_for_release` with `requires_acknowledgement` and the warnings; failing, unavailable, and error results are `health_blocked`; a refresh from `health_blocked` reads again); the refusals are `release.create`'s, #39.
 Issues: #36, #39.
 
 ### H3 — Unknown is never shown as good
 Unknown, unavailable, running, or never-checked health is never displayed as healthy. Unknown coverage is never displayed as complete or as zero.
 Source: product spec §5; issues #19, #25.
 Enforced in: `worker/src/model/health`, `worker/src/model/project` (coverage `present` is `null`, not `0`, when unknown); `web` renders each state distinctly.
-Verified by: the prototype tests carried over by #7: the `H3:` test in `worker/test/model/health.test.ts` (a missing or unknown severity is `never_checked`) and the OBS container test in `worker/test/model/project.test.ts`. Coverage: the `H3:` tests in `worker/test/model/project.test.ts` and `worker/test/contract/project-catalog.test.ts` (no ingredients, a container directory, and unknown never equal to the target).
+Verified by: the prototype tests carried over by #7: the `H3:` tests in `worker/test/model/health.test.ts` (a missing or unknown severity is `never_checked`; a pending, unavailable, or failed health-check read is `checking`, `door43_unavailable`, or `health_error`, and no read but a success result is `healthy`), the `H3` tests in `worker/test/door43/health.test.ts` and `worker/test/operations/preparation-read.test.ts` (the 422 before the check has run stays `checking`), and the OBS container test in `worker/test/model/project.test.ts`. Coverage: the `H3:` tests in `worker/test/model/project.test.ts` and `worker/test/contract/project-catalog.test.ts` (no ingredients, a container directory, and unknown never equal to the target).
 Issues: #19, #25.
 
 ### H4 — Health is never color alone

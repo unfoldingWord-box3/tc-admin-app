@@ -49,7 +49,7 @@ project
   metadata_format:   sb | rc | ts | tc | none
   editability:       { state: editable | unsupported, reason }
   coverage:          { present | null, target | null, scope: nt | ot | full | obs | unknown, basis: catalog | archive, units: [{ id, present }] }
-  health:            { state, severity_raw, ref, checked_at, issue_count | null, source: door43 }
+  health:            { state, severity_raw, ref, checked_at, issue_count | null, issues: [{ code, rule | null, severity, title, details, suggestion }] | null, source: door43 }
   latest_full_release: { tag, version, sha, published_at, author } | null
   default_branch_head: { sha, committed_at } | null   (null for a repository without a commit: setup incomplete, or empty, E10)
   active_preparation: { id, state, version } | null
@@ -58,7 +58,7 @@ project
   freshness
 ```
 
-The project summary `portfolio.list` returns is the part of the report the repository search carries (E7, E32): `ref`, `title` (the repository name when Door43 has no title), `description`, `default_branch`, `language`, `project_type`, `metadata_format`, `editability`, `coverage`, `health`, and `permissions`. The search does not say which ref or when its health severity was checked, so a summary's `health.ref` and `health.checked_at` are `null`, and `health.issue_count` is `null` until the health-check read (#25).
+The project summary `portfolio.list` returns is the part of the report the repository search carries (E7, E32): `ref`, `title` (the repository name when Door43 has no title), `description`, `default_branch`, `language`, `project_type`, `metadata_format`, `editability`, `coverage`, `health`, and `permissions`. The search does not say which ref or when its health severity was checked, so a summary's `health.ref` and `health.checked_at` are `null`, and `health.issue_count` and `health.issues` are `null` until the health-check read (#25, #36).
 
 `health.state` is one of the health states in [domain-model.md](domain-model.md) section 5. `editability.reason` is one sentence in glossary language, for example "Resource Container project. Import it into a new project to manage it here."
 
@@ -248,9 +248,9 @@ Candidate detection and everything the manager needs to decide, with no writes.
 ### `preparation.read`
 
 - Inputs: `{ owner, repo, preparation_id }`.
-- Door43 reads: health for the temporary branch (E15); default-branch head SHA. The Worker polls health every 5 seconds for 3 minutes after the push, then returns `health_checking` and lets the client refresh (Q2 tunes the constants). Inside that window a 422 "no metadata found" for the branch means the check has not run yet and maps to `checking`, not `health_error`.
-- Returns: the preparation. If the default-branch head moved, `state = restart_required` (R5). Health states map per H1. `healthy`, `info`, and `warning` move the preparation to `ready_for_release`; when the state is `warning`, `preparation.requires_acknowledgement` is true and the health issues are included for the manager to read. Every other state leaves the preparation short of `ready_for_release` (H2).
-- Errors: `not_found`, `session_expired`, `door43_unavailable`.
+- Door43 reads: the repository, in every state and before the store is consulted, as the caller's access check (a repository the token cannot see is `not_found`), and for the default-branch head when the preparation is bound and not yet released (`snapshot_prepared`, `health_checking`, `health_blocked`, `ready_for_release`, `retryable_failure`); then, while the preparation waits on the check (`health_checking`, or `health_blocked` when the manager refreshes), the health check for the temporary branch (E15), once per call. Door43 checks every push, so no trigger is sent (E28). The client polls: every 5 seconds for 3 minutes after the push (`HEALTH_POLL` in the shared schema; #5 closed Q2 with those numbers), then offers a refresh. A 422 "no metadata found" for the branch means the check has not run yet and is `checking`, not `health_error`, inside or after that window; the preparation stays `health_checking`.
+- Returns: the preparation, stored when its state or health changed. If the default-branch head moved since the plan, `state = restart_required`, before any health read (R5). Health maps per H1, with `health.issues` as Door43 listed them, `health.ref` the branch, and `health.checked_at` the time of the read. `healthy`, `info`, and `warning` move the preparation to `ready_for_release`; when the state is `warning`, `preparation.requires_acknowledgement` is true and the issues are there for the manager to read before `release.create` asks for `acknowledge_warnings` (H2, Q6). `failing`, `door43_unavailable`, and `health_error` move it to `health_blocked`, from which a further read is the manager's retry; `checking` leaves it `health_checking`. A released, discarded, restart-required, or not-yet-pushed preparation is answered as stored, with no health read.
+- Errors: `not_found` (no preparation of that id for the project, or a repository the caller cannot see), `session_expired`, `door43_unavailable` (the repository read; a health check Door43 cannot answer is a `door43_unavailable` health state, not an error).
 
 ### `release.create`
 

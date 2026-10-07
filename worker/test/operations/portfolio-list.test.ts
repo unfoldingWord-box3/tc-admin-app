@@ -143,7 +143,7 @@ describe('portfolio.list', () => {
       project_type: 'bible',
       metadata_format: 'sb',
       coverage: { present: 27, target: 27, scope: 'nt', basis: 'catalog' },
-      health: { state: 'warning', severity_raw: 'warning', ref: null, checked_at: null, issue_count: null, source: 'door43' },
+      health: { state: 'warning', severity_raw: 'warning', ref: null, checked_at: null, issue_count: null, issues: null, source: 'door43' },
       permissions: { push: true, admin: false, checked_at: '2026-10-02T12:00:00.000Z' },
     });
     expect(new Set(calls)).toEqual(new Set(['/api/v1/user', '/api/v1/repos/search']));

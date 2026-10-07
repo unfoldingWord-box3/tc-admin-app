@@ -115,7 +115,7 @@ Three resources carry state across calls:
 
 ### Health adapter
 
-Door43 runs the health check automatically on every branch push and tag; there is no trigger endpoint. The adapter reads `GET /repos/{owner}/{repo}/healthcheck?ref=` and polls after a push: every 5 seconds for up to 3 minutes, then returns a running state and lets the manager refresh. The response shape, the severity vocabulary (`error`, `warning`, `info`, `success`), and the 422 answer for a ref without a result are recorded as E15; the rule sets differ by metadata format.
+Door43 runs the health check automatically on every branch push and tag; there is no trigger endpoint. The adapter reads `GET /repos/{owner}/{repo}/healthcheck?ref=` once per `preparation.read`; the client polls after a push, every 5 seconds for up to 3 minutes (`HEALTH_POLL` in the shared schema, the numbers #5 recorded, E28), and then offers the manager a refresh; a 422 before the check has run is a running state, however long after the push. The response shape, the severity vocabulary (`error`, `warning`, `info`, `success`), and the 422 answer for a ref without a result are recorded as E15; the rule sets differ by metadata format.
 
 The health adapter accepts a repository/ref target and returns:
 
@@ -205,6 +205,8 @@ Required user-visible behaviors:
 
 Diagnostics may include request ID, project, commit SHA, version, target ref, health status, and Door43 response status. They must exclude file contents, OAuth tokens, and secrets.
 
+Concurrency (decided 7 October 2026 by Rich): plans, receipts, and preparations live in Workers KV, which offers no compare-and-set, so two calls that overlap on one preparation can each store the state it read, and the later write wins. Milestone 1 accepts this: a project has one manager preparing one release at a time, the interface disables its buttons while a call is in flight, every apply re-reads Door43 before it writes, and a receipt stored under its key answers a repeated request. If the pilot shows overlapping writes, the preparation moves to a store with a precondition (a Durable Object), a Milestone 2 change recorded as an ADR.
+
 ## 8. Security requirements
 
 - OAuth authorization-code flow with server-side code exchange.
@@ -259,13 +261,14 @@ worker/
     languages.ts     the full language list and an owner's languages, in glossary names (E25; #28)
     writes.ts        repository creation and the multi-file commit, uploads and deletions by blob SHA, sent once and never retried (W5, X1, A3, W4; #30, #34)
     branches.ts      the temporary branch a release is prepared on, created from a commit; one already there is preparation_active (E21, E27; #34); its deletion joins with #39 and #58
+    health.ts        the health check of one ref, read once per call: a result with its issues, pending, unavailable, or an error (E15, E28; #36)
     releases.ts      one release by its tag, with the commit it targets (E21, E20, R6; #40); the release writes join with #39
-                     planned: health (#36), tags, releases (#39)
+                     planned: tags, releases (#39)
   src/model/         no I/O
     books.ts         book and story ids (#19)
     language.ts      the language tag rule of the Scripture Burrito schema (E44, Q30; #28)
     project.ts       type, editability, coverage (#19)
-    health.ts        Door43 severity to health state (H1, H3)
+    health.ts        Door43 severity to health state, and one health-check read to a health value (H1, H3; #25, #36)
     burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10), and the release merge (#35, Q7, Q8)
     burrito-reader.ts  the Scripture Burrito reader: a project's metadata.json as read, every ingredient classified as book, story, or administrative (#17)
     classify.ts      every file of a ref as a book, story, administrative, or unknown file, given its metadata and tree (#20, R1, S5)
@@ -291,6 +294,7 @@ worker/
     release-plan.ts  release.plan: candidates, defaults, version, notes, bound to both refs (#33)
     release-lookup.ts  release.lookup: is there a release under this tag, and which commit does it target (R6; #40)
     release-prepare.ts  release.prepare: the confirmed selection and version, the snapshot's branch and commits, no more than the plan announced, the preparation stored (#34)
+    preparation-read.ts  preparation.read: the stored preparation, restart_required when the default branch moved (R5), the branch's health and the state it moves to (H1, H2; #36)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)

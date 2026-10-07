@@ -71,12 +71,25 @@ export const ProjectClassification = z.object({
 export type ProjectClassification = z.infer<typeof ProjectClassification>;
 
 /** Health with its provenance (H1): the ref, time, and raw severity it came from. */
+/** One issue Door43's health check reports (E15): its code, the rule, Door43's severity, and its text for the manager, as Door43 wrote it. */
+export const HealthIssue = z.object({
+  code: z.string(),
+  rule: z.string().nullable(),
+  severity: z.string(),
+  title: z.string(),
+  details: z.string(),
+  suggestion: z.string(),
+});
+export type HealthIssue = z.infer<typeof HealthIssue>;
+
 export const Health = z.object({
   state: HealthState,
   severity_raw: z.string().nullable(),
   ref: z.string().nullable(),
   checked_at: z.string().nullable(),
   issue_count: z.number().int().nonnegative().nullable(),
+  /** The issues the health-check read reported, for the manager to read (H2); `null` until a health-check read, as in a project summary, and in a receipt recorded before #36. */
+  issues: z.array(HealthIssue).nullable().default(null),
   source: z.literal('door43'),
 });
 export type Health = z.infer<typeof Health>;

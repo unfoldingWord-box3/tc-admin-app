@@ -223,7 +223,7 @@ describe('the project just created in the portfolio (S1)', () => {
     metadata_format: 'sb',
     editability: { state: 'editable', reason: '' },
     coverage: { present: 0, target: 27, scope: 'nt', basis: 'archive', units: [] },
-    health: { state: 'never_checked', severity_raw: null, ref: null, checked_at: null, issue_count: null, source: 'door43' },
+    health: { state: 'never_checked', severity_raw: null, ref: null, checked_at: null, issue_count: null, issues: null, source: 'door43' },
     permissions: { push: true, admin: true, checked_at: '' },
   });
   const portfolio = [

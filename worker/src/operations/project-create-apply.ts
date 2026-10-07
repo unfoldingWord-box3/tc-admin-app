@@ -64,7 +64,7 @@ export function createdProjectReport(
     editability: editability('sb', project.project_type),
     // Counted from the metadata just written, which is the project's Scripture Burrito, not from Door43's catalog, which has not read it yet.
     coverage: { ...files, basis: 'archive' },
-    health: { state: 'never_checked', severity_raw: null, ref: repository.default_branch, checked_at: null, issue_count: null, source: 'door43' },
+    health: { state: 'never_checked', severity_raw: null, ref: repository.default_branch, checked_at: null, issue_count: null, issues: null, source: 'door43' },
     latest_full_release: null,
     default_branch_head: commit ? { sha: commit.sha, committed_at: commit.committed_at ?? checkedAt } : null,
     active_preparation: null,
