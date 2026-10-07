@@ -285,7 +285,7 @@ In plain terms: an Open Bible Stories project's stories are files `01.md` to `50
 Blocks: nothing in Milestone 1's demo. Owner: Rich (DCS).
 Built behind: the decision above; `release.prepare` leaves an unlisted story unlisted (#84).
 Close by: the check deployed on QA; a branch with an unlisted story re-probed (as in E60) and the finding recorded here.
-**Closed 7 October 2026:** the check is live on QA. With story 04 on `master` and not listed, Door43 reports a second `obs_story_missing` error, "The following stories are not listed in the **`ingredients`** of metadata.json: **`04`**", beside the one for stories 05 to 50 (E60), and on a tree with all 50 story files and one of them unlisted it is the only issue and the answer is `error` (E60), which blocks the release (H2).
+**Closed 7 October 2026:** the check is live on QA. With story 04 on `master` and not listed, Door43 reports a second `obs_story_missing` error, "The following stories are not listed in the **`ingredients`** of metadata.json: **`04`**", beside the one for stories 05 to 50 (E60), and on a tree with all 50 story files and one of them unlisted it is the only issue and the answer is `error` (E60), which blocks the release (H2). Observed on QA only: before an Open Bible Stories release on another host, the same probe (all 50 files, one entry removed, `error`) is run there.
 
 ### Q13 — Multi-file commit limits (closed)
 **Verified 22 September 2026 (E31):** one request with 79 files and about 135 MB of base64 (101 MB of files) was accepted and became one commit in 68 seconds. A Milestone 1 snapshot of an unaligned Bible (7 MB, E17) is far inside that. Any limit that exists is above the largest real Bible we have.
