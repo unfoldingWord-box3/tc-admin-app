@@ -56,8 +56,8 @@ Each step: what the presenter does, the operation the interface calls, what Door
 ### 6. Notes, version, pre-release (R9, product spec §10)
 
 - Read the generated notes: the revised book under "Revised", the carried-forward summary, the source commit and the previous release. Edit one line to show they are the manager's.
-- Confirm the version; show that a lower one is refused (`invalid_version`, R9) and that a higher one is accepted.
-- Tick "Create as a pre-release, to promote later"; tick the acknowledgement.
+- First tick "Create as a pre-release, to promote later" and the acknowledgement: over a warning the button stays disabled until it is ticked, and the button itself creates the release.
+- Show the version check: type the previous release's version and press "Create the pre-release". Expect "Version must be valid and greater than <latest>." (`invalid_version`, R9), refused before anything is written. Set the field back to the calculated version. Do not try a higher one: one that is accepted is created as the release.
 
 ### 7. Create the release (R3, R7)
 
