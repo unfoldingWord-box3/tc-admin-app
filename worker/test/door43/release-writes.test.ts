@@ -2,7 +2,6 @@
 // on the snapshot commit; one PATCH of the pre-release flag alone promotes
 // (R8); one DELETE removes the temporary branch and reports, never throws
 // (R7). Each is sent once (X1); a refusal and a lost answer are told apart.
-import { CatalogError } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import type { Fetch } from '../../src/door43/api';
 import { deleteBranch } from '../../src/door43/branches';
@@ -35,10 +34,13 @@ describe('createRelease (E21, E27)', () => {
     expect(release).toMatchObject({ id: prerelease.id, tag: 'v1.1.0', url: prerelease.html_url, prerelease: true, target_sha: SHA });
   });
 
-  test('R6, X1: a 409 is exists, another refusal is failed with Door43 message, and a lost or unreadable answer is unknown; none is sent twice', async () => {
+  test('R6, X1: a 409 is exists, another 4xx refusal is failed with Door43 message, and a lost, unreadable, 5xx, or timed-out answer is unknown; none is sent twice', async () => {
     const cases: [() => Response | Promise<Response>, string, string][] = [
       [() => Response.json({ message: 'Release is has no Tag' }, { status: 409 }), 'exists', 'Release is has no Tag'],
       [() => Response.json({ message: 'target_commitish is not a valid commit' }, { status: 422 }), 'failed', 'target_commitish is not a valid commit'],
+      [() => Response.json({ message: 'internal error' }, { status: 500 }), 'unknown', 'internal error'],
+      [() => new Response('', { status: 504 }), 'unknown', 'Door43 answered 504'],
+      [() => new Response('', { status: 408 }), 'unknown', 'Door43 answered 408'],
       [() => Promise.reject(new TypeError('fetch failed')), 'unknown', 'Door43 did not answer'],
       [() => new Response('{"id": 1', { status: 201 }), 'unknown', 'unexpected release shape'],
     ];
@@ -66,7 +68,6 @@ describe('promoteRelease (E27)', () => {
     expect(await failure(promoteRelease(door43(() => Response.json({ message: 'release not found' }, { status: 404 })).client, PROBE.owner, PROBE.repo, 1))).toMatchObject({ code: 'not_found' });
     expect(await failure(promoteRelease(door43(() => Response.json({ message: 'nope' }, { status: 500 })).client, PROBE.owner, PROBE.repo, 1))).toMatchObject({ kind: 'failed', reason: 'nope', status: 500 });
     expect(await failure(promoteRelease(door43(() => Promise.reject(new TypeError('fetch failed'))).client, PROBE.owner, PROBE.repo, 1))).toMatchObject({ kind: 'unknown' });
-    expect(new CatalogError('not_found').code).toBe('not_found');
   });
 });
 
