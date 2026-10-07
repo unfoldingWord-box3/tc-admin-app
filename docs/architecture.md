@@ -259,6 +259,7 @@ worker/
     languages.ts     the full language list and an owner's languages, in glossary names (E25; #28)
     writes.ts        repository creation and the multi-file commit, uploads and deletions by blob SHA, sent once and never retried (W5, X1, A3, W4; #30, #34)
     branches.ts      the temporary branch a release is prepared on, created from a commit; one already there is preparation_active (E21, E27; #34); its deletion joins with #39 and #58
+    releases.ts      one release by its tag, with the commit it targets (E21, E20, R6; #40); the release writes join with #39
                      planned: health (#36), tags, releases (#39)
   src/model/         no I/O
     books.ts         book and story ids (#19)
@@ -271,7 +272,6 @@ worker/
     obs-scope.ts     the fixed currentScope of every Open Bible Stories project (E46)
     md5.ts           ingredient checksums (R10)
     license-cc-by-sa-4.0.ts  the license text of ingredients/license.md (Q20)
-                     planned: upload identification (#45), candidates (#33), version (#37), states
     candidates.ts    candidate detection by blob SHA, the R4 defaults, removals, administrative files (#33)
     version.ts       the version rules: coercion, baseline, increment (R9; #37)
     notes.ts         the release notes draft (#38)
@@ -289,6 +289,7 @@ worker/
     language-list.ts  language.list: the wizard's language list, each tag marked as accepted or not (#28)
     owner-list.ts    owner.list: the owners the account may create a project in, from its teams (E43, A2; #28)
     release-plan.ts  release.plan: candidates, defaults, version, notes, bound to both refs (#33)
+    release-lookup.ts  release.lookup: is there a release under this tag, and which commit does it target (R6; #40)
     release-prepare.ts  release.prepare: the confirmed selection and version, the snapshot's branch and commits, no more than the plan announced, the preparation stored (#34)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's

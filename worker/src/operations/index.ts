@@ -8,6 +8,7 @@ import { ownerList } from './owner-list';
 import { portfolioList } from './portfolio-list';
 import { projectCreateApply } from './project-create-apply';
 import { projectCreatePlan } from './project-create-plan';
+import { releaseLookup } from './release-lookup';
 import { releasePlan } from './release-plan';
 import { releasePrepare } from './release-prepare';
 import { situationRead } from './situation-read';
@@ -23,6 +24,7 @@ export const HANDLERS: OperationHandlers = {
   'project.create.apply': projectCreateApply,
   'language.list': languageList,
   'owner.list': ownerList,
+  'release.lookup': releaseLookup,
   'release.plan': releasePlan,
   'release.prepare': releasePrepare,
 };
