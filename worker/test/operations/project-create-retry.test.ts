@@ -4,7 +4,7 @@
 // adopted, never made twice; a repository is never created or deleted (W4);
 // a name the plan could not learn it took is adopted only under Q29's rule;
 // the same retry answers the same receipt. Door43 is a stub over the recorded
-// QA responses (E27, E43, E45) that keeps each repository's files.
+// QA responses (E27, E43, E45, E63) that keeps each repository's files.
 import { readFileSync } from 'node:fs';
 import { CatalogError, OPERATIONS } from '@tc-admin/shared/schema';
 import type { OperationInput } from '@tc-admin/shared/schema';
@@ -19,6 +19,7 @@ import { projectCreateApply } from '../../src/operations/project-create-apply';
 import { projectCreatePlan } from '../../src/operations/project-create-plan';
 import type { ProjectCreatePayload } from '../../src/operations/project-create-plan';
 import { adoptable, createdSinceAttempt, projectCreateRetry } from '../../src/operations/project-create-retry';
+import { recordedText } from '../support/recorded';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/', import.meta.url);
 const recorded = <T>(path: string): T => (JSON.parse(readFileSync(new URL(path, fixtures), 'utf8')) as { response: { json: T } }).response.json;
@@ -26,6 +27,11 @@ const user = recorded<{ id: number; login: string }>('2026-10-05/user/user.json'
 const teams = recorded<unknown[]>('2026-10-05/user/user__teams.json');
 const createdRepo = recorded<Record<string, unknown>>('2026-09-22/probe-write/03-create-repo.json');
 const firstCommit = recorded<{ commit: { sha: string } }>('2026-09-22/probe-write/04-first-commit.json');
+/** E63: a tree read answers the tree object's SHA, a branch read the head commit's, and a second create of a file is refused. */
+const setupRetry = <T>(name: string): T => JSON.parse(recordedText(`2026-10-07/setup-retry/${name}`)) as T;
+const treeByCommit = setupRetry<{ sha: string }>('07-GET-tree-by-commit.json');
+const branchRead = setupRetry<{ name: string; commit: { id: string; url: string; timestamp: string } }>('08-GET-branch.json');
+const fileExists = setupRetry<{ message: string }>('06-POST-contents-again.json');
 
 class MemoryKV implements KVNamespace {
   readonly entries = new Map<string, { value: string; ttl: number | undefined }>();
@@ -56,7 +62,7 @@ interface Sent {
 let kv: MemoryKV;
 let sent: Sent[];
 let repositories: Map<string, Repository>;
-/** What the contents endpoint does: commit and answer; refuse with a status; commit and lose the answer; or lose the request before Door43 commits. */
+/** What the contents endpoint does: commit and answer; refuse with a status (422 with Door43's recorded message, E63); commit and lose the answer; or lose the request before Door43 commits. */
 let commitAnswer: 'created' | number | 'lost-after-commit' | 'lost-before-commit';
 /** What the create endpoint does: create and answer, or create and lose the answer (Q29). */
 let createAnswer: 'created' | 'lost-after-create';
@@ -94,20 +100,28 @@ const door43: Fetch = async (url, init) => {
   const contents = /^\/api\/v1\/repos\/([^/]+)\/([^/]+)\/contents$/.exec(pathname);
   if (method === 'POST' && contents) {
     if (commitAnswer === 'lost-before-commit') throw new TypeError('fetch failed');
+    if (commitAnswer === 422) return Response.json(fileExists, { status: 422 });
     if (typeof commitAnswer === 'number') return Response.json({ message: 'the server broke' }, { status: commitAnswer });
     const target = repositories.get(`${contents[1]}/${contents[2]}`)!;
-    if (target.files !== null) return Response.json({ message: 'repository file already exists [path: metadata.json]' }, { status: 422 });
+    if (target.files !== null) return Response.json(fileExists, { status: 422 });
     const files = body!.files as { path: string; content: string }[];
     target.files = await Promise.all(files.map(async file => ({ path: file.path, sha: await gitBlobSha(new Uint8Array(Buffer.from(file.content, 'base64'))) })));
     if (commitAnswer === 'lost-after-commit') throw new TypeError('fetch failed');
     return Response.json(firstCommit, { status: 201 });
   }
+  const branch = /^\/api\/v1\/repos\/([^/]+)\/([^/]+)\/branches\/([^/]+)$/.exec(pathname);
+  if (branch && method === 'GET') {
+    const found = repositories.get(`${branch[1]}/${branch[2]}`);
+    if (!found?.files) return new Response('', { status: 404 });
+    // The branch read names the head commit and its time (E63), here the commit the contents endpoint answered.
+    return Response.json({ ...branchRead, name: branch[3], commit: { ...branchRead.commit, id: firstCommit.commit.sha, url: `https://qa.door43.org/${found.owner}/${branch[2]}/commit/${firstCommit.commit.sha}` } });
+  }
   const tree = /^\/api\/v1\/repos\/([^/]+)\/([^/]+)\/git\/trees\/([^/]+)$/.exec(pathname);
   if (tree && method === 'GET') {
     const found = repositories.get(`${tree[1]}/${tree[2]}`);
-    if (!found?.files) return new Response('', { status: 404 });
-    // Read by branch, Door43 names the commit as the tree's sha (E19, E14).
-    return Response.json({ sha: firstCommit.commit.sha, tree: found.files.map(file => ({ ...file, type: 'blob', mode: '100644', size: 1 })), truncated: false, page: 1, total_count: found.files.length });
+    if (!found?.files || tree[3] !== firstCommit.commit.sha) return new Response('', { status: 404 });
+    // Read at the commit, the tree's own sha is the tree object's, never the commit's (E63).
+    return Response.json({ ...treeByCommit, tree: found.files.map(file => ({ ...file, type: 'blob', mode: '100644', size: 1 })), truncated: false, page: 1, total_count: found.files.length });
   }
   return new Response('', { status: 404 });
 };
@@ -193,14 +207,14 @@ describe('a first commit that failed', () => {
     expect(kv.entries.get(`retry-receipt:${planned.id}`)!.ttl).toBe(86_400);
   });
 
-  test('X1: a commit the retry sees refused is commit_failed with Door43\'s message, recorded on the plan, and the next retry commits once more', async () => {
+  test('X1, E63: a commit the retry sees refused is commit_failed with Door43\'s message, recorded on the plan, and the next retry commits once more', async () => {
     const planned = await incomplete();
-    commitAnswer = 500;
+    commitAnswer = 422;
     const error = (await failure(retry(planned.id)))!;
     expect(error.code).toBe('commit_failed');
-    expect(error.message).toBe('Commit failed: the server broke.');
+    expect(error.message).toBe('Commit failed: repository file already exists [path: README.md].');
     expect(writesSent()).toEqual([COMMIT]);
-    expect(storedPlan(planned.id).payload.first_commit).toEqual({ outcome: 'failed', door43_status: 500 });
+    expect(storedPlan(planned.id).payload.first_commit).toEqual({ outcome: 'failed', door43_status: 422 });
     expect(kv.entries.has(`retry-receipt:${planned.id}`)).toBe(false);
     commitAnswer = 'created';
     sent = [];
@@ -225,6 +239,17 @@ describe('a first commit whose outcome is unknown', () => {
     expect(receipt.wrote).toEqual([]);
     expect(receipt.result.setup).toEqual({ state: 'complete', failed_step: null });
     expect(receipt.result.default_branch_head?.sha).toBe(firstCommit.commit.sha);
+  });
+
+  test('X1, E63: the adopted commit is the one the branch read names, with its time, never the tree\'s own sha; its files are read at that commit', async () => {
+    expect(treeByCommit.sha).not.toBe(firstCommit.commit.sha);
+    const planned = await incomplete('lost-after-commit');
+    const receipt = await retry(planned.id);
+    expect(receipt.result.default_branch_head).toEqual({ sha: firstCommit.commit.sha, committed_at: branchRead.commit.timestamp });
+    const reads = sent.filter(request => request.method === 'GET').map(request => request.path);
+    expect(reads).toContain('/api/v1/repos/tc-admin-qa-org/id_tcap/branches/master');
+    expect(reads).toContain(`/api/v1/repos/tc-admin-qa-org/id_tcap/git/trees/${firstCommit.commit.sha}`);
+    expect(JSON.stringify(receipt)).not.toContain(treeByCommit.sha);
   });
 
   test('X1: a retry whose own commit has no answer is commit_failed with the outcome unknown, and the next retry reads before it commits, adopting what landed', async () => {

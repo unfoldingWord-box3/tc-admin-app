@@ -32,7 +32,7 @@ export interface TreeFile {
   size: number | null;
 }
 
-/** A ref's files, in Door43's order, with the commit the tree was read at. */
+/** A ref's files, in Door43's order, with the tree's own SHA: the tree object's, not the commit's, whether read by branch or by commit (E63). */
 export interface Tree {
   sha: string;
   files: TreeFile[];

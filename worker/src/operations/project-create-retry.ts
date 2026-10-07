@@ -20,6 +20,7 @@
 import { CatalogError } from '@tc-admin/shared/schema';
 import type { ParsedInput } from '@tc-admin/shared/schema';
 import { readAccount } from '../door43/auth';
+import { readBranchHead } from '../door43/branches';
 import { readTree } from '../door43/trees';
 import { commitFiles, readRepositoryState } from '../door43/writes';
 import type { Commit, RepositoryState } from '../door43/writes';
@@ -167,15 +168,18 @@ async function commitOnce(context: OperationContext, stored: StoredPlan<ProjectC
 }
 
 /**
- * The first commit Door43 already made: the default branch holds exactly the
- * plan's files, blob for blob (E19, E45). Door43 names the commit as the tree's
- * `sha` when the tree is read by branch (inferred from the E19 fixture, whose
- * `sha` is the catalog's `commit_sha` for `master`, E14). A branch with any
- * other files is not this plan's first commit, and nothing is written.
+ * The first commit Door43 already made: the default branch's head commit
+ * (`GET /branches/{branch}`, `commit.id` and `timestamp`, E63), whose tree,
+ * read at that commit so both describe the same one, holds exactly the plan's
+ * files, blob for blob (E19, E45). The tree's own `sha` is the tree object's,
+ * never the commit's (E63), so the commit is named by the branch read. A branch
+ * with any other files is not this plan's first commit, and nothing is written.
  */
 async function landedCommit(context: OperationContext, payload: ProjectCreatePayload, state: RepositoryState): Promise<Commit> {
+  const client = signedIn(context);
   const branch = state.repository.default_branch;
-  const tree = await readTree(signedIn(context), payload.owner.login, payload.repo_name, branch);
+  const head = await readBranchHead(client, payload.owner.login, payload.repo_name, branch);
+  const tree = await readTree(client, payload.owner.login, payload.repo_name, head.sha);
   const planned = await Promise.all(payload.files.map(async file => ({ path: file.path, sha: await gitBlobSha(file.content) })));
   if (!sameFiles(planned, tree.files)) {
     throw new CatalogError('commit_failed', {
@@ -183,5 +187,5 @@ async function landedCommit(context: OperationContext, payload: ProjectCreatePay
       details: { owner: payload.owner.login, repo: payload.repo_name, outcome: 'failed', reason: 'default branch differs from the plan' },
     });
   }
-  return { sha: tree.sha, url: '', committed_at: null, files: tree.files.map(({ path, sha }) => ({ path, sha })) };
+  return { sha: head.sha, url: head.url, committed_at: head.committed_at, files: tree.files.map(({ path, sha }) => ({ path, sha })) };
 }

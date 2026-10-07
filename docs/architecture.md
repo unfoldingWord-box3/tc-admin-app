@@ -257,10 +257,10 @@ worker/
     archive.ts       the Scripture Burrito archive of a ref, opened from its central directory, each file inflated on demand (E34, E4, E53; #18)
     repos.ts         repository search and permissions read strictly (P2); one repository; whether a name is taken; the account's creation rights (E43)
     catalog.ts       the catalog view of a repository (#19); its stages and the catalog entry of one ref (E14, E20; #33)
-    trees.ts         the recursive git tree of a ref, every page (E19, E52; #33)
+    trees.ts         the recursive git tree of a ref, every page; its own sha is the tree's, not a commit's (E19, E52, E63; #33)
     languages.ts     the full language list and an owner's languages, in glossary names (E25; #28)
     writes.ts        repository creation and the multi-file commit, uploads and deletions by blob SHA, sent once and never retried (W5, X1, A3, W4; #30, #34); a created repository's state for the retry (#31)
-    branches.ts      the temporary branch a release is prepared on, created from a commit; one already there is preparation_active (E21, E27; #34); its deletion after the release, reported and never thrown (R7; #39, #58)
+    branches.ts      the temporary branch a release is prepared on, created from a commit; one already there is preparation_active (E21, E27; #34); its deletion after the release, reported and never thrown (R7; #39, #58); a branch's head commit, for the retry of a first commit (E63; #31)
     health.ts        the health check of one ref, read once per call: a result with its issues, pending, unavailable, or an error (E15, E28; #36)
     releases.ts      one release by its tag, with the commit it targets (E21, E20, R6; #40); the release created on the snapshot commit, tag and all, and the one edit that promotes it (E27, R8; #39)
   src/model/         no I/O
