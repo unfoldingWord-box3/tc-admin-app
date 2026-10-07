@@ -3,7 +3,7 @@
 // every page, each entry mapped to glossary terms. Door43's field names stop here.
 //
 // Each entry describes one ref of one repository: with `stage=prod` (Door43's
-// default, E34) its latest full release; with `stage=latest`, the latest full
+// default, E34, E62) its latest full release; with `stage=latest`, the latest full
 // release of a repository that has one and the default branch of one that has
 // none (E35: bahtraku's 40 released repositories came back as their releases
 // and `PB-Loli-Edisi-Percobaan`, unreleased, as `master`). Each entry also
@@ -75,26 +75,25 @@ function entry(raw: Door43CatalogEntry): CatalogSearchEntry | null {
   };
 }
 
-/** Door43's page size for lists (E35 read with `limit=50`). */
+/** The page size asked for; the search honors `limit` and `page` (E62). */
 const PAGE_SIZE = 50;
 /** A hundred pages is five thousand Bible and Open Bible Stories repositories for one owner: beyond any owner on Door43. */
 const MAX_PAGES = 100;
 
 /**
  * The owner's Bible and Open Bible Stories entries in any metadata format at the
- * given stage, every page, until a page with no entries. A page that repeats an
- * earlier one, an answer that is not a list, or more than `MAX_PAGES` pages fails
- * as `door43_unavailable`, never as a partial list. `data: null` is a page with
- * no entries: Door43 answers an empty catalog list that way (E25), and nothing
- * recorded says its search answers otherwise (inferred).
+ * given stage, every page, until the empty list Door43 answers past the last page
+ * and for an owner with no entries (E62). A page that repeats an earlier one, an
+ * answer that is not a list (`data: null` included, which the search was not seen
+ * to send), or more than `MAX_PAGES` pages fails as `door43_unavailable`, never
+ * as a partial or an invented empty list.
  */
 export async function searchCatalog(client: Door43Client, owner: string, stage: CatalogStage): Promise<CatalogSearchEntry[]> {
   const entries: CatalogSearchEntry[] = [];
   const seen = new Set<string>();
   for (let page = 1; page <= MAX_PAGES; page++) {
     const body = await readDoor43<{ data?: unknown } | null>(client, '/catalog/search', { owner, flavor: SUPPORTED_FLAVORS, stage, page, limit: PAGE_SIZE });
-    const batch = body?.data ?? null;
-    if (batch === null) return entries;
+    const batch = body?.data;
     if (!Array.isArray(batch)) throw new CatalogError('door43_unavailable', { details: { reason: 'unexpected catalog search shape' } });
     if (batch.length === 0) return entries;
     const signature = JSON.stringify(batch.map(item => (item && typeof item === 'object' ? (item as Door43CatalogEntry).id : null)));
