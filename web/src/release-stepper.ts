@@ -53,15 +53,18 @@ export function counts(books: readonly Book[], selection: Selection): Record<Sel
   return result;
 }
 
+/** The stories of Open Bible Stories, `01` to `50` (E36), all of which Door43's health check requires (E59). The model's list is the Worker's, out of the web's reach. */
+export const OBS_STORIES = 50;
+
 /**
  * What an Open Bible Stories release takes, in place of a selection (ADR 0013): every story on the default branch,
- * counted; a story the release had that the branch no longer has is removed, named, and needs a major version (R2, R9).
+ * counted against the fifty; a story the release had that the branch no longer has is removed, named, and needs a major version (R2, R9).
  */
 export function storySummary(books: readonly Book[]): { count: string; removed: string | null } {
   const included = books.filter(story => story.selection === 'include').length;
   const removed = books.filter(story => story.selection === 'leave_out').map(story => story.id);
   return {
-    count: `${included} ${included === 1 ? 'story' : 'stories'} in this release`,
+    count: `${included} of ${OBS_STORIES} stories in this release.`,
     removed:
       removed.length === 0
         ? null

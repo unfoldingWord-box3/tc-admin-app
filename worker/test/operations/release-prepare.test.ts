@@ -388,8 +388,8 @@ describe('an Open Bible Stories release (#84)', () => {
   const OBS_SHA = obsView.catalog.latest!.commit_sha;
   const obsZip = new Uint8Array(readFileSync(new URL('../../../fixtures/door43/qa.door43.org/2026-10-01/sb-archives/unfoldingWord__en_obs__v9.zip', import.meta.url)));
 
-  /** The default branch as an archive and a tree, its metadata carrying a stale size and md5 for story 01, as real repositories do (E5). */
-  async function obsBranch() {
+  /** The default branch as an archive and a tree, its metadata carrying a stale size and md5 for story 01, as real repositories do (E5), and no entry for the stories `unlisted` names. */
+  async function obsBranch(unlisted: readonly string[] = []) {
     const archive = openArchive(obsZip);
     const entries: [string, string][] = [['en_obs/', '']];
     const blobs: Tree['tree'] = [];
@@ -398,6 +398,7 @@ describe('an Open Bible Stories release (#84)', () => {
       if (entry.path === 'metadata.json') {
         const metadata = JSON.parse(decoder.decode(bytes)) as { ingredients: Record<string, object> };
         metadata.ingredients['ingredients/content/01.md'] = { ...metadata.ingredients['ingredients/content/01.md'], size: 1, checksum: { md5: 'stale' } };
+        for (const path of unlisted) delete metadata.ingredients[path];
         bytes = encoder.encode(`${JSON.stringify(metadata, null, 2)}\n`);
       }
       entries.push([`en_obs/${entry.path}`, decoder.decode(bytes)]);
@@ -454,6 +455,28 @@ describe('an Open Bible Stories release (#84)', () => {
       expect({ path, size: entry.size, md5: entry.checksum.md5 }).toEqual({ path, size: bytes.length, md5: md5(bytes) });
     }
     expect(metadata.ingredients['ingredients/content/01.md']!.checksum.md5).not.toBe('stale');
+  });
+
+  test('R10, H1: a story file the default branch\'s metadata does not list is left unlisted, not refused: the prepare writes only the metadata, with no entry for it and the listed stories\' sizes and md5s recomputed (decided 7 October 2026, Q32)', async () => {
+    const unlisted = ['ingredients/content/02.md', 'ingredients/content/03.md'];
+    const branch = await obsBranch(unlisted);
+    const plan = await releasePlan(OBS, context(obsDoor43(branch).fetch));
+    // The plan reads the stories from the tree, so the unlisted ones are counted and included.
+    expect(plan.preview.books.filter(story => story.selection === 'include')).toHaveLength(50);
+    const live = obsDoor43(branch);
+    const input = OPERATIONS['release.prepare'].input.parse({ ...OBS, plan_id: plan.id, selection: {}, unknown_included: [], version: null });
+    const receipt = await releasePrepare(input, context(live.fetch));
+    expect(receipt.result.state).toBe('health_checking');
+    // The story files are already on the branch from the default-branch head: none is written, only the metadata.
+    expect((live.writes[1]!.body.files as { path: string; operation: string }[]).map(file => `${file.operation} ${file.path}`)).toEqual(['upload metadata.json']);
+    const metadata = JSON.parse(decodeContent(fileOf(live.writes[1]!.body, 'metadata.json')!)) as { ingredients: Record<string, { size: number; checksum: { md5: string } }> };
+    for (const path of unlisted) expect(metadata.ingredients).not.toHaveProperty([path]);
+    expect(Object.keys(metadata.ingredients)).toHaveLength(51);
+    const files = openArchive(branch.zip);
+    for (const [path, entry] of Object.entries(metadata.ingredients)) {
+      const bytes = await files.bytes(path);
+      expect({ path, size: entry.size, md5: entry.checksum.md5 }).toEqual({ path, size: bytes.length, md5: md5(bytes) });
+    }
   });
 
   test('R4: a stored Open Bible Stories plan with no story on the default branch is invalid_selection, before any write', () => {

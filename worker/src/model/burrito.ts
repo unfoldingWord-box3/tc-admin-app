@@ -241,7 +241,8 @@ function entryFor(ingredient: MetadataIngredient, source: ProjectMetadata, file:
  * an included one takes the default branch's. Every snapshot file must have an
  * entry, unless the manager included it as an unknown file, and every entry a
  * file; otherwise the merge refuses, since Door43 verifies both ways on a tag
- * (E16, R10).
+ * (E16, R10). Open Bible Stories excepted: a story file the default branch's
+ * metadata does not list is left unlisted, for Door43's health check (Q32).
  */
 export function mergeReleaseMetadata(merge: ReleaseMerge): MergedRelease {
   const { current, base } = merge;
@@ -284,9 +285,11 @@ export function mergeReleaseMetadata(merge: ReleaseMerge): MergedRelease {
     if (!file) throw new MetadataError(`${ingredient.path} is an administrative ingredient but is not in the snapshot`);
     put(ingredient.path, 'an administrative ingredient', entryFor(ingredient, current, file));
   }
+  // An Open Bible Stories release is the whole default branch, whose metadata is the authority for its stories: a file it does not
+  // list stays unlisted, with no entry invented, and Door43's health check reports the gap (decided 7 October 2026 by Rich, H1, Q32).
   const unknown = new Set(merge.unknown_included ?? []);
   for (const file of merge.files) {
-    if (!entries.has(file.path) && !unknown.has(file.path)) throw new MetadataError(`${file.path} is in the snapshot but has no ingredient entry`);
+    if (type !== 'obs' && !entries.has(file.path) && !unknown.has(file.path)) throw new MetadataError(`${file.path} is in the snapshot but has no ingredient entry`);
   }
 
   // The scope: for a Bible exactly the released books, each with the ranges its entry declares (Q7); Open Bible Stories keeps the fixed scope (E46).
