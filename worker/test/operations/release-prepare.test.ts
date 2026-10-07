@@ -292,7 +292,7 @@ describe('what the prepare refuses, writing nothing', () => {
     expect(stored).toMatchObject({ state: 'retryable_failure', last_error: { code: 'door43_unavailable' }, snapshot: { branch: 'temp-tca-release/v1.3.0' } });
   });
 
-  test('R5: a preparation stored under the same version for a release Door43 no longer has (QA is reset from production weekly, E58) is replaced by one bound to the commits read now, with nothing of the old one kept', async () => {
+  test('R5: a preparation already stored under the version, here a full release a QA reset removed from Door43 (E58), is replaced unconditionally by one bound to the commits read now, with nothing of the old one kept', async () => {
     const key = `preparation:${PENDAU.owner.toLowerCase()}/${PENDAU.repo}/v1.3.0`;
     const first = await prepare({}, carried({ gen: 'include' }));
     const old = OPERATIONS['release.prepare'].output.parse(await first.run()).result;
