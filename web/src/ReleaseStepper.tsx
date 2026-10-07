@@ -28,6 +28,7 @@ import {
   spellVersion,
   statesFor,
   stepOf,
+  storySummary,
   versionToSend,
 } from './release-stepper';
 import type { ReleasePlan, Selection } from './release-stepper';
@@ -235,6 +236,7 @@ export function ReleaseStepper({ project, onFailure }: Props) {
   const books = plan?.preview.books ?? [];
   const removals = removalsOf(books, selection);
   const tally = counts(books, selection);
+  const stories = storySummary(books);
   const gate = preparation ? releaseGate(preparation) : 'blocked';
 
   return (
@@ -268,7 +270,13 @@ export function ReleaseStepper({ project, onFailure }: Props) {
       {step === 'Select books' && plan && !restart && (
         <>
           {project.project_type === 'obs' ? (
-            <p>An Open Bible Stories release takes the whole default branch: every story, no selection.</p>
+            <>
+              <p>An Open Bible Stories release takes the whole default branch: every story, no selection.</p>
+              <p className="derived">
+                {plan.preview.version.baseline_tag ? `Compared with the last full release, ${plan.preview.version.baseline_tag}.` : 'No release yet.'} {stories.count}
+              </p>
+              {stories.removed && <p role="status">{stories.removed}</p>}
+            </>
           ) : (
             <>
               <p className="derived">

@@ -231,4 +231,28 @@ describe('an Open Bible Stories release', () => {
     expect(Object.keys(names).filter(key => key !== 'note').map(key => key.toLowerCase()).sort()).toEqual([...merged.released].sort());
   });
 
+  test('R10, H1: only a story file the metadata does not list is left unlisted (Q32); any other unlisted file is still refused', () => {
+    const obs = parseMetadata(readFileSync(new URL('2026-10-01/sb-archives/unfoldingWord__en_obs__v9.metadata.json', fixtures), 'utf8'));
+    const files = obs.ingredients.map(i => ({ path: i.path, size: 7, md5: 'f'.repeat(32) }));
+    const extra = { path: 'ingredients/extra.txt', size: 1, md5: 'x' };
+    expect(() => mergeReleaseMetadata({ current: obs, base: null, selection: {}, files: [...files, extra] })).toThrow(/extra.txt is in the snapshot but has no ingredient entry/);
+    expect(mergeReleaseMetadata({ current: obs, base: null, selection: {}, files: [...files, extra], unknown_included: [extra.path] }).released).toHaveLength(50);
+  });
+
+  test('R10, H1: a released story the branch still has as a file but its metadata no longer lists is left unlisted, not refused and not removed (Q32)', () => {
+    const obs = parseMetadata(readFileSync(new URL('2026-10-01/sb-archives/unfoldingWord__en_obs__v9.metadata.json', fixtures), 'utf8'));
+    const files = obs.ingredients.map(i => ({ path: i.path, size: 7, md5: 'f'.repeat(32) }));
+    const branch = edited(obs, document => {
+      delete (document.ingredients as Record<string, unknown>)['ingredients/content/01.md'];
+    });
+    // The prepare sends `include` for every story the tree has (confirmedSelection), and the merge's own default.
+    for (const selection of [{ '01': 'include' as const }, {}]) {
+      const merged = mergeReleaseMetadata({ current: branch, base: obs, selection, files });
+      expect(ingredientsOf(merged.metadata)).not.toHaveProperty(['ingredients/content/01.md']);
+      expect(merged.released).not.toContain('01');
+      expect(merged.released).toHaveLength(49);
+    }
+    expect(mergeReleaseMetadata({ current: branch, base: obs, selection: { '01': 'include' }, files }).removed).toEqual([]);
+  });
+
 });

@@ -1,0 +1,35 @@
+{
+  "sha": "74f187fe58943abc7977e89418ba63c682ea98f0",
+  "files": [
+    {
+      "path": "README.md",
+      "sha": "ac1116012536496f20082618b0c039493a18409b",
+      "size": 215
+    },
+    {
+      "path": "ingredients/content/01.md",
+      "sha": "c2267966e383b2a193add2c9d3452817a72641c5",
+      "size": 5185
+    },
+    {
+      "path": "ingredients/content/02.md",
+      "sha": "66c03e59930f9d2ee278309297e59391b1f7a182",
+      "size": 4298
+    },
+    {
+      "path": "ingredients/content/03.md",
+      "sha": "cc963dcf573e43f7882a83fdc7a68708cce40b40",
+      "size": 5296
+    },
+    {
+      "path": "ingredients/license.md",
+      "sha": "31775bb8f62fc9841951a6237f60a4f6f4da7547",
+      "size": 18535
+    },
+    {
+      "path": "metadata.json",
+      "sha": "1cd65cb868be1a54c240c9c5d86fd2c5d5e5e171",
+      "size": 6413
+    }
+  ]
+}

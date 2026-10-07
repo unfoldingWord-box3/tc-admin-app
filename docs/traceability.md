@@ -107,7 +107,7 @@ Moved into Milestone 1 on 1 October 2026 (Q25). Child issues created 5 October 2
 | [#48](https://github.com/unfoldingWord-box3/tc-admin-app/issues/48) Open Bible Stories | §5, §6, §8, §10 | 0008, 0013 | H5, W1, R10 | E36, E37, Q4, Q24 | every project operation with `obs`; `release.plan` with no selection | model, operations, web | S1, S9 |
 | [#82](https://github.com/unfoldingWord-box3/tc-admin-app/issues/82) Create an Open Bible Stories project | §6 | 0006, 0013 | W1, W3, H5 | E36, E37, E44, E46, E47, Q4, Q25 | `project.create.plan`, `project.create.apply` | model/burrito, operations | S1 |
 | [#83](https://github.com/unfoldingWord-box3/tc-admin-app/issues/83) Stories in uploads, imports, archives | §5, §8 | 0013 | H3, H5, W1 | E35, E36 | `upload.plan`, `import.plan`, `project.read` | model/books, model/upload, door43/archive | S2, S9 |
-| [#84](https://github.com/unfoldingWord-box3/tc-admin-app/issues/84) Release Open Bible Stories whole | §10 | 0003, 0005, 0010, 0013 | R1, R3, R4, R10, H5 | E36, Q24 | `release.plan`, `release.prepare`, `release.create` | operations/release, web | S3 |
+| [#84](https://github.com/unfoldingWord-box3/tc-admin-app/issues/84) Release Open Bible Stories whole | §10 | 0003, 0005, 0010, 0013 | R1, R2, R3, R4, R10, H1, H2, H5 | E36, E59, E60, Q24, Q32 | `release.plan`, `release.prepare`, `release.create` | operations/release, web | S3 |
 
 ### EPIC: Demo readiness ([#44](https://github.com/unfoldingWord-box3/tc-admin-app/issues/44))
 

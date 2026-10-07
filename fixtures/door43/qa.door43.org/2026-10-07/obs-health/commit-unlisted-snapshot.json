@@ -1,0 +1,12 @@
+{
+  "sha": "1d5805ad2e543aede7bf80aa9f5a30b656c7acab",
+  "parents": [
+    "928afcf7c9c6022ae11304ca7fce04f39230ecce"
+  ],
+  "files": [
+    {
+      "filename": "metadata.json",
+      "status": "modified"
+    }
+  ]
+}
