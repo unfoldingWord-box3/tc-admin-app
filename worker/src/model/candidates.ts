@@ -17,6 +17,8 @@ import type { CatalogIngredient } from './project';
 export interface RefFile {
   path: string;
   sha: string;
+  /** The size the tree gives, when it does (E19). */
+  size?: number | null;
 }
 
 /** What is known of one ref: the catalog's ingredients (E20), which name a Bible's books and their paths, and the tree's files. */
@@ -31,6 +33,8 @@ export interface UnitFile {
   path: string;
   title: string;
   sha: string | null;
+  /** The file's size on that ref, when the tree gave it; what the plan sizes its commits by. */
+  size: number | null;
 }
 
 export interface Candidate {
@@ -67,11 +71,12 @@ const STORY_PATH = /^ingredients\/content\/(\d{1,2})\.md$/;
  */
 export function unitFiles(type: ReleasableType, content: RefContent): UnitFile[] {
   const shaOf = new Map(content.files.map(file => [file.path, file.sha]));
+  const sizeOf = new Map(content.files.map(file => [file.path, file.size ?? null]));
   if (type === 'obs') {
     return content.files.flatMap(file => {
       const match = STORY_PATH.exec(file.path);
       const id = match ? storyId(match[1]!.padStart(2, '0')) : null;
-      return id ? [{ id, path: file.path, title: '', sha: file.sha }] : [];
+      return id ? [{ id, path: file.path, title: '', sha: file.sha, size: file.size ?? null }] : [];
     });
   }
   const seen = new Set<string>();
@@ -80,7 +85,7 @@ export function unitFiles(type: ReleasableType, content: RefContent): UnitFile[]
     if (!id || ingredient.is_dir || seen.has(id)) return [];
     seen.add(id);
     const path = treePath(ingredient.path);
-    return [{ id, path, title: ingredient.title ?? '', sha: shaOf.get(path) ?? null }];
+    return [{ id, path, title: ingredient.title ?? '', sha: shaOf.get(path) ?? null, size: sizeOf.get(path) ?? null }];
   });
 }
 

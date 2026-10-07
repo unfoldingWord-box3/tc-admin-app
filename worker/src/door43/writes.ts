@@ -81,8 +81,11 @@ function repositoryShape(body: unknown): CreatedRepository | null {
 /** One file of a commit. `create` is the default; `upload` updates an existing file without its blob SHA (E27). */
 export interface CommitFile {
   path: string;
-  content: Uint8Array | string;
+  /** The bytes to write; absent for a deletion. */
+  content?: Uint8Array | string;
   operation?: 'create' | 'update' | 'upload' | 'delete';
+  /** The blob SHA of the file as it is, which a deletion needs (E21). */
+  sha?: string;
 }
 
 export interface CommitOptions {
@@ -114,13 +117,18 @@ const asBytes = (content: Uint8Array | string) => (typeof content === 'string' ?
 export async function commitFiles(client: Door43Client, owner: string, repo: string, options: CommitOptions): Promise<Commit> {
   const body: Record<string, unknown> = {
     message: options.message,
-    files: options.files.map(file => ({ operation: file.operation ?? 'create', path: file.path, content: bytesToBase64(asBytes(file.content)) })),
+    files: options.files.map(file => ({
+      operation: file.operation ?? 'create',
+      path: file.path,
+      ...(file.content === undefined ? {} : { content: bytesToBase64(asBytes(file.content)) }),
+      ...(file.sha === undefined ? {} : { sha: file.sha }),
+    })),
   };
   if (options.branch) body.branch = options.branch;
   const outcome = await writeDoor43(client, 'POST', `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents`, body);
   const details = { door43_status: outcome.status, owner, repo };
   if (outcome.status !== 201 && outcome.status !== 200) throw new CatalogError('commit_failed', { values: { 'error message': door43Message(outcome) }, details: { ...details, outcome: 'failed' } });
-  const answer = outcome.body as { commit?: { sha?: unknown; html_url?: unknown; author?: { date?: unknown } | null } | null; files?: { path?: unknown; sha?: unknown }[] | null } | null;
+  const answer = outcome.body as { commit?: { sha?: unknown; html_url?: unknown; author?: { date?: unknown } | null } | null; files?: ({ path?: unknown; sha?: unknown } | null)[] | null } | null;
   if (typeof answer?.commit?.sha !== 'string' || !answer.commit.sha) {
     throw new CatalogError('commit_failed', { values: { 'error message': 'Door43 did not say which commit it made' }, details: { ...details, outcome: 'unknown' } });
   }
@@ -128,6 +136,7 @@ export async function commitFiles(client: Door43Client, owner: string, repo: str
     sha: answer.commit.sha,
     url: typeof answer.commit.html_url === 'string' ? answer.commit.html_url : '',
     committed_at: typeof answer.commit.author?.date === 'string' ? answer.commit.author.date : null,
-    files: (answer.files ?? []).flatMap(file => (typeof file.path === 'string' && typeof file.sha === 'string' ? [{ path: file.path, sha: file.sha }] : [])),
+    // A deleted file is `null` in the answer's list (E55): only the files the commit left are named.
+    files: (answer.files ?? []).flatMap(file => (file && typeof file.path === 'string' && typeof file.sha === 'string' ? [{ path: file.path, sha: file.sha }] : [])),
   };
 }

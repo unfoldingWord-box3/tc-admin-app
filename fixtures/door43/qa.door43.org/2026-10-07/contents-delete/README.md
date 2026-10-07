@@ -1,0 +1,3 @@
+# Door43 fixtures, qa.door43.org, 7 October 2026: a commit that deletes a file
+
+`POST-contents-delete-MRK.json` is `POST /repos/tc-admin-qa/id_tcar1546/contents` on the branch `temp-tca-release/v2.0.0` with two files: `ingredients/MRK.usfm` deleted by its blob SHA and `metadata.json` uploaded, as `release.prepare` sends them for a released book left out (R2). Recorded on 7 October 2026 through the Worker's own code, the token redacted, every email redacted, and the base64 contents replaced by their length. The answer (201) lists the deleted file as `null` in `files`, which E55 records; the branch was deleted afterwards and the repository is as E54 left it.
