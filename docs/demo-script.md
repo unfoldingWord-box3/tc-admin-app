@@ -87,7 +87,7 @@ Each step: what the presenter does, the operation the interface calls, what Door
 | "Door43 is unavailable currently. Please refresh later." | Door43 did not answer. Refresh; nothing was written that the page does not list. |
 | Health "Health check running" past a minute | Press "Refresh"; Door43 checks every push, there is no trigger (E28). |
 | "Release creation failed: …" | The branch is kept (R7). "Try the release again". |
-| "Door43 did not confirm the release." | Nothing is retried on its own (X1). The page reads the preparation again: if Door43 made the release, it is shown and nothing is created twice (R6). |
+| "Door43 did not confirm the release." | Nothing is retried on its own (X1). Press "Try the release again": `release.create` looks the tag up before sending anything. If Door43 made the release, the preparation records it, "This release already exists on Door43." is shown, and nothing is created twice (R6). If not, it is created once. |
 | "This release already exists on Door43." | The tag is there already; open it on Door43. |
 
 ## The rehearsals (#43)
