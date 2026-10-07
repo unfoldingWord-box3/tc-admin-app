@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { openArchive } from '../../src/door43/archive';
-import { classifyIngredient, parseMetadata } from '../../src/model/burrito-reader';
+import { MetadataError, classifyIngredient, parseMetadata, readMetadata } from '../../src/model/burrito-reader';
 import { classifyFiles, isRootOrWorkflow, roleOf } from '../../src/model/classify';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/', import.meta.url);
@@ -68,5 +68,18 @@ describe('Open Bible Stories (E36)', () => {
     expect(classified.administrative).toEqual(['.gitignore', 'LICENSE.md', 'README.md', 'ingredients/LICENSE.md', 'ingredients/content/back.md', 'ingredients/content/front.md']);
     expect(classified.unknown).toEqual(['ingredients/content/51.md']);
     expect(roleOf('ingredients/content/51.md', metadata)).toEqual({ role: 'unknown', unit: null, listed: false });
+  });
+});
+
+describe('a unit held by two files', () => {
+  test('metadata that lists two ingredients for one book is refused before the classifier keeps either, never first-wins', async () => {
+    const archive = archiveOf('2026-09-21/sb-archives/bahtraku__Perjanjian-Baru-Pendau__master.zip');
+    const document = JSON.parse(new TextDecoder().decode(await archive.bytes('metadata.json'))) as { ingredients: Record<string, unknown> };
+    document.ingredients['ingredients/mat-again.usfm'] = { checksum: { md5: '0'.repeat(32) }, mimeType: 'text/x-usfm', size: 1, scope: { MAT: [] } };
+    const metadata = readMetadata(document);
+    expect(metadata.ingredients.filter(ingredient => ingredient.unit === 'mat')).toHaveLength(2);
+    const paths = [...archive.entries, { path: 'ingredients/mat-again.usfm' }];
+    expect(() => classifyFiles(metadata, paths)).toThrow(MetadataError);
+    expect(() => classifyFiles(metadata, paths)).toThrow(/mat/);
   });
 });
