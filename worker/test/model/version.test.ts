@@ -12,6 +12,11 @@ describe('coercion', () => {
     expect(parseVersion('v1.2.3')).toEqual({ major: 1, minor: 2, patch: 3 });
     expect(parseVersion('1.2')).toEqual({ major: 1, minor: 2, patch: 0 });
     expect(parseVersion(' v2 ')).toEqual({ major: 2, minor: 0, patch: 0 });
+    // A pre-release suffix stays on its baseline too (bench round 2): the tag a promoted pre-release keeps (R8).
+    expect(parseVersion('v2.4.5-rc.1')).toEqual({ major: 2, minor: 4, patch: 5 });
+    expect(parseVersion('v2.4.5-rc.1+build.7')).toEqual({ major: 2, minor: 4, patch: 5 });
+    expect(parseVersion('v2.4.5-')).toBeNull();
+    expect(proposeVersion('v2.4.5-rc.1', { ...none, revised: true })).toEqual({ baseline_tag: 'v2.4.5-rc.1', proposed: 'v2.4.6', rule_applied: 'revisions' });
     expect(parseVersion('1974')).toBeNull();
     expect(parseVersion('2')).toBeNull();
     expect(parseVersion('release-2020')).toBeNull();

@@ -1,6 +1,6 @@
 # Door43 fixtures, qa.door43.org, 7 October 2026
 
-Recorded read-only from public endpoints with no credentials (ADR 0012), for `release.plan` (#33). DCS `1.27.3+dcs.13-g23ba3c3ef9`.
+Recorded read-only from public endpoints with no credentials (ADR 0012), for `release.plan` (#33). DCS `1.27.3+dcs.13-g23ba3c3ef9`. The JSON recordings under `repos/` and `catalog/` are stored gzipped (`gunzip -c` reads one; the tests inflate them through `worker/test/support/recorded.ts`), since a catalog entry embeds the whole repository and the set crowded the review bench's packet.
 
 | File | Request |
 | --- | --- |

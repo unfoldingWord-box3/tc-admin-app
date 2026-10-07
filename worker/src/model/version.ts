@@ -13,8 +13,14 @@ export interface Semver {
   patch: number;
 }
 
-/** A tag with a leading `v`, one to three dotted numbers: `v1.2`, `v105`, `1.2.3`, with optional semver build metadata (`v2.4.5+build.7`), which does not order versions and is dropped. A bare number without a `v` is a year, not a version (Q19). */
-const LOOSE_VERSION = /^(v)?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+/**
+ * A tag with a leading `v`, one to three dotted numbers, and semver's optional
+ * pre-release (`-rc.1`) and build (`+build.7`) suffixes, which a promoted
+ * pre-release's tag keeps (R8) and which do not change the baseline: `v1.2`,
+ * `v105`, `1.2.3`, `v2.4.5-rc.1+build.7`. A bare number without a `v` is a year,
+ * not a version (Q19).
+ */
+const LOOSE_VERSION = /^(v)?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
 /** The tag as semver, coerced: `v105` is 105.0.0, `v1.2` is 1.2.0; `null` when the tag is a bare year or no version. */
 export function parseVersion(tag: string): Semver | null {
