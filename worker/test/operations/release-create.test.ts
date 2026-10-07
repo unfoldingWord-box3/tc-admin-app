@@ -134,7 +134,7 @@ describe('release.create (#39)', () => {
     const receipt = await releaseCreate(input({ prerelease: true }), context);
     expect(writes[0]!.body).toMatchObject({ prerelease: true });
     expect(receipt.result).toMatchObject({ state: 'pre_release', release: { prerelease: true } });
-    const promotion = door43({ lookup: () => Response.json({ ...probeRelease, tag_name: 'v1.3.0', prerelease: true, target_commitish: COMMIT }) });
+    const promotion = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: true, target_commitish: COMMIT }) });
     const promoted = await releasePromote({ ...PENDAU, tag: 'v1.3.0' }, promotion.context);
     expect(promotion.writes).toEqual([{ method: 'PATCH', path: `/api/v1/repos/${PENDAU.owner}/${PENDAU.repo}/releases/${String(probeRelease.id)}`, body: { prerelease: false } }]);
     expect(promoted.result).toEqual({ tag: 'v1.3.0', url: String(probeRelease.html_url), prerelease: false });
@@ -240,6 +240,43 @@ describe('release.create (#39)', () => {
     expect((await failure(releaseCreate(input(), taken.context)))?.code).toBe('release_exists');
     expect(taken.writes.map(write => write.method)).toEqual(['POST']);
     expect((await get())?.state).toBe('ready_for_release');
+  });
+
+  test('R6, X1: a 5xx answer to the release is release_outcome_unknown, and a second create, even at a higher version, writes nothing', async () => {
+    await put(ready());
+    const gateway = door43({ releaseAnswer: () => Response.json({ message: 'gateway timeout' }, { status: 504 }) });
+    expect((await failure(releaseCreate(input(), gateway.context)))?.code).toBe('release_outcome_unknown');
+    expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' } });
+    const bumped = door43();
+    expect((await failure(releaseCreate(input({ version: 'v1.4.0' }), bumped.context)))?.code).toBe('release_outcome_unknown');
+    expect(bumped.writes).toEqual([]);
+  });
+
+  test('R6, R7: a 201 for another commit is release_outcome_unknown; nothing is recorded as released and the branch is kept', async () => {
+    await put(ready());
+    const other = door43({ releaseAnswer: body => Response.json({ ...probeRelease, door43_metadata: null, tag_name: body.tag_name, target_commitish: 'f'.repeat(40), prerelease: body.prerelease }, { status: 201 }) });
+    expect((await failure(releaseCreate(input(), other.context)))?.code).toBe('release_outcome_unknown');
+    expect(other.writes.map(write => write.method)).toEqual(['POST']);
+    expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' }, release: null });
+  });
+
+  test('A2: a caller without push learns nothing of the preparation or its receipt; permission_denied comes first', async () => {
+    await put(ready());
+    await releaseCreate(input(), door43().context);
+    const denied = door43({ push: false });
+    const error = await failure(releaseCreate(input(), denied.context));
+    expect(error?.code).toBe('permission_denied');
+    expect(error?.details).toEqual({ owner: PENDAU.owner, repo: PENDAU.repo });
+    expect((await failure(releaseCreate(input({ preparation_id: 'v9.9.9' }), denied.context)))?.code).toBe('permission_denied');
+    expect(denied.writes).toEqual([]);
+  });
+
+  test('R8, R9: a pre-release created above the prepared version is promoted by its tag, and the preparation it came from follows to full_release', async () => {
+    await put(ready());
+    await releaseCreate(input({ version: 'v1.4.0', prerelease: true }), door43().context);
+    const promotion = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: true, target_commitish: COMMIT }), promoteAnswer: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: false, target_commitish: COMMIT }) });
+    await releasePromote({ ...PENDAU, tag: 'v1.4.0' }, promotion.context);
+    expect(await get()).toMatchObject({ id: 'v1.3.0', state: 'full_release', release: { tag: 'v1.4.0', prerelease: false } });
   });
 
   test('R7: a branch that resists deletion after the release is a warning on the receipt, and the preparation is released all the same', async () => {

@@ -23,12 +23,17 @@ import { releasable } from '../model/health';
 import { compareVersions, parseVersion } from '../model/version';
 import { signedIn } from './context';
 import type { OperationContext } from './context';
+import { PREPARATION_SECONDS } from './plans';
+import { temporaryBranch } from './release-plan';
 import { errorShape, validation } from './release-prepare';
 
 type ReleaseCreateReceipt = OperationOutput<'release.create'>;
 
 /** The receipt of a release is stored under the preparation, which is the plan a release applies. */
 export const releaseReceiptKey = (owner: string, repo: string, id: string): string => `release:${owner.toLowerCase()}/${repo}/${id}`;
+
+/** Which preparation a released tag came from, kept as long as the preparation. */
+export const releaseTagKey = (owner: string, repo: string, tag: string): string => `release-tag:${owner.toLowerCase()}/${repo}/${tag}`;
 
 /**
  * The version the release takes (R9): the manager's, valid, after the baseline, and not
@@ -52,6 +57,11 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
   const started = context.now();
   const at = () => context.now().toISOString();
 
+  // The permission (A2), read live before anything about the preparation or its receipt is answered.
+  const repository = await readRepository(client, owner, repo);
+  const access = repositoryAccess(repository);
+  if (!access.push && !access.admin) throw new CatalogError('permission_denied', { details: { owner, repo } });
+
   const done = await context.plans.getReceipt<ReleaseCreateReceipt>(releaseReceiptKey(owner, repo, id));
   if (done && done.account === account.login) return done.receipt;
 
@@ -73,10 +83,7 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
   if (!notes) throw validation('notes', 'Release notes are required.');
   const version = releaseVersion(input.version, stored.version.baseline_tag, stored.version.confirmed ?? stored.version.proposed);
 
-  // The permission (A2) and the binding (R5), read live; a moved source makes the preparation restart.
-  const repository = await readRepository(client, owner, repo);
-  const access = repositoryAccess(repository);
-  if (!access.push && !access.admin) throw new CatalogError('permission_denied', { details: { owner, repo } });
+  // The binding (R5), from the repository read live above; a moved source makes the preparation restart.
   const refs = repositoryRefs(repository);
   const bound = stored.bound_to;
   const now = { default_branch_sha: refs.default_branch?.sha ?? null, release_tag: refs.latest_full_release?.tag ?? null, release_tag_sha: refs.latest_full_release?.sha ?? null };
@@ -102,6 +109,11 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
     if (error.kind === 'failed') return failed(new CatalogError('release_failed', { values: { 'error message': error.reason }, details: { owner, repo, tag: version, door43_status: error.status } }), `release.create: ${error.reason}`);
     return failed(new CatalogError('release_outcome_unknown', { details: { owner, repo, tag: version, reason: error.reason } }), 'release.create: outcome unknown');
   }
+  // A 201 for another tag, commit, or flag is not the release asked for: nothing is recorded as released and the branch is kept (R6, R7).
+  if (created.tag !== version || created.target_sha !== stored.snapshot.commit_sha || created.prerelease !== input.prerelease) {
+    const reason = `Door43 answered with ${created.tag} on ${created.target_sha || 'no commit'}${created.prerelease ? ' as a pre-release' : ''}`;
+    return failed(new CatalogError('release_outcome_unknown', { details: { owner, repo, tag: version, reason } }), 'release.create: outcome unknown');
+  }
 
   // The release exists: the preparation records it before the cleanup, so a branch that resists deletion never hides a release (R7).
   const state = created.prerelease ? 'pre_release' : 'full_release';
@@ -116,8 +128,11 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
     freshness: { read_at: at(), source: 'live', age_seconds: 0 },
   };
   await context.plans.putPreparation(owner, repo, id, result);
+  // The tag may be above the preparation id (R9): `release.promote`, which knows only the tag, finds the preparation by this.
+  await context.plans.putReceipt(releaseTagKey(owner, repo, version), { receipt: { preparation_id: id }, account: account.login }, PREPARATION_SECONDS);
   const warnings: ReleaseCreateReceipt['warnings'] = [];
-  const deletion = await deleteBranch(client, owner, repo, branch);
+  // Only the preparation's own temporary branch is ever deleted (R3).
+  const deletion = branch === temporaryBranch(id) ? await deleteBranch(client, owner, repo, branch) : { deleted: false as const, reason: 'it is not the temporary branch of this preparation' };
   if (!deletion.deleted) warnings.push({ code: 'branch_not_deleted', message: `The temporary branch ${branch} could not be deleted: ${deletion.reason}. The release is complete; delete the branch on Door43.` });
   const receipt: ReleaseCreateReceipt = {
     operation: 'release.create',

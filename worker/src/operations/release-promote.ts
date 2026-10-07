@@ -10,6 +10,7 @@ import { promoteRelease, readReleaseByTag, ReleaseWriteError } from '../door43/r
 import { readRepository, repositoryAccess } from '../door43/repos';
 import { signedIn } from './context';
 import type { OperationContext } from './context';
+import { releaseTagKey } from './release-create';
 
 export async function releasePromote(input: ParsedInput<'release.promote'>, context: OperationContext): Promise<OperationOutput<'release.promote'>> {
   const client = signedIn(context);
@@ -32,9 +33,12 @@ export async function releasePromote(input: ParsedInput<'release.promote'>, cont
   }
   if (promoted.prerelease) throw new CatalogError('promotion_failed', { values: { 'error message': 'Door43 still reports a pre-release' }, details: { owner, repo, tag } });
 
-  const preparation = await context.plans.getPreparation<Preparation>(owner, repo, tag);
-  if (preparation && preparation.state === 'pre_release') {
-    await context.plans.putPreparation(owner, repo, tag, { ...preparation, state: 'full_release', release: { tag: promoted.tag, url: promoted.url, prerelease: false }, history: [...preparation.history, { at: at(), from: 'pre_release', to: 'full_release', event: 'release.promote' }] });
+  // The preparation the tag was created from, which may carry a lower id (R9); followed only when it recorded this release on this commit.
+  const pointer = await context.plans.getReceipt<{ preparation_id: string }>(releaseTagKey(owner, repo, tag));
+  const id = pointer?.receipt.preparation_id ?? tag;
+  const preparation = await context.plans.getPreparation<Preparation>(owner, repo, id);
+  if (preparation && preparation.state === 'pre_release' && preparation.release?.tag === promoted.tag && preparation.snapshot?.commit_sha === release.target_sha) {
+    await context.plans.putPreparation(owner, repo, id, { ...preparation, state: 'full_release', release: { tag: promoted.tag, url: promoted.url, prerelease: false }, history: [...preparation.history, { at: at(), from: 'pre_release', to: 'full_release', event: 'release.promote' }] });
   }
   return {
     operation: 'release.promote',
