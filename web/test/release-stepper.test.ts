@@ -6,7 +6,7 @@ import { catalogMessage } from '@tc-admin/shared/schema';
 import type { Preparation } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import { hashRef, releaseHash, releaseTagHash } from '../src/portfolio-labels';
-import { RESTART_MESSAGE, STEPS, canDiscard, canPrepare, counts, onProjectHost, releaseGate, removalsOf, selectionOf, selectionToSend, spellVersion, statesFor, stepOf, versionToSend } from '../src/release-stepper';
+import { RESTART_MESSAGE, STEPS, canDiscard, canPrepare, counts, onProjectHost, releaseGate, removalsOf, selectionOf, selectionToSend, spellVersion, statesFor, stepOf, storySummary, versionToSend } from '../src/release-stepper';
 import type { Book } from '../src/release-stepper';
 
 const books: Book[] = [
@@ -65,6 +65,25 @@ describe('the selection (product spec §10)', () => {
     expect(Object.keys(obsSelection)).toHaveLength(2);
     expect(selectionToSend('obs', obsSelection)).toEqual({});
     expect(selectionToSend('bible', selectionOf(plan))).toEqual(selectionOf(plan));
+  });
+
+  test('R4, ADR 0013: an Open Bible Stories release shows the stories it takes, of the fifty, in place of a selection', () => {
+    const fifty: Book[] = Array.from({ length: 50 }, (_, i) => ({ id: String(i + 1).padStart(2, '0'), group: 'new', selection: 'include' }));
+    expect(storySummary(fifty)).toEqual({ count: '50 of 50 stories in this release.', removed: null });
+    expect(storySummary(fifty.slice(0, 3)).count).toBe('3 of 50 stories in this release.');
+    expect(storySummary(fifty.slice(0, 1)).count).toBe('1 of 50 stories in this release.');
+  });
+
+  test('R2: a story the default branch no longer has is named as removed, with the major version it needs', () => {
+    const lost: Book[] = [
+      { id: '01', group: 'unchanged', selection: 'include' },
+      { id: '12', group: 'unchanged', selection: 'leave_out' },
+    ];
+    expect(storySummary(lost)).toEqual({
+      count: '1 of 50 stories in this release.',
+      removed: 'Removed from this release onward, since the default branch no longer has it: story 12. Earlier releases keep it. The version must then increase its first number.',
+    });
+    expect(storySummary([...lost, { id: '13', group: 'unchanged', selection: 'leave_out' }]).removed).toContain('no longer has them: stories 12, 13. Earlier releases keep them.');
   });
 });
 

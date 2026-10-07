@@ -86,6 +86,10 @@ export async function releasePlan(input: ParsedInput<'release.plan'>, context: O
   }
 
   const candidates = detectCandidates(type, defaultBranch, baseline);
+  // An Open Bible Stories release is the whole default branch, with no selection to make: one with no story on it has nothing to release (R4, ADR 0013).
+  if (type === 'obs' && !candidates.books.some(story => story.default_branch)) {
+    throw new CatalogError('not_releasable', { message: 'This project has no story on its default branch yet. Add stories before releasing.', details: { owner: input.owner, repo: input.repo, reason: 'no story on the default branch' } });
+  }
   const included = (group: Candidate['group']) => candidates.books.filter(book => book.group === group && book.selection === 'include');
   const version = proposeVersion(latest_full_release?.tag ?? null, {
     removed: candidates.removals.length > 0,

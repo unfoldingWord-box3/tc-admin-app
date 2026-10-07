@@ -1,0 +1,13 @@
+{
+  "sha": "c8b45d2a1c6b51fbf0c0850c511db0d6d741e98f",
+  "message": "Release v1.0.0: snapshot\n\nPrepared by tC Admin 0.1.0 from master at 5b1e85b9f7.\n",
+  "parents": [
+    "5b1e85b9f7018efd4a0f6c839c1f167fa72c8f55"
+  ],
+  "files": [
+    {
+      "filename": "metadata.json",
+      "status": "modified"
+    }
+  ]
+}

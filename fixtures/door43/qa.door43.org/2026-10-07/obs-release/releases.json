@@ -1,0 +1,11 @@
+[
+  {
+    "tag_name": "v1.0.0",
+    "prerelease": false,
+    "draft": false,
+    "target_commitish": "c8b45d2a1c6b51fbf0c0850c511db0d6d741e98f",
+    "created_at": "2026-10-07T20:40:52Z",
+    "author": "tc-admin-qa",
+    "body": "## id_obs1948 v1.0.0\n\nSource: tc-admin-qa-org/id_obs1948 at 5b1e85b9f7 on master.\nFirst release.\n\n### Added\n- 01\n- 02\n- 03\n\n### Revised\n- None\n\n### Removed\n- None\n\n### Carried forward\nNone\n\n### Unknown files included\n- None"
+  }
+]

@@ -14,7 +14,7 @@ The demo of 16 October 2026 (#42, #44): a manager releases a real Bahtraku Bible
 | Book A | the book the production rehearsal includes in its pre-release; revised on the default branch since `v1.2`; named here before the rehearsal: _____ |
 | Book B | the book the demo includes on the day; also revised on the default branch since `v1.2`, and not in the rehearsal's pre-release; named here before the rehearsal: _____ |
 
-The manager signing in is a member of `bahtraku` with push right on the repository (A2). The account used in rehearsal on QA is `tc-admin-qa`, which must be given push right on the QA copy before the rehearsal (the portfolio lists only repositories the account may push to, ADR 0014, P2).
+The manager signing in is a member of `bahtraku` with push right on the repository (A2). The account used in rehearsal on QA is `tc-admin-qa`, which needs push right on the QA copy (the portfolio lists only repositories the account may push to, ADR 0014, P2): it has it through the `bahtraku` team Translators, on production too, so the weekly QA reset keeps it (E58).
 
 ## Before the day
 
@@ -96,6 +96,8 @@ Each step: what the presenter does, the operation the interface calls, what Door
 | `tc-admin-qa-org` is not in the owner list, or the plan refuses it (`permission_denied`) | The account may not create there (before the day, 5). Stop step 9; do not choose another owner. |
 
 ## The rehearsals (#43)
+
+Before either rehearsal, read the repository on its host: its latest full release and its default-branch head. `v1.2` above is the latest full release as of 7 October 2026; if the team has released since, the rehearsal compares with that release and the versions in this script move with it. On QA the copy must be as the last reset left it, with production's latest full release and default-branch head: a test release on the QA copy since the reset (the 7 October run left `v1.2.1`, `v1.2.2`, `v2.0.0`, and two commits on `master`, E58) means waiting for the next reset. tC Admin's own stored preparations outlive a reset and, by the code and tests E58 cites (not yet observed across a reset), need no clearing.
 
 1. **QA**, on the QA copy, with `tc-admin-qa` given push right, in this order: the production rehearsal's own steps below (book A, stopping at the pre-release); then the demo's steps 2 to 9 as written (book B, the project under `tc-admin-qa-org` on QA); then one more release with one released book left out (S8: the removal named, the version a major increment, the previous release still holding the book). Record every step's answer against this script; file the recordings as fixtures and the run as an evidence entry. Run on 7 October 2026 (E58), with Titus and Philemon as QA stand-ins for book A and book B, each revised on QA's default branch first.
 2. **Production**, on the agreed repository, with the manager's own account, its own steps, not the demo's: `release.plan` against `v1.2` (every book "Carry forward", book A and book B both "Changed since the last release"); set book A to "Include" and nothing else; the version stays the calculated one (the next after `v1.2` by R9: a patch increment); "Prepare the snapshot"; the health check as in step 5, the warning acknowledged; the notes as generated; "Create as a pre-release" ticked; "Create the pre-release". Stop. Do not promote. Book B stays revised on the default branch and is not in that pre-release.
