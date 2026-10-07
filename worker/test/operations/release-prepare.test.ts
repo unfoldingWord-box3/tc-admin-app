@@ -274,6 +274,18 @@ describe('what the prepare refuses, writing nothing', () => {
     expect((await failure(releasePrepare(input, context(fetch))))!.code).toBe('plan_expired');
   });
 
+  test('R7: a branch already on Door43 (409) with no preparation naming it stores one as retryable_failure, so the manager can discard it; one already stored is left as it is (decided 7 October 2026)', async () => {
+    const first = await prepare({ branchAnswer: () => Response.json({ message: 'branch already exists' }, { status: 409 }) }, carried({ gen: 'include' }));
+    expect((await failure(first.run()))!.code).toBe('preparation_active');
+    const stored = JSON.parse(kv.entries.get(`preparation:${PENDAU.owner.toLowerCase()}/${PENDAU.repo}/v1.3.0`)!) as Preparation;
+    expect(stored).toMatchObject({ state: 'retryable_failure', last_error: { code: 'preparation_active' }, snapshot: { branch: 'temp-tca-release/v1.3.0' } });
+    expect(first.writes.map(write => write.method)).toEqual(['POST']);
+    kv.entries.set(`preparation:${PENDAU.owner.toLowerCase()}/${PENDAU.repo}/v1.3.0`, JSON.stringify({ ...stored, state: 'health_checking', last_error: null }));
+    const again = await prepare({ branchAnswer: () => Response.json({ message: 'branch already exists' }, { status: 409 }) }, carried({ gen: 'include' }));
+    expect((await failure(again.run()))!.code).toBe('preparation_active');
+    expect((JSON.parse(kv.entries.get(`preparation:${PENDAU.owner.toLowerCase()}/${PENDAU.repo}/v1.3.0`)!) as Preparation).state).toBe('health_checking');
+  });
+
   test('R7, X1: a commit Door43 refuses is commit_failed, the branch is kept, nothing is retried, and the preparation records the failure as retryable; a second attempt finds the branch and is preparation_active', async () => {
     const { plan, writes, run } = await prepare({ commitAnswer: () => Response.json({ message: 'refused by the test' }, { status: 500 }) }, carried({ gen: 'include' }));
     const error = (await failure(run()))!;
@@ -317,7 +329,8 @@ describe('the snapshot model', () => {
     candidates: [{ id: 'mat', group: 'changed_released', selection: 'include', default_branch: unit('ingredients/41-MAT.usfm', 'b1'), baseline: unit('ingredients/MAT.usfm', 'a1') }],
     selection: { mat: 'include' },
     branch: { files: [], units: new Map(), administrative: ['README.md'], unknown: ['ingredients/notes.txt'], missing: [] },
-    branch_blobs: new Map([['ingredients/41-MAT.usfm', 'b1'], ['README.md', 'r1'], ['ingredients/notes.txt', 'n1']]),
+    // The workflow file is on the default branch too (its tree lists it, the archive does not, E17): it stays (decided 7 October 2026).
+    branch_blobs: new Map([['ingredients/41-MAT.usfm', 'b1'], ['README.md', 'r1'], ['ingredients/notes.txt', 'n1'], ['.gitea/workflows/check.yml', 'w1'], ['metadata.json', 'm1']]),
     start_blobs: new Map([['ingredients/MAT.usfm', 'a1'], ['README.md', 'r1'], ['ingredients/notes.txt', 'n0'], ['.gitea/workflows/check.yml', 'w0'], ['metadata.json', 'm0']]),
     sizes: new Map([['ingredients/41-MAT.usfm', 10], ['ingredients/notes.txt', 3]]),
     unknown_included: [],

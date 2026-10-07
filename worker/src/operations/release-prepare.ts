@@ -131,6 +131,8 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
   if (classified.editability.state !== 'editable') throw new CatalogError('not_editable', { message: classified.editability.reason, details: { owner, repo } });
   const refs = repositoryRefs(repository);
   const bound = payload.bound_to;
+  // A head Door43 does not name (no catalog `latest` stage) is unknown, not a move: nothing is written (decided 7 October 2026 by Rich).
+  if (!refs.default_branch?.sha) throw new CatalogError('door43_unavailable', { details: { owner, repo, reason: 'the default-branch head could not be read from the catalog' } });
   if (refs.default_branch?.sha !== bound.default_branch_sha || (refs.latest_full_release?.tag ?? null) !== bound.release_tag || (refs.latest_full_release?.sha ?? null) !== bound.release_tag_sha) {
     throw new CatalogError('source_changed', { details: { owner, repo, planned: bound, now: { default_branch_sha: refs.default_branch?.sha ?? null, release_tag: refs.latest_full_release?.tag ?? null, release_tag_sha: refs.latest_full_release?.sha ?? null } } });
   }
@@ -259,6 +261,9 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
   } catch (error) {
     // Door43 created the branch (201) but its answer could not be read: the branch exists, so its preparation is stored too.
     if (error instanceof CatalogError && error.details.door43_status === 201) await recordFailure(startSha, error, 'branch');
+    // The branch is already there (409) and no preparation names it: one is stored, so the manager can open and discard it
+    // (decided 7 October 2026 by Rich); a preparation already stored under the version is left as it is.
+    if (error instanceof CatalogError && error.code === 'preparation_active' && !(await context.plans.getPreparation(owner, repo, version))) await recordFailure(startSha, error, 'branch');
     throw error;
   }
   const wrote: ReleasePrepareReceipt['wrote'] = [{ kind: 'branch', target, sha: branch.sha }];

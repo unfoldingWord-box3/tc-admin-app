@@ -10,6 +10,7 @@
 
 import type { SelectionState } from '@tc-admin/shared/schema';
 import type { Candidate } from './candidates';
+import { isRootOrWorkflow } from './classify';
 import type { Classification } from './classify';
 
 /** The raw bytes one commit carries at most: base64 adds a third, and the Worker holds the request whole (Q22, E30). */
@@ -96,10 +97,16 @@ export function planSnapshot(input: SnapshotInput): SnapshotPlan {
     for (const path of input.branch.unknown) if (input.unknown_included.includes(path)) upload(path, null);
     // Everything under `ingredients/` the start ref holds that the snapshot does not name is deleted, so the branch's tree is `files`:
     // a left-out released book (R2), a first release's left-out book, a book's old path after a rename, an unknown file not included (S5),
-    // an administrative ingredient the default branch no longer lists. Outside `ingredients/` the archive does not carry every file (E17), so nothing is deleted there.
+    // an administrative ingredient the default branch no longer lists. Outside `ingredients/` the archive does not carry every file (E17),
+    // so a root or `.gitea/` file is deleted only when the default branch's tree no longer has it (decided 7 October 2026 by Rich):
+    // one on both refs stays, uploaded or not; one in another directory is left alone.
     const named = new Set(files.map(file => file.path));
     const unitOf = new Map(input.candidates.flatMap(candidate => [candidate.baseline, candidate.default_branch].flatMap(ref => (ref ? [[ref.path, candidate.id] as const] : []))));
-    for (const [path] of input.start_blobs) if (path.startsWith('ingredients/') && !named.has(path)) remove(path, unitOf.get(path) ?? null);
+    for (const [path] of input.start_blobs) {
+      if (path.startsWith('ingredients/')) {
+        if (!named.has(path)) remove(path, unitOf.get(path) ?? null);
+      } else if (path !== METADATA && isRootOrWorkflow(path) && !named.has(path) && !input.branch_blobs.has(path)) remove(path, null);
+    }
   }
   files.push({ path: METADATA, source: 'default_branch', unit: null });
   uploads.push({ operation: 'upload', path: METADATA, size: input.metadata_size, source: 'default_branch', unit: null });
