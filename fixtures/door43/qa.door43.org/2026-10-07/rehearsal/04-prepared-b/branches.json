@@ -1,0 +1,74 @@
+[
+  {
+    "name": "temp-tca-release/v1.2.2",
+    "commit": {
+      "id": "efabd06f28851cf08498382e0f9a07b3eb9f77db",
+      "message": "Release v1.2.2: snapshot\n\nPrepared by tC Admin 0.1.0 from master at 6f9dfea341.\n",
+      "url": "https://qa.door43.org/bahtraku/Perjanjian-Baru-Pendau/commit/efabd06f28851cf08498382e0f9a07b3eb9f77db",
+      "author": {
+        "name": "tc-admin-qa",
+        "email": "[redacted]",
+        "username": "tc-admin-qa"
+      },
+      "committer": {
+        "name": "tc-admin-qa",
+        "email": "[redacted]",
+        "username": "tc-admin-qa"
+      },
+      "verification": {
+        "verified": false,
+        "reason": "gpg.error.not_signed_commit",
+        "signature": "",
+        "signer": null,
+        "payload": ""
+      },
+      "timestamp": "2026-10-07T20:18:19Z",
+      "added": null,
+      "removed": null,
+      "modified": null
+    },
+    "protected": false,
+    "required_approvals": 0,
+    "enable_status_check": false,
+    "status_check_contexts": [],
+    "user_can_push": false,
+    "user_can_merge": false,
+    "effective_branch_protection_name": ""
+  },
+  {
+    "name": "master",
+    "commit": {
+      "id": "6f9dfea34134e0bb69b6b00bdcfd6bcd2541cf8f",
+      "message": "QA rehearsal (#43): stand-in revision of PHM\n",
+      "url": "https://qa.door43.org/bahtraku/Perjanjian-Baru-Pendau/commit/6f9dfea34134e0bb69b6b00bdcfd6bcd2541cf8f",
+      "author": {
+        "name": "tc-admin-qa",
+        "email": "[redacted]",
+        "username": "tc-admin-qa"
+      },
+      "committer": {
+        "name": "tc-admin-qa",
+        "email": "[redacted]",
+        "username": "tc-admin-qa"
+      },
+      "verification": {
+        "verified": false,
+        "reason": "gpg.error.not_signed_commit",
+        "signature": "",
+        "signer": null,
+        "payload": ""
+      },
+      "timestamp": "2026-10-07T20:10:40Z",
+      "added": null,
+      "removed": null,
+      "modified": null
+    },
+    "protected": false,
+    "required_approvals": 0,
+    "enable_status_check": false,
+    "status_check_contexts": [],
+    "user_can_push": false,
+    "user_can_merge": false,
+    "effective_branch_protection_name": ""
+  }
+]

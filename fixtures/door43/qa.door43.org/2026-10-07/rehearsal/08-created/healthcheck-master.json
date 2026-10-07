@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "data": {
+    "issues": {
+      "title_has_uw": [],
+      "language_is_en": [],
+      "release_needed": [
+        {
+          "issue_code": "release_needed",
+          "severity_level": "info",
+          "positive_title": "An error-free release has been published",
+          "negative_title": "An error-free release needs to be published for the resource",
+          "details": "An error-free release needs to be published for the resource.",
+          "suggestion": "No release exists for this resource. Make a release with <a href=\"https://gateway-admin.netlify.app/\" target=\"_blank\">gatewayAdmin</a>."
+        }
+      ],
+      "repo_name_lang_mismatch": [],
+      "no_metadata": [],
+      "ingredient_title_is_en": [],
+      "ingredient_missing": [],
+      "ingredient_empty": [],
+      "sb_ingredient_missing": [],
+      "sb_ingredient_mismatch": [],
+      "usfm_invalid": [],
+      "usfm_no_alignment": [],
+      "metadata_invalid": []
+    },
+    "overall_severity_level": "info",
+    "severity_level_count": {
+      "error": 0,
+      "success": 0,
+      "info": 1,
+      "warning": 0
+    }
+  }
+}

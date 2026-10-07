@@ -1,0 +1,14 @@
+{
+  "sha": "80699fa07042698a4c75c5bd2245adf692edaee3",
+  "message": "QA rehearsal (#43): stand-in revision of TIT\n",
+  "parents": [
+    "2d9dbd1ee09b5a1c28edd8668462f6a64029619b"
+  ],
+  "author": "tc-admin-qa",
+  "files": [
+    {
+      "filename": "ingredients/TIT.usfm",
+      "status": "modified"
+    }
+  ]
+}
