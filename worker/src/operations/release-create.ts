@@ -96,7 +96,9 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
   const target = { tag: version, notes, target_sha: stored.snapshot.commit_sha, prerelease: input.prerelease };
   const failed = async (error: CatalogError, event: string) => {
     const last: OperationErrorShape = errorShape(error, context.requestId);
-    await context.plans.putPreparation(owner, repo, id, { ...stored, state: 'retryable_failure', last_error: last, version: { ...stored.version, confirmed: version }, notes: { ...stored.notes, confirmed: notes }, history: [...stored.history, { at: at(), from: stored.state, to: 'retryable_failure', event }] });
+    // A refusal confirms nothing, so the prepare-time version stays the floor (R9); an unconfirmed attempt keeps its tag for the lookup (R6).
+    const kept = error.code === 'release_outcome_unknown' ? { ...stored.version, confirmed: version } : stored.version;
+    await context.plans.putPreparation(owner, repo, id, { ...stored, state: 'retryable_failure', last_error: last, version: kept, notes: { ...stored.notes, confirmed: notes }, history: [...stored.history, { at: at(), from: stored.state, to: 'retryable_failure', event }] });
     throw error;
   };
   let created;

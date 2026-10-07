@@ -270,10 +270,10 @@ Candidate detection and everything the manager needs to decide, with no writes.
 ### `release.promote`
 
 - Inputs: `{ owner, repo, tag }`.
-- Checks: permission re-read, strictly (A2); the release exists under the tag (E21) and is a pre-release.
+- Checks: permission re-read, strictly (A2); the project is a Scripture Burrito Bible or Open Bible Stories project, as at `release.plan` (W2, `not_releasable`); the release exists under the tag (E21) and is a pre-release.
 - Door43 writes: one edit of the release setting the pre-release flag false and nothing else (R8).
-- Returns: `receipt.result = { tag, url, prerelease: false }`. The preparation the tag was created from (recorded by `release.create`, whose tag may be above the preparation id, R9), when it is `pre_release` and recorded this tag on the release's commit, follows the release to `full_release`.
-- Errors: `not_found`, `not_prerelease`, `permission_denied`, `promotion_failed` (Door43 refused, with its message, or did not answer; nothing retried, X1).
+- Returns: `receipt.result = { tag, url, prerelease: false }`. The preparation the tag was created from (recorded by `release.create`, whose tag may be above the preparation id, R9), when it is `pre_release` and recorded this tag on the release's commit, follows the release to `full_release`. When Door43 already shows that release full (a promotion whose answer was lost), that preparation follows it with no write and an empty `wrote`; without such a preparation the answer is `not_prerelease`.
+- Errors: `not_found`, `not_prerelease`, `not_releasable`, `permission_denied`, `promotion_failed` (Door43 refused, with its message, or did not answer; nothing retried, X1).
 
 ### `preparation.discard`
 

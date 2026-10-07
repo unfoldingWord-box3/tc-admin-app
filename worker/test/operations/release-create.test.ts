@@ -74,6 +74,7 @@ interface Door43Options {
   deleteAnswer?: () => Response | Promise<Response>;
   lookup?: (tag: string) => Response;
   promoteAnswer?: (body: Record<string, unknown>) => Response;
+  metadataType?: string;
 }
 /** Door43 as the release sees it: the account, the repository, the release write, the branch deletion, and the lookup. */
 function door43(options: Door43Options = {}) {
@@ -92,7 +93,7 @@ function door43(options: Door43Options = {}) {
     if (pathname === '/api/v1/user') return Response.json(user);
     if (/^\/api\/v1\/repos\/[^/]+\/[^/]+$/.test(pathname)) {
       const catalog = { ...repoView.catalog, latest: { ...repoView.catalog.latest!, commit_sha: options.head ?? HEAD }, prod: options.prod === undefined ? repoView.catalog.prod : options.prod };
-      return Response.json({ ...repoView, catalog, permissions: { ...repoView.permissions, push: options.push ?? true, admin: false } });
+      return Response.json({ ...repoView, ...(options.metadataType ? { metadata_type: options.metadataType } : {}), catalog, permissions: { ...repoView.permissions, push: options.push ?? true, admin: false } });
     }
     const tag = /\/releases\/tags\/([^/]+)$/.exec(pathname);
     if (tag) return options.lookup ? options.lookup(decodeURIComponent(tag[1]!)) : Response.json({ message: 'not found' }, { status: 404 });
@@ -277,6 +278,41 @@ describe('release.create (#39)', () => {
     const promotion = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: true, target_commitish: COMMIT }), promoteAnswer: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: false, target_commitish: COMMIT }) });
     await releasePromote({ ...PENDAU, tag: 'v1.4.0' }, promotion.context);
     expect(await get()).toMatchObject({ id: 'v1.3.0', state: 'full_release', release: { tag: 'v1.4.0', prerelease: false } });
+  });
+
+  test('W2: release.promote in a project that is not Scripture Burrito is not_releasable and writes nothing', async () => {
+    const lookup = () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: true, target_commitish: COMMIT });
+    const rc = door43({ metadataType: 'rc', lookup });
+    expect((await failure(releasePromote({ ...PENDAU, tag: 'v1.3.0' }, rc.context)))?.code).toBe('not_releasable');
+    expect(rc.writes).toEqual([]);
+    const sb = door43({ metadataType: 'sb', lookup });
+    expect((await releasePromote({ ...PENDAU, tag: 'v1.3.0' }, sb.context)).result.prerelease).toBe(false);
+    expect(sb.writes.map(write => write.method)).toEqual(['PATCH']);
+  });
+
+  test('R8, X1: a promotion Door43 applied but did not answer is followed on the next promote without a write, also above the prepared version', async () => {
+    await put(ready());
+    await releaseCreate(input({ version: 'v1.4.0', prerelease: true }), door43().context);
+    const lost = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: true, target_commitish: COMMIT }), promoteAnswer: () => Response.json({ message: 'bad gateway' }, { status: 502 }) });
+    expect((await failure(releasePromote({ ...PENDAU, tag: 'v1.4.0' }, lost.context)))?.code).toBe('promotion_failed');
+    expect((await get())?.state).toBe('pre_release');
+    const full = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: false, target_commitish: COMMIT }) });
+    const receipt = await releasePromote({ ...PENDAU, tag: 'v1.4.0' }, full.context);
+    expect(full.writes).toEqual([]);
+    expect(receipt).toMatchObject({ wrote: [], result: { tag: 'v1.4.0', prerelease: false } });
+    expect(await get()).toMatchObject({ id: 'v1.3.0', state: 'full_release', release: { tag: 'v1.4.0', prerelease: false } });
+    const other = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: false, target_commitish: 'f'.repeat(40) }) });
+    expect((await failure(releasePromote({ ...PENDAU, tag: 'v1.4.0' }, other.context)))?.code).toBe('not_prerelease');
+  });
+
+  test('R9, X1: a refused release leaves the prepare-time version as the floor; a retry at it performs the POST', async () => {
+    await put(ready());
+    const refused = door43({ releaseAnswer: () => Response.json({ message: 'tag name is not allowed' }, { status: 422 }) });
+    expect((await failure(releaseCreate(input({ version: 'v1.4.0' }), refused.context)))?.code).toBe('release_failed');
+    expect(await get()).toMatchObject({ state: 'retryable_failure', version: { confirmed: 'v1.3.0' } });
+    const retry = door43();
+    expect((await releaseCreate(input(), retry.context)).result.release?.tag).toBe('v1.3.0');
+    expect(retry.writes.map(write => write.method)).toEqual(['POST', 'DELETE']);
   });
 
   test('R7: a branch that resists deletion after the release is a warning on the receipt, and the preparation is released all the same', async () => {
