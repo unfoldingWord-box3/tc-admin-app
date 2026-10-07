@@ -23,6 +23,7 @@ Each document answers one question. Read downward for "why", upward for "how".
 | In what order, and how do we know it is done? | [docs/roadmap.md](docs/roadmap.md), GitHub milestones and `EPIC:` issues |
 | How does an issue connect to all of the above? | [docs/traceability.md](docs/traceability.md) |
 | How is it built, checked, and deployed? | [docs/deployment.md](docs/deployment.md), `.github/workflows/` |
+| How is the Milestone 1 demo run, step by step? | [docs/demo-script.md](docs/demo-script.md) |
 
 ## Orient by task
 
