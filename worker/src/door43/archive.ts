@@ -53,7 +53,7 @@ const MAX_COMMENT = 0xffff;
 const STORED = 0;
 const DEFLATED = 8;
 
-const malformed = (reason: string, details: Record<string, unknown> = {}) => new CatalogError('door43_unavailable', { details: { reason: `malformed archive: ${reason}`, ...details } });
+const malformed = (reason: string, details: Record<string, unknown> = {}, cause?: unknown) => new CatalogError('door43_unavailable', { details: { reason: `malformed archive: ${reason}`, ...details }, ...(cause === undefined ? {} : { cause }) });
 
 const CRC_TABLE = Uint32Array.from({ length: 256 }, (_, n) => {
   let c = n;
@@ -138,7 +138,7 @@ async function inflate(data: Uint8Array, limit: number, path: string): Promise<U
       total += chunk.value.length;
     }
   } catch (cause) {
-    throw cause instanceof CatalogError ? cause : malformed('deflate data the inflater refused', { path });
+    throw cause instanceof CatalogError ? cause : malformed('deflate data the inflater refused', { path }, cause);
   }
   return total === limit ? out : out.subarray(0, total);
 }
@@ -146,8 +146,9 @@ async function inflate(data: Uint8Array, limit: number, path: string): Promise<U
 /** A path the archive may hand on: no empty, `.` or `..` segment, no backslash, no NUL. */
 const safePath = (path: string) => !path.includes('\\') && !path.includes('\0') && path.split('/').every(segment => segment !== '' && segment !== '.' && segment !== '..');
 
-/** The archive's one top-level folder (E4), or a failure when the entries do not share one. */
+/** The archive's one top-level folder (E4), or a failure when there are no files or the entries do not share one. */
 export function topLevelFolder(paths: readonly string[]): string {
+  if (paths.length === 0) throw malformed('no files');
   const folders = new Set(paths.map(path => path.split('/')[0]));
   if (folders.size !== 1 || paths.some(path => !path.includes('/'))) throw malformed('not one top-level folder', { folders: [...folders].slice(0, 5) });
   return [...folders][0]!;

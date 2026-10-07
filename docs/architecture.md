@@ -205,6 +205,8 @@ Required user-visible behaviors:
 
 Diagnostics may include request ID, project, commit SHA, version, target ref, health status, and Door43 response status. They must exclude file contents, OAuth tokens, and secrets.
 
+Concurrency (decided 7 October 2026 by Rich): plans, receipts, and preparations live in Workers KV, which offers no compare-and-set, so two calls that overlap on one preparation can each store the state it read, and the later write wins. Milestone 1 accepts this: a project has one manager preparing one release at a time, the interface disables its buttons while a call is in flight, every apply re-reads Door43 before it writes, and a receipt stored under its key answers a repeated request. If the pilot shows overlapping writes, the preparation moves to a store with a precondition (a Durable Object), a Milestone 2 change recorded as an ADR.
+
 ## 8. Security requirements
 
 - OAuth authorization-code flow with server-side code exchange.

@@ -92,9 +92,10 @@ const unanswered = (error: unknown): ReleaseWriteError | null =>
  * `POST /repos/{owner}/{repo}/releases` (`CreateReleaseOption`, E21) with the tag,
  * the notes, the commit, and the pre-release flag; Door43 creates the tag on that
  * commit with the release (E27). A 409 means the tag or release is already there
- * (`exists`, R6); any other refusal is `failed`; a request Door43 did not answer, or
- * answered unreadably, is `unknown`: whether the release exists is then for
- * `release.lookup` to settle before anything is sent again (R6, X1).
+ * (`exists`, R6); any other 4xx refusal is `failed`; a request Door43 did not answer,
+ * answered unreadably, or answered with a status that does not say it refused (a 5xx
+ * or gateway timeout, a 408, an unexpected success) is `unknown`: whether the release
+ * exists is then for `release.lookup` to settle before anything is sent again (R6, X1).
  */
 export async function createRelease(client: Door43Client, owner: string, repo: string, release: ReleaseToCreate): Promise<Release> {
   const path = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases`;
@@ -106,7 +107,8 @@ export async function createRelease(client: Door43Client, owner: string, repo: s
     throw unanswered(error) ?? error;
   }
   if (outcome.status === 409) throw new ReleaseWriteError('exists', door43Message(outcome), 409);
-  if (outcome.status !== 201) throw new ReleaseWriteError('failed', door43Message(outcome), outcome.status);
+  const refused = outcome.status >= 400 && outcome.status < 500 && outcome.status !== 408;
+  if (outcome.status !== 201) throw new ReleaseWriteError(refused ? 'failed' : 'unknown', door43Message(outcome), outcome.status);
   const created = releaseShape(outcome.body);
   if (!created) throw new ReleaseWriteError('unknown', 'unexpected release shape', 201);
   return created;

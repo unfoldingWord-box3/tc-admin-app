@@ -91,6 +91,9 @@ describe('what the client refuses', () => {
     expect(reason(() => openArchive(new TextEncoder().encode('not a zip at all, and long enough to scan for the end record signature')))).toMatchObject({ code: 'door43_unavailable' });
     expect(reason(() => openArchive(storedZip([['a/x', '1'], ['b/y', '2']])))).toEqual({ code: 'door43_unavailable', reason: 'malformed archive: not one top-level folder' });
     expect(reason(() => topLevelFolder(['a/x', 'y']))).toMatchObject({ reason: 'malformed archive: not one top-level folder' });
+    // An archive of directory entries only, or of nothing, has no files: its own reason, not a complaint about folders (#96 follow-up).
+    expect(reason(() => openArchive(storedZip([['r/', ''], ['r/ingredients/', '']])))).toEqual({ code: 'door43_unavailable', reason: 'malformed archive: no files' });
+    expect(reason(() => topLevelFolder([]))).toMatchObject({ reason: 'malformed archive: no files' });
     // A size that is not the one declared is refused, never returned short or long.
     const lying = storedZip([['r/f.txt', 'abc']]);
     // The central directory starts after the one local header (30 bytes and the 7-byte name) and the 3 bytes of data; its uncompressed size is 24 bytes in.
@@ -111,7 +114,12 @@ describe('what the client refuses', () => {
     const zip = bytes('2026-10-07/sb-archives/birch__es-419_tit_text_reg__master.zip');
     const entry = zipEntries(zip).find(raw => raw.path.endsWith('TIT.usfm'))!;
     zip.fill(0xff, entry.offset, entry.offset + entry.compressed);
-    expect(await code(openArchive(zip).bytes('ingredients/TIT.usfm'))).toBe('door43_unavailable');
+    const error = await openArchive(zip).bytes('ingredients/TIT.usfm').then(() => null, (e: unknown) => e);
+    expect(error).toBeInstanceOf(CatalogError);
+    // The inflater's own error rides along as the cause, as the download path keeps it (#96 follow-up).
+    expect((error as CatalogError).cause).toBeInstanceOf(Error);
+    expect((error as CatalogError).cause).not.toBeInstanceOf(CatalogError);
+    expect((error as CatalogError).details.reason).toBe('malformed archive: deflate data the inflater refused');
   });
 
   test('the end record is the one whose comment ends the file; a directory that overruns it or stops short is refused', () => {

@@ -74,6 +74,7 @@ interface Door43Options {
   deleteAnswer?: () => Response | Promise<Response>;
   lookup?: (tag: string) => Response;
   promoteAnswer?: (body: Record<string, unknown>) => Response;
+  metadataType?: string;
 }
 /** Door43 as the release sees it: the account, the repository, the release write, the branch deletion, and the lookup. */
 function door43(options: Door43Options = {}) {
@@ -85,14 +86,14 @@ function door43(options: Door43Options = {}) {
       const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : null;
       writes.push({ method, path: pathname, body });
       if (pathname.endsWith('/releases')) return options.releaseAnswer ? options.releaseAnswer(body!) : Response.json({ ...probeRelease, door43_metadata: null, tag_name: body!.tag_name, name: body!.tag_name, body: body!.body, target_commitish: body!.target_commitish, prerelease: body!.prerelease, html_url: `https://qa.door43.org/${PENDAU.owner}/${PENDAU.repo}/releases/tag/${String(body!.tag_name)}` }, { status: 201 });
-      if (/\/releases\/\d+$/.test(pathname)) return options.promoteAnswer ? options.promoteAnswer(body!) : Response.json({ ...probeRelease, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT });
+      if (/\/releases\/\d+$/.test(pathname)) return options.promoteAnswer ? options.promoteAnswer(body!) : Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT });
       if (pathname.includes('/branches/')) return options.deleteAnswer ? options.deleteAnswer() : new Response(null, { status: 204 });
       return new Response('', { status: 404 });
     }
     if (pathname === '/api/v1/user') return Response.json(user);
     if (/^\/api\/v1\/repos\/[^/]+\/[^/]+$/.test(pathname)) {
       const catalog = { ...repoView.catalog, latest: { ...repoView.catalog.latest!, commit_sha: options.head ?? HEAD }, prod: options.prod === undefined ? repoView.catalog.prod : options.prod };
-      return Response.json({ ...repoView, catalog, permissions: { ...repoView.permissions, push: options.push ?? true, admin: false } });
+      return Response.json({ ...repoView, ...(options.metadataType ? { metadata_type: options.metadataType } : {}), catalog, permissions: { ...repoView.permissions, push: options.push ?? true, admin: false } });
     }
     const tag = /\/releases\/tags\/([^/]+)$/.exec(pathname);
     if (tag) return options.lookup ? options.lookup(decodeURIComponent(tag[1]!)) : Response.json({ message: 'not found' }, { status: 404 });
@@ -134,7 +135,7 @@ describe('release.create (#39)', () => {
     const receipt = await releaseCreate(input({ prerelease: true }), context);
     expect(writes[0]!.body).toMatchObject({ prerelease: true });
     expect(receipt.result).toMatchObject({ state: 'pre_release', release: { prerelease: true } });
-    const promotion = door43({ lookup: () => Response.json({ ...probeRelease, tag_name: 'v1.3.0', prerelease: true, target_commitish: COMMIT }) });
+    const promotion = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: true, target_commitish: COMMIT }) });
     const promoted = await releasePromote({ ...PENDAU, tag: 'v1.3.0' }, promotion.context);
     expect(promotion.writes).toEqual([{ method: 'PATCH', path: `/api/v1/repos/${PENDAU.owner}/${PENDAU.repo}/releases/${String(probeRelease.id)}`, body: { prerelease: false } }]);
     expect(promoted.result).toEqual({ tag: 'v1.3.0', url: String(probeRelease.html_url), prerelease: false });
@@ -226,17 +227,22 @@ describe('release.create (#39)', () => {
     expect(retry.writes.map(write => write.method)).toEqual(['POST', 'DELETE']);
   });
 
-  test('R6, X1: a release Door43 did not confirm is release_outcome_unknown and not retried; the next create looks the tag up first: found, it is release_exists with no write and the preparation records it; not found, it is created (#40)', async () => {
+  test('R6, X1: a release Door43 did not confirm is release_outcome_unknown and not retried; the next create looks the tag up first: found on the snapshot commit, it is release_exists, the preparation records it and its branch is deleted; found elsewhere, release_exists and nothing changes; not found, it is created (#40)', async () => {
     await put(ready());
     const lost = door43({ releaseAnswer: () => Promise.reject(new TypeError('fetch failed')) });
     expect((await failure(releaseCreate(input(), lost.context)))?.code).toBe('release_outcome_unknown');
     expect(lost.writes.map(write => write.method)).toEqual(['POST']);
     expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' } });
+    const denied = door43({ push: false, lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT }) });
+    expect((await failure(releaseCreate(input(), denied.context)))?.code).toBe('permission_denied');
+    expect(denied.writes).toEqual([]);
+    expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' } });
     const found = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT, html_url: 'https://qa.door43.org/found' }) });
     const exists = await failure(releaseCreate(input(), found.context));
     expect(exists).toMatchObject({ code: 'release_exists' });
     expect(exists?.details).toMatchObject({ tag: 'v1.3.0', url: 'https://qa.door43.org/found', target_sha: COMMIT });
-    expect(found.writes).toEqual([]);
+    expect(found.writes.map(write => write.method)).toEqual(['DELETE']);
+    expect(exists?.details).toMatchObject({ branch_deleted: true });
     expect(await get()).toMatchObject({ state: 'full_release', release: { tag: 'v1.3.0', url: 'https://qa.door43.org/found', prerelease: false }, last_error: null });
     await put(ready({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'run `release.lookup` for the tag before retrying', request_id: 'r', details: {}, invariant: 'R6' } }));
     const other = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: 'f000000000000000000000000000000000000000' }) });
@@ -253,6 +259,120 @@ describe('release.create (#39)', () => {
     expect((await failure(releaseCreate(input(), taken.context)))?.code).toBe('release_exists');
     expect(taken.writes.map(write => write.method)).toEqual(['POST']);
     expect((await get())?.state).toBe('ready_for_release');
+  });
+
+  test('R6, R5, X1: an unconfirmed attempt on a moved source (restart_required) is looked up first: found on the snapshot commit, it is recorded and its branch deleted; not found, it stays source_changed and nothing is created', async () => {
+    const unknown = { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'run `release.lookup` for the tag before retrying', request_id: 'r', details: {}, invariant: 'R6' } as const;
+    await put(ready({ state: 'restart_required', last_error: unknown }));
+    const found = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT }) });
+    expect((await failure(releaseCreate(input(), found.context)))?.code).toBe('release_exists');
+    expect(found.writes.map(write => write.method)).toEqual(['DELETE']);
+    expect(await get()).toMatchObject({ state: 'full_release', last_error: null });
+    await put(ready({ state: 'restart_required', last_error: unknown }));
+    const looked: string[] = [];
+    const absent = door43({ lookup: tag => (looked.push(tag), Response.json({ message: 'not found' }, { status: 404 })) });
+    expect((await failure(releaseCreate(input(), absent.context)))?.code).toBe('source_changed');
+    expect(looked).toEqual(['v1.3.0']);
+    expect(absent.writes).toEqual([]);
+    expect(await get()).toMatchObject({ state: 'restart_required', last_error: { code: 'release_outcome_unknown' } });
+  });
+
+  test('R6, X1: a 5xx answer to the release is release_outcome_unknown; a second create, even at a higher version, looks the tag it sent up first and, finding none, creates (decided 7 October 2026)', async () => {
+    await put(ready());
+    const gateway = door43({ releaseAnswer: () => Response.json({ message: 'gateway timeout' }, { status: 504 }) });
+    expect((await failure(releaseCreate(input(), gateway.context)))?.code).toBe('release_outcome_unknown');
+    expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' } });
+    const looked: string[] = [];
+    const bumped = door43({ lookup: tag => (looked.push(tag), Response.json({ message: 'not found' }, { status: 404 })) });
+    const receipt = await releaseCreate(input({ version: 'v1.4.0' }), bumped.context);
+    expect(looked).toEqual(['v1.3.0']);
+    expect(bumped.writes.map(write => write.method)).toEqual(['POST', 'DELETE']);
+    expect(receipt.result).toMatchObject({ state: 'full_release', release: { tag: 'v1.4.0' } });
+  });
+
+  test('R6, R7: a 201 for another commit is release_outcome_unknown; nothing is recorded as released and the branch is kept', async () => {
+    await put(ready());
+    const other = door43({ releaseAnswer: body => Response.json({ ...probeRelease, door43_metadata: null, tag_name: body.tag_name, target_commitish: 'f'.repeat(40), prerelease: body.prerelease }, { status: 201 }) });
+    expect((await failure(releaseCreate(input(), other.context)))?.code).toBe('release_outcome_unknown');
+    expect(other.writes.map(write => write.method)).toEqual(['POST']);
+    expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' }, release: null });
+  });
+
+  test('A2: a caller without push learns nothing of the preparation or its receipt; permission_denied comes first', async () => {
+    await put(ready());
+    await releaseCreate(input(), door43().context);
+    const denied = door43({ push: false });
+    const error = await failure(releaseCreate(input(), denied.context));
+    expect(error?.code).toBe('permission_denied');
+    expect(error?.details).toEqual({ owner: PENDAU.owner, repo: PENDAU.repo });
+    expect((await failure(releaseCreate(input({ preparation_id: 'v9.9.9' }), denied.context)))?.code).toBe('permission_denied');
+    expect(denied.writes).toEqual([]);
+  });
+
+  test('R8, R9: a pre-release created above the prepared version is promoted by its tag, and the preparation it came from follows to full_release', async () => {
+    await put(ready());
+    await releaseCreate(input({ version: 'v1.4.0', prerelease: true }), door43().context);
+    const promotion = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: true, target_commitish: COMMIT }), promoteAnswer: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: false, target_commitish: COMMIT }) });
+    await releasePromote({ ...PENDAU, tag: 'v1.4.0' }, promotion.context);
+    expect(await get()).toMatchObject({ id: 'v1.3.0', state: 'full_release', release: { tag: 'v1.4.0', prerelease: false } });
+  });
+
+  test('W2: release.promote in a project that is not Scripture Burrito is not_releasable and writes nothing', async () => {
+    const lookup = () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: true, target_commitish: COMMIT });
+    const rc = door43({ metadataType: 'rc', lookup });
+    expect((await failure(releasePromote({ ...PENDAU, tag: 'v1.3.0' }, rc.context)))?.code).toBe('not_releasable');
+    expect(rc.writes).toEqual([]);
+    const sb = door43({ metadataType: 'sb', lookup });
+    expect((await releasePromote({ ...PENDAU, tag: 'v1.3.0' }, sb.context)).result.prerelease).toBe(false);
+    expect(sb.writes.map(write => write.method)).toEqual(['PATCH']);
+  });
+
+  test('R8, X1: a promotion Door43 applied but did not answer is followed on the next promote without a write, also above the prepared version', async () => {
+    await put(ready());
+    await releaseCreate(input({ version: 'v1.4.0', prerelease: true }), door43().context);
+    const lost = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: true, target_commitish: COMMIT }), promoteAnswer: () => Response.json({ message: 'bad gateway' }, { status: 502 }) });
+    expect((await failure(releasePromote({ ...PENDAU, tag: 'v1.4.0' }, lost.context)))?.code).toBe('promotion_failed');
+    expect((await get())?.state).toBe('pre_release');
+    const full = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: false, target_commitish: COMMIT }) });
+    const receipt = await releasePromote({ ...PENDAU, tag: 'v1.4.0' }, full.context);
+    expect(full.writes).toEqual([]);
+    expect(receipt).toMatchObject({ wrote: [], result: { tag: 'v1.4.0', prerelease: false } });
+    expect(await get()).toMatchObject({ id: 'v1.3.0', state: 'full_release', release: { tag: 'v1.4.0', prerelease: false } });
+    const other = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: false, target_commitish: 'f'.repeat(40) }) });
+    expect((await failure(releasePromote({ ...PENDAU, tag: 'v1.4.0' }, other.context)))?.code).toBe('not_prerelease');
+  });
+
+  test('R8, X1: a promotion answered 200 for another tag or commit is promotion_failed, and the preparation does not follow', async () => {
+    await put(ready());
+    await releaseCreate(input({ prerelease: true }), door43().context);
+    const lookup = () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: true, target_commitish: COMMIT });
+    for (const answer of [{ tag_name: 'v9.9.9', target_commitish: COMMIT }, { tag_name: 'v1.3.0', target_commitish: 'f'.repeat(40) }]) {
+      const lying = door43({ lookup, promoteAnswer: () => Response.json({ ...probeRelease, door43_metadata: null, prerelease: false, ...answer }) });
+      expect((await failure(releasePromote({ ...PENDAU, tag: 'v1.3.0' }, lying.context)))?.code).toBe('promotion_failed');
+      expect((await get())?.state).toBe('pre_release');
+    }
+  });
+
+  test('§1 rule 6: a preparation prepared again under the same id after its pre-release is not answered the old receipt; its own release is created', async () => {
+    await put(ready());
+    const first = await releaseCreate(input({ version: 'v1.4.0', prerelease: true }), door43().context);
+    const again = 'e000000000000000000000000000000000000002';
+    await put(ready({ snapshot: { ...ready().snapshot!, commit_sha: again } }));
+    const second = door43();
+    const receipt = await releaseCreate(input({ version: 'v1.5.0', prerelease: true }), second.context);
+    expect(receipt).not.toEqual(first);
+    expect(receipt.result).toMatchObject({ state: 'pre_release', release: { tag: 'v1.5.0' } });
+    expect(second.writes[0]).toMatchObject({ method: 'POST', body: { tag_name: 'v1.5.0', target_commitish: again } });
+  });
+
+  test('R9, X1: a refused release leaves the prepare-time version as the floor; a retry at it performs the POST', async () => {
+    await put(ready());
+    const refused = door43({ releaseAnswer: () => Response.json({ message: 'tag name is not allowed' }, { status: 422 }) });
+    expect((await failure(releaseCreate(input({ version: 'v1.4.0' }), refused.context)))?.code).toBe('release_failed');
+    expect(await get()).toMatchObject({ state: 'retryable_failure', version: { confirmed: 'v1.3.0' } });
+    const retry = door43();
+    expect((await releaseCreate(input(), retry.context)).result.release?.tag).toBe('v1.3.0');
+    expect(retry.writes.map(write => write.method)).toEqual(['POST', 'DELETE']);
   });
 
   test('R7: a branch that resists deletion after the release is a warning on the receipt, and the preparation is released all the same', async () => {
@@ -275,4 +395,38 @@ describe('release.create (#39)', () => {
     expect((await failure(releaseCreate(input(), door43().context)))?.code).toBe('release_exists');
     expect((await failure(releaseCreate(input({ preparation_id: 'v9.9.9' }), door43().context)))?.code).toBe('not_found');
   });
+  test('R6, R7: a 409 at creation is looked up (decided 7 October 2026): this snapshot\'s release is recorded, its branch deleted, and the answer release_exists; a tag on another commit is release_exists with the error recorded and nothing deleted; no second POST', async () => {
+    await put(ready());
+    const ours = door43({ releaseAnswer: () => Response.json({ message: 'Release is has no Tag' }, { status: 409 }), lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT, html_url: 'https://qa.door43.org/ours' }) });
+    const exists = await failure(releaseCreate(input(), ours.context));
+    expect(exists).toMatchObject({ code: 'release_exists' });
+    expect(exists?.details).toMatchObject({ url: 'https://qa.door43.org/ours', target_sha: COMMIT, branch_deleted: true });
+    expect(ours.writes.map(write => write.method)).toEqual(['POST', 'DELETE']);
+    expect(await get()).toMatchObject({ state: 'full_release', release: { tag: 'v1.3.0', url: 'https://qa.door43.org/ours' }, last_error: null });
+    kv = new MemoryKV();
+    await put(ready());
+    const foreign = door43({ releaseAnswer: () => Response.json({ message: 'Release is has no Tag' }, { status: 409 }), lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: 'f000000000000000000000000000000000000000' }) });
+    expect((await failure(releaseCreate(input(), foreign.context)))?.code).toBe('release_exists');
+    expect(foreign.writes.map(write => write.method)).toEqual(['POST']);
+    expect(await get()).toMatchObject({ state: 'ready_for_release', release: null, last_error: { code: 'release_exists' } });
+  });
+
+  test('R5: a repository whose catalog names no default-branch head is door43_unavailable and nothing is written or restarted (decided 7 October 2026)', async () => {
+    await put(ready());
+    const { context, writes } = door43({ head: '' });
+    expect((await failure(releaseCreate(input(), context)))?.code).toBe('door43_unavailable');
+    expect(writes).toEqual([]);
+    expect((await get())?.state).toBe('ready_for_release');
+  });
+
+  test('R6, R8, R9: a pre-release above the preparation id found by the lookup after an unconfirmed attempt is recorded with its tag pointer, so its promotion by tag moves the original preparation to full_release', async () => {
+    await put(ready({ state: 'retryable_failure', version: { baseline_tag: 'v1.2', proposed: 'v1.3.0', confirmed: 'v1.4.0' }, last_error: { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'run `release.lookup` for the tag before retrying', request_id: 'r', details: {}, invariant: 'R6' } }));
+    const found = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: true, target_commitish: COMMIT }) });
+    expect((await failure(releaseCreate(input({ version: 'v1.4.0' }), found.context)))?.code).toBe('release_exists');
+    expect(await get()).toMatchObject({ id: 'v1.3.0', state: 'pre_release', release: { tag: 'v1.4.0', prerelease: true } });
+    const promotion = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: true, target_commitish: COMMIT }), promoteAnswer: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.4.0', prerelease: false, target_commitish: COMMIT }) });
+    await releasePromote({ ...PENDAU, tag: 'v1.4.0' }, promotion.context);
+    expect(await get()).toMatchObject({ id: 'v1.3.0', state: 'full_release', release: { tag: 'v1.4.0', prerelease: false } });
+  });
+
 });

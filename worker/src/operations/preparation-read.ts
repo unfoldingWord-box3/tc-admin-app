@@ -6,8 +6,9 @@
 // manager's acknowledgement still to come; a pending check stays
 // `health_checking`; everything else is `health_blocked`. Before any of that,
 // a default-branch head that moved since the plan makes the preparation
-// `restart_required` (R5). A preparation past that point, or not yet pushed,
-// is answered as stored, with no Door43 read. The Worker reads once per call;
+// `restart_required` (R5). The repository is read first in every state, as the
+// caller's access check. A preparation not waiting on the check is answered as
+// stored, with no health read. The Worker reads once per call;
 // the client polls (HEALTH_POLL in the shared schema).
 
 import { CatalogError } from '@tc-admin/shared/schema';
@@ -34,6 +35,9 @@ export function stateOfHealth(health: Health): PreparationState {
 export async function preparationRead(input: ParsedInput<'preparation.read'>, context: OperationContext): Promise<OperationOutput<'preparation.read'>> {
   const client = signedIn(context);
   const { owner, repo, preparation_id: id } = input;
+  // The store is keyed by project, not by account: the caller's own repository read is the access check, in every state,
+  // before the store is consulted, so a repository the token cannot see is `not_found` whether or not a preparation exists.
+  const repository = await readRepository(client, owner, repo);
   const stored = await context.plans.getPreparation<Preparation>(owner, repo, id);
   if (!stored) throw new CatalogError('not_found', { details: { owner, repo, preparation_id: id } });
   const at = context.now().toISOString();
@@ -41,8 +45,9 @@ export async function preparationRead(input: ParsedInput<'preparation.read'>, co
   if (!BOUND.has(stored.state)) return fresh(stored);
 
   // R5: the binding is to the default-branch head the plan read; a head that moved means the release must restart.
-  const head = repositoryRefs(await readRepository(client, owner, repo)).default_branch?.sha ?? null;
-  if (head !== stored.bound_to.default_branch_sha) {
+  // A head Door43 does not name (no catalog `latest` stage) is unknown, not a move: nothing is written (decided 7 October 2026 by Rich).
+  const head = repositoryRefs(repository).default_branch?.sha ?? null;
+  if (head !== null && head !== stored.bound_to.default_branch_sha) {
     const restarted = fresh({ ...stored, state: 'restart_required', history: [...stored.history, { at, from: stored.state, to: 'restart_required', event: `default branch moved to ${head ?? 'none'}` }] });
     await context.plans.putPreparation(owner, repo, id, restarted);
     return restarted;
