@@ -29,6 +29,8 @@ describe('W6: unsafe names are refused as validation_failed naming the file', ()
     ['c:a.usfm', 'absolute'],
     ['\\\\server\\share\\a.usfm', 'absolute'],
     ['\\a.usfm', 'absolute'],
+    ['./C:/GEN.usfm', 'absolute'],
+    ['././c:GEN.usfm', 'absolute'],
     ['ingredients\\GEN.usfm', 'backslash'],
     ['a\\..\\b.usfm', 'backslash'],
     ['a\u0000.usfm', 'control_character'],
@@ -36,6 +38,10 @@ describe('W6: unsafe names are refused as validation_failed naming the file', ()
     ['a\nb.usfm', 'control_character'],
     ['a\u007f.usfm', 'control_character'],
     ['a\u0085.usfm', 'control_character'],
+    ['a‮b.usfm', 'control_character'],
+    ['a⁦b.usfm', 'control_character'],
+    ['a b.usfm', 'control_character'],
+    ['a b.usfm', 'control_character'],
     ['', 'empty'],
     ['.', 'empty'],
     ['./', 'empty_segment'],
@@ -79,7 +85,7 @@ describe('W6: entries the client reports as symlinks, non-files, or executables 
 
   test('W6: a directory, device, or other non-regular entry is refused', () => {
     for (const mode of [0o040755, 0o040644, 0o020644, 0o060644, 0o010644, 0o140644]) {
-      expect(modeProblem(mode), mode.toString(8)).toBe('not_a_file');
+      expect(refusal([file('a.usfm', 10, mode)]).problems[0]?.reason, mode.toString(8)).toBe('not_a_file');
     }
   });
 
@@ -96,7 +102,7 @@ describe('W6: accepted names are repository-relative and none escapes the projec
   });
 
   test('W6: Unicode names are accepted as sent, unnormalized', () => {
-    for (const name of ['ingredients/GÉN.usfm', 'истории/01.md', '故事/01.md', 'אסתר.usfm', 'e\u0301.md', '📖.usfm']) {
+    for (const name of ['ingredients/GÉN.usfm', 'истории/01.md', '故事/01.md', 'אסתר.usfm', 'نامه‌ها.usfm','e\u0301.md', '📖.usfm']) {
       expect(normalizeUploadName(name), name).toEqual({ ok: true, path: name });
     }
   });

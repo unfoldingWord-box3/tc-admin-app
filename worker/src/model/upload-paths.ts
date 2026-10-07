@@ -75,8 +75,11 @@ const REASON_TEXT: Record<NameReason | ModeReason, string> = {
  */
 export function normalizeUploadName(name: string): { ok: true; path: string } | { ok: false; reason: NameReason } {
   if (name.length === 0) return { ok: false, reason: 'empty' };
-  // Unicode category Cc: C0 controls, including the null byte, DEL, and C1 controls.
-  if (/\p{Cc}/u.test(name)) return { ok: false, reason: 'control_character' };
+  // Unicode category Cc (C0 controls, the null byte, DEL, C1 controls), the line
+  // and paragraph separators (Zl, Zp), and the bidirectional embedding, override,
+  // and isolate controls, which can make a name display as another path. Other
+  // Cf characters stay: ZWNJ and ZWJ are spelling in Persian and Indic names.
+  if (/[\p{Cc}\p{Zl}\p{Zp}‪-‮⁦-⁩]/u.test(name)) return { ok: false, reason: 'control_character' };
   // A leading slash or backslash (`/x`, `\\server\share`), or a drive (`C:\x`, `C:/x`, `C:x`).
   if (/^[/\\]/.test(name) || /^[A-Za-z]:/.test(name)) return { ok: false, reason: 'absolute' };
   if (name.includes('\\')) return { ok: false, reason: 'backslash' };
@@ -88,6 +91,8 @@ export function normalizeUploadName(name: string): { ok: true; path: string } | 
     if (segment !== '.') segments.push(segment);
   }
   if (segments.length === 0) return { ok: false, reason: 'empty' };
+  // A drive revealed by dropping `.` segments (`./C:/x`, `././c:x`).
+  if (/^[A-Za-z]:/.test(segments[0] ?? '')) return { ok: false, reason: 'absolute' };
   return { ok: true, path: segments.join('/') };
 }
 
