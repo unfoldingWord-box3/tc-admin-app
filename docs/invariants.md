@@ -194,7 +194,7 @@ Issues: #30, #34, #45, #46.
 ### W6 — Upload paths are safe
 Uploads reject absolute paths, path traversal, symlinks, executable behavior, and files or batches over the configured limits.
 Source: product spec §8; architecture §5.
-Enforced in: `worker/src/model/upload-paths.ts` `checkUpload`, which `upload.plan` runs first, before identification or any Door43 read: names are normalized to repository-relative paths and an absolute, traversing, backslash, control-character, empty-segment, or `.git` name is refused; an entry whose reported `mode` is a symlink, not a regular file, or executable is refused; so is a file or a batch over `MAX_UPLOAD_BYTES`, one value (the Q15 proposal), each as `validation_failed` naming the file.
+Enforced in: `worker/src/model/upload-paths.ts` `checkUpload`, which `upload.plan` runs first, before identification or any Door43 read: names are normalized to repository-relative paths and an absolute, traversing, backslash, control-character, percent-sign (decided 7 October 2026 by Rich, so no encoded `..` or `.git` can traverse), empty-segment, or `.git` name is refused; an entry whose reported `mode` is a symlink, not a regular file, or executable is refused; so is a file or a batch over `MAX_UPLOAD_BYTES`, one value (the Q15 proposal), each as `validation_failed` naming the file.
 Verified by: the table-driven `W6:` tests in `worker/test/model/upload-paths.test.ts` (each unsafe name, symlink, executable, and non-file entry refused naming the file; `./a.usfm` and Unicode names accepted as repository-relative; a file and a batch of exactly the limit accepted and one byte over refused). That `upload.plan` runs the check before anything else is #74's test.
 Issues: #45, #51, #73.
 

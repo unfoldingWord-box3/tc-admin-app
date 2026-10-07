@@ -31,7 +31,7 @@ export interface UploadFile {
 }
 
 /** Why a name does not stand for a path inside the project. */
-export type NameReason = 'empty' | 'control_character' | 'absolute' | 'backslash' | 'empty_segment' | 'traversal' | 'git_directory';
+export type NameReason = 'empty' | 'control_character' | 'percent_encoding' | 'absolute' | 'backslash' | 'empty_segment' | 'traversal' | 'git_directory';
 /** Why an entry's reported mode is refused. */
 export type ModeReason = 'symlink' | 'not_a_file' | 'executable';
 /** Why a file of the batch is refused. */
@@ -58,6 +58,7 @@ const EXECUTE_BITS = 0o111;
 const REASON_TEXT: Record<NameReason | ModeReason, string> = {
   empty: 'the name is empty',
   control_character: 'the name contains a control character',
+  percent_encoding: 'the name contains a percent sign',
   absolute: 'the path is absolute',
   backslash: 'the path contains a backslash',
   empty_segment: 'the path has an empty segment',
@@ -80,6 +81,9 @@ export function normalizeUploadName(name: string): { ok: true; path: string } | 
   // and isolate controls, which can make a name display as another path. Other
   // Cf characters stay: ZWNJ and ZWJ are spelling in Persian and Indic names.
   if (/[\p{Cc}\p{Zl}\p{Zp}‪-‮⁦-⁩]/u.test(name)) return { ok: false, reason: 'control_character' };
+  // A percent sign, so no encoded `..` or `.git` (`%2e%2e/a.usfm`) can traverse if a later hop decodes the
+  // name; no book, story, or project file needs one (decided 7 October 2026 by Rich, #116).
+  if (name.includes('%')) return { ok: false, reason: 'percent_encoding' };
   // A leading slash or backslash (`/x`, `\\server\share`), or a drive (`C:\x`, `C:/x`, `C:x`).
   if (/^[/\\]/.test(name) || /^[A-Za-z]:/.test(name)) return { ok: false, reason: 'absolute' };
   if (name.includes('\\')) return { ok: false, reason: 'backslash' };

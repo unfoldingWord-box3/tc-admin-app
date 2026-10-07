@@ -49,6 +49,10 @@ describe('W6: unsafe names are refused as validation_failed naming the file', ()
     ['ingredients/', 'empty_segment'],
     ['.git/config', 'git_directory'],
     ['a/.GIT/hooks/pre-commit', 'git_directory'],
+    ['%2e%2e/%2e%2e/a.usfm', 'percent_encoding'],
+    ['%2e%2e%2f%2e%2e%2fa.usfm', 'percent_encoding'],
+    ['%2egit/config', 'percent_encoding'],
+    ['50%.md', 'percent_encoding'],
   ];
 
   test.each(cases)('W6: %j is refused as %s', (name, reason) => {
