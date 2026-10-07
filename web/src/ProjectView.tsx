@@ -4,7 +4,7 @@
 // (`project.read`) is #25.
 
 import type { ProjectSummary } from '@tc-admin/shared/schema';
-import { coverageLabel, healthLabel, typeLabel } from './portfolio-labels';
+import { coverageLabel, healthLabel, releaseHash, typeLabel } from './portfolio-labels';
 
 export function ProjectView({ project }: { project: ProjectSummary }) {
   const { coverage } = project;
@@ -30,6 +30,11 @@ export function ProjectView({ project }: { project: ProjectSummary }) {
         <dt>Health</dt>
         <dd>{healthLabel(project.health.state)}</dd>
       </dl>
+      <p className="actions">
+        <a className="button" href={releaseHash(project)}>
+          Prepare a release
+        </a>
+      </p>
       {coverage.units.length > 0 && (
         <ul className="units" aria-label="Books and stories in scope">
           {coverage.units.map(unit => (

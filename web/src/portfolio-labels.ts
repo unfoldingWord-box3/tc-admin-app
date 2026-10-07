@@ -61,11 +61,13 @@ export const canOpen = (project: Pick<ProjectSummary, 'editability'>) => project
 export const projectHash = (project: Pick<ProjectSummary, 'ref'>) => `#/${encodeURIComponent(project.ref.owner)}/${encodeURIComponent(project.ref.repo)}`;
 
 /** The owner and repository a hash names, or `null`. */
-export function hashRef(hash: string): { owner: string; repo: string } | null {
-  const match = /^#\/([^/]+)\/([^/]+)$/.exec(hash);
+export const releaseHash = (project: Pick<ProjectSummary, 'ref'>) => `${projectHash(project)}/release`;
+
+export function hashRef(hash: string): { owner: string; repo: string; view: 'project' | 'release' } | null {
+  const match = /^#\/([^/]+)\/([^/]+)(\/release)?$/.exec(hash);
   if (!match) return null;
   try {
-    return { owner: decodeURIComponent(match[1]!), repo: decodeURIComponent(match[2]!) };
+    return { owner: decodeURIComponent(match[1]!), repo: decodeURIComponent(match[2]!), view: match[3] ? 'release' : 'project' };
   } catch {
     return null;
   }

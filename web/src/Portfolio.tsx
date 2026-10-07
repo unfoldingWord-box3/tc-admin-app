@@ -16,6 +16,7 @@ import { callOperation } from './api/client';
 import { CreateProject } from './CreateProject';
 import { CREATE_HASH, retireCreated, withCreated } from './create-project';
 import { ProjectView } from './ProjectView';
+import { ReleaseStepper } from './ReleaseStepper';
 import { canOpen, coverageLabel, formatLabel, hashRef, healthLabel, projectHash, typeLabel } from './portfolio-labels';
 
 type PortfolioList = OperationOutput<'portfolio.list'>;
@@ -62,7 +63,7 @@ export function Portfolio({ account, onFailure }: Props) {
   const projects = organizations.flatMap(group => group.projects);
   const wanted = hashRef(hash);
   const open = wanted && projects.find(project => project.ref.owner === wanted.owner && project.ref.repo === wanted.repo && canOpen(project));
-  if (open) return <ProjectView project={open} />;
+  if (open) return wanted.view === 'release' ? <ReleaseStepper project={open} onFailure={onFailure} /> : <ProjectView project={open} />;
 
   if (hash === CREATE_HASH) {
     if (!portfolio) return <p>Loading your projects…</p>;
