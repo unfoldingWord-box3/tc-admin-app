@@ -10,7 +10,9 @@ The demo of 16 October 2026 (#42, #44): a manager releases a real Bahtraku Bible
 | What it is | Scripture Burrito, 27 New Testament books, latest full release `v1.2` |
 | Why it | Its health is `warning` on both refs (E16: ingredient sizes, and the Acts title in English), so the demo exercises the warning acknowledgement (H2, Q6) and the recomputed sizes and checksums (R10) |
 | Rehearsal copy | the QA copy of the same repository, `bahtraku/Perjanjian-Baru-Pendau` on `https://qa.door43.org`, refreshed from production at each QA reset (E23) |
-| Agreed with | the Bahtraku team, before the rehearsal: the repository, the book the demo includes, and the pre-release the rehearsal leaves |
+| Agreed with | the Bahtraku team, before the rehearsal: the repository, the two books (below), and the pre-release the rehearsal leaves |
+| Book A | the book the production rehearsal includes in its pre-release; revised on the default branch since `v1.2`; named here before the rehearsal: _____ |
+| Book B | the book the demo includes on the day; also revised on the default branch since `v1.2`, and not in the rehearsal's pre-release; named here before the rehearsal: _____ |
 
 The manager signing in is a member of `bahtraku` with push right on the repository (A2). The account used in rehearsal on QA is `tc-admin-qa`, which must be given push right on the QA copy before the rehearsal (the portfolio lists only repositories the account may push to, ADR 0014, P2).
 
@@ -19,7 +21,7 @@ The manager signing in is a member of `bahtraku` with push right on the reposito
 1. The production rehearsal (#43) has left exactly one pre-release on the repository, the next version after `v1.2` by the rules of R9, and nothing else: no temporary branch, no second release, the default branch untouched (R3).
 2. The deployed production Worker signs in and lists the portfolio (E38, the production callback confirmed).
 3. Door43's health check on the pre-release's tag has run (E28: within seconds of the tag).
-4. A second book to include is ready on the default branch, so the demo's own release has a visible change: one book revised since `v1.2`, agreed with the team.
+4. Book A and book B are two different books, both revised on the default branch since `v1.2` and agreed with the team; the rehearsal's pre-release carries book A's revision and not book B's, so on the day book B is the one book "Changed since the last release" once the pre-release is promoted, with no further commit on the default branch.
 
 ## The script
 
@@ -34,13 +36,13 @@ Each step: what the presenter does, the operation the interface calls, what Door
 
 - Open the project; "Prepare a release". Operation: `release.plan`.
 - Expect: the plan compares the default branch with the latest full release `v1.2`; the pre-release from the rehearsal is not a full release, so it is not the baseline. Say so: a pre-release is published to Door43 and visible there, and the catalog's full release stays `v1.2` until promotion.
-- Promotion is one call: from the rehearsal's own stepper page if its session is still open, or through `release.promote` for the tag. Expect: one `PATCH` of the pre-release flag (R8), the release "Full release created", and after a few seconds the catalog's `prod` stage on the new tag. Open the release on Door43: same tag, same contents, no longer marked pre-release.
+- Open the project; in "A release by its tag, to see it or promote a pre-release" type the rehearsal's tag and "Open the release". Operation: `release.lookup`. Expect the release page: the tag, "Pre-release", the snapshot commit, the Door43 link. "Promote to a full release". Operation: `release.promote`: one `PATCH` of the pre-release flag (R8). Expect "Full release" and "Written: release <tag>", and after a few seconds the catalog's `prod` stage on the new tag. Open the release on Door43: same tag, same contents, no longer marked pre-release. This page is reachable after any sign-in; it does not depend on the stepper that made the pre-release (E57).
 
 ### 3. Select one book (S3, S4, R4)
 
 - Back on the stepper for the project. Operation: `release.plan` again; the baseline is now the promoted release.
-- Expect every book listed: the revised book "Changed since the last release" and every other "Unchanged", all "Carry forward" by default, "0 included · 27 carried forward · 0 left out". Read the three meanings beside the list.
-- Set the revised book to "Include". Expect "1 included · 26 carried forward · 0 left out"; the version calculated as a patch increment (R9, a revision).
+- Expect every book listed: book B "Changed since the last release" (book A is "Unchanged": its revision is the promoted release's) and every other "Unchanged", all "Carry forward" by default, "0 included · 27 carried forward · 0 left out". Read the three meanings beside the list.
+- Set book B to "Include". Expect "1 included · 26 carried forward · 0 left out"; the version calculated as a patch increment (R9, a revision).
 - Say what is not written: nothing, until the next step (ADR 0011).
 
 ### 4. Prepare the snapshot (R1, R2, R3)
@@ -55,7 +57,7 @@ Each step: what the presenter does, the operation the interface calls, what Door
 
 ### 6. Notes, version, pre-release (R9, product spec §10)
 
-- Read the generated notes: the revised book under "Revised", the carried-forward summary, the source commit and the previous release. Edit one line to show they are the manager's.
+- Read the generated notes: book B under "Revised", the carried-forward summary, the source commit and the previous release. Edit one line to show they are the manager's.
 - First tick "Create as a pre-release, to promote later" and the acknowledgement: over a warning the button stays disabled until it is ticked, and the button itself creates the release.
 - Show the version check: type the previous release's version and press "Create the pre-release". Expect "Version must be valid and greater than <latest>." (`invalid_version`, R9), refused before anything is written. Set the field back to the calculated version. Do not try a higher one: one that is accepted is created as the release.
 
@@ -72,7 +74,7 @@ Each step: what the presenter does, the operation the interface calls, what Door
 ### 9. Create a project (S1, W1)
 
 - "All projects" · "Create a project". Operation: `owner.list`, `language.list`, then `project.create.plan` and `project.create.apply`.
-- Choose the owner (an organization the account may create in, or the account itself), "Bible", a title, an abbreviation, a language from the live Door43 list (a tag Door43 lists but the Scripture Burrito schema refuses is shown with the reason, Q30), New Testament scope.
+- The owner is `tc-admin-qa-org`, unfoldingWord's own organization on production (E23), never the partner's; the title, abbreviation, and language are fixed here before the day: title "Demo 16 October 2026", abbreviation `demo1016`, language `id` (Bahasa Indonesia), New Testament scope, so the repository is `tc-admin-qa-org/id_demo1016`. Its name is checked free on the morning (the plan refuses a taken name as `name_taken`). The repository stays after the demo as a record; Rich removes it from Door43 by hand if the team prefers (tC Admin never deletes a repository, W4).
 - Expect the plan's preview: repository name `<language>_<abbreviation>`, the three files, the metadata; then the receipt: "Written: Repository … · Commit …", the project in the portfolio with "0 of 27 books", health "Information" with the one note that no release exists yet (E28, Q21).
 
 ### 10. Close
@@ -89,10 +91,11 @@ Each step: what the presenter does, the operation the interface calls, what Door
 | "Release creation failed: …" | The branch is kept (R7). "Try the release again". |
 | "Door43 did not confirm the release." | Nothing is retried on its own (X1). Press "Try the release again": `release.create` looks the tag up before sending anything. If Door43 made the release, the preparation records it, "This release already exists on Door43." is shown, and nothing is created twice (R6). If not, it is created once. |
 | "This release already exists on Door43." | The tag is there already; open it on Door43. |
+| The creation plan refuses the name as taken | `tc-admin-qa-org/id_demo1016` already exists (a rehearsal left it): use the abbreviation `demo1016b`, decided here, and say so. |
 
 ## The rehearsals (#43)
 
-1. **QA**, on the QA copy, with `tc-admin-qa` given push right: run steps 3 to 9 twice, first as written, then with one released book left out (S8: the removal named, the version a major increment, the previous release still holding the book). Record every step's answer against this script; file the recordings as fixtures and the run as an evidence entry.
-2. **Production**, on the agreed repository, with the manager's own account: run steps 3 to 7 once and stop after the pre-release. That pre-release is what step 2 promotes on the day. Confirm the branch list shows the default branch only.
+1. **QA**, on the QA copy, with `tc-admin-qa` given push right, in this order: the production rehearsal's own steps below (book A, stopping at the pre-release); then the demo's steps 2 to 9 as written (book B, the project under `tc-admin-qa-org` on QA); then one more release with one released book left out (S8: the removal named, the version a major increment, the previous release still holding the book). Record every step's answer against this script; file the recordings as fixtures and the run as an evidence entry.
+2. **Production**, on the agreed repository, with the manager's own account, its own steps, not the demo's: `release.plan` against `v1.2` (every book "Carry forward", book A and book B both "Changed since the last release"); set book A to "Include" and nothing else; the version stays the calculated one (the next after `v1.2` by R9: a patch increment); "Prepare the snapshot"; the health check as in step 5, the warning acknowledged; the notes as generated; "Create as a pre-release" ticked; "Create the pre-release". Stop. Do not promote. Book B stays revised on the default branch and is not in that pre-release.
 
 What a rehearsal must leave: on production, exactly one pre-release and no other change; on QA, whatever it made, kept for inspection until the next reset.
