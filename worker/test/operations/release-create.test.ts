@@ -277,14 +277,17 @@ describe('release.create (#39)', () => {
     expect(await get()).toMatchObject({ state: 'restart_required', last_error: { code: 'release_outcome_unknown' } });
   });
 
-  test('R6, X1: a 5xx answer to the release is release_outcome_unknown, and a second create, even at a higher version, writes nothing', async () => {
+  test('R6, X1: a 5xx answer to the release is release_outcome_unknown; a second create, even at a higher version, looks the tag it sent up first and, finding none, creates (decided 7 October 2026)', async () => {
     await put(ready());
     const gateway = door43({ releaseAnswer: () => Response.json({ message: 'gateway timeout' }, { status: 504 }) });
     expect((await failure(releaseCreate(input(), gateway.context)))?.code).toBe('release_outcome_unknown');
     expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' } });
-    const bumped = door43();
-    expect((await failure(releaseCreate(input({ version: 'v1.4.0' }), bumped.context)))?.code).toBe('release_outcome_unknown');
-    expect(bumped.writes).toEqual([]);
+    const looked: string[] = [];
+    const bumped = door43({ lookup: tag => (looked.push(tag), Response.json({ message: 'not found' }, { status: 404 })) });
+    const receipt = await releaseCreate(input({ version: 'v1.4.0' }), bumped.context);
+    expect(looked).toEqual(['v1.3.0']);
+    expect(bumped.writes.map(write => write.method)).toEqual(['POST', 'DELETE']);
+    expect(receipt.result).toMatchObject({ state: 'full_release', release: { tag: 'v1.4.0' } });
   });
 
   test('R6, R7: a 201 for another commit is release_outcome_unknown; nothing is recorded as released and the branch is kept', async () => {
