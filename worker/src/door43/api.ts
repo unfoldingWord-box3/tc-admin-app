@@ -62,14 +62,46 @@ export async function readDoor43<T = unknown>(client: Door43Client, path: string
   return (await (await readResponse(client, path, query, 'application/json')).json()) as T;
 }
 
-/** `GET /api/v1<path>` as bytes, for an archive (E34); a body that cannot be read whole is `door43_unavailable`. */
-export async function readDoor43Bytes(client: Door43Client, path: string): Promise<Uint8Array> {
+/**
+ * `GET /api/v1<path>` as bytes, for an archive (E34), up to `limit` bytes: a body
+ * that declares more, or streams more, is refused as `door43_unavailable` before
+ * it is held whole (decided 7 October 2026 by Rich, Q22); one that cannot be read
+ * is too.
+ */
+export async function readDoor43Bytes(client: Door43Client, path: string, limit: number): Promise<Uint8Array> {
   const response = await readResponse(client, path, {}, 'application/zip, application/octet-stream');
+  const tooLarge = (bytes: number) => new CatalogError('door43_unavailable', { details: { reason: 'archive larger than the limit', bytes, limit } });
+  const declared = Number(response.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > limit) throw tooLarge(declared);
+  if (!response.body) return new Uint8Array();
+  const reader = response.body.getReader();
+  // Each chunk is copied into one buffer as it arrives and not kept, so the body is held once, not as chunks and a copy of them.
+  // The buffer starts at the declared length (a hint only: a decoded body may differ) and otherwise doubles up to the limit,
+  // so at most the old and new buffers are live together: the limit once with a true Content-Length, one and a half times with none,
+  // and under twice the limit only when a declared length is wrong.
+  let out = new Uint8Array(Number.isFinite(declared) && declared > 0 ? declared : Math.min(limit, 1024 * 1024));
+  let total = 0;
   try {
-    return new Uint8Array(await response.arrayBuffer());
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (total + value.byteLength > limit) {
+        await reader.cancel();
+        throw tooLarge(total + value.byteLength);
+      }
+      if (total + value.byteLength > out.length) {
+        const grown = new Uint8Array(Math.min(limit, Math.max(out.length * 2, total + value.byteLength)));
+        grown.set(out.subarray(0, total));
+        out = grown;
+      }
+      out.set(value, total);
+      total += value.byteLength;
+    }
   } catch (cause) {
+    if (cause instanceof CatalogError) throw cause;
     throw new CatalogError('door43_unavailable', { cause, details: { reason: 'unreadable response body' } });
   }
+  return total === out.length ? out : out.subarray(0, total);
 }
 
 /** The prototype's read limit: 2000 pages of 50. Beyond it nothing partial is returned (`portfolio_too_large`). */

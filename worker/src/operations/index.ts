@@ -8,6 +8,8 @@ import { ownerList } from './owner-list';
 import { portfolioList } from './portfolio-list';
 import { projectCreateApply } from './project-create-apply';
 import { projectCreatePlan } from './project-create-plan';
+import { releaseLookup } from './release-lookup';
+import { releasePlan } from './release-plan';
 import { situationRead } from './situation-read';
 
 export type OperationHandler<Name extends RoutedOperation> = (input: ParsedInput<Name>, context: OperationContext) => Promise<OperationOutput<Name>>;
@@ -21,6 +23,8 @@ export const HANDLERS: OperationHandlers = {
   'project.create.apply': projectCreateApply,
   'language.list': languageList,
   'owner.list': ownerList,
+  'release.lookup': releaseLookup,
+  'release.plan': releasePlan,
 };
 
 export { operationContext, signedIn } from './context';
