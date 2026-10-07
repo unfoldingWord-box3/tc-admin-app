@@ -1,0 +1,5 @@
+en_web_mrk_book/
+en_web_mrk_book/ingredients/
+en_web_mrk_book/ingredients/LICENSE.md
+en_web_mrk_book/ingredients/MRK.usfm
+en_web_mrk_book/metadata.json

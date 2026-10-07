@@ -1,0 +1,111 @@
+{
+  "format": "scripture burrito",
+  "meta": {
+    "version": "1.0.0",
+    "category": "source",
+    "generator": {
+      "softwareName": "go-rc2sb",
+      "softwareVersion": "v0.5.0",
+      "userName": ""
+    },
+    "defaultLocale": "en",
+    "dateCreated": "2026-10-07T13:28:19.525Z",
+    "normalization": "NFC"
+  },
+  "idAuthorities": {
+    "dcs": {
+      "id": "https://git.door43.org",
+      "name": {
+        "en": "Door43 Content Service"
+      }
+    }
+  },
+  "identification": {
+    "primary": {
+      "dcs": {
+        "Door43/es-419_reg": {
+          "revision": "1",
+          "timestamp": "2026-10-07T13:28:19.525Z"
+        }
+      }
+    },
+    "name": {
+      "en": "Regular"
+    },
+    "description": {
+      "en": "Regular"
+    },
+    "abbreviation": {
+      "en": "REG"
+    }
+  },
+  "languages": [
+    {
+      "tag": "es-419",
+      "name": {
+        "en": "Español Latin America"
+      },
+      "scriptDirection": "ltr"
+    }
+  ],
+  "type": {
+    "flavorType": {
+      "name": "scripture",
+      "flavor": {
+        "name": "textTranslation",
+        "usfmVersion": "3.0",
+        "translationType": "revision",
+        "audience": "common",
+        "projectType": "standard"
+      },
+      "currentScope": {
+        "TIT": []
+      }
+    }
+  },
+  "confidential": false,
+  "localizedNames": {
+    "book-tit": {
+      "abbr": {
+        "en": "Tit",
+        "es-419": "Titus"
+      },
+      "short": {
+        "en": "Titus",
+        "es-419": "Titus"
+      },
+      "long": {
+        "en": "The Letter of Paul to Titus",
+        "es-419": "Titus"
+      }
+    }
+  },
+  "ingredients": {
+    "ingredients/LICENSE.md": {
+      "checksum": {
+        "md5": "7643244179815b17a33e6abc079cc76c"
+      },
+      "mimeType": "text/markdown",
+      "size": 589
+    },
+    "ingredients/TIT.usfm": {
+      "checksum": {
+        "md5": "3363cb88d7f79086cd86ab41750fee9c"
+      },
+      "mimeType": "text/plain",
+      "size": 242,
+      "scope": {
+        "TIT": []
+      }
+    }
+  },
+  "copyright": {
+    "shortStatements": [
+      {
+        "statement": "© Door43 2020, CC BY-SA 4.0",
+        "mimetype": "text/plain",
+        "lang": "en"
+      }
+    ]
+  }
+}

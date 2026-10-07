@@ -50,6 +50,11 @@ export async function searchRepositories(client: Door43Client, userId: number, s
   return [...new Map(repositories.map(repo => [repo.id, repo])).values()];
 }
 
+/** `GET /repos/{owner}/{repo}` (E14): the repository with its catalog view, stages, and the account's permissions. A missing one is `not_found`. */
+export async function readRepository(client: Door43Client, owner: string, repo: string): Promise<Door43SearchRepository> {
+  return readDoor43<Door43SearchRepository>(client, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
+}
+
 /** `GET /repos/{owner}/{repo}`: whether a repository of that name exists in the owner (`name_taken`). Door43's 404 is the only "no". */
 export async function repositoryExists(client: Door43Client, owner: string, repo: string): Promise<boolean> {
   try {

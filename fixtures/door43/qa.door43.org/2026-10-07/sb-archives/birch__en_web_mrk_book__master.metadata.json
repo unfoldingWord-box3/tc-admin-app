@@ -1,0 +1,108 @@
+{
+  "format": "scripture burrito",
+  "meta": {
+    "version": "1.0.0",
+    "category": "source",
+    "generator": {
+      "softwareName": "go-rc2sb",
+      "softwareVersion": "v0.5.0",
+      "userName": ""
+    },
+    "defaultLocale": "en",
+    "dateCreated": "2026-10-07T13:28:20.224Z",
+    "normalization": "NFC"
+  },
+  "idAuthorities": {
+    "dcs": {
+      "id": "https://git.door43.org",
+      "name": {
+        "en": "Door43 Content Service"
+      }
+    }
+  },
+  "identification": {
+    "primary": {
+      "dcs": {
+        "Door43/en_web": {
+          "revision": "1",
+          "timestamp": "2026-10-07T13:28:20.224Z"
+        }
+      }
+    },
+    "name": {
+      "en": "Mark"
+    },
+    "description": {
+      "en": "Mark"
+    },
+    "abbreviation": {
+      "en": "WEB"
+    }
+  },
+  "languages": [
+    {
+      "tag": "en",
+      "name": {
+        "en": "English"
+      },
+      "scriptDirection": "ltr"
+    }
+  ],
+  "type": {
+    "flavorType": {
+      "name": "scripture",
+      "flavor": {
+        "name": "textTranslation",
+        "usfmVersion": "3.0",
+        "translationType": "revision",
+        "audience": "common",
+        "projectType": "standard"
+      },
+      "currentScope": {
+        "MRK": []
+      }
+    }
+  },
+  "confidential": false,
+  "localizedNames": {
+    "book-mrk": {
+      "abbr": {
+        "en": "Mark"
+      },
+      "short": {
+        "en": "Mark"
+      },
+      "long": {
+        "en": "The Good News According to Mark"
+      }
+    }
+  },
+  "ingredients": {
+    "ingredients/LICENSE.md": {
+      "checksum": {
+        "md5": "c326a7c74d062e72ddf4cf376410ef71"
+      },
+      "mimeType": "text/markdown",
+      "size": 1484
+    },
+    "ingredients/MRK.usfm": {
+      "checksum": {
+        "md5": "11e9568ce022e1b185987e43c85da6b9"
+      },
+      "mimeType": "text/plain",
+      "size": 684173,
+      "scope": {
+        "MRK": []
+      }
+    }
+  },
+  "copyright": {
+    "shortStatements": [
+      {
+        "statement": "© Door43 2019, CC BY-SA 4.0",
+        "mimetype": "text/plain",
+        "lang": "en"
+      }
+    ]
+  }
+}

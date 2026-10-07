@@ -41,25 +41,67 @@ export async function door43Request(host: Door43Host, url: string, init: Request
 export type QueryValue = string | number | boolean | readonly string[];
 export type Query = Readonly<Record<string, QueryValue>>;
 
-/** `GET /api/v1<path>` as JSON. 401 is `session_expired`, 403 `permission_denied`, 404 `not_found`, anything else `door43_unavailable`. */
-export async function readDoor43<T = unknown>(client: Door43Client, path: string, query: Query = {}): Promise<T> {
+/** One read of `/api/v1<path>` with the session token. 401 is `session_expired`, 403 `permission_denied`, 404 `not_found`, anything else not ok `door43_unavailable`. */
+async function readResponse(client: Door43Client, path: string, query: Query, accept: string): Promise<Response> {
   if (!path.startsWith('/') || path.startsWith('//')) throw new CatalogError('unexpected', { details: { reason: 'invalid Door43 API path' } });
   const url = new URL(`/api/v1${path}`, client.host.origin);
   url.search = new URLSearchParams(
     Object.entries(query).flatMap(([key, value]): [string, string][] => (Array.isArray(value) ? value.map(item => [key, item]) : [[key, String(value)]])),
   ).toString();
-  const response = await door43Request(
-    client.host,
-    url.href,
-    { headers: { accept: 'application/json', authorization: `Bearer ${client.token}` } },
-    client.fetch,
-  );
+  const response = await door43Request(client.host, url.href, { headers: { accept, authorization: `Bearer ${client.token}` } }, client.fetch);
   const status = { door43_status: response.status };
   if (response.status === 401) throw new CatalogError('session_expired', { details: status });
   if (response.status === 403) throw new CatalogError('permission_denied', { details: status });
   if (response.status === 404) throw new CatalogError('not_found', { details: status });
   if (!response.ok) throw new CatalogError('door43_unavailable', { details: status });
-  return (await response.json()) as T;
+  return response;
+}
+
+/** `GET /api/v1<path>` as JSON. */
+export async function readDoor43<T = unknown>(client: Door43Client, path: string, query: Query = {}): Promise<T> {
+  return (await (await readResponse(client, path, query, 'application/json')).json()) as T;
+}
+
+/**
+ * `GET /api/v1<path>` as bytes, for an archive (E34), up to `limit` bytes: a body
+ * that declares more, or streams more, is refused as `door43_unavailable` before
+ * it is held whole (decided 7 October 2026 by Rich, Q22); one that cannot be read
+ * is too.
+ */
+export async function readDoor43Bytes(client: Door43Client, path: string, limit: number): Promise<Uint8Array> {
+  const response = await readResponse(client, path, {}, 'application/zip, application/octet-stream');
+  const tooLarge = (bytes: number) => new CatalogError('door43_unavailable', { details: { reason: 'archive larger than the limit', bytes, limit } });
+  const declared = Number(response.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > limit) throw tooLarge(declared);
+  if (!response.body) return new Uint8Array();
+  const reader = response.body.getReader();
+  // Each chunk is copied into one buffer as it arrives and not kept, so the body is held once, not as chunks and a copy of them.
+  // The buffer starts at the declared length (a hint only: a decoded body may differ) and otherwise doubles up to the limit,
+  // so at most the old and new buffers are live together: the limit once with a true Content-Length, one and a half times with none,
+  // and under twice the limit only when a declared length is wrong.
+  let out = new Uint8Array(Number.isFinite(declared) && declared > 0 ? declared : Math.min(limit, 1024 * 1024));
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (total + value.byteLength > limit) {
+        await reader.cancel();
+        throw tooLarge(total + value.byteLength);
+      }
+      if (total + value.byteLength > out.length) {
+        const grown = new Uint8Array(Math.min(limit, Math.max(out.length * 2, total + value.byteLength)));
+        grown.set(out.subarray(0, total));
+        out = grown;
+      }
+      out.set(value, total);
+      total += value.byteLength;
+    }
+  } catch (cause) {
+    if (cause instanceof CatalogError) throw cause;
+    throw new CatalogError('door43_unavailable', { cause, details: { reason: 'unreadable response body' } });
+  }
+  return total === out.length ? out : out.subarray(0, total);
 }
 
 /** The prototype's read limit: 2000 pages of 50. Beyond it nothing partial is returned (`portfolio_too_large`). */

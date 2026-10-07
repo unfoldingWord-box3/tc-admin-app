@@ -26,6 +26,8 @@ export interface CatalogIngredient {
   exists: boolean;
   /** The ingredient is a directory, which may hold units the catalog does not itemize. */
   is_dir: boolean;
+  /** The title Door43 gives the ingredient (E14), for naming a book in release notes; empty when it gives none. */
+  title?: string;
 }
 
 /** The catalog view of one repository, the input to classification. */

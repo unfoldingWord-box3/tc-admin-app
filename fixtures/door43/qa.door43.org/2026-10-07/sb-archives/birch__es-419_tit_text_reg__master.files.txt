@@ -1,0 +1,5 @@
+es-419_tit_text_reg/
+es-419_tit_text_reg/ingredients/
+es-419_tit_text_reg/ingredients/LICENSE.md
+es-419_tit_text_reg/ingredients/TIT.usfm
+es-419_tit_text_reg/metadata.json
