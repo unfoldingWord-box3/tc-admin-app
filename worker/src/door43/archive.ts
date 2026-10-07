@@ -125,23 +125,22 @@ async function inflate(data: Uint8Array, limit: number, path: string): Promise<U
     },
   });
   const reader = source.pipeThrough(new DecompressionStream('deflate-raw')).getReader();
-  const chunks: Uint8Array[] = [];
+  // One buffer of the declared size (already within MAX_ENTRY_BYTES), filled as the inflater yields: the file is held once, not as chunks and a copy.
+  const out = new Uint8Array(limit);
   let total = 0;
   try {
     for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
-      total += chunk.value.length;
-      if (total > limit) {
+      if (total + chunk.value.length > limit) {
         await reader.cancel();
         throw malformed('size differs from the one declared', { path, declared: limit });
       }
-      chunks.push(chunk.value);
+      out.set(chunk.value, total);
+      total += chunk.value.length;
     }
   } catch (cause) {
     throw cause instanceof CatalogError ? cause : malformed('deflate data the inflater refused', { path });
   }
-  const out = new Uint8Array(total);
-  chunks.reduce((at, chunk) => (out.set(chunk, at), at + chunk.length), 0);
-  return out;
+  return total === limit ? out : out.subarray(0, total);
 }
 
 /** A path the archive may hand on: no empty, `.` or `..` segment, no backslash, no NUL. */

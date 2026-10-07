@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import { crc32 } from 'node:zlib';
 import { CatalogError } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
+import { readDoor43Bytes } from '../../src/door43/api';
 import type { Fetch } from '../../src/door43/api';
 import { MAX_ARCHIVE_BYTES, MAX_ENTRY_BYTES, openArchive, readArchive, topLevelFolder, zipEntries } from '../../src/door43/archive';
 import { door43Host } from '../../src/door43/host';
@@ -242,6 +243,22 @@ describe('the ceilings (Q22, decided 7 October 2026)', () => {
     const streamed = await reason(readArchive(client(async () => new Response(endless, { status: 200 })), 'o', 'r', 'main'));
     expect(streamed).toEqual({ code: 'door43_unavailable', reason: 'archive larger than the limit' });
     expect(sent).toBeLessThanOrEqual(MAX_ARCHIVE_BYTES + 2 * chunk.length);
+  });
+
+  test('a body of exactly the limit is read whole, chunk by chunk into one buffer, whether its Content-Length is true, absent or wrong; one byte more is refused', async () => {
+    const body = Uint8Array.from({ length: 1000 }, (_, n) => (n * 7) % 251);
+    const stream = (data: Uint8Array) => new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (let at = 0; at < data.length; at += 64) controller.enqueue(data.slice(at, at + 64));
+        controller.close();
+      },
+    });
+    const read = (data: Uint8Array, headers: Record<string, string>) => readDoor43Bytes(client(async () => new Response(stream(data), { status: 200, headers })), '/repos/o/r/sb/main.zip', body.length);
+    for (const headers of [{ 'content-length': String(body.length) }, {}, { 'content-length': '10' }]) {
+      expect(await read(body, headers)).toEqual(body);
+    }
+    const over = new Uint8Array(body.length + 1);
+    expect(await reason(read(over, {}))).toEqual({ code: 'door43_unavailable', reason: 'archive larger than the limit' });
   });
 
   test('an entry that declares more than 32 MB is refused before any byte of it is copied or inflated', async () => {
