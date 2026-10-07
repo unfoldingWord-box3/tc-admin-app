@@ -16,6 +16,7 @@ import { readReleaseByTag } from '../door43/releases';
 import { readRepository, repositoryAccess } from '../door43/repos';
 import { signedIn } from './context';
 import type { OperationContext } from './context';
+import { temporaryBranch } from './release-plan';
 import { errorShape } from './release-prepare';
 
 type DiscardReceipt = OperationOutput<'preparation.discard'>;
@@ -61,9 +62,11 @@ export async function preparationDiscard(input: ParsedInput<'preparation.discard
     if (found && found.target_sha === stored.snapshot.commit_sha) {
       // This snapshot's release: recorded, its branch deleted as after any release (R7), and the discard refused (decided 7 October 2026 by Rich).
       const state = found.prerelease ? 'pre_release' : 'full_release';
-      await context.plans.putPreparation(owner, repo, id, { ...stored, state, release: { tag: found.tag, url: found.url, prerelease: found.prerelease }, last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: state, event: 'release.lookup found the release of the unconfirmed attempt' }] });
-      const deletion = await deleteBranch(client, owner, repo, stored.snapshot.branch);
-      throw new CatalogError('already_released', { details: { owner, repo, preparation_id: id, tag: found.tag, branch_deleted: deletion.deleted } });
+      // Only the preparation's own temporary branch is ever deleted (R3); a deletion that fails is on the record, for the manager to finish on Door43.
+      const deletion = stored.snapshot.branch === temporaryBranch(id) ? await deleteBranch(client, owner, repo, stored.snapshot.branch) : { deleted: false as const, reason: 'it is not the temporary branch of this preparation' };
+      const event = `release.lookup found the release of the unconfirmed attempt${deletion.deleted ? '' : `; the temporary branch could not be deleted: ${deletion.reason}`}`;
+      await context.plans.putPreparation(owner, repo, id, { ...stored, state, release: { tag: found.tag, url: found.url, prerelease: found.prerelease }, last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: state, event }] });
+      throw new CatalogError('already_released', { details: { owner, repo, preparation_id: id, tag: found.tag, branch_deleted: deletion.deleted, ...(deletion.deleted ? {} : { branch: stored.snapshot.branch, reason: deletion.reason }) } });
     }
     if (found) {
       // A release on another commit under this tag: not this preparation's, so nothing is deleted or stored; the manager resolves it on Door43 (R6, R7).
@@ -72,7 +75,8 @@ export async function preparationDiscard(input: ParsedInput<'preparation.discard
   }
 
   const branch = stored.snapshot.branch;
-  const deletion = await deleteBranch(client, owner, repo, branch);
+  // Only the preparation's own temporary branch is ever deleted (R3).
+  const deletion = branch === temporaryBranch(id) ? await deleteBranch(client, owner, repo, branch) : { deleted: false as const, reason: 'it is not the temporary branch of this preparation' };
   if (!deletion.deleted) {
     // The branch stays, and so does the preparation, for the retry (R7).
     const error = new CatalogError('door43_unavailable', { details: { owner, repo, branch, reason: `the temporary branch could not be deleted: ${deletion.reason}` } });

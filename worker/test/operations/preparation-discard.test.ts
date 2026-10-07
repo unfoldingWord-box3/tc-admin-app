@@ -181,4 +181,15 @@ describe('preparation.discard (#58)', () => {
     expect(found.writes.map(write => write.method)).toEqual(['DELETE']);
     expect(await get()).toMatchObject({ state: 'full_release', release: { tag: 'v1.3.0', prerelease: false }, last_error: null });
   });
+  test('R7: a branch that resists deletion after a found release is adopted is on the preparation\'s record, and the answer says so', async () => {
+    await put(prepared({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'run `release.lookup` for the tag before retrying', request_id: 'r', details: {}, invariant: 'R6' } }));
+    const stuck = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: 'e000000000000000000000000000000000000001' }), deleteAnswer: () => Response.json({ message: 'branch is protected' }, { status: 500 }) });
+    const error = await failure(discard(stuck.context));
+    expect(error).toMatchObject({ code: 'already_released' });
+    expect(error?.details).toMatchObject({ branch_deleted: false, branch: BRANCH, reason: 'branch is protected' });
+    const after = await get();
+    expect(after).toMatchObject({ state: 'full_release', last_error: null });
+    expect(after?.history.at(-1)?.event).toContain('could not be deleted: branch is protected');
+  });
+
 });

@@ -75,9 +75,11 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
         // It is this preparation's release: the preparation records it, nothing new is created, and the temporary branch is
         // deleted as after any release (R7; decided 7 October 2026 by Rich).
         const state = found.prerelease ? 'pre_release' : 'full_release';
-        await context.plans.putPreparation(owner, repo, id, { ...stored, state, release: { tag: found.tag, url: found.url, prerelease: found.prerelease }, last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: state, event: 'release.lookup found the release of the unconfirmed attempt' }] });
-        const deletion = stored.snapshot.branch === temporaryBranch(id) ? await deleteBranch(client, owner, repo, stored.snapshot.branch) : { deleted: false as const };
-        throw new CatalogError('release_exists', { details: { owner, repo, tag, url: found.url, target_sha: found.target_sha, snapshot_sha: stored.snapshot.commit_sha, branch_deleted: deletion.deleted } });
+        // Only the preparation's own temporary branch is ever deleted (R3); a deletion that fails is on the record, for the manager to finish on Door43.
+        const deletion = stored.snapshot.branch === temporaryBranch(id) ? await deleteBranch(client, owner, repo, stored.snapshot.branch) : { deleted: false as const, reason: 'it is not the temporary branch of this preparation' };
+        const event = `release.lookup found the release of the unconfirmed attempt${deletion.deleted ? '' : `; the temporary branch could not be deleted: ${deletion.reason}`}`;
+        await context.plans.putPreparation(owner, repo, id, { ...stored, state, release: { tag: found.tag, url: found.url, prerelease: found.prerelease }, last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: state, event }] });
+        throw new CatalogError('release_exists', { details: { owner, repo, tag, url: found.url, target_sha: found.target_sha, snapshot_sha: stored.snapshot.commit_sha, branch_deleted: deletion.deleted, ...(deletion.deleted ? {} : { branch: stored.snapshot.branch, reason: deletion.reason }) } });
       }
       throw new CatalogError('release_exists', { details: { owner, repo, tag, url: found.url, target_sha: found.target_sha, snapshot_sha: stored.snapshot.commit_sha } });
     }
