@@ -64,6 +64,9 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
   const unconfirmed = stored.state === 'retryable_failure' && stored.last_error?.code === 'release_outcome_unknown';
   if (unconfirmed) {
     // The last attempt was not confirmed: the tag is looked up before anything is sent again, so a lost answer never becomes a duplicate (R6, X1).
+    // The permission is re-read first (A2): nothing is looked up or recorded for an account that may not release.
+    const access = repositoryAccess(await readRepository(client, owner, repo));
+    if (!access.push && !access.admin) throw new CatalogError('permission_denied', { details: { owner, repo } });
     const tag = stored.version.confirmed ?? id;
     const found = await readReleaseByTag(client, owner, repo, tag);
     if (found) {

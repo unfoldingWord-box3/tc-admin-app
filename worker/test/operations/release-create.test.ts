@@ -232,6 +232,10 @@ describe('release.create (#39)', () => {
     expect((await failure(releaseCreate(input(), lost.context)))?.code).toBe('release_outcome_unknown');
     expect(lost.writes.map(write => write.method)).toEqual(['POST']);
     expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' } });
+    const denied = door43({ push: false, lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT }) });
+    expect((await failure(releaseCreate(input(), denied.context)))?.code).toBe('permission_denied');
+    expect(denied.writes).toEqual([]);
+    expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' } });
     const found = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT, html_url: 'https://qa.door43.org/found' }) });
     const exists = await failure(releaseCreate(input(), found.context));
     expect(exists).toMatchObject({ code: 'release_exists' });

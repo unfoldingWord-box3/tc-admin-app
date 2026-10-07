@@ -15,6 +15,7 @@ import { recorded } from '../support/recorded';
 
 type Repo = { catalog: { latest: { commit_sha: string } | null; prod: { commit_sha: string } | null }; permissions: { push: boolean; admin: boolean; pull: boolean } };
 const repoView = recorded<Repo>('2026-10-07/repos/bahtraku__Perjanjian-Baru-Pendau.json.gz');
+const probeRelease = recorded<Record<string, unknown>>('2026-09-22/probe-write/11-prerelease-v1.1.0.json');
 const user = recorded<unknown>('2026-10-05/user/user.json');
 const PENDAU = { owner: 'bahtraku', repo: 'Perjanjian-Baru-Pendau' };
 const BRANCH = 'temp-tca-release/v1.3.0';
@@ -56,7 +57,7 @@ const prepared = (overrides: Partial<Preparation> = {}): Preparation =>
     ...overrides,
   });
 
-function door43(options: { push?: boolean; deleteAnswer?: () => Response | Promise<Response> } = {}) {
+function door43(options: { push?: boolean; deleteAnswer?: () => Response | Promise<Response>; lookup?: () => Response } = {}) {
   const writes: { method: string; path: string }[] = [];
   const fetch: Fetch = async (url, init) => {
     const { pathname } = new URL(url);
@@ -68,6 +69,7 @@ function door43(options: { push?: boolean; deleteAnswer?: () => Response | Promi
     }
     if (pathname === '/api/v1/user') return Response.json(user);
     if (/^\/api\/v1\/repos\/[^/]+\/[^/]+$/.test(pathname)) return Response.json({ ...repoView, permissions: { ...repoView.permissions, push: options.push ?? true, admin: false } });
+    if (pathname.includes('/releases/tags/') && options.lookup) return options.lookup();
     return new Response('', { status: 404 });
   };
   const base = operationContext({ door43Origin: 'https://qa.door43.org', door43ClientId: 'id' }, 'request-5', 'door43-token', kv);
@@ -135,6 +137,7 @@ describe('preparation.discard (#58)', () => {
     const never = door43();
     expect((await discard(never.context)).result.state).toBe('discarded');
     expect(never.writes).toEqual([]);
+    expect((await get())?.state).toBe('discarded');
     kv = new MemoryKV();
     await put(prepared({ state: 'discarded' }));
     const already = door43();
@@ -142,5 +145,32 @@ describe('preparation.discard (#58)', () => {
     expect(receipt.result.state).toBe('discarded');
     expect(receipt.wrote).toEqual([]);
     expect(already.writes).toEqual([]);
+  });
+
+  test('R7: a replacement prepared under the same version after a discard is discarded on its own, by its own branch deletion', async () => {
+    await put(prepared());
+    await discard(door43().context);
+    await put(prepared({ state: 'ready_for_release', health: { ...prepared().health, state: 'healthy' } }));
+    const replacement = door43();
+    expect((await discard(replacement.context)).result.history.at(-1)).toMatchObject({ from: 'ready_for_release', to: 'discarded' });
+    expect(replacement.writes).toHaveLength(1);
+    expect((await get())?.state).toBe('discarded');
+  });
+
+  test('R6, R7: an unconfirmed release found on the snapshot commit is already_released, recorded, and the branch is not deleted; a failed lookup keeps the preparation; none found discards', async () => {
+    const unknown = () => prepared({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'look the tag up', request_id: 'r', details: {}, invariant: 'R6' } });
+    await put(unknown());
+    const found = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: true, target_commitish: 'e000000000000000000000000000000000000001' }) });
+    expect((await failure(discard(found.context)))?.code).toBe('already_released');
+    expect(found.writes).toEqual([]);
+    expect(await get()).toMatchObject({ state: 'pre_release', release: { tag: 'v1.3.0', prerelease: true }, last_error: null });
+    await put(unknown());
+    const broken = door43({ lookup: () => new Response('', { status: 502 }) });
+    expect((await failure(discard(broken.context)))?.code).toBe('door43_unavailable');
+    expect(broken.writes).toEqual([]);
+    expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' } });
+    const absent = door43();
+    expect((await discard(absent.context)).result.state).toBe('discarded');
+    expect(absent.writes).toHaveLength(1);
   });
 });

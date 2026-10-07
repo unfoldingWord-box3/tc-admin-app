@@ -12,6 +12,7 @@ import { CatalogError } from '@tc-admin/shared/schema';
 import type { OperationOutput, ParsedInput, Preparation } from '@tc-admin/shared/schema';
 import { readAccount } from '../door43/auth';
 import { deleteBranch } from '../door43/branches';
+import { readReleaseByTag } from '../door43/releases';
 import { readRepository, repositoryAccess } from '../door43/repos';
 import { signedIn } from './context';
 import type { OperationContext } from './context';
@@ -29,9 +30,9 @@ export async function preparationDiscard(input: ParsedInput<'preparation.discard
   const at = () => context.now().toISOString();
 
   const done = await context.plans.getReceipt<DiscardReceipt>(discardReceiptKey(owner, repo, id));
-  if (done && done.account === account.login) return done.receipt;
-
   const stored = await context.plans.getPreparation<Preparation>(owner, repo, id);
+  // The receipt answers only while the preparation it discarded is still discarded: a replacement prepared under the same version is discarded on its own.
+  if (done && done.account === account.login && (!stored || stored.state === 'discarded')) return done.receipt;
   if (!stored) throw new CatalogError('not_found', { details: { owner, repo, preparation_id: id } });
   if (stored.state === 'pre_release' || stored.state === 'full_release') throw new CatalogError('already_released', { details: { owner, repo, preparation_id: id, tag: stored.release?.tag ?? id } });
 
@@ -50,6 +51,17 @@ export async function preparationDiscard(input: ParsedInput<'preparation.discard
     const result = fresh({ ...stored, state: 'discarded', history: [...stored.history, { at: at(), from: stored.state, to: 'discarded', event: 'preparation.discard' }] });
     await context.plans.putPreparation(owner, repo, id, result);
     return receipt(result, []);
+  }
+
+  if (stored.state === 'retryable_failure' && stored.last_error?.code === 'release_outcome_unknown') {
+    // The last release attempt was not confirmed: a release Door43 made of this snapshot makes it released, not discardable (R6, R7).
+    const tag = stored.version.confirmed ?? id;
+    const found = await readReleaseByTag(client, owner, repo, tag);
+    if (found && found.target_sha === stored.snapshot.commit_sha) {
+      const state = found.prerelease ? 'pre_release' : 'full_release';
+      await context.plans.putPreparation(owner, repo, id, { ...stored, state, release: { tag: found.tag, url: found.url, prerelease: found.prerelease }, last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: state, event: 'release.lookup found the release of the unconfirmed attempt' }] });
+      throw new CatalogError('already_released', { details: { owner, repo, preparation_id: id, tag: found.tag } });
+    }
   }
 
   const branch = stored.snapshot.branch;
