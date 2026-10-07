@@ -22,6 +22,7 @@ The manager signing in is a member of `bahtraku` with push right on the reposito
 2. The deployed production Worker signs in and lists the portfolio (E38, the production callback confirmed).
 3. Door43's health check on the pre-release's tag has run (E28: within seconds of the tag).
 4. Book A and book B are two different books, both revised on the default branch since `v1.2` and agreed with the team; the rehearsal's pre-release carries book A's revision and not book B's, so on the day book B is the one book "Changed since the last release" once the pre-release is promoted, with no further commit on the default branch.
+5. The manager's account may create repositories in `tc-admin-qa-org` on production: the organization is in its `owner.list` (an owner team, or a team that may create repositories). If it is not, step 9 is not run; `bahtraku` is never the fallback.
 
 ## The script
 
@@ -92,6 +93,7 @@ Each step: what the presenter does, the operation the interface calls, what Door
 | "Door43 did not confirm the release." | Nothing is retried on its own (X1). Press "Try the release again": `release.create` looks the tag up before sending anything. If Door43 made the release, the preparation records it, "This release already exists on Door43." is shown, and nothing is created twice (R6). If not, it is created once. |
 | "This release already exists on Door43." | The tag is there already; open it on Door43. |
 | The creation plan refuses the name as taken | `tc-admin-qa-org/id_demo1016` already exists (a rehearsal left it): use the abbreviation `demo1016b`, decided here, and say so. |
+| `tc-admin-qa-org` is not in the owner list, or the plan refuses it (`permission_denied`) | The account may not create there (before the day, 5). Stop step 9; do not choose another owner. |
 
 ## The rehearsals (#43)
 
