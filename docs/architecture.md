@@ -257,8 +257,9 @@ worker/
     catalog.ts       the catalog view of a repository (#19); its stages and the catalog entry of one ref (E14, E20; #33)
     trees.ts         the recursive git tree of a ref, every page (E19, E52; #33)
     languages.ts     the full language list and an owner's languages, in glossary names (E25; #28)
-    writes.ts        repository creation and the multi-file commit, sent once and never retried, no delete (W5, X1, A3, W4; #30)
-                     planned: health (#36), branches, tags, releases (#34, #39)
+    writes.ts        repository creation and the multi-file commit, uploads and deletions by blob SHA, sent once and never retried (W5, X1, A3, W4; #30, #34)
+    branches.ts      the temporary branch a release is prepared on, created from a commit; one already there is preparation_active (E21, E27; #34); its deletion joins with #39 and #58
+                     planned: health (#36), tags, releases (#39)
   src/model/         no I/O
     books.ts         book and story ids (#19)
     language.ts      the language tag rule of the Scripture Burrito schema (E44, Q30; #28)
@@ -274,26 +275,28 @@ worker/
     candidates.ts    candidate detection by blob SHA, the R4 defaults, removals, administrative files (#33)
     version.ts       the version rules: coercion, baseline, increment (R9; #37)
     notes.ts         the release notes draft (#38)
-                     planned: burrito reader (#17), classify (#20, #45), states
+    snapshot.ts      what a release snapshot uploads and deletes, by blob SHA against the ref the branch starts from, in commits of at most 32 MB (R1, R2, Q22; #34)
+                     planned: upload identification (#45), states
   src/operations/    one module per catalog operation, plus shared preconditions
     index.ts         the built operations by name
     context.ts       what every operation receives, with the session's Door43 client (A3)
     sign-in.ts       begin and complete sign-in for http/session; not catalog operations (#12)
     situation-read.ts  situation.read; the account from /user when signed in
     portfolio-list.ts  the writable filter (P1, P2); the operation: #23
-    plans.ts         plans and receipts in Workers KV, by plan id (operations.md §2)
+    plans.ts         plans and receipts in Workers KV, by plan id; preparations by project and id, for thirty days (operations.md §2)
     project-create-plan.ts  project.create.plan (#29)
     project-create-apply.ts  project.create.apply: the first Door43 writes, idempotent by plan id (#30)
     language-list.ts  language.list: the wizard's language list, each tag marked as accepted or not (#28)
     owner-list.ts    owner.list: the owners the account may create a project in, from its teams (E43, A2; #28)
     release-plan.ts  release.plan: candidates, defaults, version, notes, bound to both refs (#33)
+    release-prepare.ts  release.prepare: the confirmed selection and version, the snapshot's branch and commits, no more than the plan announced, the preparation stored (#34)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)
     errors.ts        every failure to the error shape (X2, X3)
     session.ts       /auth/login, /auth/callback, /auth/logout; the token in Workers KV under a hash of the cookie (A1)
     csrf.ts          same-origin and CSRF token checks ahead of every POST (A4)
-  test/              model/, door43/, operations/, http/, contract/ (against fixtures)
+  test/              model/, door43/, operations/, http/, contract/ (against fixtures); support/ (the recordings reader, a zip builder)
 web/
   src/api/client.ts  typed client: one call per operation, from shared/schema
   src/               the application shell; portfolio, wizard, stepper, design system (#8)

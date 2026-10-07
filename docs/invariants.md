@@ -21,7 +21,7 @@ Groups: **R** release safety, **H** health and coverage truthfulness, **A** acce
 Changes on the default branch enter a release snapshot only through books the manager set to include. An included book comes from the default branch; a carried-forward book is the file from the release tag, untouched.
 Source: product spec §10 snapshot rules; ADR 0003, ADR 0005.
 Enforced in: `worker/src/operations/release-prepare` (snapshot assembly); `worker/src/model/candidates` (source of each file: a book comes from the branch only when its selection is `include`; `administrativeFiles` takes the root files and `.gitea/` from the default branch alone).
-Verified by: contract test with a fixture where an unselected released book differs between tag and default branch; the snapshot must contain the tag version byte for byte. So far: the `R1:` tests in `worker/test/model/candidates.test.ts` and `worker/test/operations/release-plan.test.ts` (a changed book stays carried forward until included; the administrative files are the default branch's, never the baseline's); and the `R1:` test in `worker/test/model/classify.test.ts`, over one ref at a time (a listed file without a scope, a root file, and a `.gitea/` file are administrative; an unlisted file under `ingredients/` and a path that cannot name one file inside the project are unknown and never carried, S5); the two-ref comparison and the carry are #33 and #34.
+Verified by: contract test with a fixture where an unselected released book differs between tag and default branch; the snapshot must contain the tag version byte for byte. So far: the `R1:` tests in `worker/test/model/candidates.test.ts` and `worker/test/operations/release-plan.test.ts` (a changed book stays carried forward until included; the administrative files are the default branch's, never the baseline's), the `R1` test in `worker/test/operations/release-prepare.test.ts` (a carried-forward book is never uploaded and an unchanged root file is left alone; only the included books and the metadata reach the commit); and the `R1:` test in `worker/test/model/classify.test.ts`, over one ref at a time (a listed file without a scope, a root file, and a `.gitea/` file are administrative; an unlisted file under `ingredients/` and a path that cannot name one file inside the project are unknown and never carried, S5); the two-ref comparison and the carry are #33 and #34.
 Issues: #33, #34.
 
 ### R2 — Removal is explicit and listed
@@ -29,14 +29,14 @@ A book present in the latest full release leaves a later release only when the m
 Source: ADR 0013; CONTEXT.md "Removed content", "Selection state".
 Enforced in: `worker/src/operations/release-plan` (default selection carries every released book forward); `release-prepare` (deletes only books whose selection is `leave_out`); `worker/src/model/burrito` (metadata merge drops exactly the removed ingredients).
 Verified by: the default selection on a project with a release contains no `leave_out`; a `leave_out` on a released book appears in `preview.removals`, is absent from the snapshot tree and the merged metadata, and every other released book is present byte for byte. So far: the `R2:` tests in `worker/test/model/burrito-merge.test.ts` (every book of the previous release is in the merged metadata when carried forward; one left out is gone from the entries and the scope and is listed as removed; a lost Open Bible Stories story is listed).
-Verified by: the default selection on a project with a release contains no `leave_out`; a `leave_out` on a released book appears in `preview.removals`, is absent from the snapshot tree and the merged metadata, and every other released book is present byte for byte. So far: the `R2:` tests in `worker/test/model/candidates.test.ts` (no released book is left out by default, so the plan's removals are empty; one set to leave out is listed; an Open Bible Stories story the branch lost is listed) and `worker/test/model/notes.test.ts` (every removed book is named in the draft).
+Verified by: the default selection on a project with a release contains no `leave_out`; a `leave_out` on a released book appears in `preview.removals`, is absent from the snapshot tree and the merged metadata, and every other released book is present byte for byte. So far: the `R2:` tests in `worker/test/model/candidates.test.ts` (no released book is left out by default, so the plan's removals are empty; one set to leave out is listed; an Open Bible Stories story the branch lost is listed), `worker/test/operations/release-prepare.test.ts` (a released book left out is deleted from the branch with its blob SHA, dropped from the metadata and the scope, and named in the notes) and `worker/test/model/notes.test.ts` (every removed book is named in the draft).
 Issues: #33, #35, #38.
 
 ### R3 — A release never writes to the default branch
 The only Door43 writes a release performs are: create the temporary branch, one or more commits on it (Q22), the tag, and the Door43 release. Nothing else, and nothing on the default branch.
 Source: ADR 0008, ADR 0010; architecture §5.
 Enforced in: `worker/src/operations/release-prepare`, `release-create`; the Door43 adapter exposes no write to a default branch from the release operations.
-Verified by: recorded-request test asserting the exact set of write calls for a release; a plan's `would_write` list contains only those four kinds, and every commit is on the temporary branch.
+Verified by: recorded-request test asserting the exact set of write calls for a release; a plan's `would_write` list contains only those four kinds, and every commit is on the temporary branch. So far: the `R3, W5` tests in `worker/test/operations/release-prepare.test.ts` (the prepare's writes are the branch and the commits on it, no more than the plan announced, and none on the default branch).
 Issues: #34, #39.
 
 ### R4 — Defaults publish nothing new, and a release needs a book
@@ -50,7 +50,7 @@ Issues: #33.
 Every release preparation records the default-branch commit SHA it was planned from. Before the snapshot is written and again before the release is created, the Worker re-reads the SHA. If it moved, the preparation becomes `restart_required` and is never silently merged with the new state.
 Source: product spec §10 "Project has been edited"; architecture §6 stale source protection.
 Enforced in: `worker/src/operations/release-prepare`, `release-create` (precondition check).
-Verified by: fixture where the default-branch head changes between plan and apply; apply returns `source_changed` and writes nothing. So far: the `R5` binding in `worker/test/operations/release-plan.test.ts` (the plan carries the default-branch SHA and the baseline tag and SHA it compared, and reads each tree at that commit); the re-check is #34 and #39.
+Verified by: fixture where the default-branch head changes between plan and apply; apply returns `source_changed` and writes nothing. So far: the `R5` binding in `worker/test/operations/release-plan.test.ts` (the plan carries the default-branch SHA and the baseline tag and SHA it compared, and reads each tree at that commit) and the `R5:` test in `worker/test/operations/release-prepare.test.ts` (a default branch that moved since the plan is `source_changed` and nothing is written); the re-check before release creation is #39.
 Issues: #34, #40.
 
 ### R6 — Never a duplicate release
@@ -64,7 +64,7 @@ Issues: #40.
 The temporary branch is deleted only after release creation succeeds, or when the manager explicitly discards an unreleased preparation (`preparation.discard`, Q14). On health failure, commit failure, or release failure it is retained for inspection and retry.
 Source: ADR 0003; architecture §6 branch lifecycle.
 Enforced in: `worker/src/operations/release-create` (delete branch is the last step and runs only on success).
-Verified by: failed release fixture leaves the branch; successful release fixture deletes it; deletion failure after success is reported as a warning in the receipt, not as a release failure; discard of a released preparation returns `already_released` and writes nothing.
+Verified by: failed release fixture leaves the branch; successful release fixture deletes it; deletion failure after success is reported as a warning in the receipt, not as a release failure; discard of a released preparation returns `already_released` and writes nothing. So far: the `R7, X1` test in `worker/test/operations/release-prepare.test.ts` (a commit Door43 refuses leaves the branch, is not retried, and the preparation is stored as `retryable_failure` with the error).
 Issues: #34, #39, #58.
 
 ### R8 — Promotion changes only status

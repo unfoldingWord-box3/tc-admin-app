@@ -81,8 +81,11 @@ function repositoryShape(body: unknown): CreatedRepository | null {
 /** One file of a commit. `create` is the default; `upload` updates an existing file without its blob SHA (E27). */
 export interface CommitFile {
   path: string;
-  content: Uint8Array | string;
+  /** The bytes to write; absent for a deletion. */
+  content?: Uint8Array | string;
   operation?: 'create' | 'update' | 'upload' | 'delete';
+  /** The blob SHA of the file as it is, which a deletion needs (E21). */
+  sha?: string;
 }
 
 export interface CommitOptions {
@@ -114,7 +117,12 @@ const asBytes = (content: Uint8Array | string) => (typeof content === 'string' ?
 export async function commitFiles(client: Door43Client, owner: string, repo: string, options: CommitOptions): Promise<Commit> {
   const body: Record<string, unknown> = {
     message: options.message,
-    files: options.files.map(file => ({ operation: file.operation ?? 'create', path: file.path, content: bytesToBase64(asBytes(file.content)) })),
+    files: options.files.map(file => ({
+      operation: file.operation ?? 'create',
+      path: file.path,
+      ...(file.content === undefined ? {} : { content: bytesToBase64(asBytes(file.content)) }),
+      ...(file.sha === undefined ? {} : { sha: file.sha }),
+    })),
   };
   if (options.branch) body.branch = options.branch;
   const outcome = await writeDoor43(client, 'POST', `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents`, body);

@@ -17,6 +17,7 @@ import { readTree } from '../door43/trees';
 import { detectCandidates, removals } from '../model/candidates';
 import type { Candidate, RefContent, ReleasableType } from '../model/candidates';
 import { releaseNotesDraft } from '../model/notes';
+import { commitsForAll } from '../model/snapshot';
 import { classifyProject } from '../model/project';
 import { proposeVersion } from '../model/version';
 import type { Proposal } from '../model/version';
@@ -108,6 +109,8 @@ export async function releasePlan(input: ParsedInput<'release.plan'>, context: O
   const now = context.now();
   const bound_to: BoundTo = { default_branch_sha: default_branch.sha, release_tag: latest_full_release?.tag ?? null, release_tag_sha: latest_full_release?.sha ?? null };
   const target = `${input.owner}/${input.repo}@${temporaryBranch(version.proposed)}`;
+  // As many commits as including every book on the default branch would take (Q22), so the prepare never writes one the plan did not announce (R3, W5).
+  const commits = commitsForAll(candidates.books.flatMap(book => (book.default_branch ? [book.default_branch.size ?? 0] : [])));
   const plan: ReleasePlan = {
     id: newPlanId(),
     operation: 'release.plan',
@@ -121,10 +124,7 @@ export async function releasePlan(input: ParsedInput<'release.plan'>, context: O
       version,
       notes_draft,
     },
-    would_write: [
-      { kind: 'branch', target },
-      { kind: 'commit', target },
-    ],
+    would_write: [{ kind: 'branch', target }, ...Array.from({ length: commits }, (): { kind: 'commit'; target: string } => ({ kind: 'commit', target }))],
     warnings: [],
   };
   const payload: ReleasePlanPayload = {

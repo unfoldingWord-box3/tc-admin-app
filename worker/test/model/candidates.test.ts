@@ -19,9 +19,9 @@ describe('units of a ref', () => {
     content.ingredients = [...content.ingredients!, ingredient('luk', './ingredients/LUK.usfm'), ingredient('obs', './ingredients', 'container'), { ...ingredient('mat', './ingredients/MAT.usfm'), id: 'MAT' }];
     (content.ingredients[3] as { is_dir: boolean }).is_dir = true;
     expect(unitFiles('bible', content)).toEqual([
-      { id: 'mat', path: 'ingredients/MAT.usfm', title: 'Matius', sha: 'aaa' },
-      { id: 'mrk', path: 'ingredients/MRK.usfm', title: '', sha: 'bbb' },
-      { id: 'luk', path: 'ingredients/LUK.usfm', title: '', sha: null },
+      { id: 'mat', path: 'ingredients/MAT.usfm', title: 'Matius', sha: 'aaa', size: null },
+      { id: 'mrk', path: 'ingredients/MRK.usfm', title: '', sha: 'bbb', size: null },
+      { id: 'luk', path: 'ingredients/LUK.usfm', title: '', sha: null, size: null },
     ]);
     expect(unitFiles('bible', { ingredients: null, files: content.files })).toEqual([]);
   });
@@ -29,14 +29,14 @@ describe('units of a ref', () => {
   test('an Open Bible Stories ref\'s stories come from the tree, ingredients/content/<NN>.md (E36), since the catalog lists only the container (E47)', () => {
     const files = [['ingredients/content/01.md', 's1'], ['ingredients/content/2.md', 's2'], ['ingredients/content/front.md', 'f'], ['ingredients/content/51.md', 'x'], ['content/03.md', 'y']].map(([path, sha]) => ({ path: path!, sha: sha! }));
     expect(unitFiles('obs', { ingredients: [{ id: 'obs', path: './ingredients', exists: true, is_dir: true }], files })).toEqual([
-      { id: '01', path: 'ingredients/content/01.md', title: '', sha: 's1' },
-      { id: '02', path: 'ingredients/content/2.md', title: '', sha: 's2' },
+      { id: '01', path: 'ingredients/content/01.md', title: '', sha: 's1', size: null },
+      { id: '02', path: 'ingredients/content/2.md', title: '', sha: 's2', size: null },
     ]);
   });
 });
 
 describe('groups and defaults', () => {
-  const on = (sha: string | null) => ({ id: 'mat', path: 'ingredients/MAT.usfm', title: '', sha });
+  const on = (sha: string | null) => ({ id: 'mat', path: 'ingredients/MAT.usfm', title: '', sha, size: null });
 
   test('the group follows the SHAs: new, unchanged, changed released, and unknown when a file is missing', () => {
     expect(groupOf(on('a'), null)).toBe('new');

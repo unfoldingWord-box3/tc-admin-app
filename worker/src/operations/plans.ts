@@ -25,17 +25,24 @@ export interface StoredReceipt<Receipt = unknown> {
   account: string;
 }
 
+/** A preparation is kept while its temporary branch may exist: thirty days. */
+export const PREPARATION_SECONDS = 30 * 24 * 60 * 60;
+
 export interface PlanStore {
   getPlan<Payload = unknown>(id: string): Promise<StoredPlan<Payload> | null>;
   putPlan(stored: StoredPlan, ttlSeconds?: number): Promise<void>;
   getReceipt<Receipt = unknown>(planId: string): Promise<StoredReceipt<Receipt> | null>;
   putReceipt(planId: string, stored: StoredReceipt, ttlSeconds?: number): Promise<void>;
+  /** The addressable preparation of a project (operations.md §2), by its id, the version it was created with. */
+  getPreparation<Preparation = unknown>(owner: string, repo: string, id: string): Promise<Preparation | null>;
+  putPreparation(owner: string, repo: string, id: string, preparation: unknown, ttlSeconds?: number): Promise<void>;
 }
 
 export const newPlanId = (): string => crypto.randomUUID();
 
 const planKey = (id: string) => `plan:${id}`;
 const receiptKey = (id: string) => `receipt:${id}`;
+const preparationKey = (owner: string, repo: string, id: string) => `preparation:${owner.toLowerCase()}/${repo}/${id}`;
 
 function parse<T>(stored: string | null): T | null {
   if (!stored) return null;
@@ -59,6 +66,12 @@ export function planStore(kv: KVNamespace): PlanStore {
     },
     async putReceipt(planId, stored, ttlSeconds = RECEIPT_SECONDS) {
       await kv.put(receiptKey(planId), JSON.stringify(stored), { expirationTtl: ttlSeconds });
+    },
+    async getPreparation(owner, repo, id) {
+      return parse(await kv.get(preparationKey(owner, repo, id)));
+    },
+    async putPreparation(owner, repo, id, preparation, ttlSeconds = PREPARATION_SECONDS) {
+      await kv.put(preparationKey(owner, repo, id), JSON.stringify(preparation), { expirationTtl: ttlSeconds });
     },
   };
 }
