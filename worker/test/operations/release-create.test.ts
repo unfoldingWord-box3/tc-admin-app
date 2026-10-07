@@ -226,15 +226,28 @@ describe('release.create (#39)', () => {
     expect(retry.writes.map(write => write.method)).toEqual(['POST', 'DELETE']);
   });
 
-  test('R6, X1: a release Door43 did not confirm is release_outcome_unknown, not retried, and a second create of it points to the lookup; a tag already on Door43 is release_exists', async () => {
+  test('R6, X1: a release Door43 did not confirm is release_outcome_unknown and not retried; the next create looks the tag up first: found, it is release_exists with no write and the preparation records it; not found, it is created (#40)', async () => {
     await put(ready());
     const lost = door43({ releaseAnswer: () => Promise.reject(new TypeError('fetch failed')) });
     expect((await failure(releaseCreate(input(), lost.context)))?.code).toBe('release_outcome_unknown');
     expect(lost.writes.map(write => write.method)).toEqual(['POST']);
     expect(await get()).toMatchObject({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown' } });
-    const again = door43();
-    expect((await failure(releaseCreate(input(), again.context)))?.code).toBe('release_outcome_unknown');
-    expect(again.writes).toEqual([]);
+    const found = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT, html_url: 'https://qa.door43.org/found' }) });
+    const exists = await failure(releaseCreate(input(), found.context));
+    expect(exists).toMatchObject({ code: 'release_exists' });
+    expect(exists?.details).toMatchObject({ tag: 'v1.3.0', url: 'https://qa.door43.org/found', target_sha: COMMIT });
+    expect(found.writes).toEqual([]);
+    expect(await get()).toMatchObject({ state: 'full_release', release: { tag: 'v1.3.0', url: 'https://qa.door43.org/found', prerelease: false }, last_error: null });
+    await put(ready({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'run `release.lookup` for the tag before retrying', request_id: 'r', details: {}, invariant: 'R6' } }));
+    const other = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: 'f000000000000000000000000000000000000000' }) });
+    expect((await failure(releaseCreate(input(), other.context)))?.code).toBe('release_exists');
+    expect(other.writes).toEqual([]);
+    expect((await get())?.state).toBe('retryable_failure');
+    await put(ready({ state: 'retryable_failure', last_error: { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'run `release.lookup` for the tag before retrying', request_id: 'r', details: {}, invariant: 'R6' } }));
+    const absent = door43();
+    expect((await releaseCreate(input(), absent.context)).result.state).toBe('full_release');
+    expect(absent.writes.map(write => write.method)).toEqual(['POST', 'DELETE']);
+    kv = new MemoryKV();
     await put(ready());
     const taken = door43({ releaseAnswer: () => Response.json({ message: 'Release is has no Tag' }, { status: 409 }) });
     expect((await failure(releaseCreate(input(), taken.context)))?.code).toBe('release_exists');

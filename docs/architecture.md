@@ -291,8 +291,9 @@ worker/
     release-plan.ts  release.plan: candidates, defaults, version, notes, bound to both refs (#33)
     release-lookup.ts  release.lookup: is there a release under this tag, and which commit does it target (R6; #40)
     release-prepare.ts  release.prepare: the confirmed selection and version, the snapshot's branch and commits, no more than the plan announced, the preparation stored (#34)
-    release-create.ts  release.create: the gates (H2, R9, R5, A2), one release on the snapshot commit, the branch deleted after, a refusal kept for retry and a lost answer never retried (R3, R6, R7, X1; #39)
+    release-create.ts  release.create: the gates (H2, R9, R5, A2), one release on the snapshot commit, the branch deleted after, a refusal kept for retry, a lost answer never retried, and the tag looked up before any retry after one (R3, R6, R7, X1; #39, #40)
     release-promote.ts  release.promote: one edit of the pre-release flag (R8; #39)
+    preparation-discard.ts  preparation.discard: the manager's confirmed abandonment, one branch deletion, the preparation discarded (R7, A2, Q14; #58)
     preparation-read.ts  preparation.read: the stored preparation, restart_required when the default branch moved (R5), the branch's health and the state it moves to (H1, H2; #36)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's

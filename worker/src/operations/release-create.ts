@@ -8,8 +8,8 @@
 // only after that the temporary branch is deleted, its failure a warning on
 // the receipt (R7, R3). A release Door43 refused keeps the branch and the
 // preparation as `retryable_failure`; one Door43 did not confirm is not
-// retried: the preparation says so, and `release.lookup` settles it before
-// anything is sent again (R6, X1). The same request after success answers the
+// retried on its own: the next create looks the tag up first, records a
+// release it finds, and creates nothing over it (R6, X1; #40). The same request after success answers the
 // same receipt (§1 rule 6).
 
 import { CatalogError } from '@tc-admin/shared/schema';
@@ -17,7 +17,7 @@ import type { OperationErrorShape, OperationOutput, ParsedInput, Preparation } f
 import { readAccount } from '../door43/auth';
 import { deleteBranch } from '../door43/branches';
 import { repositoryRefs } from '../door43/catalog';
-import { createRelease, ReleaseWriteError } from '../door43/releases';
+import { createRelease, readReleaseByTag, ReleaseWriteError } from '../door43/releases';
 import { readRepository, repositoryAccess } from '../door43/repos';
 import { releasable } from '../model/health';
 import { compareVersions, parseVersion } from '../model/version';
@@ -61,10 +61,21 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
   const retrying = stored.state === 'retryable_failure' && stored.last_error?.code === 'release_failed';
   if (stored.state === 'pre_release' || stored.state === 'full_release') throw new CatalogError('release_exists', { details: { tag: stored.release?.tag ?? id } });
   if (stored.state === 'restart_required') throw new CatalogError('source_changed', { details: { owner, repo, preparation_id: id } });
-  if (stored.state === 'retryable_failure' && stored.last_error?.code === 'release_outcome_unknown') {
-    throw new CatalogError('release_outcome_unknown', { details: { owner, repo, tag: stored.version.confirmed ?? id, reason: 'the last attempt was not confirmed; look the tag up first' } });
+  const unconfirmed = stored.state === 'retryable_failure' && stored.last_error?.code === 'release_outcome_unknown';
+  if (unconfirmed) {
+    // The last attempt was not confirmed: the tag is looked up before anything is sent again, so a lost answer never becomes a duplicate (R6, X1).
+    const tag = stored.version.confirmed ?? id;
+    const found = await readReleaseByTag(client, owner, repo, tag);
+    if (found) {
+      if (found.target_sha === stored.snapshot.commit_sha) {
+        // It is this preparation's release: the preparation records it, and nothing new is created.
+        const state = found.prerelease ? 'pre_release' : 'full_release';
+        await context.plans.putPreparation(owner, repo, id, { ...stored, state, release: { tag: found.tag, url: found.url, prerelease: found.prerelease }, last_error: null, history: [...stored.history, { at: at(), from: stored.state, to: state, event: 'release.lookup found the release of the unconfirmed attempt' }] });
+      }
+      throw new CatalogError('release_exists', { details: { owner, repo, tag, url: found.url, target_sha: found.target_sha, snapshot_sha: stored.snapshot.commit_sha } });
+    }
   }
-  if (stored.state !== 'ready_for_release' && !retrying) throw new CatalogError('health_blocked', { message: stored.state === 'health_checking' ? 'The health check is still running.' : 'The release snapshot is not ready.', details: { state: stored.state, health: stored.health.state } });
+  if (stored.state !== 'ready_for_release' && !retrying && !unconfirmed) throw new CatalogError('health_blocked', { message: stored.state === 'health_checking' ? 'The health check is still running.' : 'The release snapshot is not ready.', details: { state: stored.state, health: stored.health.state } });
 
   // The health gate (H2): Door43's result, with the manager's acknowledgement when it is a warning (Q6).
   if (!releasable(stored.health.state)) throw new CatalogError('health_blocked', { message: 'The health check did not pass.', details: { health: stored.health.state } });

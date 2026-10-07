@@ -1,0 +1,146 @@
+// `preparation.discard` (#58, Q14): one branch deletion and the preparation
+// `discarded` (R7); a released preparation is `already_released` and nothing is
+// written; no push right is `permission_denied` and nothing is written (A2); a
+// deletion Door43 did not do leaves the branch and the preparation for the
+// retry (R7); the same request after success answers the same receipt.
+import { CatalogError, Preparation } from '@tc-admin/shared/schema';
+import { beforeEach, describe, expect, test } from 'vitest';
+import type { Fetch } from '../../src/door43/api';
+import type { KVNamespace } from '../../src/env';
+import { operationContext } from '../../src/operations';
+import type { OperationContext } from '../../src/operations';
+import { planStore } from '../../src/operations/plans';
+import { preparationDiscard } from '../../src/operations/preparation-discard';
+import { recorded } from '../support/recorded';
+
+type Repo = { catalog: { latest: { commit_sha: string } | null; prod: { commit_sha: string } | null }; permissions: { push: boolean; admin: boolean; pull: boolean } };
+const repoView = recorded<Repo>('2026-10-07/repos/bahtraku__Perjanjian-Baru-Pendau.json.gz');
+const user = recorded<unknown>('2026-10-05/user/user.json');
+const PENDAU = { owner: 'bahtraku', repo: 'Perjanjian-Baru-Pendau' };
+const BRANCH = 'temp-tca-release/v1.3.0';
+const NOW = new Date('2026-10-07T17:00:00.000Z');
+
+class MemoryKV implements KVNamespace {
+  store = new Map<string, string>();
+  async get(key: string) {
+    return this.store.get(key) ?? null;
+  }
+  async put(key: string, value: string) {
+    this.store.set(key, value);
+  }
+  async delete(key: string) {
+    this.store.delete(key);
+  }
+}
+let kv: MemoryKV;
+beforeEach(() => {
+  kv = new MemoryKV();
+});
+
+const prepared = (overrides: Partial<Preparation> = {}): Preparation =>
+  Preparation.parse({
+    id: 'v1.3.0',
+    project_ref: PENDAU,
+    state: 'health_blocked',
+    bound_to: { default_branch_sha: repoView.catalog.latest!.commit_sha, release_tag: 'v1.2', release_tag_sha: repoView.catalog.prod!.commit_sha },
+    selection: { new: ['gen'], revised: [], unknown_included: [] },
+    snapshot: { branch: BRANCH, commit_sha: 'e000000000000000000000000000000000000001', files: [] },
+    health: { state: 'failing', severity_raw: 'error', ref: BRANCH, checked_at: '2026-10-07T15:05:00.000Z', issue_count: 1, issues: [], source: 'door43' },
+    requires_acknowledgement: false,
+    version: { baseline_tag: 'v1.2', proposed: 'v1.3.0', confirmed: 'v1.3.0' },
+    notes: { draft: 'Release v1.3.0', confirmed: null },
+    release: null,
+    last_error: null,
+    history: [{ at: '2026-10-07T15:05:00.000Z', from: 'health_checking', to: 'health_blocked', event: 'health failing' }],
+    freshness: { read_at: '2026-10-07T15:05:00.000Z', source: 'live', age_seconds: 0 },
+    ...overrides,
+  });
+
+function door43(options: { push?: boolean; deleteAnswer?: () => Response | Promise<Response> } = {}) {
+  const writes: { method: string; path: string }[] = [];
+  const fetch: Fetch = async (url, init) => {
+    const { pathname } = new URL(url);
+    const method = init?.method ?? 'GET';
+    if (method !== 'GET') {
+      writes.push({ method, path: pathname });
+      if (pathname.includes('/branches/')) return options.deleteAnswer ? options.deleteAnswer() : new Response(null, { status: 204 });
+      return new Response('', { status: 404 });
+    }
+    if (pathname === '/api/v1/user') return Response.json(user);
+    if (/^\/api\/v1\/repos\/[^/]+\/[^/]+$/.test(pathname)) return Response.json({ ...repoView, permissions: { ...repoView.permissions, push: options.push ?? true, admin: false } });
+    return new Response('', { status: 404 });
+  };
+  const base = operationContext({ door43Origin: 'https://qa.door43.org', door43ClientId: 'id' }, 'request-5', 'door43-token', kv);
+  const context: OperationContext = { ...base, door43: { ...base.door43!, fetch }, now: () => NOW };
+  return { context, writes };
+}
+const put = (preparation: Preparation) => planStore(kv).putPreparation(PENDAU.owner, PENDAU.repo, preparation.id, preparation);
+const get = () => planStore(kv).getPreparation<Preparation>(PENDAU.owner, PENDAU.repo, 'v1.3.0');
+const discard = (context: OperationContext, id = 'v1.3.0') => preparationDiscard({ ...PENDAU, preparation_id: id }, context);
+const failure = (promise: Promise<unknown>) => promise.then(() => null, (error: unknown) => (error instanceof CatalogError ? error : Promise.reject(error)));
+
+describe('preparation.discard (#58)', () => {
+  test('R7: an unreleased preparation is discarded by exactly one branch deletion, the receipt lists it, and the state is stored', async () => {
+    await put(prepared());
+    const { context, writes } = door43();
+    const receipt = await discard(context);
+    expect(writes).toEqual([{ method: 'DELETE', path: `/api/v1/repos/${PENDAU.owner}/${PENDAU.repo}/branches/${encodeURIComponent(BRANCH)}` }]);
+    expect(receipt.wrote).toEqual([{ kind: 'branch', target: BRANCH }]);
+    expect(receipt.result).toMatchObject({ state: 'discarded', last_error: null });
+    expect(receipt.result.history.at(-1)).toEqual({ at: NOW.toISOString(), from: 'health_blocked', to: 'discarded', event: 'preparation.discard' });
+    expect((await get())?.state).toBe('discarded');
+    expect(Preparation.parse(receipt.result)).toEqual(receipt.result);
+    const again = door43();
+    expect(await discard(again.context)).toEqual(receipt);
+    expect(again.writes).toEqual([]);
+  });
+
+  test('R7: a released preparation is already_released and nothing is written, pre-release or full', async () => {
+    for (const state of ['pre_release', 'full_release'] as const) {
+      kv = new MemoryKV();
+      await put(prepared({ state, release: { tag: 'v1.3.0', url: 'https://qa.door43.org/r', prerelease: state === 'pre_release' } }));
+      const { context, writes } = door43();
+      expect((await failure(discard(context)))?.code).toBe('already_released');
+      expect(writes).toEqual([]);
+      expect((await get())?.state).toBe(state);
+    }
+  });
+
+  test('A2: no push right is permission_denied and nothing is written; a preparation the store lacks is not_found', async () => {
+    await put(prepared());
+    const { context, writes } = door43({ push: false });
+    expect((await failure(discard(context)))?.code).toBe('permission_denied');
+    expect(writes).toEqual([]);
+    expect((await get())?.state).toBe('health_blocked');
+    expect((await failure(discard(door43().context, 'v9.9.9')))?.code).toBe('not_found');
+  });
+
+  test('R7: a deletion Door43 did not do is door43_unavailable with the reason, the branch stays, and the preparation is retryable_failure for the retry', async () => {
+    await put(prepared());
+    const { context, writes } = door43({ deleteAnswer: () => Response.json({ message: 'branch is protected' }, { status: 500 }) });
+    const error = await failure(discard(context));
+    expect(error).toMatchObject({ code: 'door43_unavailable' });
+    expect(error?.details.reason).toBe('the temporary branch could not be deleted: branch is protected');
+    expect(writes).toHaveLength(1);
+    const after = await get();
+    expect(after).toMatchObject({ state: 'retryable_failure', last_error: { code: 'door43_unavailable' } });
+    expect(after?.history.at(-1)).toMatchObject({ from: 'health_blocked', to: 'retryable_failure' });
+    const retry = door43();
+    expect((await discard(retry.context)).result.state).toBe('discarded');
+    expect(retry.writes).toHaveLength(1);
+  });
+
+  test('a preparation never pushed, or already discarded, is discarded with no Door43 write', async () => {
+    await put(prepared({ state: 'selecting', snapshot: null }));
+    const never = door43();
+    expect((await discard(never.context)).result.state).toBe('discarded');
+    expect(never.writes).toEqual([]);
+    kv = new MemoryKV();
+    await put(prepared({ state: 'discarded' }));
+    const already = door43();
+    const receipt = await discard(already.context);
+    expect(receipt.result.state).toBe('discarded');
+    expect(receipt.wrote).toEqual([]);
+    expect(already.writes).toEqual([]);
+  });
+});

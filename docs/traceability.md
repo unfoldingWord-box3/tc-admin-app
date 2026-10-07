@@ -76,8 +76,8 @@ Keep this file current: an issue's Traceability section and its row here say the
 | [#37](https://github.com/unfoldingWord-box3/tc-admin-app/issues/37) Version calculation | §10; domain §7 | 0013 | R9 | E9, Q19, Q24 | `release.plan` (the proposal, built with #33), `release.create` (the edit) | model/version | S8 |
 | [#38](https://github.com/unfoldingWord-box3/tc-admin-app/issues/38) Release notes | §10 | 0013 | R2 | Q24 | `release.plan` (the draft, built with #33), `release.create` (the confirmed notes) | model/notes, operations, web | S4, S5, S8 |
 | [#39](https://github.com/unfoldingWord-box3/tc-admin-app/issues/39) Create, pre-release, promote | §10 | 0003 | R3, R5, R6, R7, R8, R9, H2, A2, X1 | E21, E27, E29, Q3, Q5, Q6 | `release.create`, `release.promote` | door43/releases, door43/branches, operations/release-create, operations/release-promote | S7 |
-| [#40](https://github.com/unfoldingWord-box3/tc-admin-app/issues/40) Stale source and lost response | §10, §11; arch §6 | — | R5, R6, X1, X2 | E20, E21, E27, E29 | `release.lookup` (built), `preparation.read`, error catalog | operations, door43/releases | S6 |
-| [#58](https://github.com/unfoldingWord-box3/tc-admin-app/issues/58) Discard a preparation | §10 | 0003 | R7, A2 | Q14 | `preparation.discard` | operations, door43/api | — |
+| [#40](https://github.com/unfoldingWord-box3/tc-admin-app/issues/40) Stale source and lost response | §10, §11; arch §6 | — | R5, R6, X1, X2 | E20, E21, E27, E29 | `release.lookup`, `preparation.read`, `release.create`, error catalog | operations/release-lookup, operations/preparation-read, operations/release-create, door43/releases | S6 |
+| [#58](https://github.com/unfoldingWord-box3/tc-admin-app/issues/58) Discard a preparation | §10 | 0003 | R7, A2 | E21, E27, Q14 | `preparation.discard` | operations/preparation-discard, door43/branches | — |
 
 ### EPIC: Add books: upload and import ([#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45), [#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47))
 
