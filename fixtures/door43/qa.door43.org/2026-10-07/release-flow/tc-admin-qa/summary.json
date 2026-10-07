@@ -1,0 +1,814 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-10-07T15:46:36.529Z",
+  "steps": [
+    {
+      "step": 1,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 170
+    },
+    {
+      "step": 2,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 404,
+      "ms": 398
+    },
+    {
+      "step": 3,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 229
+    },
+    {
+      "step": 4,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 404,
+      "ms": 217
+    },
+    {
+      "step": 5,
+      "name": "POST-user_repos",
+      "status": 201,
+      "ms": 1412
+    },
+    {
+      "step": 6,
+      "name": "POST-repos_tc-admin-qa_id_tcar1546_contents",
+      "status": 201,
+      "ms": 2091
+    },
+    {
+      "step": 7,
+      "name": "POST-contents-seed",
+      "status": 201,
+      "ms": 1772
+    },
+    {
+      "step": 8,
+      "name": "GET-repos_catalog-view",
+      "status": 200,
+      "ms": 5468,
+      "waited_ms": 5468,
+      "latest": {
+        "branch_or_tag_name": "master",
+        "release_url": null,
+        "commit_sha": "00767589bc8e7283320a3bc6b2667105cb02abca",
+        "released": "2026-10-07T15:46:44Z",
+        "zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/archive/00767589bc.zip",
+        "tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/archive/00767589bc.tar.gz",
+        "sb_zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/sb/00767589bc.zip",
+        "sb_tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/sb/00767589bc.tar.gz",
+        "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/trees/00767589bc?recursive=1&per_page=99999",
+        "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents?ref=00767589bc"
+      },
+      "prod": null
+    },
+    {
+      "step": 9,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 186
+    },
+    {
+      "step": 10,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 135
+    },
+    {
+      "step": 11,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_git_trees_00767589bc8e7283320a3bc6b2667105cb02abca",
+      "status": 200,
+      "ms": 192
+    },
+    {
+      "step": 12,
+      "name": "GET-catalog_entry_tc-admin-qa_id_tcar1546_master",
+      "status": 200,
+      "ms": 193
+    },
+    {
+      "step": 13,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 181
+    },
+    {
+      "step": 14,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 126
+    },
+    {
+      "step": 15,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_sb_00767589bc8e7283320a3bc6b2667105cb02abca.zip",
+      "status": 200,
+      "ms": 202
+    },
+    {
+      "step": 16,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_git_trees_00767589bc8e7283320a3bc6b2667105cb02abca",
+      "status": 200,
+      "ms": 132
+    },
+    {
+      "step": 17,
+      "name": "POST-repos_tc-admin-qa_id_tcar1546_branches",
+      "status": 201,
+      "ms": 502
+    },
+    {
+      "step": 18,
+      "name": "POST-repos_tc-admin-qa_id_tcar1546_contents",
+      "status": 201,
+      "ms": 549
+    },
+    {
+      "step": 19,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 170
+    },
+    {
+      "step": 20,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_healthcheck",
+      "status": 422,
+      "ms": 186
+    },
+    {
+      "step": 21,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 389
+    },
+    {
+      "step": 22,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_healthcheck",
+      "status": 200,
+      "ms": 184
+    },
+    {
+      "step": 23,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 189
+    },
+    {
+      "step": 24,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 126
+    },
+    {
+      "step": 25,
+      "name": "POST-repos_tc-admin-qa_id_tcar1546_releases",
+      "status": 201,
+      "ms": 729
+    },
+    {
+      "step": 26,
+      "name": "DELETE-repos_tc-admin-qa_id_tcar1546_branches_temp-tca-release_2Fv1.0.0",
+      "status": 204,
+      "ms": 187
+    },
+    {
+      "step": 27,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_releases_tags_v1.0.0",
+      "status": 200,
+      "ms": 125
+    },
+    {
+      "step": 28,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 206
+    },
+    {
+      "step": 29,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_releases_tags_v1.0.0",
+      "status": 200,
+      "ms": 187
+    },
+    {
+      "step": 30,
+      "name": "PATCH-repos_tc-admin-qa_id_tcar1546_releases_10987981",
+      "status": 200,
+      "ms": 851
+    },
+    {
+      "step": 31,
+      "name": "GET-repos_catalog-view",
+      "status": 200,
+      "ms": 190,
+      "waited_ms": 190,
+      "latest": {
+        "branch_or_tag_name": "master",
+        "release_url": null,
+        "commit_sha": "00767589bc8e7283320a3bc6b2667105cb02abca",
+        "released": "2026-10-07T15:46:44Z",
+        "zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/archive/00767589bc.zip",
+        "tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/archive/00767589bc.tar.gz",
+        "sb_zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/sb/00767589bc.zip",
+        "sb_tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/sb/00767589bc.tar.gz",
+        "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/trees/00767589bc?recursive=1&per_page=99999",
+        "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents?ref=00767589bc"
+      },
+      "prod": {
+        "branch_or_tag_name": "v1.0.0",
+        "release_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/releases/10987981",
+        "commit_sha": "25d92e0f3b85a4ba92ace38c413d3751f363e42d",
+        "released": "2026-10-07T15:46:59Z",
+        "zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/archive/v1.0.0.zip",
+        "tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/archive/v1.0.0.tar.gz",
+        "sb_zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/sb/v1.0.0.zip",
+        "sb_tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/sb/v1.0.0.tar.gz",
+        "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/trees/v1.0.0?recursive=1&per_page=99999",
+        "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents?ref=v1.0.0"
+      }
+    },
+    {
+      "step": 32,
+      "name": "POST-contents-change",
+      "status": 201,
+      "ms": 1673
+    },
+    {
+      "step": 33,
+      "name": "GET-repos_catalog-view",
+      "status": 200,
+      "ms": 5474,
+      "waited_ms": 5474,
+      "latest": {
+        "branch_or_tag_name": "master",
+        "release_url": null,
+        "commit_sha": "8e3fcd0a478f5f3b89e3d5790fa3692a27d00333",
+        "released": "2026-10-07T15:47:03Z",
+        "zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/archive/8e3fcd0a47.zip",
+        "tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/archive/8e3fcd0a47.tar.gz",
+        "sb_zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/sb/8e3fcd0a47.zip",
+        "sb_tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/sb/8e3fcd0a47.tar.gz",
+        "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/trees/8e3fcd0a47?recursive=1&per_page=99999",
+        "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents?ref=8e3fcd0a47"
+      },
+      "prod": {
+        "branch_or_tag_name": "v1.0.0",
+        "release_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/releases/10987981",
+        "commit_sha": "25d92e0f3b85a4ba92ace38c413d3751f363e42d",
+        "released": "2026-10-07T15:46:59Z",
+        "zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/archive/v1.0.0.zip",
+        "tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/archive/v1.0.0.tar.gz",
+        "sb_zipball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/sb/v1.0.0.zip",
+        "sb_tarball_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/sb/v1.0.0.tar.gz",
+        "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/trees/v1.0.0?recursive=1&per_page=99999",
+        "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents?ref=v1.0.0"
+      }
+    },
+    {
+      "step": 34,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 185
+    },
+    {
+      "step": 35,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 127
+    },
+    {
+      "step": 36,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_git_trees_8e3fcd0a478f5f3b89e3d5790fa3692a27d00333",
+      "status": 200,
+      "ms": 193
+    },
+    {
+      "step": 37,
+      "name": "GET-catalog_entry_tc-admin-qa_id_tcar1546_master",
+      "status": 200,
+      "ms": 196
+    },
+    {
+      "step": 38,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_git_trees_25d92e0f3b85a4ba92ace38c413d3751f363e42d",
+      "status": 200,
+      "ms": 188
+    },
+    {
+      "step": 39,
+      "name": "GET-catalog_entry_tc-admin-qa_id_tcar1546_v1.0.0",
+      "status": 200,
+      "ms": 189
+    },
+    {
+      "step": 40,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 116
+    },
+    {
+      "step": 41,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 205
+    },
+    {
+      "step": 42,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_sb_8e3fcd0a478f5f3b89e3d5790fa3692a27d00333.zip",
+      "status": 200,
+      "ms": 189
+    },
+    {
+      "step": 43,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_sb_25d92e0f3b85a4ba92ace38c413d3751f363e42d.zip",
+      "status": 200,
+      "ms": 143
+    },
+    {
+      "step": 44,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_git_trees_8e3fcd0a478f5f3b89e3d5790fa3692a27d00333",
+      "status": 200,
+      "ms": 128
+    },
+    {
+      "step": 45,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_git_trees_25d92e0f3b85a4ba92ace38c413d3751f363e42d",
+      "status": 200,
+      "ms": 127
+    },
+    {
+      "step": 46,
+      "name": "POST-repos_tc-admin-qa_id_tcar1546_branches",
+      "status": 201,
+      "ms": 512
+    },
+    {
+      "step": 47,
+      "name": "POST-repos_tc-admin-qa_id_tcar1546_contents",
+      "status": 201,
+      "ms": 1247
+    },
+    {
+      "step": 48,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 223
+    },
+    {
+      "step": 49,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_healthcheck",
+      "status": 422,
+      "ms": 192
+    },
+    {
+      "step": 50,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 383
+    },
+    {
+      "step": 51,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_healthcheck",
+      "status": 200,
+      "ms": 189
+    },
+    {
+      "step": 52,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 186
+    },
+    {
+      "step": 53,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 138
+    },
+    {
+      "step": 54,
+      "name": "POST-repos_tc-admin-qa_id_tcar1546_releases",
+      "status": 201,
+      "ms": 946
+    },
+    {
+      "step": 55,
+      "name": "DELETE-repos_tc-admin-qa_id_tcar1546_branches_temp-tca-release_2Fv1.1.0",
+      "status": 204,
+      "ms": 182
+    },
+    {
+      "step": 56,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_releases_tags_v1.1.0",
+      "status": 200,
+      "ms": 134
+    },
+    {
+      "step": 57,
+      "name": "GET-sb-archive-after-release",
+      "status": 200,
+      "ms": 499
+    },
+    {
+      "step": 58,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 189
+    },
+    {
+      "step": 59,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 131
+    },
+    {
+      "step": 60,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_git_trees_8e3fcd0a478f5f3b89e3d5790fa3692a27d00333",
+      "status": 200,
+      "ms": 198
+    },
+    {
+      "step": 61,
+      "name": "GET-catalog_entry_tc-admin-qa_id_tcar1546_master",
+      "status": 200,
+      "ms": 198
+    },
+    {
+      "step": 62,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_git_trees_785766a4a9db81c72178a5e21fd616c5479db8b6",
+      "status": 200,
+      "ms": 185
+    },
+    {
+      "step": 63,
+      "name": "GET-catalog_entry_tc-admin-qa_id_tcar1546_v1.1.0",
+      "status": 200,
+      "ms": 187
+    },
+    {
+      "step": 64,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 120
+    },
+    {
+      "step": 65,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 203
+    },
+    {
+      "step": 66,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_sb_8e3fcd0a478f5f3b89e3d5790fa3692a27d00333.zip",
+      "status": 200,
+      "ms": 191
+    },
+    {
+      "step": 67,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_sb_785766a4a9db81c72178a5e21fd616c5479db8b6.zip",
+      "status": 200,
+      "ms": 223
+    },
+    {
+      "step": 68,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_git_trees_8e3fcd0a478f5f3b89e3d5790fa3692a27d00333",
+      "status": 200,
+      "ms": 151
+    },
+    {
+      "step": 69,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546_git_trees_785766a4a9db81c72178a5e21fd616c5479db8b6",
+      "status": 200,
+      "ms": 199
+    },
+    {
+      "step": 70,
+      "name": "POST-repos_tc-admin-qa_id_tcar1546_branches",
+      "status": 201,
+      "ms": 1179
+    },
+    {
+      "step": 71,
+      "name": "POST-repos_tc-admin-qa_id_tcar1546_contents",
+      "status": 201,
+      "ms": 1309
+    },
+    {
+      "step": 72,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 153
+    },
+    {
+      "step": 73,
+      "name": "GET-repos_tc-admin-qa_id_tcar1546",
+      "status": 200,
+      "ms": 199
+    },
+    {
+      "step": 74,
+      "name": "DELETE-repos_tc-admin-qa_id_tcar1546_branches_temp-tca-release_2Fv1.1.1",
+      "status": 204,
+      "ms": 233
+    },
+    {
+      "step": 75,
+      "name": "GET-branches-after-discard",
+      "status": 200,
+      "ms": 185
+    }
+  ],
+  "phases": {
+    "seed": {
+      "created": {
+        "repo": "id_tcar1546",
+        "setup": "complete"
+      },
+      "seed_sha": "00767589bc8e7283320a3bc6b2667105cb02abca"
+    },
+    "first_release": {
+      "plan": {
+        "id": "e8a18b61-c0d7-49eb-bd60-a070913a8424",
+        "books": [
+          {
+            "id": "mat",
+            "group": "new",
+            "selection": "include"
+          },
+          {
+            "id": "jhn",
+            "group": "new",
+            "selection": "include"
+          }
+        ],
+        "version": {
+          "baseline_tag": null,
+          "proposed": "v1.0.0",
+          "rule_applied": "first"
+        },
+        "would_write": [
+          {
+            "kind": "branch",
+            "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.0.0"
+          },
+          {
+            "kind": "commit",
+            "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.0.0"
+          }
+        ]
+      },
+      "prepare": {
+        "wrote": [
+          {
+            "kind": "branch",
+            "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.0.0",
+            "sha": "00767589bc8e7283320a3bc6b2667105cb02abca"
+          },
+          {
+            "kind": "commit",
+            "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.0.0",
+            "sha": "25d92e0f3b85a4ba92ace38c413d3751f363e42d",
+            "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/commit/25d92e0f3b85a4ba92ace38c413d3751f363e42d"
+          }
+        ],
+        "state": "health_checking",
+        "files": 5
+      },
+      "read": {
+        "state": "ready_for_release",
+        "health": "healthy",
+        "severity_raw": "success",
+        "issues": 0,
+        "waited_ms": 5938,
+        "requires_acknowledgement": false
+      },
+      "create": {
+        "wrote": [
+          {
+            "kind": "tag",
+            "target": "v1.0.0",
+            "sha": "25d92e0f3b85a4ba92ace38c413d3751f363e42d"
+          },
+          {
+            "kind": "release",
+            "target": "v1.0.0",
+            "sha": "25d92e0f3b85a4ba92ace38c413d3751f363e42d",
+            "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/releases/tag/v1.0.0"
+          }
+        ],
+        "warnings": [],
+        "state": "pre_release",
+        "release": {
+          "tag": "v1.0.0",
+          "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/releases/tag/v1.0.0",
+          "prerelease": true
+        }
+      },
+      "lookup": {
+        "found": true,
+        "release": {
+          "tag": "v1.0.0",
+          "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/releases/tag/v1.0.0",
+          "prerelease": true,
+          "target_sha": "25d92e0f3b85a4ba92ace38c413d3751f363e42d"
+        }
+      },
+      "promote": {
+        "tag": "v1.0.0",
+        "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/releases/tag/v1.0.0",
+        "prerelease": false
+      }
+    },
+    "second_release": {
+      "change_sha": "8e3fcd0a478f5f3b89e3d5790fa3692a27d00333",
+      "plan": {
+        "id": "75efc4b3-3cb9-46be-868c-628bdc652e79",
+        "books": [
+          {
+            "id": "mat",
+            "group": "changed_released",
+            "selection": "carry_forward"
+          },
+          {
+            "id": "mrk",
+            "group": "new",
+            "selection": "leave_out"
+          },
+          {
+            "id": "jhn",
+            "group": "unchanged",
+            "selection": "carry_forward"
+          }
+        ],
+        "removals": [],
+        "version": {
+          "baseline_tag": "v1.0.0",
+          "proposed": "v1.0.1",
+          "rule_applied": "revisions"
+        },
+        "would_write": [
+          {
+            "kind": "branch",
+            "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.0.1"
+          },
+          {
+            "kind": "commit",
+            "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.0.1"
+          }
+        ]
+      },
+      "prepare": {
+        "wrote": [
+          {
+            "kind": "branch",
+            "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.1.0",
+            "sha": "25d92e0f3b85a4ba92ace38c413d3751f363e42d"
+          },
+          {
+            "kind": "commit",
+            "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.1.0",
+            "sha": "785766a4a9db81c72178a5e21fd616c5479db8b6",
+            "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/commit/785766a4a9db81c72178a5e21fd616c5479db8b6"
+          }
+        ],
+        "state": "health_checking",
+        "selection": {
+          "new": [
+            "mrk"
+          ],
+          "revised": [
+            "mat"
+          ],
+          "unknown_included": []
+        },
+        "files": [
+          {
+            "path": "ingredients/MAT.usfm",
+            "source": "default_branch",
+            "unit": "mat"
+          },
+          {
+            "path": "ingredients/MRK.usfm",
+            "source": "default_branch",
+            "unit": "mrk"
+          },
+          {
+            "path": "ingredients/JHN.usfm",
+            "source": "tag",
+            "unit": "jhn"
+          },
+          {
+            "path": "README.md",
+            "source": "default_branch",
+            "unit": null
+          },
+          {
+            "path": "ingredients/license.md",
+            "source": "default_branch",
+            "unit": null
+          },
+          {
+            "path": "metadata.json",
+            "source": "default_branch",
+            "unit": null
+          }
+        ]
+      },
+      "read": {
+        "state": "ready_for_release",
+        "health": "healthy",
+        "severity_raw": "success",
+        "issues": [],
+        "waited_ms": 5995
+      },
+      "create": {
+        "wrote": [
+          {
+            "kind": "tag",
+            "target": "v1.1.0",
+            "sha": "785766a4a9db81c72178a5e21fd616c5479db8b6"
+          },
+          {
+            "kind": "release",
+            "target": "v1.1.0",
+            "sha": "785766a4a9db81c72178a5e21fd616c5479db8b6",
+            "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/releases/tag/v1.1.0"
+          }
+        ],
+        "warnings": [],
+        "state": "full_release",
+        "release": {
+          "tag": "v1.1.0",
+          "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/releases/tag/v1.1.0",
+          "prerelease": false
+        }
+      },
+      "lookup": {
+        "found": true,
+        "release": {
+          "tag": "v1.1.0",
+          "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/releases/tag/v1.1.0",
+          "prerelease": false,
+          "target_sha": "785766a4a9db81c72178a5e21fd616c5479db8b6"
+        }
+      },
+      "archive_status": 200
+    },
+    "discard": {
+      "plan": {
+        "id": "e7bdf4c6-6d6b-4b15-bffa-7166857a87c6",
+        "books": [
+          {
+            "id": "mat",
+            "group": "unchanged",
+            "selection": "carry_forward"
+          },
+          {
+            "id": "mrk",
+            "group": "unchanged",
+            "selection": "carry_forward"
+          },
+          {
+            "id": "jhn",
+            "group": "unchanged",
+            "selection": "carry_forward"
+          }
+        ],
+        "version": {
+          "baseline_tag": "v1.1.0",
+          "proposed": "v1.1.1",
+          "rule_applied": "revisions"
+        }
+      },
+      "prepare": {
+        "wrote": [
+          {
+            "kind": "branch",
+            "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.1.1",
+            "sha": "785766a4a9db81c72178a5e21fd616c5479db8b6"
+          },
+          {
+            "kind": "commit",
+            "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.1.1",
+            "sha": "babc4149315f7016e711e2d1338952cd21ed55cd",
+            "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/commit/babc4149315f7016e711e2d1338952cd21ed55cd"
+          }
+        ],
+        "state": "health_checking"
+      },
+      "discard": {
+        "wrote": [
+          {
+            "kind": "branch",
+            "target": "temp-tca-release/v1.1.1"
+          }
+        ],
+        "state": "discarded"
+      },
+      "branches": [
+        "master"
+      ]
+    }
+  },
+  "dcs_version": "1.27.3+dcs.13-g23ba3c3ef9",
+  "repository": "tc-admin-qa/id_tcar1546"
+}

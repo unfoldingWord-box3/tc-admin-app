@@ -1,0 +1,119 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]",
+      "content-type": "application/json"
+    },
+    "body": "[28259 bytes omitted: file contents as base64]"
+  },
+  "response": {
+    "status": 201,
+    "ms": 2091,
+    "json": {
+      "files": [
+        {
+          "name": "metadata.json",
+          "path": "metadata.json",
+          "sha": "99393866dd452de9a3e5cf0f7d262b54ee6e5d23",
+          "last_commit_sha": "333a0ec350b675f88433c903e3d156d165583f82",
+          "last_committer_date": "2026-10-07T15:46:40Z",
+          "last_author_date": "2026-10-07T15:46:40Z",
+          "type": "file",
+          "size": 2156,
+          "encoding": "base64",
+          "content": "[2876 base64 characters omitted]",
+          "target": null,
+          "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents/metadata.json?ref=master",
+          "html_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/src/branch/master/metadata.json",
+          "git_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/blobs/99393866dd452de9a3e5cf0f7d262b54ee6e5d23",
+          "download_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/raw/branch/master/metadata.json",
+          "submodule_git_url": null,
+          "_links": {
+            "self": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents/metadata.json?ref=master",
+            "git": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/blobs/99393866dd452de9a3e5cf0f7d262b54ee6e5d23",
+            "html": "https://qa.door43.org/tc-admin-qa/id_tcar1546/src/branch/master/metadata.json"
+          }
+        },
+        {
+          "name": "license.md",
+          "path": "ingredients/license.md",
+          "sha": "31775bb8f62fc9841951a6237f60a4f6f4da7547",
+          "last_commit_sha": "333a0ec350b675f88433c903e3d156d165583f82",
+          "last_committer_date": "2026-10-07T15:46:40Z",
+          "last_author_date": "2026-10-07T15:46:40Z",
+          "type": "file",
+          "size": 18535,
+          "encoding": "base64",
+          "content": "[24716 base64 characters omitted]",
+          "target": null,
+          "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents/ingredients/license.md?ref=master",
+          "html_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/src/branch/master/ingredients/license.md",
+          "git_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/blobs/31775bb8f62fc9841951a6237f60a4f6f4da7547",
+          "download_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/raw/branch/master/ingredients/license.md",
+          "submodule_git_url": null,
+          "_links": {
+            "self": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents/ingredients/license.md?ref=master",
+            "git": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/blobs/31775bb8f62fc9841951a6237f60a4f6f4da7547",
+            "html": "https://qa.door43.org/tc-admin-qa/id_tcar1546/src/branch/master/ingredients/license.md"
+          }
+        },
+        {
+          "name": "README.md",
+          "path": "README.md",
+          "sha": "2c77e9d3a4dcc44ad34cabb3ea321f135cab4925",
+          "last_commit_sha": "333a0ec350b675f88433c903e3d156d165583f82",
+          "last_committer_date": "2026-10-07T15:46:40Z",
+          "last_author_date": "2026-10-07T15:46:40Z",
+          "type": "file",
+          "size": 247,
+          "encoding": "base64",
+          "content": "[332 base64 characters omitted]",
+          "target": null,
+          "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents/README.md?ref=master",
+          "html_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/src/branch/master/README.md",
+          "git_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/blobs/2c77e9d3a4dcc44ad34cabb3ea321f135cab4925",
+          "download_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/raw/branch/master/README.md",
+          "submodule_git_url": null,
+          "_links": {
+            "self": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/contents/README.md?ref=master",
+            "git": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/blobs/2c77e9d3a4dcc44ad34cabb3ea321f135cab4925",
+            "html": "https://qa.door43.org/tc-admin-qa/id_tcar1546/src/branch/master/README.md"
+          }
+        }
+      ],
+      "commit": {
+        "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/commits/333a0ec350b675f88433c903e3d156d165583f82",
+        "sha": "333a0ec350b675f88433c903e3d156d165583f82",
+        "created": "0001-01-01T00:00:00Z",
+        "html_url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/commit/333a0ec350b675f88433c903e3d156d165583f82",
+        "author": {
+          "name": "tc-admin-qa",
+          "email": "[redacted]",
+          "date": "2026-10-07T15:46:40Z"
+        },
+        "committer": {
+          "name": "tc-admin-qa",
+          "email": "[redacted]",
+          "date": "2026-10-07T15:46:40Z"
+        },
+        "parents": [],
+        "message": "Create tC Admin release probe 2026-10-07 1546\n\nmetadata.json, ingredients/license.md, and README.md, written by tC Admin 0.1.0.\n",
+        "tree": {
+          "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/git/trees/bab9a03bd4ec6b38ea691e0604969f25729c1763",
+          "sha": "bab9a03bd4ec6b38ea691e0604969f25729c1763",
+          "created": "0001-01-01T00:00:00Z"
+        }
+      },
+      "verification": {
+        "verified": false,
+        "reason": "gpg.error.not_signed_commit",
+        "signature": "",
+        "signer": null,
+        "payload": ""
+      }
+    }
+  }
+}

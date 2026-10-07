@@ -316,6 +316,7 @@ scripts/
   check-docs.mjs     the document check
   probe/             live Door43 probes that write to docs/evidence.md: qa-write-probe (the release writes),
                      qa-create-probe (project.create.plan and apply through the Worker's own code, #30)
+                     qa-release-probe (the release flow through the Worker's own code on a seeded repository: plan, prepare, read, create, lookup, promote, discard; E54)
                      planned: seed-qa (#3)
 docs/                this tower
 prototypes/door43-mcp  a Door43 MCP proof of concept, not a deliverable; prototypes/tc-admin was retired by #7

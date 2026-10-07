@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/sb/785766a4a9db81c72178a5e21fd616c5479db8b6.zip",
+    "headers": {
+      "accept": "application/zip, application/octet-stream",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 223,
+    "json": {
+      "archive_bytes": null
+    }
+  }
+}

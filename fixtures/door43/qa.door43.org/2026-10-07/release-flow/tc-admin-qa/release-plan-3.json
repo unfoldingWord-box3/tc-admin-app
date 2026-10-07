@@ -1,0 +1,51 @@
+{
+  "id": "e7bdf4c6-6d6b-4b15-bffa-7166857a87c6",
+  "operation": "release.plan",
+  "created_at": "2026-10-07T15:47:22.922Z",
+  "expires_at": "2026-10-07T16:17:22.922Z",
+  "bound_to": {
+    "default_branch_sha": "8e3fcd0a478f5f3b89e3d5790fa3692a27d00333",
+    "release_tag": "v1.1.0",
+    "release_tag_sha": "785766a4a9db81c72178a5e21fd616c5479db8b6"
+  },
+  "preview": {
+    "books": [
+      {
+        "id": "mat",
+        "group": "unchanged",
+        "selection": "carry_forward"
+      },
+      {
+        "id": "mrk",
+        "group": "unchanged",
+        "selection": "carry_forward"
+      },
+      {
+        "id": "jhn",
+        "group": "unchanged",
+        "selection": "carry_forward"
+      }
+    ],
+    "removals": [],
+    "administrative": [
+      "README.md"
+    ],
+    "version": {
+      "baseline_tag": "v1.1.0",
+      "proposed": "v1.1.1",
+      "rule_applied": "revisions"
+    },
+    "notes_draft": "## id_tcar1546 v1.1.1\n\nSource: tc-admin-qa/id_tcar1546 at 8e3fcd0a47 on master.\nPrevious release: v1.1.0.\n\n### Added\n- None\n\n### Revised\n- None\n\n### Removed\n- None\n\n### Carried forward\n3 books unchanged from v1.1.0: MAT, MRK, JHN\n\n### Unknown files included\n- None\n"
+  },
+  "would_write": [
+    {
+      "kind": "branch",
+      "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.1.1"
+    },
+    {
+      "kind": "commit",
+      "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.1.1"
+    }
+  ],
+  "warnings": []
+}

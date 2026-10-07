@@ -1,0 +1,125 @@
+{
+  "operation": "release.prepare",
+  "request_id": "probe-1791387997129",
+  "plan_id": "75efc4b3-3cb9-46be-868c-628bdc652e79",
+  "started_at": "2026-10-07T15:47:12.037Z",
+  "finished_at": "2026-10-07T15:47:14.111Z",
+  "wrote": [
+    {
+      "kind": "branch",
+      "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.1.0",
+      "sha": "25d92e0f3b85a4ba92ace38c413d3751f363e42d"
+    },
+    {
+      "kind": "commit",
+      "target": "tc-admin-qa/id_tcar1546@temp-tca-release/v1.1.0",
+      "sha": "785766a4a9db81c72178a5e21fd616c5479db8b6",
+      "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/commit/785766a4a9db81c72178a5e21fd616c5479db8b6"
+    }
+  ],
+  "result": {
+    "id": "v1.1.0",
+    "project_ref": {
+      "owner": "tc-admin-qa",
+      "repo": "id_tcar1546"
+    },
+    "state": "health_checking",
+    "bound_to": {
+      "default_branch_sha": "8e3fcd0a478f5f3b89e3d5790fa3692a27d00333",
+      "release_tag": "v1.0.0",
+      "release_tag_sha": "25d92e0f3b85a4ba92ace38c413d3751f363e42d"
+    },
+    "selection": {
+      "new": [
+        "mrk"
+      ],
+      "revised": [
+        "mat"
+      ],
+      "unknown_included": []
+    },
+    "snapshot": {
+      "branch": "temp-tca-release/v1.1.0",
+      "commit_sha": "785766a4a9db81c72178a5e21fd616c5479db8b6",
+      "files": [
+        {
+          "path": "ingredients/MAT.usfm",
+          "source": "default_branch",
+          "unit": "mat"
+        },
+        {
+          "path": "ingredients/MRK.usfm",
+          "source": "default_branch",
+          "unit": "mrk"
+        },
+        {
+          "path": "ingredients/JHN.usfm",
+          "source": "tag",
+          "unit": "jhn"
+        },
+        {
+          "path": "README.md",
+          "source": "default_branch",
+          "unit": null
+        },
+        {
+          "path": "ingredients/license.md",
+          "source": "default_branch",
+          "unit": null
+        },
+        {
+          "path": "metadata.json",
+          "source": "default_branch",
+          "unit": null
+        }
+      ]
+    },
+    "health": {
+      "state": "checking",
+      "severity_raw": null,
+      "ref": "temp-tca-release/v1.1.0",
+      "checked_at": null,
+      "issue_count": null,
+      "issues": null,
+      "source": "door43"
+    },
+    "requires_acknowledgement": false,
+    "version": {
+      "baseline_tag": "v1.0.0",
+      "proposed": "v1.1.0",
+      "confirmed": "v1.1.0"
+    },
+    "notes": {
+      "draft": "## id_tcar1546 v1.1.0\n\nSource: tc-admin-qa/id_tcar1546 at 8e3fcd0a47 on master.\nPrevious release: v1.0.0.\n\n### Added\n- Markus (MRK)\n\n### Revised\n- Matius (MAT)\n\n### Removed\n- None\n\n### Carried forward\n1 books unchanged from v1.0.0: JHN\n\n### Unknown files included\n- None\n",
+      "confirmed": null
+    },
+    "release": null,
+    "last_error": null,
+    "history": [
+      {
+        "at": "2026-10-07T15:47:10.863Z",
+        "from": null,
+        "to": "selecting",
+        "event": "release.plan"
+      },
+      {
+        "at": "2026-10-07T15:47:12.550Z",
+        "from": "selecting",
+        "to": "snapshot_prepared",
+        "event": "release.prepare"
+      },
+      {
+        "at": "2026-10-07T15:47:14.111Z",
+        "from": "snapshot_prepared",
+        "to": "health_checking",
+        "event": "push confirmed"
+      }
+    ],
+    "freshness": {
+      "read_at": "2026-10-07T15:47:14.111Z",
+      "source": "live",
+      "age_seconds": 0
+    }
+  },
+  "warnings": []
+}

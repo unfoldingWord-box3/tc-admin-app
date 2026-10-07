@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "DELETE",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcar1546/branches/temp-tca-release%2Fv1.0.0",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 204,
+    "ms": 187,
+    "json": null
+  }
+}
