@@ -53,6 +53,25 @@ export function counts(books: readonly Book[], selection: Selection): Record<Sel
   return result;
 }
 
+/** The stories of Open Bible Stories, `01` to `50` (E36), all of which Door43's health check requires (E59). The model's list is the Worker's, out of the web's reach. */
+export const OBS_STORIES = 50;
+
+/**
+ * What an Open Bible Stories release takes, in place of a selection (ADR 0013): every story on the default branch,
+ * counted against the fifty; a story the release had that the branch no longer has is removed, named, and needs a major version (R2, R9).
+ */
+export function storySummary(books: readonly Book[]): { count: string; removed: string | null } {
+  const included = books.filter(story => story.selection === 'include').length;
+  const removed = books.filter(story => story.selection === 'leave_out').map(story => story.id);
+  return {
+    count: `${included} of ${OBS_STORIES} stories in this release.`,
+    removed:
+      removed.length === 0
+        ? null
+        : `Removed from this release onward, since the default branch no longer has ${removed.length === 1 ? 'it' : 'them'}: ${removed.length === 1 ? 'story' : 'stories'} ${removed.join(', ')}. Earlier releases keep ${removed.length === 1 ? 'it' : 'them'}. The version must then increase its first number.`,
+  };
+}
+
 /** A typed version, trimmed, with the `v` the catalog spells: `2.0.1` and `V2.0.1` are `v2.0.1`; only a `v` before a digit is taken as already spelled. */
 export function spellVersion(typed: string): string {
   const text = typed.trim();

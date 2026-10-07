@@ -1,0 +1,34 @@
+{
+  "full_name": "tc-admin-qa-org/id_obs1948",
+  "default_branch": "master",
+  "catalog": {
+    "prod": {
+      "branch_or_tag_name": "v1.0.0",
+      "release_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_obs1948/releases/10987990",
+      "commit_sha": "c8b45d2a1c6b51fbf0c0850c511db0d6d741e98f",
+      "released": "2026-10-07T20:40:52Z",
+      "zipball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/archive/v1.0.0.zip",
+      "tarball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/archive/v1.0.0.tar.gz",
+      "sb_zipball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/sb/v1.0.0.zip",
+      "sb_tarball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/sb/v1.0.0.tar.gz",
+      "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_obs1948/git/trees/v1.0.0?recursive=1&per_page=99999",
+      "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_obs1948/contents?ref=v1.0.0"
+    },
+    "preprod": null,
+    "latest": {
+      "branch_or_tag_name": "master",
+      "release_url": null,
+      "commit_sha": "5b1e85b9f7018efd4a0f6c839c1f167fa72c8f55",
+      "released": "2026-10-07T20:40:30Z",
+      "zipball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/archive/5b1e85b9f7.zip",
+      "tarball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/archive/5b1e85b9f7.tar.gz",
+      "sb_zipball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/sb/5b1e85b9f7.zip",
+      "sb_tarball_url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948/sb/5b1e85b9f7.tar.gz",
+      "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_obs1948/git/trees/5b1e85b9f7?recursive=1&per_page=99999",
+      "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_obs1948/contents?ref=5b1e85b9f7"
+    }
+  },
+  "metadata_type": "sb",
+  "healthcheck_severity": "success",
+  "subject": "Open Bible Stories"
+}
