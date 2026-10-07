@@ -17,7 +17,7 @@ import type { SnapshotInput, Upload } from '../../src/model/snapshot';
 import { operationContext } from '../../src/operations';
 import type { OperationContext } from '../../src/operations';
 import { releasePlan } from '../../src/operations/release-plan';
-import { confirmedSelection, confirmedVersion, releasePrepare } from '../../src/operations/release-prepare';
+import { confirmedSelection, confirmedUnknowns, confirmedVersion, releasePrepare } from '../../src/operations/release-prepare';
 import { recorded } from '../support/recorded';
 import { storedZip } from '../support/zip';
 
@@ -263,6 +263,16 @@ describe('what the prepare refuses, writing nothing', () => {
     const payload = { project_type: 'obs' as const, candidates: [{ id: '01', group: 'new' as const, selection: 'include' as const, default_branch: { id: '01', path: 'ingredients/content/01.md', title: '', sha: 'a', size: 1 }, baseline: null }] };
     expect(() => confirmedSelection(payload as never, { '01': 'include' })).toThrow(/send no selection/);
     expect(confirmedSelection(payload as never, {})).toEqual({ '01': 'include' });
+  });
+
+  test('R1, R10, S5: an included unknown file at the path of a book carried forward is validation_failed, so a carried book is never replaced behind its checksum', () => {
+    // The default branch no longer lists Matthew but still has a changed ingredients/MAT.usfm, so that file is unknown there (classify.ts).
+    const mat = { id: 'mat', group: 'removed' as const, default_branch: null, baseline: { id: 'mat', path: 'ingredients/MAT.usfm', title: 'Matthew', sha: 'a', size: 1 } };
+    const unknown = ['ingredients/MAT.usfm', 'ingredients/notes.txt'];
+    expect(() => confirmedUnknowns(['ingredients/MAT.usfm'], unknown, [{ ...mat, selection: 'carry_forward' }] as never)).toThrow('unknown_included: ingredients/MAT.usfm holds a book carried forward from the previous release and cannot also be included as an unknown file.');
+    expect(() => confirmedUnknowns(['ingredients/MAT.usfm', 'ingredients/notes.txt'], unknown, [{ ...mat, selection: 'leave_out' }] as never)).not.toThrow();
+    expect(() => confirmedUnknowns(['ingredients/notes.txt'], unknown, [{ ...mat, selection: 'carry_forward' }] as never)).not.toThrow();
+    expect(() => confirmedUnknowns(['ingredients/other.txt'], unknown, [] as never)).toThrow('unknown_included: ingredients/other.txt is not an unknown file of the default branch.');
   });
 
   test('A2: no push is permission_denied; an expired or foreign plan is plan_expired', async () => {

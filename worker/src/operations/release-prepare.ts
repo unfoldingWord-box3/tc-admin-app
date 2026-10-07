@@ -88,6 +88,19 @@ export function confirmedSelection(payload: ReleasePlanPayload, sent: Readonly<R
   return selection;
 }
 
+/**
+ * The unknown files the manager included (S5): each must be an unknown file of the default branch, and none may be
+ * the path of a book carried forward, which the snapshot keeps from the release; one path has one source, so an
+ * included unknown file never replaces a carried book's bytes behind the metadata's checksum (R1, R10).
+ */
+export function confirmedUnknowns(sent: readonly string[], branchUnknown: readonly string[], candidates: readonly Candidate[]): void {
+  const carried = new Set(candidates.flatMap(candidate => (candidate.selection === 'carry_forward' && candidate.baseline ? [candidate.baseline.path] : [])));
+  for (const path of sent) {
+    if (!branchUnknown.includes(path)) throw validation('unknown_included', `${path} is not an unknown file of the default branch.`);
+    if (carried.has(path)) throw validation('unknown_included', `${path} holds a book carried forward from the previous release and cannot also be included as an unknown file.`);
+  }
+}
+
 /** The version the release takes: the manager's when given and valid, after the baseline, and a major increment when a book is removed (R9); else the proposal. */
 export function confirmedVersion(sent: string | null, baselineTag: string | null, proposed: string, removal: boolean): string {
   if (sent === null) return proposed;
@@ -152,7 +165,7 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
   const branchArchive = await readArchive(client, owner, repo, payload.default_branch.sha);
   const current = await metadataOf(branchArchive, payload.default_branch.sha);
   const branchFiles = classifyFiles(current, branchArchive.entries);
-  for (const path of input.unknown_included) if (!branchFiles.unknown.includes(path)) throw validation('unknown_included', `${path} is not an unknown file of the default branch.`);
+  confirmedUnknowns(input.unknown_included, branchFiles.unknown, candidates);
   // Only sizes and checksums are kept here; the bytes to upload are inflated again per commit, so the Worker holds one commit's content at a time (Q22, E30).
   const sizeByPath = new Map<string, number>();
   const files: SnapshotFile[] = [];
