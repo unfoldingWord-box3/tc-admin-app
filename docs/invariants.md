@@ -225,8 +225,8 @@ Issues: #23.
 Every cached or derived fact carries its read time and source; the UI labels stale data with its age. tC Admin holds no durable content or release ledger.
 Source: ADR 0002; architecture §4.
 Enforced in: operation outputs carry `freshness`; Workers KV entries carry a read timestamp.
-Verified by: output-shape tests; refresh test shows age reset.
-Issues: #26.
+Verified by: output-shape tests; refresh test shows age reset. So far: the `P3` tests in `worker/test/operations/owner-search.test.ts` and `worker/test/http/owner-search.test.ts` (`owner.search` answers with a live `freshness`, with or without a search).
+Issues: #26, #77.
 
 ## X — Failure and diagnostics
 
