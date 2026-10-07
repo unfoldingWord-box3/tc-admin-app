@@ -16,4 +16,6 @@ Book A and book B are QA stand-ins, not the demo's books: Titus (A) and Philemon
 | S8: a book left out | `07-removal/` | `v2.0.0` a full release on `3a4c3ded`, one commit from `efabd06f` removing `ingredients/3JN.usfm` and modifying `metadata.json`; its `metadata.json` (gzipped): 29 ingredients, `currentScope` 26 books, no 3 John; every release in full (`releases-full.json.gz`) |
 | Demo 9: the project | `08-created/` | `tc-admin-qa-org/id_demo1016`: `metadata_type: sb`, health `info` with `release_needed` only, `master` only, the committed `metadata.json` |
 
+The directory numbers do not follow the run: step 9 (`08-created`, its commit at 20:21:16) ran before S8 (`07-removal`, its release at 20:22:17), in the script's order, as E58 tells it.
+
 `releases.json` in each step keeps each release's tag, flag, target, creation time, author, and notes; the full answer is kept once, at the end. Duplicate copies of an unchanged `metadata.json` were not kept.
