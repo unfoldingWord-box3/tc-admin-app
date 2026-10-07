@@ -226,7 +226,7 @@ describe('release.create (#39)', () => {
     expect(retry.writes.map(write => write.method)).toEqual(['POST', 'DELETE']);
   });
 
-  test('R6, X1: a release Door43 did not confirm is release_outcome_unknown and not retried; the next create looks the tag up first: found, it is release_exists with no write and the preparation records it; not found, it is created (#40)', async () => {
+  test('R6, X1: a release Door43 did not confirm is release_outcome_unknown and not retried; the next create looks the tag up first: found on the snapshot commit, it is release_exists, the preparation records it and its branch is deleted; found elsewhere, release_exists and nothing changes; not found, it is created (#40)', async () => {
     await put(ready());
     const lost = door43({ releaseAnswer: () => Promise.reject(new TypeError('fetch failed')) });
     expect((await failure(releaseCreate(input(), lost.context)))?.code).toBe('release_outcome_unknown');
