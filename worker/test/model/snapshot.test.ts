@@ -57,4 +57,26 @@ describe('planSnapshot: files outside ingredients/ (R1, R2)', () => {
     expect(plan.writes.filter(write => write.operation === 'upload').map(write => write.path)).toEqual(['metadata.json']);
     expect(plan.files.map(file => file.path)).toEqual(['ingredients/MAT.usfm', 'README.md', 'metadata.json']);
   });
+  test('W5: the files outside the books are uploaded in path order, administrative and included unknown together, the order the plan sized them in', () => {
+    const plan = planSnapshot({
+      project_type: 'bible',
+      from_release: false,
+      candidates: [candidate('mat', 'ingredients/MAT.usfm', 'new', 'include', false)],
+      selection: { mat: 'include' },
+      branch: classification([
+        { path: 'ingredients/MAT.usfm', unit: 'mat', role: 'unit' },
+        { path: 'README.md', unit: null, role: 'administrative' },
+        { path: 'ingredients/license.md', unit: null, role: 'administrative' },
+        { path: 'ingredients/notes.txt', unit: null, role: 'unknown' },
+        { path: 'extras/map.png', unit: null, role: 'unknown' },
+      ]),
+      branch_blobs: new Map(),
+      start_blobs: new Map(),
+      sizes: new Map(),
+      unknown_included: ['ingredients/notes.txt', 'extras/map.png'],
+      metadata_size: 50,
+    });
+    expect(plan.writes.filter(write => write.operation === 'upload').map(write => write.path)).toEqual(['ingredients/MAT.usfm', 'README.md', 'extras/map.png', 'ingredients/license.md', 'ingredients/notes.txt', 'metadata.json']);
+  });
+
 });

@@ -79,7 +79,7 @@ interface Door43Options {
   /** The default-branch commit the repository reports, when it moved since the plan. */
   movedTo?: string;
   commitAnswer?: () => Response;
-  branchAnswer?: () => Response;
+  branchAnswer?: () => Response | Promise<Response>;
 }
 
 /** A Door43 of the fixtures above: reads answered from them, writes answered as QA did (E27) and recorded. */
@@ -162,8 +162,8 @@ describe('a later release of Pendau (baseline v1.2)', () => {
     expect((commit.files as { path: string; operation: string }[]).map(file => `${file.operation} ${file.path}`)).toEqual(['create ingredients/GEN.usfm', 'upload ingredients/MAT.usfm', 'upload metadata.json']);
     expect(decodeContent(fileOf(commit, 'ingredients/MAT.usfm')!)).toBe(fixtures.changedMat);
     expect(decodeContent(fileOf(commit, 'ingredients/GEN.usfm')!)).toBe(fixtures.newGen);
-    // The plan announced the branch and one commit on it; the receipt wrote no more (W5), on the branch of the confirmed version (R3).
-    expect(plan.would_write.map(write => write.kind)).toEqual(['branch', 'commit']);
+    // The plan announced the branch and two commits (the files, and the merged metadata of a size it could not know); the receipt wrote one, no more (W5), on the branch of the confirmed version (R3).
+    expect(plan.would_write.map(write => write.kind)).toEqual(['branch', 'commit', 'commit']);
     expect(receipt.wrote.map(write => `${write.kind} ${write.target}`)).toEqual(['branch bahtraku/Perjanjian-Baru-Pendau@temp-tca-release/v1.3.0', 'commit bahtraku/Perjanjian-Baru-Pendau@temp-tca-release/v1.3.0']);
     expect(receipt.wrote[1]).toMatchObject({ sha: 'e000000000000000000000000000000000000001' });
     const preparation = receipt.result;
@@ -282,6 +282,14 @@ describe('what the prepare refuses, writing nothing', () => {
     const { fetch } = door43(fixtures);
     const input = OPERATIONS['release.prepare'].input.parse({ ...PENDAU, plan_id: 'no-such-plan', selection: {}, unknown_included: [], version: null });
     expect((await failure(releasePrepare(input, context(fetch))))!.code).toBe('plan_expired');
+  });
+
+  test('R7, X1: a branch-creation request lost before Door43 answers stores a preparation naming the branch, which may exist, and is not retried (decided 7 October 2026)', async () => {
+    const lost = await prepare({ branchAnswer: () => Promise.reject(new TypeError('fetch failed')) }, carried({ gen: 'include' }));
+    expect((await failure(lost.run()))!.code).toBe('door43_unavailable');
+    expect(lost.writes.map(write => write.method)).toEqual(['POST']);
+    const stored = JSON.parse(kv.entries.get(`preparation:${PENDAU.owner.toLowerCase()}/${PENDAU.repo}/v1.3.0`)!) as Preparation;
+    expect(stored).toMatchObject({ state: 'retryable_failure', last_error: { code: 'door43_unavailable' }, snapshot: { branch: 'temp-tca-release/v1.3.0' } });
   });
 
   test('R7: a branch already on Door43 (409) with no preparation naming it stores one as retryable_failure, so the manager can discard it; one already stored is left as it is (decided 7 October 2026)', async () => {

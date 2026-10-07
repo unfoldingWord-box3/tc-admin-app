@@ -109,12 +109,17 @@ export async function releasePlan(input: ParsedInput<'release.plan'>, context: O
   const now = context.now();
   const bound_to: BoundTo = { default_branch_sha: default_branch.sha, release_tag: latest_full_release?.tag ?? null, release_tag_sha: latest_full_release?.sha ?? null };
   const target = `${input.owner}/${input.repo}@${temporaryBranch(version.proposed)}`;
-  // As many commits as uploading every file of the default branch would take (Q22): the books, then the root, administrative, and unknown files, the metadata last; so the prepare never writes one the plan did not announce (R3, W5).
+  // As many commits as uploading every file of the default branch would take (Q22): the books in this order, then every other file
+  // in path order, as the prepare uploads them, and the merged metadata last, its size unknown until the prepare merges it (so it
+  // counts as a commit of its own); the prepare never writes one the plan did not announce (R3, W5).
   const bookPaths = new Set(candidates.books.flatMap(book => (book.default_branch ? [book.default_branch.path] : [])));
   const commits = commitsForAll([
     ...candidates.books.flatMap(book => (book.default_branch ? [book.default_branch.size ?? null] : [])),
-    ...branchTree.files.filter(file => !bookPaths.has(file.path) && file.path !== 'metadata.json').map(file => file.size),
-    branchTree.files.find(file => file.path === 'metadata.json')?.size ?? null,
+    ...branchTree.files
+      .filter(file => !bookPaths.has(file.path) && file.path !== 'metadata.json')
+      .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
+      .map(file => file.size),
+    null,
   ]);
   const plan: ReleasePlan = {
     id: newPlanId(),

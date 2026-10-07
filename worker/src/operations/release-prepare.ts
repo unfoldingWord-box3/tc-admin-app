@@ -274,9 +274,12 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
   } catch (error) {
     // Door43 created the branch (201) but its answer could not be read: the branch exists, so its preparation is stored too.
     if (error instanceof CatalogError && error.details.door43_status === 201) await recordFailure(startSha, error, 'branch');
-    // The branch is already there (409) and no preparation names it: one is stored, so the manager can open and discard it
-    // (decided 7 October 2026 by Rich); a preparation already stored under the version is left as it is.
-    if (error instanceof CatalogError && error.code === 'preparation_active' && !(await context.plans.getPreparation(owner, repo, version))) await recordFailure(startSha, error, 'branch');
+    // The branch is already there (409) and no preparation names it, or the request was lost before Door43 answered and the
+    // branch may exist: a preparation is stored, so the manager can open and discard it (decided 7 October 2026 by Rich);
+    // a preparation already stored under the version is left as it is.
+    const lost = error instanceof CatalogError && error.code === 'door43_unavailable' && error.details.door43_status === undefined;
+    const taken = error instanceof CatalogError && error.code === 'preparation_active';
+    if ((lost || taken) && !(await context.plans.getPreparation(owner, repo, version))) await recordFailure(startSha, error, 'branch');
     throw error;
   }
   const wrote: ReleasePrepareReceipt['wrote'] = [{ kind: 'branch', target, sha: branch.sha }];

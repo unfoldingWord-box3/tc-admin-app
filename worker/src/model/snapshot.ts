@@ -91,10 +91,10 @@ export function planSnapshot(input: SnapshotInput): SnapshotPlan {
       if (selection === 'include' && candidate.default_branch) upload(candidate.default_branch.path, candidate.id);
       else if (selection === 'carry_forward' && candidate.baseline) files.push({ path: candidate.baseline.path, source: 'tag', unit: candidate.id });
     }
-    // Every root file, `.gitea/` file, and administrative ingredient comes from the default branch (R1, Q22).
-    for (const path of input.branch.administrative) upload(path, null);
-    // Unknown files: only the ones the manager included (S5).
-    for (const path of input.branch.unknown) if (input.unknown_included.includes(path)) upload(path, null);
+    // Every root file, `.gitea/` file, and administrative ingredient comes from the default branch (R1, Q22), and the unknown files
+    // the manager included (S5); together in path order, the order the plan sized them in, so the commits fall as announced (W5).
+    const others = [...input.branch.administrative, ...input.branch.unknown.filter(path => input.unknown_included.includes(path))].sort();
+    for (const path of others) upload(path, null);
     // Everything under `ingredients/` the start ref holds that the snapshot does not name is deleted, so the branch's tree is `files`:
     // a left-out released book (R2), a first release's left-out book, a book's old path after a rename, an unknown file not included (S5),
     // an administrative ingredient the default branch no longer lists. Outside `ingredients/` the archive does not carry every file (E17),
