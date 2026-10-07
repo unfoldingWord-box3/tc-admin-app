@@ -61,8 +61,8 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
   if (!stored.snapshot) throw new CatalogError('health_blocked', { message: 'The release snapshot has not been prepared.', details: { state: stored.state } });
   const retrying = stored.state === 'retryable_failure' && stored.last_error?.code === 'release_failed';
   if (stored.state === 'pre_release' || stored.state === 'full_release') throw new CatalogError('release_exists', { details: { tag: stored.release?.tag ?? id } });
-  if (stored.state === 'restart_required') throw new CatalogError('source_changed', { details: { owner, repo, preparation_id: id } });
-  const unconfirmed = stored.state === 'retryable_failure' && stored.last_error?.code === 'release_outcome_unknown';
+  // A moved source (`restart_required`) keeps the unconfirmed attempt's error, and its release may still exist: it is looked up too.
+  const unconfirmed = (stored.state === 'retryable_failure' || stored.state === 'restart_required') && stored.last_error?.code === 'release_outcome_unknown';
   if (unconfirmed) {
     // The last attempt was not confirmed: the tag is looked up before anything is sent again, so a lost answer never becomes a duplicate (R6, X1).
     // The permission is re-read first (A2): nothing is looked up or recorded for an account that may not release.
@@ -84,6 +84,8 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
       throw new CatalogError('release_exists', { details: { owner, repo, tag, url: found.url, target_sha: found.target_sha, snapshot_sha: stored.snapshot.commit_sha } });
     }
   }
+  // None found on a moved source: nothing is created on it (R5).
+  if (stored.state === 'restart_required') throw new CatalogError('source_changed', { details: { owner, repo, preparation_id: id } });
   if (stored.state !== 'ready_for_release' && !retrying && !unconfirmed) throw new CatalogError('health_blocked', { message: stored.state === 'health_checking' ? 'The health check is still running.' : 'The release snapshot is not ready.', details: { state: stored.state, health: stored.health.state } });
 
   // The health gate (H2): Door43's result, with the manager's acknowledgement when it is a warning (Q6).

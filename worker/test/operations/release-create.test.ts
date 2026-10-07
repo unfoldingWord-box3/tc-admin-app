@@ -260,6 +260,22 @@ describe('release.create (#39)', () => {
     expect((await get())?.state).toBe('ready_for_release');
   });
 
+  test('R6, R5, X1: an unconfirmed attempt on a moved source (restart_required) is looked up first: found on the snapshot commit, it is recorded and its branch deleted; not found, it stays source_changed and nothing is created', async () => {
+    const unknown = { code: 'release_outcome_unknown', message: 'Door43 did not confirm the release.', retryable: true, next_action: 'run `release.lookup` for the tag before retrying', request_id: 'r', details: {}, invariant: 'R6' } as const;
+    await put(ready({ state: 'restart_required', last_error: unknown }));
+    const found = door43({ lookup: () => Response.json({ ...probeRelease, door43_metadata: null, tag_name: 'v1.3.0', prerelease: false, target_commitish: COMMIT }) });
+    expect((await failure(releaseCreate(input(), found.context)))?.code).toBe('release_exists');
+    expect(found.writes.map(write => write.method)).toEqual(['DELETE']);
+    expect(await get()).toMatchObject({ state: 'full_release', last_error: null });
+    await put(ready({ state: 'restart_required', last_error: unknown }));
+    const looked: string[] = [];
+    const absent = door43({ lookup: tag => (looked.push(tag), Response.json({ message: 'not found' }, { status: 404 })) });
+    expect((await failure(releaseCreate(input(), absent.context)))?.code).toBe('source_changed');
+    expect(looked).toEqual(['v1.3.0']);
+    expect(absent.writes).toEqual([]);
+    expect(await get()).toMatchObject({ state: 'restart_required', last_error: { code: 'release_outcome_unknown' } });
+  });
+
   test('R7: a branch that resists deletion after the release is a warning on the receipt, and the preparation is released all the same', async () => {
     await put(ready());
     const { context } = door43({ deleteAnswer: () => Response.json({ message: 'branch is protected' }, { status: 500 }) });
