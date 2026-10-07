@@ -12,6 +12,8 @@ import type { Fetch } from '../../src/door43/api';
 import { openArchive } from '../../src/door43/archive';
 import type { KVNamespace } from '../../src/env';
 import { md5 } from '../../src/model/md5';
+import { MAX_COMMIT_BYTES, batch, commitBytes, commitsForAll, planSnapshot } from '../../src/model/snapshot';
+import type { SnapshotInput, Upload } from '../../src/model/snapshot';
 import { operationContext } from '../../src/operations';
 import type { OperationContext } from '../../src/operations';
 import { releasePlan } from '../../src/operations/release-plan';
@@ -156,7 +158,8 @@ describe('a later release of Pendau (baseline v1.2)', () => {
     expect(writes[0]!.body).toEqual({ new_branch_name: 'temp-tca-release/v1.3.0', old_ref_name: TAG_SHA });
     const commit = writes[1]!.body;
     expect(commit.branch).toBe('temp-tca-release/v1.3.0');
-    expect((commit.files as { path: string; operation: string }[]).map(file => `${file.operation} ${file.path}`)).toEqual(['upload ingredients/GEN.usfm', 'upload ingredients/MAT.usfm', 'upload metadata.json']);
+    // Genesis is not on the release's commit, so it is created; Matthew is, so it is replaced (E27).
+    expect((commit.files as { path: string; operation: string }[]).map(file => `${file.operation} ${file.path}`)).toEqual(['create ingredients/GEN.usfm', 'upload ingredients/MAT.usfm', 'upload metadata.json']);
     expect(decodeContent(fileOf(commit, 'ingredients/MAT.usfm')!)).toBe(fixtures.changedMat);
     expect(decodeContent(fileOf(commit, 'ingredients/GEN.usfm')!)).toBe(fixtures.newGen);
     // The plan announced the branch and one commit on it; the receipt wrote no more (W5), on the branch of the confirmed version (R3).
@@ -272,7 +275,7 @@ describe('what the prepare refuses, writing nothing', () => {
   });
 
   test('R7, X1: a commit Door43 refuses is commit_failed, the branch is kept, nothing is retried, and the preparation records the failure as retryable; a second attempt finds the branch and is preparation_active', async () => {
-    const { writes, run } = await prepare({ commitAnswer: () => Response.json({ message: 'refused by the test' }, { status: 500 }) }, carried({ gen: 'include' }));
+    const { plan, writes, run } = await prepare({ commitAnswer: () => Response.json({ message: 'refused by the test' }, { status: 500 }) }, carried({ gen: 'include' }));
     const error = (await failure(run()))!;
     expect(error.code).toBe('commit_failed');
     expect(error.message).toBe('Commit failed: refused by the test.');
@@ -281,9 +284,17 @@ describe('what the prepare refuses, writing nothing', () => {
     expect(kept.state).toBe('retryable_failure');
     expect(kept.last_error).toMatchObject({ code: 'commit_failed', retryable: true, request_id: 'request-1' });
     expect(kept.snapshot).toMatchObject({ branch: 'temp-tca-release/v1.3.0', commit_sha: 'a000000000000000000000000000000000000000' });
-    expect(kv.entries.has('receipt:no')).toBe(false);
+    expect(kv.entries.has(`receipt:${plan.id}`)).toBe(false);
     const again = await prepare({ branchAnswer: () => Response.json({ message: 'branch already exists' }, { status: 409 }) }, carried({ gen: 'include' }));
     expect((await failure(again.run()))!.code).toBe('preparation_active');
+  });
+
+  test('R7: a branch Door43 created (201) with an answer that cannot be read is still recorded as a retryable preparation on the release\'s commit, and no commit is sent', async () => {
+    const { writes, run } = await prepare({ branchAnswer: () => Response.json({}, { status: 201 }) }, carried({ gen: 'include' }));
+    expect((await failure(run()))!.code).toBe('door43_unavailable');
+    expect(writes.map(write => write.path.split('/').pop())).toEqual(['branches']);
+    const kept = JSON.parse(kv.entries.get('preparation:bahtraku/Perjanjian-Baru-Pendau/v1.3.0')!) as Preparation;
+    expect(kept).toMatchObject({ state: 'retryable_failure', last_error: { code: 'door43_unavailable' }, snapshot: { commit_sha: TAG_SHA } });
   });
 
   test('a repeated prepare of the same plan answers the stored receipt and writes nothing more', async () => {
@@ -294,5 +305,46 @@ describe('what the prepare refuses, writing nothing', () => {
     expect(second).toEqual(first);
     expect(live.writes).toEqual([]);
     expect(writes).toHaveLength(2);
+  });
+});
+
+describe('the snapshot model', () => {
+  const MiB = 1024 * 1024;
+  const unit = (path: string, sha: string) => ({ id: 'mat', path, title: 'Matthew', sha, size: 10 });
+  const input = (over: Partial<SnapshotInput> = {}): SnapshotInput => ({
+    project_type: 'bible',
+    from_release: true,
+    candidates: [{ id: 'mat', group: 'changed_released', selection: 'include', default_branch: unit('ingredients/41-MAT.usfm', 'b1'), baseline: unit('ingredients/MAT.usfm', 'a1') }],
+    selection: { mat: 'include' },
+    branch: { files: [], units: new Map(), administrative: ['README.md'], unknown: ['ingredients/notes.txt'], missing: [] },
+    branch_blobs: new Map([['ingredients/41-MAT.usfm', 'b1'], ['README.md', 'r1'], ['ingredients/notes.txt', 'n1']]),
+    start_blobs: new Map([['ingredients/MAT.usfm', 'a1'], ['README.md', 'r1'], ['ingredients/notes.txt', 'n0'], ['.gitea/workflows/check.yml', 'w0'], ['metadata.json', 'm0']]),
+    sizes: new Map([['ingredients/41-MAT.usfm', 10], ['ingredients/notes.txt', 3]]),
+    unknown_included: [],
+    metadata_size: 5,
+    ...over,
+  });
+  const ingredientsAfter = (plan: ReturnType<typeof planSnapshot>, start: ReadonlyMap<string, string>) => {
+    const tree = new Set(start.keys());
+    for (const write of plan.writes) if (write.operation === 'delete') tree.delete(write.path);
+    else tree.add(write.path);
+    return [...tree].filter(path => path.startsWith('ingredients/')).sort();
+  };
+
+  test('R2, S5: a renamed book leaves no copy at its old path and an unknown file not included is deleted, so under ingredients/ the tree after the writes is exactly snapshot.files', () => {
+    const plan = planSnapshot(input());
+    expect(plan.writes.filter(write => write.operation === 'delete').map(write => write.path)).toEqual(['ingredients/MAT.usfm', 'ingredients/notes.txt']);
+    expect(ingredientsAfter(plan, input().start_blobs)).toEqual(plan.files.map(file => file.path).filter(path => path.startsWith('ingredients/')).sort());
+    const kept = planSnapshot(input({ unknown_included: ['ingredients/notes.txt'] }));
+    expect(kept.writes.filter(write => write.operation === 'delete').map(write => write.path)).toEqual(['ingredients/MAT.usfm']);
+    expect(ingredientsAfter(kept, input().start_blobs)).toEqual(['ingredients/41-MAT.usfm', 'ingredients/notes.txt']);
+  });
+
+  test('Q22, W5: the plan\'s count and the batcher agree on a 20 MiB book and a 20 MiB administrative file; the metadata counts toward the ceiling; a size the tree lacks takes a commit of its own', () => {
+    const up = (path: string, size: number): Upload => ({ operation: 'upload', path, size, source: 'default_branch', unit: null });
+    expect(commitsForAll([20 * MiB, 20 * MiB, 1000])).toBe(2);
+    expect(batch([up('ingredients/MAT.usfm', 20 * MiB), up('LICENSE.md', 20 * MiB), up('metadata.json', 1000)], [])).toHaveLength(2);
+    expect(batch([up('ingredients/MAT.usfm', MAX_COMMIT_BYTES), up('metadata.json', 1000)], []).map(commitBytes)).toEqual([MAX_COMMIT_BYTES, 1000]);
+    expect(commitsForAll([10, null, 10])).toBe(3);
   });
 });

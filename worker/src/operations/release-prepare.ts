@@ -37,7 +37,7 @@ import { classifyFiles } from '../model/classify';
 import { md5 } from '../model/md5';
 import { releaseNotesDraft } from '../model/notes';
 import { classifyProject } from '../model/project';
-import { planSnapshot } from '../model/snapshot';
+import { MAX_COMMIT_BYTES, commitBytes, planSnapshot } from '../model/snapshot';
 import type { SnapshotWrite } from '../model/snapshot';
 import { compareVersions, parseVersion, proposeVersion } from '../model/version';
 import type { OperationContext } from './context';
@@ -151,11 +151,12 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
   const current = await metadataOf(branchArchive, payload.default_branch.sha);
   const branchFiles = classifyFiles(current, branchArchive.entries);
   for (const path of input.unknown_included) if (!branchFiles.unknown.includes(path)) throw validation('unknown_included', `${path} is not an unknown file of the default branch.`);
-  const bytesByPath = new Map<string, Uint8Array>();
+  // Only sizes and checksums are kept here; the bytes to upload are inflated again per commit, so the Worker holds one commit's content at a time (Q22, E30).
+  const sizeByPath = new Map<string, number>();
   const files: SnapshotFile[] = [];
   const take = async (archive: Archive, path: string, keep: boolean) => {
     const bytes = await archive.bytes(path);
-    if (keep) bytesByPath.set(path, bytes);
+    if (keep) sizeByPath.set(path, bytes.length);
     files.push({ path, size: bytes.length, md5: md5(bytes) });
   };
   let base: ProjectMetadata | null = null;
@@ -168,12 +169,13 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
     if (candidate.selection === 'include' && candidate.default_branch) await take(branchArchive, candidate.default_branch.path, true);
     else if (candidate.selection === 'carry_forward' && candidate.baseline && tagArchive) await take(tagArchive, candidate.baseline.path, false);
   }
+  tagArchive = null;
   for (const path of branchFiles.administrative) {
     const bytes = await branchArchive.bytes(path);
-    bytesByPath.set(path, bytes);
+    sizeByPath.set(path, bytes.length);
     if (path.startsWith('ingredients/')) files.push({ path, size: bytes.length, md5: md5(bytes) });
   }
-  for (const path of input.unknown_included) bytesByPath.set(path, await branchArchive.bytes(path));
+  for (const path of input.unknown_included) sizeByPath.set(path, (await branchArchive.bytes(path)).length);
 
   let merged: ReturnType<typeof mergeReleaseMetadata>;
   try {
@@ -183,11 +185,11 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
     throw error;
   }
   const metadataBytes = new TextEncoder().encode(`${JSON.stringify(merged.metadata, null, 2)}\n`);
-  bytesByPath.set('metadata.json', metadataBytes);
 
   // The blobs of the default branch and of the ref the branch starts from (E19): what is already there is not uploaded, what is deleted needs its SHA (E21).
   const branchTree = await readTree(client, owner, repo, payload.default_branch.sha);
   const startTree = fromRelease ? await readTree(client, owner, repo, startSha) : branchTree;
+  const startBlobs = new Map(startTree.files.map(file => [file.path, file.sha]));
   const snapshot = planSnapshot({
     project_type: payload.project_type,
     from_release: fromRelease,
@@ -195,13 +197,16 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
     selection,
     branch: branchFiles,
     branch_blobs: new Map(branchTree.files.map(file => [file.path, file.sha])),
-    start_blobs: new Map(startTree.files.map(file => [file.path, file.sha])),
-    sizes: new Map(branchTree.files.map(file => [file.path, file.size ?? 0])),
+    start_blobs: startBlobs,
+    // The byte lengths read, so a size the tree does not give still counts (Q22).
+    sizes: sizeByPath,
     unknown_included: input.unknown_included,
     metadata_size: metadataBytes.length,
   });
   const announced = ((stored.plan as unknown as ReleasePlan).would_write ?? []).filter(write => write.kind === 'commit').length;
   if (snapshot.commits.length > announced) throw new CatalogError('unexpected', { details: { reason: 'the snapshot needs more commits than the plan announced', announced, needed: snapshot.commits.length } });
+  const oversized = snapshot.commits.find(commit => commitBytes(commit) > MAX_COMMIT_BYTES);
+  if (oversized) throw new CatalogError('unexpected', { details: { reason: 'a file of the snapshot is larger than one commit may carry', bytes: commitBytes(oversized), ceiling: MAX_COMMIT_BYTES } });
 
   const notes = releaseNotesDraft({
     owner,
@@ -220,8 +225,6 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
   // The writes (R3): the branch, then the commits, each sent once (X1), all on the branch.
   const started = context.now();
   const target = `${owner}/${repo}@${branchName}`;
-  const branch = await createBranch(client, owner, repo, branchName, startSha);
-  const wrote: ReleasePrepareReceipt['wrote'] = [{ kind: 'branch', target, sha: branch.sha }];
   const at = () => context.now().toISOString();
   const history: Preparation['history'] = [
     { at: (stored.plan as unknown as ReleasePlan).created_at, from: null, to: 'selecting', event: 'release.plan' },
@@ -243,23 +246,44 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
     history,
     freshness: { read_at: at(), source: 'live', age_seconds: 0 },
   });
+  // Once Door43 holds the branch, every failure is stored as `retryable_failure` before it is reported, so the branch never lacks its preparation (R7, X1).
+  const recordFailure = async (commitSha: string, error: unknown, step: string) => {
+    const known = error instanceof CatalogError ? error : new CatalogError('unexpected', { details: { reason: error instanceof Error ? error.message : String(error) } });
+    history.push({ at: at(), from: 'snapshot_prepared', to: 'retryable_failure', event: `${step}: ${known.code}` });
+    await context.plans.putPreparation(owner, repo, version, preparation('retryable_failure', commitSha, errorShape(known, context.requestId)));
+  };
 
+  let branch: { sha: string };
+  try {
+    branch = await createBranch(client, owner, repo, branchName, startSha);
+  } catch (error) {
+    // Door43 created the branch (201) but its answer could not be read: the branch exists, so its preparation is stored too.
+    if (error instanceof CatalogError && error.details.door43_status === 201) await recordFailure(startSha, error, 'branch');
+    throw error;
+  }
+  const wrote: ReleasePrepareReceipt['wrote'] = [{ kind: 'branch', target, sha: branch.sha }];
+
+  // A path the start ref lacks is created; one it has is replaced by `upload` (E27). Bytes are inflated for this commit only.
+  const commitFilesOf = async (writes: readonly SnapshotWrite[]): Promise<CommitFile[]> => {
+    const out: CommitFile[] = [];
+    for (const write of writes) {
+      if (write.operation === 'delete') out.push({ path: write.path, operation: 'delete', sha: write.sha });
+      else out.push({ path: write.path, content: write.path === 'metadata.json' ? metadataBytes : await branchArchive.bytes(write.path), operation: startBlobs.has(write.path) ? 'upload' : 'create' });
+    }
+    return out;
+  };
   let last: Commit | null = null;
   for (const [index, batch] of snapshot.commits.entries()) {
-    const commitFilesOf = (writes: readonly SnapshotWrite[]): CommitFile[] =>
-      writes.map(write => (write.operation === 'upload' ? { path: write.path, content: bytesByPath.get(write.path)!, operation: 'upload' } : { path: write.path, operation: 'delete', sha: write.sha }));
     try {
       last = await commitFiles(client, owner, repo, {
         message: `Release ${version}: snapshot${snapshot.commits.length > 1 ? ` (${index + 1} of ${snapshot.commits.length})` : ''}\n\nPrepared by ${context.application.name} ${context.application.version} from ${payload.default_branch.name} at ${payload.default_branch.sha.slice(0, 10)}.`,
         branch: branchName,
-        files: commitFilesOf(batch),
+        files: await commitFilesOf(batch),
       });
       wrote.push({ kind: 'commit', target, sha: last.sha, url: last.url });
     } catch (error) {
       // The branch is kept (R7), nothing is retried (X1): the preparation records the failure for the retry.
-      if (!(error instanceof CatalogError)) throw error;
-      history.push({ at: at(), from: 'snapshot_prepared', to: 'retryable_failure', event: `commit ${index + 1} of ${snapshot.commits.length}: ${error.code}` });
-      await context.plans.putPreparation(owner, repo, version, preparation('retryable_failure', last?.sha ?? branch.sha, errorShape(error, context.requestId)));
+      await recordFailure(last?.sha ?? branch.sha, error, `commit ${index + 1} of ${snapshot.commits.length}`);
       throw error;
     }
   }
