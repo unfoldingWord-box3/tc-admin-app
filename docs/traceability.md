@@ -69,12 +69,12 @@ Keep this file current: an issue's Traceability section and its row here say the
 
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [#33](https://github.com/unfoldingWord-box3/tc-admin-app/issues/33) Candidate detection and selection states | §10; domain §4 | 0005, 0010, 0013 | R1, R2, R4 | E18, E19, Q24 | `release.plan` | model/candidates | S3, S4, S5, S8 |
+| [#33](https://github.com/unfoldingWord-box3/tc-admin-app/issues/33) Candidate detection and selection states | §10; domain §4 | 0005, 0010, 0013 | R1, R2, R4, R5, A2, W2 | E14, E18, E19, E20, E36, E47, E52, Q24 | `release.plan` | model/candidates, door43/trees, door43/catalog, operations/release-plan | S3, S4, S5, S8 |
 | [#34](https://github.com/unfoldingWord-box3/tc-admin-app/issues/34) Snapshot assembly | §10; arch §3 | 0003, 0010, 0013 | R1, R2, R3, R5, R7, W2, W5 | E4, Q3, Q12, Q13, Q22, Q24 | `release.prepare` | operations/release-prepare | S3, S8 |
 | [#35](https://github.com/unfoldingWord-box3/tc-admin-app/issues/35) Metadata merge | §7, §10 | 0008, 0010, 0013 | R2, R10 | E5, Q1, Q7, Q8, Q24 | `release.prepare` | model/burrito | S3, S4, S8 |
 | [#36](https://github.com/unfoldingWord-box3/tc-admin-app/issues/36) Health poll | §9; arch §3 | 0007 | H1, H2 | Q2, Q6 | `preparation.read` | door43/health, operations | S6 |
-| [#37](https://github.com/unfoldingWord-box3/tc-admin-app/issues/37) Version calculation | §10; domain §7 | 0013 | R9 | E9, Q19, Q24 | `release.plan`, `release.create` | model/version | S8 |
-| [#38](https://github.com/unfoldingWord-box3/tc-admin-app/issues/38) Release notes | §10 | 0013 | R2 | Q24 | `release.plan`, `release.create` | operations, web | S4, S5, S8 |
+| [#37](https://github.com/unfoldingWord-box3/tc-admin-app/issues/37) Version calculation | §10; domain §7 | 0013 | R9 | E9, Q19, Q24 | `release.plan` (the proposal, built with #33), `release.create` (the edit) | model/version | S8 |
+| [#38](https://github.com/unfoldingWord-box3/tc-admin-app/issues/38) Release notes | §10 | 0013 | R2 | Q24 | `release.plan` (the draft, built with #33), `release.create` (the confirmed notes) | model/notes, operations, web | S4, S5, S8 |
 | [#39](https://github.com/unfoldingWord-box3/tc-admin-app/issues/39) Create, pre-release, promote | §10 | 0003 | R3, R7, R8, A2 | Q3, Q5 | `release.create`, `release.promote` | door43/api, operations | S7 |
 | [#40](https://github.com/unfoldingWord-box3/tc-admin-app/issues/40) Stale source and lost response | §10, §11; arch §6 | — | R5, R6, X1, X2 | — | `release.lookup`, error catalog | operations | S6 |
 | [#58](https://github.com/unfoldingWord-box3/tc-admin-app/issues/58) Discard a preparation | §10 | 0003 | R7, A2 | Q14 | `preparation.discard` | operations, door43/api | — |

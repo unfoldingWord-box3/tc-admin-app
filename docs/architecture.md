@@ -252,9 +252,10 @@ worker/
     host.ts          the configured host, QA or production only
     api.ts           reads with the session token, pagination (P1)
     auth.ts          OAuth with PKCE, code exchange, the signed-in account from /user
-    repos.ts         repository search and permissions read strictly (P2); whether a name is taken; the account's creation rights (E43)
-    catalog.ts       the catalog view of a repository (#19)
     archive.ts       the Scripture Burrito archive of a ref, opened from its central directory, each file inflated on demand (E34, E4, E53; #18)
+    repos.ts         repository search and permissions read strictly (P2); one repository; whether a name is taken; the account's creation rights (E43)
+    catalog.ts       the catalog view of a repository (#19); its stages and the catalog entry of one ref (E14, E20; #33)
+    trees.ts         the recursive git tree of a ref, every page (E19, E52; #33)
     languages.ts     the full language list and an owner's languages, in glossary names (E25; #28)
     writes.ts        repository creation and the multi-file commit, sent once and never retried, no delete (W5, X1, A3, W4; #30)
                      planned: health (#36), branches, tags, releases (#34, #39)
@@ -269,6 +270,10 @@ worker/
     md5.ts           ingredient checksums (R10)
     license-cc-by-sa-4.0.ts  the license text of ingredients/license.md (Q20)
                      planned: classify (#20, #45), candidates (#33), version (#37), states
+    candidates.ts    candidate detection by blob SHA, the R4 defaults, removals, administrative files (#33)
+    version.ts       the version rules: coercion, baseline, increment (R9; #37)
+    notes.ts         the release notes draft (#38)
+                     planned: burrito reader (#17), classify (#20, #45), states
   src/operations/    one module per catalog operation, plus shared preconditions
     index.ts         the built operations by name
     context.ts       what every operation receives, with the session's Door43 client (A3)
@@ -280,6 +285,7 @@ worker/
     project-create-apply.ts  project.create.apply: the first Door43 writes, idempotent by plan id (#30)
     language-list.ts  language.list: the wizard's language list, each tag marked as accepted or not (#28)
     owner-list.ts    owner.list: the owners the account may create a project in, from its teams (E43, A2; #28)
+    release-plan.ts  release.plan: candidates, defaults, version, notes, bound to both refs (#33)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)

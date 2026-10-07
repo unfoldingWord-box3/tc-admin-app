@@ -42,8 +42,8 @@ export interface ProjectMetadata {
     name: LocalizedText;
     abbreviation: LocalizedText;
     description: LocalizedText;
-    /** The one primary id: its authority, id, and revision (`identification.primary` holds exactly one authority, E44). */
-    primary: { authority: string; id: string; revision: string | null; timestamp: string | null } | null;
+    /** The primary identification: its one authority (E44) and every id under it, as written, none chosen over another. */
+    primary: { authority: string; ids: { id: string; revision: string | null; timestamp: string | null }[] } | null;
   };
   languages: { tag: string; name: LocalizedText; direction: 'ltr' | 'rtl' | null }[];
   /** `type.flavorType.currentScope` as written: book codes, uppercase, to chapter or verse ranges. */
@@ -96,7 +96,8 @@ export function classifyIngredient(path: string, scope: Scope | null, projectTyp
   const books = Object.keys(scope);
   const book = books.length === 1 ? bookId(books[0]!) : null;
   if (projectType === 'bible' && book) return { kind: 'book', unit: book };
-  if (projectType === 'obs') return { kind: 'administrative', unit: null };
+  // An Open Bible Stories ingredient with a scope that is no story is neither administrative, which has no scope, nor a story: other.
+  if (projectType === 'obs') return { kind: 'other', unit: null };
   return { kind: 'other', unit: null };
 }
 
@@ -117,9 +118,12 @@ export function readMetadata(document: unknown): ProjectMetadata {
     const authorities = isRecord(identification.primary) ? Object.entries(identification.primary) : [];
     const [authority, ids] = authorities[0] ?? [];
     const idEntries = isRecord(ids) ? Object.entries(ids) : [];
-    if (authorities.length !== 1 || idEntries.length !== 1) throw new MetadataError('identification.primary does not hold exactly one authority and one id (E44)');
-    const [id, detail] = idEntries[0]!;
-    if (authority && id) primary = { authority, id, revision: text(isRecord(detail) ? detail.revision : null), timestamp: text(isRecord(detail) ? detail.timestamp : null) };
+    // The schema holds `primary` to exactly one authority and allows several ids under it (E44): all are kept, none chosen.
+    if (authorities.length !== 1 || !authority || idEntries.length === 0) throw new MetadataError('identification.primary does not hold exactly one authority with at least one id (E44)');
+    primary = {
+      authority,
+      ids: idEntries.map(([id, detail]) => ({ id, revision: text(isRecord(detail) ? detail.revision : null), timestamp: text(isRecord(detail) ? detail.timestamp : null) })),
+    };
   }
 
   const meta = isRecord(document.meta) ? document.meta : {};
