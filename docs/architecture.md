@@ -264,10 +264,11 @@ worker/
     project.ts       type, editability, coverage (#19)
     health.ts        Door43 severity to health state (H1, H3)
     burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10); the release merge is #35
+    burrito-reader.ts  the Scripture Burrito reader: a project's metadata.json as read, every ingredient classified as book, story, or administrative (#17)
     obs-scope.ts     the fixed currentScope of every Open Bible Stories project (E46)
     md5.ts           ingredient checksums (R10)
     license-cc-by-sa-4.0.ts  the license text of ingredients/license.md (Q20)
-                     planned: burrito reader (#17), classify (#20, #45), candidates (#33), version (#37), states
+                     planned: classify (#20, #45), candidates (#33), version (#37), states
   src/operations/    one module per catalog operation, plus shared preconditions
     index.ts         the built operations by name
     context.ts       what every operation receives, with the session's Door43 client (A3)
