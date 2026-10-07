@@ -6,7 +6,7 @@ import { catalogMessage } from '@tc-admin/shared/schema';
 import type { Preparation } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import { hashRef, releaseHash, releaseTagHash } from '../src/portfolio-labels';
-import { RESTART_MESSAGE, STEPS, canDiscard, canPrepare, counts, releaseGate, removalsOf, selectionOf, selectionToSend, spellVersion, statesFor, stepOf, versionToSend } from '../src/release-stepper';
+import { RESTART_MESSAGE, STEPS, canDiscard, canPrepare, counts, onProjectHost, releaseGate, removalsOf, selectionOf, selectionToSend, spellVersion, statesFor, stepOf, versionToSend } from '../src/release-stepper';
 import type { Book } from '../src/release-stepper';
 
 const books: Book[] = [
@@ -114,4 +114,13 @@ describe('the route', () => {
     expect(hashRef('#/team%20a/en%2Fobs/releases/v1.3.0')).toEqual({ owner: 'team a', repo: 'en/obs', view: 'tag', tag: 'v1.3.0' });
     expect(hashRef('#/a/b/releases/')).toBeNull();
   });
+  test('a release link is shown only on the project\'s own Door43 host, over https', () => {
+    const project = 'https://qa.door43.org/tc-admin-qa/id_tcar1546';
+    expect(onProjectHost('https://qa.door43.org/tc-admin-qa/id_tcar1546/releases/tag/v2.0.1', project)).toBe(true);
+    expect(onProjectHost('https://git.door43.org/tc-admin-qa/id_tcar1546/releases/tag/v2.0.1', project)).toBe(false);
+    expect(onProjectHost('http://qa.door43.org/x', project)).toBe(false);
+    expect(onProjectHost('javascript:alert(1)', project)).toBe(false);
+    expect(onProjectHost('', project)).toBe(false);
+  });
+
 });
