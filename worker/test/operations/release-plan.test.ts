@@ -120,7 +120,7 @@ describe('a later release of a Bible (Pendau, baseline v1.2)', () => {
       tree: [...tagTree.tree.map(entry => (entry.path === 'ingredients/MAT.usfm' ? { ...entry, sha: 'c000000000000000000000000000000000000000' } : entry)), { path: 'ingredients/GEN.usfm', type: 'blob', sha: 'd000000000000000000000000000000000000000' }],
     };
     const branchEntry = base.entries.master as { ingredients: object[] };
-    const entries = { ...base.entries, master: { ...branchEntry, ingredients: [...branchEntry.ingredients, { identifier: 'gen', path: './ingredients/GEN.usfm', title: 'Kejadian', exists: true, is_dir: false }] } };
+    const entries = { ...base.entries, master: { ...branchEntry, commit_sha: branchSha, ingredients: [...branchEntry.ingredients, { identifier: 'gen', path: './ingredients/GEN.usfm', title: 'Kejadian', exists: true, is_dir: false }] } };
     const { fetch } = door43({ repo, entries, trees: { [SHA]: tagTree, [branchSha]: branchTree } });
     const plan = await releasePlan(PENDAU, context(fetch));
     const by = Object.fromEntries(plan.preview.books.map(book => [book.id, book]));
@@ -172,6 +172,19 @@ describe('what a plan refuses', () => {
     expect(error.code).toBe('not_releasable');
     expect(error.message).toBe('Resource Container project. Import it into a new project to manage it here.');
     expect(calls.some(call => call.includes('/git/trees/'))).toBe(false);
+    expect(kv.entries.size).toBe(0);
+  });
+
+  test('R5: a catalog entry computed for another commit than the tree is refused as door43_unavailable, and nothing is stored', async () => {
+    const base = pendau();
+    const stale = { ...(base.entries['v1.2'] as object), commit_sha: 'e000000000000000000000000000000000000000' };
+    const { fetch } = door43({ ...base, entries: { ...base.entries, 'v1.2': stale } });
+    const error = (await failure(releasePlan(PENDAU, context(fetch))))!;
+    expect(error.code).toBe('door43_unavailable');
+    expect(kv.entries.size).toBe(0);
+    const unnamed = { ...(base.entries.master as object), commit_sha: undefined };
+    const { fetch: noSha } = door43({ ...base, entries: { ...base.entries, master: unnamed } });
+    expect((await failure(releasePlan(PENDAU, context(noSha))))!.code).toBe('door43_unavailable');
     expect(kv.entries.size).toBe(0);
   });
 

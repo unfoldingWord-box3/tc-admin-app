@@ -45,6 +45,17 @@ export interface ReleasePlanPayload {
 
 const named = (candidates: readonly Candidate[]) => candidates.map(candidate => ({ id: candidate.id, title: (candidate.default_branch ?? candidate.baseline)?.title ?? '' }));
 
+/**
+ * The catalog entry is read by ref name, the tree by commit (R5). An entry Door43
+ * computed for another commit, or one that names none, would map books to paths
+ * the tree does not describe, so the plan is refused and nothing is stored; the
+ * catalog catching up is a retry (`door43_unavailable`).
+ */
+function sameCommit(input: { owner: string; repo: string }, ref: string, expected: string, entrySha: string | null): void {
+  if (entrySha === expected) return;
+  throw new CatalogError('door43_unavailable', { details: { owner: input.owner, repo: input.repo, ref, expected_sha: expected, catalog_sha: entrySha, reason: 'catalog entry not at the commit the repository named' } });
+}
+
 export async function releasePlan(input: ParsedInput<'release.plan'>, context: OperationContext): Promise<ReleasePlan> {
   const client = signedIn(context);
   const { account } = await readAccount(client);
@@ -64,10 +75,12 @@ export async function releasePlan(input: ParsedInput<'release.plan'>, context: O
 
   // Both refs are read at the commit the repository named, so the plan binds to what it compared (R5).
   const [branchEntry, branchTree] = await Promise.all([readCatalogEntry(client, input.owner, input.repo, default_branch.name), readTree(client, input.owner, input.repo, default_branch.sha)]);
+  sameCommit(input, default_branch.name, default_branch.sha, branchEntry.sha);
   const defaultBranch: RefContent = { ingredients: branchEntry.catalog.ingredients, files: branchTree.files };
   let baseline: RefContent | null = null;
   if (latest_full_release) {
     const [tagEntry, tagTree] = await Promise.all([readCatalogEntry(client, input.owner, input.repo, latest_full_release.tag), readTree(client, input.owner, input.repo, latest_full_release.sha)]);
+    sameCommit(input, latest_full_release.tag, latest_full_release.sha, tagEntry.sha);
     baseline = { ingredients: tagEntry.catalog.ingredients, files: tagTree.files };
   }
 
