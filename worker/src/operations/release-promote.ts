@@ -67,6 +67,10 @@ export async function releasePromote(input: ParsedInput<'release.promote'>, cont
     throw error;
   }
   if (promoted.prerelease) throw new CatalogError('promotion_failed', { values: { 'error message': 'Door43 still reports a pre-release' }, details: { owner, repo, tag } });
+  // A 200 for another release, tag, or commit is not the promotion asked for: no preparation follows and no receipt is given (R8, X1).
+  if (promoted.id !== release.id || promoted.tag !== tag || promoted.target_sha !== release.target_sha) {
+    throw new CatalogError('promotion_failed', { values: { 'error message': `Door43 answered with ${promoted.tag} on ${promoted.target_sha || 'no commit'}` }, details: { owner, repo, tag } });
+  }
 
   await follow(promoted, 'release.promote');
   return receipt(promoted, [{ kind: 'release', target: promoted.tag, url: promoted.url }]);

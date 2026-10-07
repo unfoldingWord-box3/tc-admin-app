@@ -63,9 +63,11 @@ export async function releaseCreate(input: ParsedInput<'release.create'>, contex
   if (!access.push && !access.admin) throw new CatalogError('permission_denied', { details: { owner, repo } });
 
   const done = await context.plans.getReceipt<ReleaseCreateReceipt>(releaseReceiptKey(owner, repo, id));
-  if (done && done.account === account.login) return done.receipt;
-
   const stored = await context.plans.getPreparation<Preparation>(owner, repo, id);
+  // A replay answers only the preparation the receipt released: one prepared again under the same id since is a new release (§1 rule 6).
+  const same = stored?.release?.tag === done?.receipt.result.release?.tag && stored?.snapshot?.commit_sha === done?.receipt.result.snapshot?.commit_sha;
+  if (done && done.account === account.login && same) return done.receipt;
+
   if (!stored) throw new CatalogError('not_found', { details: { owner, repo, preparation_id: id } });
   if (!stored.snapshot) throw new CatalogError('health_blocked', { message: 'The release snapshot has not been prepared.', details: { state: stored.state } });
   const retrying = stored.state === 'retryable_failure' && stored.last_error?.code === 'release_failed';
