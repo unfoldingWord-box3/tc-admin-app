@@ -6,6 +6,7 @@ import type { OperationContext } from './context';
 import { languageList } from './language-list';
 import { ownerList } from './owner-list';
 import { portfolioList } from './portfolio-list';
+import { preparationRead } from './preparation-read';
 import { projectCreateApply } from './project-create-apply';
 import { projectCreatePlan } from './project-create-plan';
 import { releasePlan } from './release-plan';
@@ -25,6 +26,7 @@ export const HANDLERS: OperationHandlers = {
   'owner.list': ownerList,
   'release.plan': releasePlan,
   'release.prepare': releasePrepare,
+  'preparation.read': preparationRead,
 };
 
 export { operationContext, signedIn } from './context';

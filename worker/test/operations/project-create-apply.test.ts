@@ -157,7 +157,7 @@ describe('a successful apply', () => {
       metadata_format: 'sb',
       editability: { state: 'editable' },
       coverage: { present: 0, target: 27, scope: 'nt', basis: 'archive' },
-      health: { state: 'never_checked', severity_raw: null, ref: 'master', checked_at: null, issue_count: null, source: 'door43' },
+      health: { state: 'never_checked', severity_raw: null, ref: 'master', checked_at: null, issue_count: null, issues: null, source: 'door43' },
       latest_full_release: null,
       default_branch_head: { sha: firstCommit.commit.sha, committed_at: '2026-09-22T19:49:22Z' },
       active_preparation: null,

@@ -234,7 +234,7 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
     bound_to: bound,
     selection: { new: included('new').map(candidate => candidate.id), revised: included('changed_released').map(candidate => candidate.id), unknown_included: [...input.unknown_included] },
     snapshot: { branch: branchName, commit_sha: commitSha, files: snapshot.files },
-    health: { state: 'checking', severity_raw: null, ref: branchName, checked_at: null, issue_count: null, source: 'door43' },
+    health: { state: 'checking', severity_raw: null, ref: branchName, checked_at: null, issue_count: null, issues: null, source: 'door43' },
     requires_acknowledgement: false,
     version: { baseline_tag: payload.baseline?.tag ?? null, proposed: proposal.proposed, confirmed: version },
     notes: { draft: notes, confirmed: null },

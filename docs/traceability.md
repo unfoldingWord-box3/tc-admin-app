@@ -53,7 +53,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#23](https://github.com/unfoldingWord-box3/tc-admin-app/issues/23) Writable discovery | §2, §5 | 0002, 0014 | P1, P2 | E7, E40, E41, E42 | `portfolio.list` | door43/api, operations | — |
 | [#24](https://github.com/unfoldingWord-box3/tc-admin-app/issues/24) Grouping, filters, async analysis | §5 | — | H3, H5 | Q17 | `portfolio.list` | operations, web | — |
-| [#25](https://github.com/unfoldingWord-box3/tc-admin-app/issues/25) Health states | §5, §9; domain §5 | 0007 | H1, H3, H4 | E7, Q2 | `project.read` | model/health, web | — |
+| [#25](https://github.com/unfoldingWord-box3/tc-admin-app/issues/25) Health states | §5, §9; domain §5 | 0007 | H1, H3, H4 | E7, E15, E28, Q2, Q21 | `project.read`, `preparation.read` | model/health, web | — |
 | [#26](https://github.com/unfoldingWord-box3/tc-admin-app/issues/26) Refresh and freshness | §9; arch §4 | 0002 | P3 | — | `project.refresh` | operations, web | — |
 
 ### EPIC: Create a project ([#32](https://github.com/unfoldingWord-box3/tc-admin-app/issues/32))
@@ -72,7 +72,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | [#33](https://github.com/unfoldingWord-box3/tc-admin-app/issues/33) Candidate detection and selection states | §10; domain §4 | 0005, 0010, 0013 | R1, R2, R4, R5, A2, W2 | E14, E18, E19, E20, E36, E47, E52, Q24 | `release.plan` | model/candidates, door43/trees, door43/catalog, operations/release-plan | S3, S4, S5, S8 |
 | [#34](https://github.com/unfoldingWord-box3/tc-admin-app/issues/34) Snapshot assembly | §10; arch §3 | 0003, 0010, 0013 | R1, R2, R3, R4, R5, R7, R9, R10, W2, W5, A2, X1 | E4, E17, E19, E21, E27, E28, E30, E34, Q3, Q12, Q13, Q22, Q24 | `release.prepare` | operations/release-prepare, model/snapshot, door43/branches | S3, S8 |
 | [#35](https://github.com/unfoldingWord-box3/tc-admin-app/issues/35) Metadata merge | §7, §10 | 0008, 0010, 0013 | R2, R10, W1 | E5, E16, E17, E46, Q1, Q7, Q8, Q24 | `release.prepare` (the metadata it writes; wired by #34) | model/burrito, model/burrito-reader | S3, S4, S8 |
-| [#36](https://github.com/unfoldingWord-box3/tc-admin-app/issues/36) Health poll | §9; arch §3 | 0007 | H1, H2 | Q2, Q6 | `preparation.read` | door43/health, operations | S6 |
+| [#36](https://github.com/unfoldingWord-box3/tc-admin-app/issues/36) Health poll | §9; arch §3 | 0007 | H1, H2, H3, R5 | E15, E28, Q2, Q6 | `preparation.read` | door43/health, model/health, operations/preparation-read | S6 |
 | [#37](https://github.com/unfoldingWord-box3/tc-admin-app/issues/37) Version calculation | §10; domain §7 | 0013 | R9 | E9, Q19, Q24 | `release.plan` (the proposal, built with #33), `release.create` (the edit) | model/version | S8 |
 | [#38](https://github.com/unfoldingWord-box3/tc-admin-app/issues/38) Release notes | §10 | 0013 | R2 | Q24 | `release.plan` (the draft, built with #33), `release.create` (the confirmed notes) | model/notes, operations, web | S4, S5, S8 |
 | [#39](https://github.com/unfoldingWord-box3/tc-admin-app/issues/39) Create, pre-release, promote | §10 | 0003 | R3, R7, R8, A2 | Q3, Q5 | `release.create`, `release.promote` | door43/api, operations | S7 |

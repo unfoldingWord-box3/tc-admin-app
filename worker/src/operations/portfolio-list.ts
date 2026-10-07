@@ -37,7 +37,7 @@ export function projectSummary(repo: Door43SearchRepository, access: RepositoryA
   return {
     ...repositoryIdentity(repo),
     ...classifyProject(projectCatalog(repo)),
-    health: { state: healthFromSeverity(severity), severity_raw: severity, ref: null, checked_at: null, issue_count: null, source: 'door43' },
+    health: { state: healthFromSeverity(severity), severity_raw: severity, ref: null, checked_at: null, issue_count: null, issues: null, source: 'door43' },
     permissions: { push: access.push, admin: access.admin, checked_at: checkedAt },
   };
 }

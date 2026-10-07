@@ -7,6 +7,13 @@ import { OperationErrorShape } from './errors';
 import { Health } from './project';
 import { PreparationState } from './states';
 
+/**
+ * The health poll after a push (#5, Q2, E28): the client reads the preparation every
+ * `interval_ms` for `window_ms` after the push, then offers a refresh. The Worker reads
+ * Door43 once per `preparation.read`.
+ */
+export const HEALTH_POLL = { interval_ms: 5_000, window_ms: 180_000 } as const;
+
 export const Preparation = z.object({
   /** The version the preparation was created with; its temporary branch is `temp-tca-release/<version>`. */
   id: z.string(),
