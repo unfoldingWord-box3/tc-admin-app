@@ -56,7 +56,7 @@ Issues: #34, #40.
 When release creation returns an ambiguous result, the Worker looks up the expected tag and release on Door43 before any retry. If one exists it is shown and nothing new is created.
 Source: architecture §6 duplicate release protection; product spec §11.
 Enforced in: `worker/src/operations/release-create` (ambiguous result path); `release-lookup` over `GET /repos/{owner}/{repo}/releases/tags/{tag}` (E21).
-Verified by: simulated lost response followed by a fixture where the tag exists; retry returns `release_exists` and performs no write.
+Verified by: simulated lost response followed by a fixture where the tag exists; retry returns `release_exists` and performs no write. So far: the `R6:` tests in `worker/test/operations/release-lookup.test.ts` (the lookup answers found or not found from the recorded releases, with the commit the release targets, and writes nothing); the retry path is #39 and #40.
 Issues: #40.
 
 ### R7 — The temporary branch outlives failure
