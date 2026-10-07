@@ -256,6 +256,7 @@ worker/
     catalog.ts       the catalog view of a repository (#19)
     languages.ts     the full language list and an owner's languages, in glossary names (E25; #28)
     writes.ts        repository creation and the multi-file commit, sent once and never retried, no delete (W5, X1, A3, W4; #30)
+    releases.ts      one release by its tag, with the commit it targets (E21, E20, R6; #40); the release writes join with #39
                      planned: archive (#18), health (#36), branches, tags, releases (#34, #39)
   src/model/         no I/O
     books.ts         book and story ids (#19)
@@ -276,6 +277,7 @@ worker/
     plans.ts         plans and receipts in Workers KV, by plan id (operations.md §2)
     project-create-plan.ts  project.create.plan (#29)
     project-create-apply.ts  project.create.apply: the first Door43 writes, idempotent by plan id (#30)
+    release-lookup.ts  release.lookup: is there a release under this tag, and which commit does it target (R6; #40)
     language-list.ts  language.list: the wizard's language list, each tag marked as accepted or not (#28)
     owner-list.ts    owner.list: the owners the account may create a project in, from its teams (E43, A2; #28)
                      planned: one module per remaining operation; preconditions (#14)

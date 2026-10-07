@@ -261,8 +261,9 @@ Candidate detection and everything the manager needs to decide, with no writes.
 ### `release.lookup`
 
 - Inputs: `{ owner, repo, tag }`.
-- Door43 reads: `GET /repos/{owner}/{repo}/releases/tags/{tag}` (E21).
-- Returns: `{ found: boolean, release: { tag, url, prerelease, target_sha } | null }`. Used before any retry after an ambiguous outcome (R6).
+- Door43 reads: `GET /repos/{owner}/{repo}/releases/tags/{tag}` (E21). Door43's 404, which a missing repository also answers, is `found: false`, not a failure.
+- Returns: `{ found: boolean, release: { tag, url, prerelease, target_sha } | null }`. `target_sha` is the commit the release targets: from the catalog entry Door43 carries on every release (`door43_metadata.commit_sha`, E20), since a release made on Door43's site names a branch as its target (Pendau's `v1.2` names `master`); from the target itself when it is a commit (one tC Admin makes, E27); empty when neither names one. Used before any retry after an ambiguous outcome (R6); a release is found after its temporary branch is deleted (E29).
+- Errors: `session_expired`, `door43_unavailable`.
 
 ### `release.promote`
 
