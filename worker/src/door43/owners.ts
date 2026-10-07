@@ -1,6 +1,6 @@
 // The owners an import can come from (#77): the account's organizations,
-// `GET /user/orgs` (recorded with E43), and every owner with a catalog entry
-// whose name contains a search, `GET /catalog/list/owners` (E35), both mapped
+// `GET /user/orgs` (E43, E61), and every owner with a catalog entry whose name
+// contains a search, `GET /catalog/list/owners` (E35, E61), both mapped
 // to an owner's login and display name here. Door43's field names stop in
 // this module.
 
@@ -20,7 +20,7 @@ function owner(login: unknown, fullName: unknown): Owner | null {
   return { login, name };
 }
 
-/** One organization as `GET /user/orgs` returns it (fixture of E43). Only the fields read. */
+/** One organization as `GET /user/orgs` returns it (E43, E61). Only the fields read. */
 interface Door43Organization {
   id: number;
   username?: unknown;
@@ -29,9 +29,10 @@ interface Door43Organization {
 }
 
 /**
- * The organizations the account belongs to (`GET /user/orgs`), every page, as the
- * account's teams are read (E43, P1). The organization's login is `username`, or
- * `name` where Door43 gives only that, as for a team's organization.
+ * The organizations the account belongs to (`GET /user/orgs`), every page: the list
+ * pages by `page` and `limit` and ends on an empty page (E61), as the account's teams
+ * do (E43). The organization's login is `username`, or `name` where Door43 gives only
+ * that, as for a team's organization.
  */
 export async function readOrganizations(client: Door43Client): Promise<Owner[]> {
   const organizations = await readPages<Door43Organization>(client, '/user/orgs');
@@ -47,13 +48,13 @@ interface Door43CatalogOwner {
 /**
  * Every owner, organization or user account, with a catalog entry on a release or
  * its default branch whose name contains `q`
- * (`GET /catalog/list/owners?owner=<q>&partialMatch=1&stage=latest&limit=50`, E35):
- * one request, as recorded. `data: null` is no match, as the catalog's language
- * list answers for an owner it does not know (E25); any other shape is not an
- * answer (`door43_unavailable`), never an empty one.
+ * (`GET /catalog/list/owners?owner=<q>&partialMatch=1&stage=latest`, E35): one
+ * request, which answers every match at once, since the endpoint ignores `limit`
+ * and `page` (E61), so neither is sent. No match is `data: null` (E61); any other
+ * shape is not an answer (`door43_unavailable`), never an empty one.
  */
 export async function searchCatalogOwners(client: Door43Client, q: string): Promise<Owner[]> {
-  const body = await readDoor43<{ data?: unknown } | null>(client, '/catalog/list/owners', { owner: q, partialMatch: '1', stage: 'latest', limit: 50 });
+  const body = await readDoor43<{ data?: unknown } | null>(client, '/catalog/list/owners', { owner: q, partialMatch: '1', stage: 'latest' });
   if (body?.data === null) return [];
   if (!Array.isArray(body?.data)) throw new CatalogError('door43_unavailable', { details: { reason: 'unexpected list shape' } });
   return body.data.flatMap(entry => {

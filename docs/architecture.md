@@ -259,7 +259,7 @@ worker/
     catalog.ts       the catalog view of a repository (#19); its stages and the catalog entry of one ref (E14, E20; #33)
     trees.ts         the recursive git tree of a ref, every page (E19, E52; #33)
     languages.ts     the full language list and an owner's languages, in glossary names (E25; #28)
-    owners.ts        the owners an import can come from: the account's organizations, every page, and the catalog's owners by partial name (E43, E35; #77)
+    owners.ts        the owners an import can come from: the account's organizations, every page, and the catalog's owners by partial name, every match in one answer (E43, E35, E61; #77)
     writes.ts        repository creation and the multi-file commit, uploads and deletions by blob SHA, sent once and never retried (W5, X1, A3, W4; #30, #34)
     branches.ts      the temporary branch a release is prepared on, created from a commit; one already there is preparation_active (E21, E27; #34); its deletion after the release, reported and never thrown (R7; #39, #58)
     health.ts        the health check of one ref, read once per call: a result with its issues, pending, unavailable, or an error (E15, E28; #36)
