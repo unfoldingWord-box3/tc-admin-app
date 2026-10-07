@@ -114,7 +114,7 @@ Moved into Milestone 1 on 1 October 2026 (Q25). Child issues created 5 October 2
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#42](https://github.com/unfoldingWord-box3/tc-admin-app/issues/42) Demo script | §13; [demo-script.md](demo-script.md) | — | R3, R7, R9, H2, A2 | E9, E16, E28, E38, E54, E56, Q6 | the Milestone 1 catalog, one per step | docs/demo-script.md | S1, S3, S7, S8 |
-| [#43](https://github.com/unfoldingWord-box3/tc-admin-app/issues/43) Rehearsals | §13 | — | — | — | the Milestone 1 catalog | — | S1, S3, S7, S9 |
+| [#43](https://github.com/unfoldingWord-box3/tc-admin-app/issues/43) Rehearsals | §13; [demo-script.md](demo-script.md) | — | R1, R3, R7, R9, H2 | E58, Q31 | the Milestone 1 catalog | docs/demo-script.md, fixtures | S1, S3, S7, S8, S9 |
 
 ## Milestone 2 — Manage
 

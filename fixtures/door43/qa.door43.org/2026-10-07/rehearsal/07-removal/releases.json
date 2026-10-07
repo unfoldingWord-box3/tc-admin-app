@@ -1,0 +1,38 @@
+[
+  {
+    "tag_name": "v2.0.0",
+    "prerelease": false,
+    "draft": false,
+    "target_commitish": "3a4c3ded956a600e10e6b87788365bceea918748",
+    "created_at": "2026-10-07T20:22:17Z",
+    "author": "tc-admin-qa",
+    "body": "## Perjanjian-Baru-Pendau v2.0.0\n\nSource: bahtraku/Perjanjian-Baru-Pendau at 6f9dfea341 on master.\nPrevious release: v1.2.2.\n\n### Added\n- None\n\n### Revised\n- None\n\n### Removed\n- 3 John (3JN)\n\n### Carried forward\n26 books unchanged from v1.2.2: MAT, MRK, LUK, JHN, ACT, ROM, 1CO, 2CO, GAL, EPH, PHP, COL, 1TH, 2TH, 1TI, 2TI, TIT, PHM, HEB, JAS, 1PE, 2PE, 1JN, 2JN, JUD, REV\n\n### Unknown files included\n- None"
+  },
+  {
+    "tag_name": "v1.2.2",
+    "prerelease": false,
+    "draft": false,
+    "target_commitish": "efabd06f28851cf08498382e0f9a07b3eb9f77db",
+    "created_at": "2026-10-07T20:18:19Z",
+    "author": "tc-admin-qa",
+    "body": "## Perjanjian-Baru-Pendau v1.2.2\n\nSource: bahtraku/Perjanjian-Baru-Pendau at 6f9dfea341 on master.\nPrevious release: v1.2.1.\n\n### Added\n- None\n\n### Revised\n- Philemon (PHM)\n\n### Removed\n- None\n\n### Carried forward\n26 books unchanged from v1.2.1: MAT, MRK, LUK, JHN, ACT, ROM, 1CO, 2CO, GAL, EPH, PHP, COL, 1TH, 2TH, 1TI, 2TI, TIT, HEB, JAS, 1PE, 2PE, 1JN, 2JN, 3JN, JUD, REV\n\n### Unknown files included\n- None\n\nQA rehearsal of the Milestone 1 demo (#43)."
+  },
+  {
+    "tag_name": "v1.2.1",
+    "prerelease": false,
+    "draft": false,
+    "target_commitish": "40ff914ab3b34f891ab9244f12d5f1ce1a25c0f9",
+    "created_at": "2026-10-07T20:12:05Z",
+    "author": "tc-admin-qa",
+    "body": "## Perjanjian-Baru-Pendau v1.2.1\n\nSource: bahtraku/Perjanjian-Baru-Pendau at 6f9dfea341 on master.\nPrevious release: v1.2.\n\n### Added\n- None\n\n### Revised\n- Titus (TIT)\n\n### Removed\n- None\n\n### Carried forward\n26 books unchanged from v1.2: MAT, MRK, LUK, JHN, ACT, ROM, 1CO, 2CO, GAL, EPH, PHP, COL, 1TH, 2TH, 1TI, 2TI, PHM, HEB, JAS, 1PE, 2PE, 1JN, 2JN, 3JN, JUD, REV\n\n### Unknown files included\n- None"
+  },
+  {
+    "tag_name": "v1.2",
+    "prerelease": false,
+    "draft": false,
+    "target_commitish": "master",
+    "created_at": "2026-07-21T04:43:26Z",
+    "author": "jeane_manuhutu",
+    "body": ""
+  }
+]

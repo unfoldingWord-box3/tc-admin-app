@@ -1,0 +1,12 @@
+{
+  "total_commits": 1,
+  "commits": [
+    {
+      "sha": "efabd06f28851cf08498382e0f9a07b3eb9f77db",
+      "message": "Release v1.2.2: snapshot\n\nPrepared by tC Admin 0.1.0 from master at 6f9dfea341.\n",
+      "parents": [
+        "40ff914ab3b34f891ab9244f12d5f1ce1a25c0f9"
+      ]
+    }
+  ]
+}

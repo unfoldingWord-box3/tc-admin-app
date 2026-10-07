@@ -1,0 +1,38 @@
+[
+  {
+    "name": "master",
+    "commit": {
+      "id": "47bb806a1cc7da9225d775ed25d154ad934b3500",
+      "message": "Create Demo 16 October 2026\n\nmetadata.json, ingredients/license.md, and README.md, written by tC Admin 0.1.0.\n",
+      "url": "https://qa.door43.org/tc-admin-qa-org/id_demo1016/commit/47bb806a1cc7da9225d775ed25d154ad934b3500",
+      "author": {
+        "name": "tc-admin-qa",
+        "email": "[redacted]",
+        "username": "tc-admin-qa"
+      },
+      "committer": {
+        "name": "tc-admin-qa",
+        "email": "[redacted]",
+        "username": "tc-admin-qa"
+      },
+      "verification": {
+        "verified": false,
+        "reason": "gpg.error.not_signed_commit",
+        "signature": "",
+        "signer": null,
+        "payload": ""
+      },
+      "timestamp": "2026-10-07T20:21:16Z",
+      "added": null,
+      "removed": null,
+      "modified": null
+    },
+    "protected": false,
+    "required_approvals": 0,
+    "enable_status_check": false,
+    "status_check_contexts": [],
+    "user_can_push": false,
+    "user_can_merge": false,
+    "effective_branch_protection_name": ""
+  }
+]

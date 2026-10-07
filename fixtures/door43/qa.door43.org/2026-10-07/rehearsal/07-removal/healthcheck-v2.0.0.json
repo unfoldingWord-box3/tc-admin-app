@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "data": {
+    "issues": {
+      "title_has_uw": [],
+      "ingredient_title_is_en": [
+        {
+          "issue_code": "ingredient_title_is_en",
+          "severity_level": "warning",
+          "positive_title": "Project titles have been translated",
+          "negative_title": "Project title is still in English",
+          "details": "The title for the project '**`act`**' is still in English: **`Acts`**",
+          "suggestion": "Edit the <a href=\"/bahtraku/Perjanjian-Baru-Pendau/src/branch/v2.0.0/metadata.json\" target=\"_blank\">metadata.json</a> file and translate the **`title`** of the projects. For example, translate **'Acts'** to the resource's language."
+        }
+      ],
+      "ingredient_empty": [],
+      "release_needed": [],
+      "repo_name_lang_mismatch": [],
+      "language_is_en": [],
+      "ingredient_missing": [],
+      "sb_ingredient_missing": [],
+      "sb_ingredient_mismatch": [],
+      "usfm_invalid": [],
+      "usfm_no_alignment": [],
+      "no_metadata": [],
+      "metadata_invalid": []
+    },
+    "overall_severity_level": "warning",
+    "severity_level_count": {
+      "warning": 1,
+      "error": 0,
+      "success": 0,
+      "info": 0
+    }
+  }
+}
