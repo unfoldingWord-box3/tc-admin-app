@@ -6,6 +6,7 @@
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { crc32 } from 'node:zlib';
 import { CatalogError } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import type { Fetch } from '../../src/door43/api';
@@ -60,7 +61,7 @@ describe('each recorded archive', () => {
   });
 });
 
-/** A zip written by hand with stored entries and a comment, the case Door43's archives do not show (they deflate everything, E53). */
+/** A zip written by hand with stored entries, which Door43's archives do not hold (they deflate every file, E53), and a comment. */
 function storedZip(entries: [string, string][], comment = 'made by the test'): Uint8Array {
   const encoder = new TextEncoder();
   const parts: Uint8Array[] = [];
@@ -73,6 +74,7 @@ function storedZip(entries: [string, string][], comment = 'made by the test'): U
     const view = new DataView(local.buffer);
     view.setUint32(0, 0x04034b50, true);
     view.setUint16(4, 20, true);
+    view.setUint32(14, crc32(data), true);
     view.setUint32(18, data.length, true);
     view.setUint32(22, data.length, true);
     view.setUint16(26, nameBytes.length, true);
@@ -82,6 +84,7 @@ function storedZip(entries: [string, string][], comment = 'made by the test'): U
     centralView.setUint32(0, 0x02014b50, true);
     centralView.setUint16(4, 20, true);
     centralView.setUint16(6, 20, true);
+    centralView.setUint32(16, crc32(data), true);
     centralView.setUint32(20, data.length, true);
     centralView.setUint32(24, data.length, true);
     centralView.setUint16(28, nameBytes.length, true);
@@ -147,22 +150,56 @@ describe('what the client refuses', () => {
     new DataView(lying.buffer).setUint32(30 + 7 + 3 + 24, 5, true);
     expect(await code(openArchive(lying).bytes('f.txt'))).toBe('door43_unavailable');
   });
+
+  test('same-length corruption is refused by the CRC-32 the archive declares, stored or deflated', async () => {
+    const stored = storedZip([['r/f.txt', 'abc']]);
+    stored[37] = stored[37]! ^ 1;
+    expect(await code(openArchive(stored).bytes('f.txt'))).toBe('door43_unavailable');
+    const deflated = bytes('2026-10-07/sb-archives/birch__es-419_tit_text_reg__master.zip');
+    deflated[737] = deflated[737]! ^ 1;
+    expect(await code(openArchive(deflated).bytes('ingredients/TIT.usfm'))).toBe('door43_unavailable');
+  });
+
+  test('deflate data the inflater rejects is door43_unavailable, not a runtime error', async () => {
+    const zip = bytes('2026-10-07/sb-archives/birch__es-419_tit_text_reg__master.zip');
+    const entry = zipEntries(zip).find(raw => raw.path.endsWith('TIT.usfm'))!;
+    zip.fill(0xff, entry.offset, entry.offset + entry.compressed);
+    expect(await code(openArchive(zip).bytes('ingredients/TIT.usfm'))).toBe('door43_unavailable');
+  });
+
+  test('the end record is the one whose comment ends the file; a directory that overruns it or stops short is refused', () => {
+    expect(openArchive(storedZip([['r/f.txt', 'abc']], 'PK\x05\x06 inside the comment')).entries).toEqual([{ path: 'f.txt', size: 3 }]);
+    const overrun = storedZip([['r/f.txt', 'abc']]);
+    new DataView(overrun.buffer).setUint16(30 + 7 + 3 + 28, 200, true);
+    expect(reason(() => openArchive(overrun))).toMatchObject({ code: 'door43_unavailable' });
+    const short = storedZip([['r/a', '1'], ['r/b', '2']]);
+    new DataView(short.buffer).setUint16(short.length - END - 'made by the test'.length + 10, 1, true);
+    expect(reason(() => openArchive(short))).toMatchObject({ code: 'door43_unavailable' });
+  });
+
+  test('an entry path with a dot segment, an empty segment or a backslash, or one listed twice, is refused', () => {
+    for (const entries of [[['r/../x', '1']], [['r//x', '1']], [['r/a\\b', '1']], [['r/a', '1'], ['r/a', '2']]] as [string, string][][]) {
+      expect(reason(() => openArchive(storedZip(entries))), JSON.stringify(entries)).toMatchObject({ code: 'door43_unavailable' });
+    }
+  });
 });
+
+const END = 22;
 
 describe('the download', () => {
   test('A3, E34: the archive is read from the API route with the session token, and nothing else is read or written (R3)', async () => {
     const zip = bytes('2026-10-07/sb-archives/birch__es-419_tit_text_reg__master.zip');
-    const calls: { url: string; method: string; authorization: string | null }[] = [];
+    const calls: { url: string; method: string; redirect: string | undefined; authorization: string | null }[] = [];
     const archive = await readArchive(
       client(async (url, init) => {
-        calls.push({ url, method: init?.method ?? 'GET', authorization: new Headers(init?.headers).get('authorization') });
+        calls.push({ url, method: init?.method ?? 'GET', redirect: init?.redirect, authorization: new Headers(init?.headers).get('authorization') });
         return new Response(zip, { status: 200, headers: { 'content-type': 'application/zip' } });
       }),
       'birch',
       'es-419_tit_text_reg',
       'master',
     );
-    expect(calls).toEqual([{ url: 'https://qa.door43.org/api/v1/repos/birch/es-419_tit_text_reg/sb/master.zip', method: 'GET', authorization: 'Bearer test-only' }]);
+    expect(calls).toEqual([{ url: 'https://qa.door43.org/api/v1/repos/birch/es-419_tit_text_reg/sb/master.zip', method: 'GET', redirect: 'manual', authorization: 'Bearer test-only' }]);
     expect(archive.entries.map(entry => entry.path).sort()).toEqual(['ingredients/LICENSE.md', 'ingredients/TIT.usfm', 'metadata.json']);
     expect(JSON.parse(new TextDecoder().decode(await archive.bytes('metadata.json')))).toMatchObject({ format: 'scripture burrito', meta: { generator: { softwareName: 'go-rc2sb' } } });
   });
@@ -171,5 +208,14 @@ describe('the download', () => {
     expect(await code(readArchive(client(async () => new Response('', { status: 404 })), 'o', 'r', 'gone'))).toBe('not_found');
     expect(await code(readArchive(client(async () => new Response('', { status: 302, headers: { location: 'https://example.org/x.zip' } })), 'o', 'r', 'main'))).toBe('door43_unavailable');
     expect(await code(readArchive(client(async () => new Response('', { status: 401 })), 'o', 'r', 'main'))).toBe('session_expired');
+  });
+
+  test('A3: an owner, repository or ref that is empty, . or .. is refused before any request, so the token never leaves /api/v1/repos', async () => {
+    let calls = 0;
+    const counting = client(async () => (calls++, new Response('', { status: 404 })));
+    for (const [owner, repo, ref] of [['..', '..', 'master'], ['o', '.', 'master'], ['o', 'r', '..'], ['', 'r', 'master']] as const) {
+      expect(await code(readArchive(counting, owner, repo, ref))).toBe('unexpected');
+    }
+    expect(calls).toBe(0);
   });
 });
