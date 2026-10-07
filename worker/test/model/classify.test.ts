@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { openArchive } from '../../src/door43/archive';
 import { MetadataError, classifyIngredient, parseMetadata, readMetadata } from '../../src/model/burrito-reader';
-import { classifyFiles, isRootOrWorkflow, roleOf } from '../../src/model/classify';
+import { classifyFiles, isRootOrWorkflow, roleOf, wellFormed } from '../../src/model/classify';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/', import.meta.url);
 const archiveOf = (path: string) => openArchive(new Uint8Array(readFileSync(new URL(path, fixtures))));
@@ -81,5 +81,36 @@ describe('a unit held by two files', () => {
     const paths = [...archive.entries, { path: 'ingredients/mat-again.usfm' }];
     expect(() => classifyFiles(metadata, paths)).toThrow(MetadataError);
     expect(() => classifyFiles(metadata, paths)).toThrow(/mat/);
+  });
+});
+
+describe('a path that cannot name one file inside the project (bench round 3)', () => {
+  const bad = ['.gitea/../README.md', '../README.md', '/README.md', 'a//b', 'ingredients/../../MAT.usfm', 'ingredients\\MAT.usfm', 'ingredients/MAT.usfm\0'];
+
+  test('is unknown whatever the metadata says, never administrative and never a unit', async () => {
+    const archive = archiveOf('2026-09-21/sb-archives/bahtraku__Perjanjian-Baru-Pendau__master.zip');
+    const metadata = parseMetadata(await archive.bytes('metadata.json'));
+    for (const path of bad) {
+      expect(wellFormed(path), path).toBe(false);
+      expect(roleOf(path, metadata), path).toEqual({ role: 'unknown', unit: null, listed: false });
+      expect(isRootOrWorkflow(path), path).toBe(false);
+    }
+    const classified = classifyFiles(metadata, [...archive.entries, { path: '.gitea/../README.md' }, { path: '../README.md' }]);
+    expect(classified.unknown).toEqual(['../README.md', '.gitea/../README.md']);
+    expect(classified.administrative).not.toContain('.gitea/../README.md');
+  });
+
+  test('metadata that lists such a path, scopeless or scoped to a book, is refused before anything is classified', async () => {
+    const archive = archiveOf('2026-09-21/sb-archives/bahtraku__Perjanjian-Baru-Pendau__master.zip');
+    const document = JSON.parse(new TextDecoder().decode(await archive.bytes('metadata.json'))) as { ingredients: Record<string, unknown> };
+    for (const [path, entry] of [
+      ['.gitea/../README.md', { mimeType: 'text/markdown', size: 1 }],
+      ['../README.md', { mimeType: 'text/markdown', size: 1 }],
+      ['ingredients/../../MAT.usfm', { mimeType: 'text/x-usfm', size: 1, scope: { MAT: [] } }],
+    ] as const) {
+      const listed = readMetadata({ ...document, ingredients: { ...document.ingredients, [path]: entry } });
+      expect(() => classifyFiles(listed, archive.entries), path).toThrow(MetadataError);
+      expect(() => classifyFiles(listed, [...archive.entries, { path }]), path).toThrow(/cannot name one file/);
+    }
   });
 });

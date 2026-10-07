@@ -8,7 +8,7 @@
 // included only after explicit confirmation (S5). Door43 checks that listed
 // ingredients exist, not the reverse, so this is tC Admin's rule. Pure.
 
-import { MetadataError, unitIngredients } from './burrito-reader';
+import { MetadataError } from './burrito-reader';
 import type { ProjectMetadata } from './burrito-reader';
 
 /** A file of a ref, as its git tree lists it (E19) or its archive holds it. */
@@ -23,7 +23,7 @@ export interface ClassifiedFile {
   role: FileRole;
   /** The book or story id, for a book or story. */
   unit: string | null;
-  /** Whether the metadata lists the file; a listed file with no unit is administrative, an unlisted root or `.gitea/` file is too. */
+  /** Whether the metadata lists the file. A listed file without a scope is administrative, a listed one whose scope names no one book is unknown, and an unlisted root or `.gitea/` file is administrative. */
   listed: boolean;
 }
 
@@ -41,15 +41,16 @@ export interface Classification {
 
 export const METADATA_FILE = 'metadata.json';
 
-/** No backslash, and no empty, `.` or `..` segment: a path that names one file of the ref. */
-const wellFormed = (path: string) => !path.includes('\\') && path.split('/').every(segment => segment !== '' && segment !== '.' && segment !== '..');
+/** No backslash, NUL, or leading slash, and no empty, `.` or `..` segment: a path that names one file inside the ref. */
+export const wellFormed = (path: string) => !path.includes('\\') && !path.includes('\0') && path.split('/').every(segment => segment !== '' && segment !== '.' && segment !== '..');
 
 /** A root file (no directory) or a `.gitea/` workflow file: carried with every release, whatever the metadata says (Q22). A malformed path is neither. */
 export const isRootOrWorkflow = (path: string) => wellFormed(path) && (!path.includes('/') || path.startsWith('.gitea/'));
 
-/** What one path is, given the metadata. */
+/** What one path is, given the metadata. A path that cannot name one file inside the ref is unknown whatever the metadata says, so it is never carried and never a unit. */
 export function roleOf(path: string, metadata: ProjectMetadata): Pick<ClassifiedFile, 'role' | 'unit' | 'listed'> {
   if (path === METADATA_FILE) return { role: 'metadata', unit: null, listed: false };
+  if (!wellFormed(path)) return { role: 'unknown', unit: null, listed: false };
   const ingredient = metadata.ingredients.find(entry => entry.path === path);
   if (ingredient?.kind === 'book' || ingredient?.kind === 'story') return { role: ingredient.kind, unit: ingredient.unit, listed: true };
   // A listed ingredient with a scope that names no one book (`other`) is not administrative: it is unknown (S5).
@@ -58,12 +59,19 @@ export function roleOf(path: string, metadata: ProjectMetadata): Pick<Classified
   return { role: 'unknown', unit: null, listed: false };
 }
 
-/** Every file of the ref classified, with the units, the administrative and unknown paths, and the listed ingredients that are not there. */
+/**
+ * Every file of the ref classified, with the units, the administrative and unknown
+ * paths, and the listed ingredients that are not there. Metadata that lists a path
+ * that cannot name one file inside the ref is refused here, the first place that
+ * reads ingredient paths, before any caller can open or write one (bench rounds 2
+ * and 3 of #99, deferred from #97).
+ */
 export function classifyFiles(metadata: ProjectMetadata, paths: readonly RefPath[]): Classification {
+  const malformed = metadata.ingredients.find(ingredient => !wellFormed(ingredient.path));
+  if (malformed) throw new MetadataError(`the metadata lists ${JSON.stringify(malformed.path)}, which cannot name one file inside the project`);
   const files = paths.map(({ path }): ClassifiedFile => ({ path, ...roleOf(path, metadata) }));
   const units = new Map<string, ClassifiedFile>();
-  // The reader refuses metadata that lists two ingredients for one unit, so a unit is held by at most one on-disk file here; a second is refused, never kept or dropped (bench round 1).
-  unitIngredients(metadata);
+  // A unit is held by at most one on-disk file: a second is refused here, never kept first-wins or dropped unreported (bench round 2).
   for (const file of files) {
     if (file.unit === null) continue;
     const held = units.get(file.unit);
