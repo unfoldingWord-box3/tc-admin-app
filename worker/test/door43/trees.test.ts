@@ -1,20 +1,20 @@
 // The git trees adapter (E19, E52): every page is read until one is not
 // truncated, only files are kept, and an unexpected shape is a Door43 failure.
-import { readFileSync } from 'node:fs';
 import { CatalogError } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import type { Fetch } from '../../src/door43/api';
 import { door43Host } from '../../src/door43/host';
 import { readTree } from '../../src/door43/trees';
 
-const fixtures = new URL('../../../fixtures/door43/qa.door43.org/2026-10-07/repos/', import.meta.url);
-const recorded = <T>(name: string): T => (JSON.parse(readFileSync(new URL(name, fixtures), 'utf8')) as { response: { json: T } }).response.json;
+import { recorded as recordedAt } from '../support/recorded';
+
+const recorded = <T>(name: string): T => recordedAt<T>(`2026-10-07/repos/${name}`);
 const client = (fetch: Fetch) => ({ host: door43Host('https://qa.door43.org'), token: 'test-only', fetch });
 const code = (promise: Promise<unknown>) => promise.then(() => null, (error: unknown) => (error instanceof CatalogError ? error.code : error));
 
 describe('readTree', () => {
   test('reads the recursive tree at the ref, a thousand entries a page, and keeps the files with their SHAs', async () => {
-    const whole = recorded<{ sha: string; tree: { path: string }[] }>('bahtraku__Perjanjian-Baru-Pendau__git-trees__master.json');
+    const whole = recorded<{ sha: string; tree: { path: string }[] }>('bahtraku__Perjanjian-Baru-Pendau__git-trees__master.json.gz');
     const urls: string[] = [];
     const tree = await readTree(
       client(async (url, init) => {
@@ -35,7 +35,7 @@ describe('readTree', () => {
   });
 
   test('E52: a page that is not the last says truncated, so the next page is read; the last does not', async () => {
-    const page2 = recorded<{ sha: string; tree: unknown[]; truncated: boolean; total_count: number }>('bahtraku__Perjanjian-Baru-Pendau__git-trees__master__per_page=10__page=2.json');
+    const page2 = recorded<{ sha: string; tree: unknown[]; truncated: boolean; total_count: number }>('bahtraku__Perjanjian-Baru-Pendau__git-trees__master__per_page=10__page=2.json.gz');
     expect(page2.truncated).toBe(true);
     expect(page2.total_count).toBe(34);
     const pages = [

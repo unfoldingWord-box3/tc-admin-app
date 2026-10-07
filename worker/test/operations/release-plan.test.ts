@@ -1,7 +1,6 @@
 // `release.plan` (#33) against the recorded QA repositories (E52): the
 // candidates, the R4 defaults, the version and notes, the binding (R5), the
 // announced writes, and what the plan refuses.
-import { readFileSync } from 'node:fs';
 import { CatalogError, OPERATIONS } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import type { Fetch } from '../../src/door43/api';
@@ -12,8 +11,8 @@ import type { StoredPlan } from '../../src/operations/plans';
 import { releasePlan } from '../../src/operations/release-plan';
 import type { ReleasePlanPayload } from '../../src/operations/release-plan';
 
-const fixtures = new URL('../../../fixtures/door43/qa.door43.org/', import.meta.url);
-const recorded = <T>(path: string): T => (JSON.parse(readFileSync(new URL(path, fixtures), 'utf8')) as { response: { json: T } }).response.json;
+import { recorded } from '../support/recorded';
+
 const user = recorded<unknown>('2026-10-05/user/user.json');
 type Repo = { catalog: { prod: { branch_or_tag_name: string; commit_sha: string } | null; latest: { branch_or_tag_name: string; commit_sha: string } | null }; permissions: object; ingredients: { identifier: string; path: string }[] | null };
 type Tree = { sha: string; tree: { path: string; type: string; sha: string }[]; truncated: boolean };
@@ -63,12 +62,12 @@ const stored = (planId: string) => JSON.parse(kv.entries.get(`plan:${planId}`)!)
 
 /** Pendau as recorded on 7 October 2026: master and v1.2 are the same commit (E52). */
 const pendau = () => ({
-  repo: recorded<Repo>('2026-10-07/repos/bahtraku__Perjanjian-Baru-Pendau.json'),
+  repo: recorded<Repo>('2026-10-07/repos/bahtraku__Perjanjian-Baru-Pendau.json.gz'),
   entries: {
-    master: recorded<unknown>('2026-10-07/catalog/entry__bahtraku__Perjanjian-Baru-Pendau__master.json'),
-    'v1.2': recorded<unknown>('2026-10-07/catalog/entry__bahtraku__Perjanjian-Baru-Pendau__v1.2.json'),
+    master: recorded<unknown>('2026-10-07/catalog/entry__bahtraku__Perjanjian-Baru-Pendau__master.json.gz'),
+    'v1.2': recorded<unknown>('2026-10-07/catalog/entry__bahtraku__Perjanjian-Baru-Pendau__v1.2.json.gz'),
   },
-  trees: { [SHA]: recorded<Tree>('2026-10-07/repos/bahtraku__Perjanjian-Baru-Pendau__git-trees__master.json') },
+  trees: { [SHA]: recorded<Tree>('2026-10-07/repos/bahtraku__Perjanjian-Baru-Pendau__git-trees__master.json.gz') },
 });
 
 describe('a later release of a Bible (Pendau, baseline v1.2)', () => {
@@ -152,11 +151,11 @@ describe('a first release', () => {
   });
 
   test('a project without books yet (the one the wizard created, E51) plans an empty first release', async () => {
-    const repo = recorded<Repo>('2026-10-07/repos/tc-admin-qa-org__ums_tcaw2030.json');
+    const repo = recorded<Repo>('2026-10-07/repos/tc-admin-qa-org__ums_tcaw2030.json.gz');
     const { fetch } = door43({
       repo,
-      entries: { master: recorded<unknown>('2026-10-07/catalog/entry__tc-admin-qa-org__ums_tcaw2030__master.json') },
-      trees: { [repo.catalog.latest!.commit_sha]: recorded<Tree>('2026-10-07/repos/tc-admin-qa-org__ums_tcaw2030__git-trees__master.json') },
+      entries: { master: recorded<unknown>('2026-10-07/catalog/entry__tc-admin-qa-org__ums_tcaw2030__master.json.gz') },
+      trees: { [repo.catalog.latest!.commit_sha]: recorded<Tree>('2026-10-07/repos/tc-admin-qa-org__ums_tcaw2030__git-trees__master.json.gz') },
     });
     const plan = await releasePlan({ owner: 'tc-admin-qa-org', repo: 'ums_tcaw2030' }, context(fetch));
     expect(plan.preview.books).toEqual([]);
@@ -167,7 +166,7 @@ describe('a first release', () => {
 
 describe('what a plan refuses', () => {
   test('W2: a Resource Container project is not releasable, with its reason, before any tree is read', async () => {
-    const { fetch, calls } = door43({ repo: recorded<Repo>('2026-10-07/repos/bahtraku__id_tb1.json'), entries: {}, trees: {} });
+    const { fetch, calls } = door43({ repo: recorded<Repo>('2026-10-07/repos/bahtraku__id_tb1.json.gz'), entries: {}, trees: {} });
     const error = (await failure(releasePlan({ owner: 'bahtraku', repo: 'id_tb1' }, context(fetch))))!;
     expect(error.code).toBe('not_releasable');
     expect(error.message).toBe('Resource Container project. Import it into a new project to manage it here.');
