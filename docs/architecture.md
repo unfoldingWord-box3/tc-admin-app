@@ -252,12 +252,15 @@ worker/
     host.ts          the configured host, QA or production only
     api.ts           reads with the session token, pagination (P1)
     auth.ts          OAuth with PKCE, code exchange, the signed-in account from /user
+    repos.ts         repository search and permissions read strictly (P2); whether a name is taken; the account's creation rights (E43)
+    catalog.ts       the catalog view of a repository (#19)
+    archive.ts       the Scripture Burrito archive of a ref, opened from its central directory, each file inflated on demand (E34, E4, E53; #18)
     repos.ts         repository search and permissions read strictly (P2); one repository; whether a name is taken; the account's creation rights (E43)
     catalog.ts       the catalog view of a repository (#19); its stages and the catalog entry of one ref (E14, E20; #33)
     trees.ts         the recursive git tree of a ref, every page (E19, E52; #33)
     languages.ts     the full language list and an owner's languages, in glossary names (E25; #28)
     writes.ts        repository creation and the multi-file commit, sent once and never retried, no delete (W5, X1, A3, W4; #30)
-                     planned: archive (#18), health (#36), branches, tags, releases (#34, #39)
+                     planned: health (#36), branches, tags, releases (#34, #39)
   src/model/         no I/O
     books.ts         book and story ids (#19)
     language.ts      the language tag rule of the Scripture Burrito schema (E44, Q30; #28)

@@ -9,6 +9,6 @@ Recorded read-only from public endpoints with no credentials (ADR 0012). DCS ver
 | `catalog/search__owner=unfoldingWord__flavor=textTranslation,textStories.json` | `GET /api/v1/catalog/search?owner=unfoldingWord&flavor=textTranslation&flavor=textStories&limit=50` |
 | `catalog/search__owner=bahtraku__flavor=textTranslation,textStories__stage=latest.json` | `GET /api/v1/catalog/search?owner=bahtraku&flavor=textTranslation&flavor=textStories&stage=latest&limit=50` |
 | `catalog/metadata__unfoldingWord__en_obs__v9.json` | `GET /api/v1/catalog/metadata/unfoldingWord/en_obs/v9` (returns the Resource Container manifest, E20) |
-| `sb-archives/unfoldingWord__en_obs__v9.zip`, `.files.txt`, `.metadata.json` | `GET /unfoldingWord/en_obs/sb/v9.zip` (web route; the API route is E34), its file list, and its `metadata.json` |
+| `sb-archives/unfoldingWord__en_obs__v9.zip`, `.files.txt`, `.metadata.json` | `GET /unfoldingWord/en_obs/sb/v9.zip` (web route; the API route is E34), its file list (regenerated from the zip with `unzip -Z1` on 7 October 2026, since the first list had omitted `metadata.json`, E53), and its `metadata.json` |
 
 Facts derived from these recordings are E34, E35, and E36 in `docs/evidence.md`; the E20 caveat comes from the catalog metadata file.
