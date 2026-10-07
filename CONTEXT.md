@@ -45,7 +45,7 @@ The file that describes a project: `metadata.json` for Scripture Burrito, `manif
 _Avoid_: Manifest (as the generic term), config
 
 **Ingredient**:
-A file listed in a Scripture Burrito project's metadata. A book or story ingredient carries a scope naming its book or story; an administrative ingredient does not.
+A file listed in a Scripture Burrito project's metadata. A book ingredient carries a scope naming its one book; a story ingredient is `ingredients/content/<NN>.md`, and its scope names the Bible passages the story draws on, not the story (E36); an administrative ingredient has no scope.
 _Avoid_: Asset, attachment
 
 **Coverage**:
