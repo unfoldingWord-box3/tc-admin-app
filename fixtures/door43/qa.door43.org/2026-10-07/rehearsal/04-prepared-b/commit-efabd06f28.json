@@ -1,0 +1,13 @@
+{
+  "sha": "efabd06f28851cf08498382e0f9a07b3eb9f77db",
+  "files": [
+    {
+      "filename": "ingredients/PHM.usfm",
+      "status": "modified"
+    },
+    {
+      "filename": "metadata.json",
+      "status": "modified"
+    }
+  ]
+}

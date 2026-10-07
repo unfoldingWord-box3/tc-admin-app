@@ -1,0 +1,14 @@
+{
+  "sha": "6f9dfea34134e0bb69b6b00bdcfd6bcd2541cf8f",
+  "message": "QA rehearsal (#43): stand-in revision of PHM\n",
+  "parents": [
+    "80699fa07042698a4c75c5bd2245adf692edaee3"
+  ],
+  "author": "tc-admin-qa",
+  "files": [
+    {
+      "filename": "ingredients/PHM.usfm",
+      "status": "modified"
+    }
+  ]
+}

@@ -21,7 +21,7 @@ The manager signing in is a member of `bahtraku` with push right on the reposito
 1. The production rehearsal (#43) has left exactly one pre-release on the repository, the next version after `v1.2` by the rules of R9, and nothing else: no temporary branch, no second release, the default branch untouched (R3).
 2. The deployed production Worker signs in and lists the portfolio (E38, the production callback confirmed).
 3. Door43's health check on the pre-release's tag has run (E28: within seconds of the tag).
-4. Book A and book B are two different books, both revised on the default branch since `v1.2` and agreed with the team; the rehearsal's pre-release carries book A's revision and not book B's, so on the day book B is the one book "Changed since the last release" once the pre-release is promoted, with no further commit on the default branch.
+4. Book A and book B are two different books, both revised on the default branch since `v1.2` and agreed with the team; the rehearsal's pre-release carries book A's revision and not book B's, so on the day book B is the one book "Changed since the last release" once the pre-release is promoted, with no further commit on the default branch. On 7 October 2026 neither condition held: the default branch was `v1.2`'s commit on production, nothing pushed since 21 July (E58), so the team's revisions of both books must land on production's default branch before the production rehearsal.
 5. The manager's account may create repositories in `tc-admin-qa-org` on production: the organization is in its `owner.list` (an owner team, or a team that may create repositories). If it is not, step 9 is not run; `bahtraku` is never the fallback.
 
 ## The script
@@ -36,7 +36,7 @@ Each step: what the presenter does, the operation the interface calls, what Door
 ### 2. Promote the rehearsal's pre-release (S7, R8)
 
 - Open the project; "Prepare a release". Operation: `release.plan`.
-- Expect: the plan compares the default branch with the latest full release `v1.2`; the pre-release from the rehearsal is not a full release, so it is not the baseline. Say so: a pre-release is published to Door43 and visible there, and the catalog's full release stays `v1.2` until promotion.
+- Expect: the plan compares the default branch with the latest full release `v1.2`; the pre-release from the rehearsal is not a full release, so it is not the baseline. Say so: a pre-release is published to Door43 and visible there, and the catalog's full release stays `v1.2` until promotion. Do not prepare from this plan: its calculated version is the pre-release's own (Q31, E58).
 - Open the project; in "A release by its tag, to see it or promote a pre-release" type the rehearsal's tag and "Open the release". Operation: `release.lookup`. Expect the release page: the tag, "Pre-release", the snapshot commit, the Door43 link. "Promote to a full release". Operation: `release.promote`: one `PATCH` of the pre-release flag (R8). Expect "Full release" and "Written: release <tag>", and after a few seconds the catalog's `prod` stage on the new tag. Open the release on Door43: same tag, same contents, no longer marked pre-release. This page is reachable after any sign-in; it does not depend on the stepper that made the pre-release (E57).
 
 ### 3. Select one book (S3, S4, R4)
@@ -49,11 +49,11 @@ Each step: what the presenter does, the operation the interface calls, what Door
 ### 4. Prepare the snapshot (R1, R2, R3)
 
 - "Prepare the snapshot". Operation: `release.prepare`.
-- Expect "Written: Branch … temp-tca-release/<version> · Commit …": the branch from the promoted release's commit, one commit that uploads the included book and `metadata.json` only; "26 files in the snapshot" with the carried books "from the previous release". Show the branch on Door43 if asked; the default branch has no new commit (R3).
+- Expect "Written: Branch … temp-tca-release/<version> · Commit …": the branch from the promoted release's commit, one commit that uploads the included book and `metadata.json` only; "33 files in the snapshot": the 26 carried books from "the previous release", book B and the six administrative files (`LICENSE.md`, `README.md`, `metadata.json`, `ingredients/license.md`, `ingredients/scribe-settings.json`, `ingredients/versification.json`) from "the default branch" (E58). Show the branch on Door43 if asked; the default branch has no new commit (R3).
 
 ### 5. Health check (H1, H2, Q6)
 
-- The page polls `preparation.read` every 5 seconds. Expect within about ten seconds: "Health: Warning", the findings listed (the Acts title in English; the size warnings are gone, since the snapshot recomputed sizes and checksums, R10), and "Ready for release" with the acknowledgement box.
+- The page polls `preparation.read` every 5 seconds. Expect within about ten seconds: "Health: Warning", the findings listed (the Acts title in English, shown as Door43 words it, Markdown marks included; the size warnings are gone, since the snapshot recomputed sizes and checksums, R10), and "Ready for release" with the acknowledgement box.
 - Say: Door43 is the authority on health (H1); tC Admin shows what it reported and asks the manager to confirm before releasing over a warning (H2, Q6). A failing or unavailable check would block here with "Check again".
 
 ### 6. Notes, version, pre-release (R9, product spec §10)
@@ -76,11 +76,11 @@ Each step: what the presenter does, the operation the interface calls, what Door
 
 - "All projects" · "Create a project". Operation: `owner.list`, `language.list`, then `project.create.plan` and `project.create.apply`.
 - The owner is `tc-admin-qa-org`, unfoldingWord's own organization on production (E23), never the partner's; the title, abbreviation, and language are fixed here before the day: title "Demo 16 October 2026", abbreviation `demo1016`, language `id` (Bahasa Indonesia), New Testament scope, so the repository is `tc-admin-qa-org/id_demo1016`. Its name is checked free on the morning (the plan refuses a taken name as `name_taken`). The repository stays after the demo as a record; Rich removes it from Door43 by hand if the team prefers (tC Admin never deletes a repository, W4).
-- Expect the plan's preview: repository name `<language>_<abbreviation>`, the three files, the metadata; then the receipt: "Written: Repository … · Commit …", the project in the portfolio with "0 of 27 books", health "Information" with the one note that no release exists yet (E28, Q21).
+- Expect the plan's preview: repository name `<language>_<abbreviation>`, the three files, the metadata; then the receipt: "Written: Repository … · Commit …" and the project's page, "0 of 27 books", health "Never checked". Back in the portfolio a few seconds later the project reads "Coverage unknown" (Door43 lists no ingredients for a project with no books, E45) and health "Information", the one note that no release exists yet (E28, Q21, E58).
 
 ### 10. Close
 
-- The portfolio again: the released project with its new version, the new project at the bottom. Say what Milestone 2 adds (uploads, imports) and that everything shown is one operation per step, each recorded on the receipt the page shows.
+- The portfolio again: the released project, its health; the new version is on its release page and on Door43, not in the portfolio's row (E58); the new project in the `tc-admin-qa-org` group. Say what Milestone 2 adds (uploads, imports) and that everything shown is one operation per step, each recorded on the receipt the page shows.
 
 ## If something goes wrong on the day
 
@@ -97,7 +97,7 @@ Each step: what the presenter does, the operation the interface calls, what Door
 
 ## The rehearsals (#43)
 
-1. **QA**, on the QA copy, with `tc-admin-qa` given push right, in this order: the production rehearsal's own steps below (book A, stopping at the pre-release); then the demo's steps 2 to 9 as written (book B, the project under `tc-admin-qa-org` on QA); then one more release with one released book left out (S8: the removal named, the version a major increment, the previous release still holding the book). Record every step's answer against this script; file the recordings as fixtures and the run as an evidence entry.
+1. **QA**, on the QA copy, with `tc-admin-qa` given push right, in this order: the production rehearsal's own steps below (book A, stopping at the pre-release); then the demo's steps 2 to 9 as written (book B, the project under `tc-admin-qa-org` on QA); then one more release with one released book left out (S8: the removal named, the version a major increment, the previous release still holding the book). Record every step's answer against this script; file the recordings as fixtures and the run as an evidence entry. Run on 7 October 2026 (E58), with Titus and Philemon as QA stand-ins for book A and book B, each revised on QA's default branch first.
 2. **Production**, on the agreed repository, with the manager's own account, its own steps, not the demo's: `release.plan` against `v1.2` (every book "Carry forward", book A and book B both "Changed since the last release"); set book A to "Include" and nothing else; the version stays the calculated one (the next after `v1.2` by R9: a patch increment); "Prepare the snapshot"; the health check as in step 5, the warning acknowledged; the notes as generated; "Create as a pre-release" ticked; "Create the pre-release". Stop. Do not promote. Book B stays revised on the default branch and is not in that pre-release.
 
 What a rehearsal must leave: on production, exactly one pre-release and no other change; on QA, whatever it made, kept for inspection until the next reset.

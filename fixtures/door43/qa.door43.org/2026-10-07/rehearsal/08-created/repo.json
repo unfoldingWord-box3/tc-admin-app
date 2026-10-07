@@ -1,0 +1,22 @@
+{
+  "full_name": "tc-admin-qa-org/id_demo1016",
+  "default_branch": "master",
+  "catalog": {
+    "prod": null,
+    "preprod": null,
+    "latest": {
+      "branch_or_tag_name": "master",
+      "release_url": null,
+      "commit_sha": "47bb806a1cc7da9225d775ed25d154ad934b3500",
+      "released": "2026-10-07T20:21:16Z",
+      "zipball_url": "https://qa.door43.org/tc-admin-qa-org/id_demo1016/archive/47bb806a1c.zip",
+      "tarball_url": "https://qa.door43.org/tc-admin-qa-org/id_demo1016/archive/47bb806a1c.tar.gz",
+      "sb_zipball_url": "https://qa.door43.org/tc-admin-qa-org/id_demo1016/sb/47bb806a1c.zip",
+      "sb_tarball_url": "https://qa.door43.org/tc-admin-qa-org/id_demo1016/sb/47bb806a1c.tar.gz",
+      "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_demo1016/git/trees/47bb806a1c?recursive=1&per_page=99999",
+      "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_demo1016/contents?ref=47bb806a1c"
+    }
+  },
+  "metadata_type": "sb",
+  "healthcheck_severity": "info"
+}
