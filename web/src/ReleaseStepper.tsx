@@ -10,7 +10,7 @@ import { HEALTH_POLL } from '@tc-admin/shared/schema';
 import type { Preparation, ProjectSummary, SelectionState } from '@tc-admin/shared/schema';
 import { ApiError, callOperation, failureMessage } from './api/client';
 import { WRITE_LABELS } from './create-project';
-import { healthLabel, projectHash } from './portfolio-labels';
+import { healthLabel, projectHash, releaseTagHash } from './portfolio-labels';
 import {
   GROUP_LABELS,
   RESTART_MESSAGE,
@@ -444,7 +444,7 @@ export function ReleaseStepper({ project, onFailure }: Props) {
                 <a href={preparation.release.url} target="_blank" rel="noreferrer">
                   open it
                 </a>
-                .
+                . Its page here, to come back to later: <a href={releaseTagHash(project, preparation.release.tag)}>{preparation.release.tag}</a>.
               </p>
               {preparation.state === 'pre_release' && (
                 <div className="actions">

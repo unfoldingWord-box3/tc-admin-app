@@ -62,12 +62,18 @@ export const projectHash = (project: Pick<ProjectSummary, 'ref'>) => `#/${encode
 
 /** The owner and repository a hash names, or `null`. */
 export const releaseHash = (project: Pick<ProjectSummary, 'ref'>) => `${projectHash(project)}/release`;
+/** One release of the project by its tag: the lookup, and the promotion of a pre-release (S7). */
+export const releaseTagHash = (project: Pick<ProjectSummary, 'ref'>, tag: string) => `${projectHash(project)}/releases/${encodeURIComponent(tag)}`;
 
-export function hashRef(hash: string): { owner: string; repo: string; view: 'project' | 'release' } | null {
-  const match = /^#\/([^/]+)\/([^/]+)(\/release)?$/.exec(hash);
+export type HashView = { view: 'project' } | { view: 'release' } | { view: 'tag'; tag: string };
+
+export function hashRef(hash: string): ({ owner: string; repo: string } & HashView) | null {
+  const match = /^#\/([^/]+)\/([^/]+)(?:(\/release)|\/releases\/([^/]+))?$/.exec(hash);
   if (!match) return null;
   try {
-    return { owner: decodeURIComponent(match[1]!), repo: decodeURIComponent(match[2]!), view: match[3] ? 'release' : 'project' };
+    const ref = { owner: decodeURIComponent(match[1]!), repo: decodeURIComponent(match[2]!) };
+    if (match[4]) return { ...ref, view: 'tag', tag: decodeURIComponent(match[4]) };
+    return { ...ref, view: match[3] ? 'release' : 'project' };
   } catch {
     return null;
   }

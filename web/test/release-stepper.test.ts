@@ -5,7 +5,7 @@
 import { catalogMessage } from '@tc-admin/shared/schema';
 import type { Preparation } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
-import { hashRef, releaseHash } from '../src/portfolio-labels';
+import { hashRef, releaseHash, releaseTagHash } from '../src/portfolio-labels';
 import { RESTART_MESSAGE, STEPS, canDiscard, canPrepare, counts, releaseGate, removalsOf, selectionOf, selectionToSend, spellVersion, statesFor, stepOf, versionToSend } from '../src/release-stepper';
 import type { Book } from '../src/release-stepper';
 
@@ -110,5 +110,8 @@ describe('the route', () => {
     expect(hashRef(releaseHash(project))).toEqual({ owner: 'team a', repo: 'en/obs', view: 'release' });
     expect(hashRef('#/team%20a/en%2Fobs')).toEqual({ owner: 'team a', repo: 'en/obs', view: 'project' });
     expect(hashRef('#/a/b/other')).toBeNull();
+    expect(releaseTagHash(project, 'v1.3.0')).toBe('#/team%20a/en%2Fobs/releases/v1.3.0');
+    expect(hashRef('#/team%20a/en%2Fobs/releases/v1.3.0')).toEqual({ owner: 'team a', repo: 'en/obs', view: 'tag', tag: 'v1.3.0' });
+    expect(hashRef('#/a/b/releases/')).toBeNull();
   });
 });

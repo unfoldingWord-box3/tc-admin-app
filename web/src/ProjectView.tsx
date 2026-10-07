@@ -4,10 +4,12 @@
 // (`project.read`) is #25.
 
 import type { ProjectSummary } from '@tc-admin/shared/schema';
-import { coverageLabel, healthLabel, releaseHash, typeLabel } from './portfolio-labels';
+import { useState } from 'react';
+import { coverageLabel, healthLabel, releaseHash, releaseTagHash, typeLabel } from './portfolio-labels';
 
 export function ProjectView({ project }: { project: ProjectSummary }) {
   const { coverage } = project;
+  const [tag, setTag] = useState('');
   return (
     <section>
       <p>
@@ -35,6 +37,21 @@ export function ProjectView({ project }: { project: ProjectSummary }) {
           Prepare a release
         </a>
       </p>
+      <form
+        className="actions"
+        onSubmit={event => {
+          event.preventDefault();
+          if (tag.trim()) window.location.assign(releaseTagHash(project, tag.trim()));
+        }}
+      >
+        <label className="field" htmlFor="release-tag">
+          A release by its tag, to see it or promote a pre-release
+          <input id="release-tag" value={tag} onChange={event => setTag(event.target.value)} placeholder="v1.3.0" />
+        </label>
+        <button type="submit" className="secondary" disabled={!tag.trim()}>
+          Open the release
+        </button>
+      </form>
       {coverage.units.length > 0 && (
         <ul className="units" aria-label="Books and stories in scope">
           {coverage.units.map(unit => (
