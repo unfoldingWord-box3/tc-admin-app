@@ -17,7 +17,7 @@
 import { TEXT_TRANSLATION_FLAVOR_DEFAULTS } from '@tc-admin/shared/schema';
 import type { ProjectType, SelectionState, TextTranslationFlavor } from '@tc-admin/shared/schema';
 import { BIBLE_BOOKS, NEW_TESTAMENT, OLD_TESTAMENT, STORIES, bookId, storyId } from './books';
-import { MetadataError, classifyIngredient, unitIngredients } from './burrito-reader';
+import { MetadataError, classifyIngredient, isRecord, unitIngredients } from './burrito-reader';
 import type { MetadataIngredient, ProjectMetadata } from './burrito-reader';
 import { CC_BY_SA_4_0_TEXT } from './license-cc-by-sa-4.0';
 import { md5 } from './md5';
@@ -283,6 +283,68 @@ export function mergeUploadMetadata(current: ProjectMetadata, added: readonly Ad
     entries.push({ path: unit.path, before, after });
   }
   return { metadata: document, entries };
+}
+
+/** The repository an import takes from, and the revision taken: a release tag, or the default branch's head commit (built behind, #79). */
+export interface ImportSource {
+  owner: string;
+  repo: string;
+  revision: string;
+}
+
+/** A `source` relationship as `metadata.json` lists it (E24): the source repository under the `dcs` authority and the revision imported. */
+export interface SourceRelationship {
+  id: string;
+  relationType: 'source';
+  flavor: string;
+  revision: string;
+}
+
+/**
+ * The flavor a `source` relationship names for each project type. The relationship
+ * schema (E24, `fixtures/scripture-burrito/2026-10-05/schema/relationship.schema.json`)
+ * allows a `source` only `textTranslation` or `audioTranslation`, or a custom
+ * `x-` flavor, so a Bible's is its own flavor and an Open Bible Stories project's
+ * is the custom spelling of its flavor: the schema names no story flavor a source
+ * may carry, and tC Admin writes only what the schema accepts (W1). Decided
+ * 8 October 2026 by Rich (Q34, #79): the custom spelling, until upstream admits
+ * the story flavor for a source.
+ */
+export const SOURCE_RELATIONSHIP_FLAVOR: Readonly<Record<CreatableProjectType, string>> = { bible: 'textTranslation', obs: 'x-textStories' };
+
+/** The relationship an import of `source` into a project of `type` records (E24). */
+export function sourceRelationship(type: CreatableProjectType, source: ImportSource): SourceRelationship {
+  return { id: `dcs::${source.owner}/${source.repo}`, relationType: 'source', flavor: SOURCE_RELATIONSHIP_FLAVOR[type], revision: source.revision };
+}
+
+export interface MergedImport extends MergedUpload {
+  /** The relationships the import adds: the source's, or none when the document already lists that same relationship. */
+  relationships: SourceRelationship[];
+}
+
+const sameRelationship = (a: Record<string, unknown>, b: SourceRelationship) => a.id === b.id && a.relationType === b.relationType && a.flavor === b.flavor && a.revision === b.revision && !('variant' in a);
+
+/**
+ * The metadata an import proposes (#79, product spec §8 "Import from an existing
+ * repository"): what `mergeUploadMetadata` proposes for the imported books or
+ * stories, plus one `source` relationship for the source repository and revision
+ * (E24, ADR 0013), and the `dcs` id authority it refers to when the document does
+ * not declare one. A relationship the document already lists, field for field, is
+ * not listed again; an authority already declared under `dcs` is kept as written,
+ * whatever its spelling (E24). Nothing else changes.
+ */
+export function mergeImportMetadata(current: ProjectMetadata, added: readonly AddedUnit[], source: ImportSource): MergedImport {
+  const type = current.project_type;
+  if (type === 'other') throw new MetadataError('not a Bible or Open Bible Stories project');
+  const { metadata, entries } = mergeUploadMetadata(current, added);
+  const relationship = sourceRelationship(type, source);
+  const authorities = isRecord(metadata.idAuthorities) ? metadata.idAuthorities : {};
+  // A new object, as the relationships are a new array: nothing the caller holds is written to.
+  if (!isRecord(authorities.dcs)) metadata.idAuthorities = { ...authorities, dcs: structuredClone(DCS_AUTHORITY) };
+  const listed = Array.isArray(metadata.relationships) ? metadata.relationships : [];
+  const relationships = listed.some(entry => isRecord(entry) && sameRelationship(entry, relationship)) ? [] : [relationship];
+  if (relationships.length > 0) metadata.relationships = [...listed, structuredClone(relationship)];
+  return { metadata, entries, relationships };
 }
 
 /** A file under `ingredients/` in a release snapshot, with the size and md5 computed from its bytes (R10). */

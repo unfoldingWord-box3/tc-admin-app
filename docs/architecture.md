@@ -270,7 +270,7 @@ worker/
     language.ts      the language tag rule of the Scripture Burrito schema (E44, Q30; #28)
     project.ts       type, editability, coverage (#19); the books or stories a ref offers as an import source (H3; #78)
     health.ts        Door43 severity to health state, and one health-check read to a health value (H1, H3; #25, #36)
-    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10), a book's or story's path and ingredient entry (#72, W1), the metadata an upload proposes, its entries added or replaced with the new bytes' size and md5 (#74, R10), and the release merge (#35, Q7, Q8)
+    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10), a book's or story's path and ingredient entry (#72, W1), the metadata an upload proposes, its entries added or replaced with the new bytes' size and md5 (#74, R10), the metadata an import proposes, those entries plus one source relationship and the dcs authority (#79, E24, Q34), and the release merge (#35, Q7, Q8)
     burrito-reader.ts  the Scripture Burrito reader: a project's metadata.json as read, every ingredient classified as book, story, or administrative (#17)
     classify.ts      every file of a ref as a book, story, administrative, or unknown file, given its metadata and tree (#20, R1, S5)
     obs-scope.ts     the fixed currentScope of every Open Bible Stories project (E46)
@@ -309,6 +309,7 @@ worker/
     upload-plan.ts   upload.plan: the batch checked first (W6), the project writable and editable (A2, W2), every file identified or confirmed, two for one unit refused, overwrites and diffs from the default branch's tree and archive at its head, the proposed metadata (R10), one commit announced, bound to the head (R5), stored without the bytes (Q33; #74)
     upload-apply.ts  upload.apply: the same files sent again and matched to the plan by size and md5 (Q33), none held back, the plan's confirmations only, permission re-read (A2), still editable (W2), the head still the plan's (R5); one commit with the files and the metadata, create or update by blob, sent once (W5, A3, X1); the attempt recorded first, an unknown outcome never sent again and a landed commit adopted (X1); the receipt by plan id (#75)
     source-search.ts  source.search: an owner's Bible and Open Bible Stories repositories as import sources, at the last release or the default branch (E35, Q25; #78)
+    import-plan.ts   import.plan: the project writable and editable (A2, W2), the chosen units checked, the source read and its revision resolved to a release's commit or the default branch's head, the files taken from its archive one at a time (E1, E30), overwrites and diffs as upload.plan, the proposed metadata with one source relationship and the dcs authority (R10, E24, Q34), one commit announced to the project and nothing to the source (W5, W2), bound to the head (R5; #79)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)

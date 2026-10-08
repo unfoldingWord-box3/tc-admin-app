@@ -16,6 +16,8 @@ export interface ErrorEntry {
   /** Further fixed messages for the same code, by case. */
   variants?: Readonly<Record<string, string>>;
   next_action: string;
+  /** The next action of a variant, when it differs from the code's; `catalogNextAction` reads it. */
+  next_actions?: Readonly<Record<string, string>>;
   invariants: readonly string[];
 }
 
@@ -31,7 +33,16 @@ export const ERROR_CATALOG = {
   not_releasable: { http: 409, retryable: false, message: null, next_action: 'import into a new project when the reason offers it', invariants: ['P1'] },
   invalid_selection: { http: 400, retryable: false, message: 'Include or carry forward at least one book.', next_action: 'fix the selection', invariants: ['R4'] },
   unidentified_file: { http: 400, retryable: false, message: '<file name> does not identify a book or story. Choose one or leave the file out.', next_action: 'choose the book or story, or drop the file', invariants: ['W6'] },
-  id_line_mismatch: { http: null, retryable: false, message: '<file name> is confirmed as <unit>, but its \\id line does not name it. The file is committed unchanged.', next_action: 'correct the \\id line and upload the file again, or keep the confirmation', invariants: [] },
+  id_line_mismatch: {
+    http: null,
+    retryable: false,
+    message: '<file name> is confirmed as <unit>, but its \\id line does not name it. The file is committed unchanged.',
+    /** An import names the book itself; nothing is confirmed (#79, bench round 1). */
+    variants: { import: '<file name> is imported as <unit>, but its \\id line does not name it. The file is committed unchanged.' },
+    next_action: 'correct the \\id line and upload the file again, or keep the confirmation',
+    next_actions: { import: 'correct the \\id line in the source, or keep the import' },
+    invariants: [],
+  },
   source_unavailable: { http: 502, retryable: true, message: "Door43 could not provide the source repository's archive. Try again later.", next_action: 'retry `import.plan`', invariants: [] },
   invalid_version: {
     http: 400,
@@ -112,6 +123,12 @@ export class CatalogError extends Error {
     this.variant = options.variant;
     this.details = options.details ?? {};
   }
+}
+
+/** The next action for a code, or for one of its variants when the catalog gives that variant its own (operations.md §6). */
+export function catalogNextAction(code: ErrorCode, variant?: string): string {
+  const entry: ErrorEntry = ERROR_CATALOG[code];
+  return (variant !== undefined ? entry.next_actions?.[variant] : undefined) ?? entry.next_action;
 }
 
 /** The fixed message for a code, with its placeholders filled; the code itself when the failure must supply it. */
