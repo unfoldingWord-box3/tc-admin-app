@@ -11,6 +11,7 @@ import { forgetCsrfToken } from '../src/api/client';
 import { Portfolio } from '../src/Portfolio';
 import { ProjectView } from '../src/ProjectView';
 import { errorOf } from './support/upload';
+import { book, importPlanOf, importReceiptOf, ownersOf, sourceOf, sourcesOf } from './support/import';
 import { freshness, heldWorker, projectOf } from './support/mounted';
 
 const PENDAU = projectOf('bahtraku', 'Perjanjian-Baru-Pendau', 'bible');
@@ -77,6 +78,57 @@ describe('the project view reads the full report', () => {
     expect(screen.getByRole('alert').textContent).toBe('Door43 is unavailable currently. Please refresh later. What is shown was read earlier.');
     expect(screen.getByRole('heading', { name: 'bahtraku/Perjanjian-Baru-Pendau' })).toBeTruthy();
   });
+
+  test('P3: a receipt after a failed read replaces what is shown, and the alert that it was read earlier goes', async () => {
+    const qa = projectOf('tc-admin-qa', 'id_tcai1633', 'bible');
+    const base = '/api/projects/tc-admin-qa/id_tcai1633';
+    render(<ProjectView project={qa} onFailure={() => {}} />);
+    await answerWhenSent('GET', base, errorOf('door43_unavailable'), 503);
+    expect(screen.getByRole('alert')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Import books' }));
+    await answerWhenSent('GET', '/api/owners', ownersOf([{ login: 'tc-admin-qa-org', name: 'tC Admin QA' }]));
+    fireEvent.click(screen.getByRole('button', { name: 'tC Admin QA (tc-admin-qa-org)' }));
+    await answerWhenSent('GET', '/api/sources?owner=tc-admin-qa-org&stage=latest', sourcesOf([sourceOf('bahtraku', 'id_tb1', { title: 'Alkitab Terjemahan Baru', stage: 'latest', format: 'rc' })]));
+    fireEvent.click(screen.getByRole('button', { name: /Alkitab Terjemahan Baru/ }));
+    fireEvent.click(screen.getByLabelText('MAT · Matius'));
+    fireEvent.click(screen.getByRole('button', { name: 'Plan the import of 2 books' }));
+    await answerWhenSent('POST', `${base}/imports/plan`, importPlanOf('p1', [book('gen'), book('exo')]));
+    fireEvent.click(screen.getByRole('button', { name: /^Import 2 books$/ }));
+    await answerWhenSent('POST', `${base}/imports`, importReceiptOf('p1'));
+    expect(screen.getByRole('heading', { name: 'tC Admin import probe' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  test('P3: a newer report of the same project, as a retried creation gives, replaces what is shown and is read again', async () => {
+    const incomplete = reportOf({ setup: { state: 'incomplete', failed_step: 'first_commit' }, default_branch_head: null });
+    const { rerender } = render(<ProjectView project={incomplete} />);
+    await answerWhenSent('GET', READ, incomplete);
+    expect(screen.queryByRole('button', { name: 'Add books' })).toBeNull();
+    rerender(<ProjectView project={reportOf()} />);
+    expect(screen.getByRole('button', { name: 'Add books' })).toBeTruthy();
+    await answerWhenSent('GET', READ, reportOf());
+    expect(screen.getByRole('button', { name: 'Add books' })).toBeTruthy();
+    expect(worker.sent.filter(request => request.url === READ)).toHaveLength(2);
+  });
+});
+
+describe('a creation\'s report survives a read made too early (bench round 2)', () => {
+  test('E45: the project just created stays a Bible with "Add books" and "Import books" when Door43\'s catalog has not read it yet, and the view says so', async () => {
+    const created = reportOf({ coverage: { present: 0, target: 27, scope: 'nt', basis: 'archive', units: [] }, latest_full_release: null });
+    render(<ProjectView project={created} />);
+    expect(screen.getByRole('button', { name: 'Add books' })).toBeTruthy();
+    const notYetRead = reportOf({
+      project_type: 'other',
+      metadata_format: 'none',
+      editability: { state: 'unsupported', reason: 'Door43 found no project metadata it recognizes. Release and editing are not available.' },
+      coverage: { present: null, target: null, scope: 'unknown', basis: 'catalog', units: [] },
+      latest_full_release: null,
+    });
+    await answerWhenSent('GET', READ, notYetRead);
+    expect(screen.getByRole('button', { name: 'Add books' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Import books' })).toBeTruthy();
+    expect(screen.getByText(/Door43's catalog has not read this project's latest change yet/)).toBeTruthy();
+  });
 });
 
 describe('the portfolio refreshes', () => {
@@ -88,5 +140,21 @@ describe('the portfolio refreshes', () => {
     await answerWhenSent('GET', '/api/portfolio?show=supported', { organizations: [{ name: 'bahtraku', projects: [PENDAU] }], freshness: { ...freshness, read_at: new Date().toISOString() }, analysis: { complete: 1, pending: 0 } });
     expect(screen.getByText(/· just now\./)).toBeTruthy();
     expect(worker.sent.filter(request => request.url === '/api/portfolio?show=supported')).toHaveLength(2);
+  });
+
+  test('P3, X2: a refresh Door43 cannot answer keeps the list and says it was read earlier; an expired session still ends the view', async () => {
+    const onFailure = vi.fn<(failure: unknown) => void>();
+    const listed = { organizations: [{ name: 'bahtraku', projects: [PENDAU] }], freshness, analysis: { complete: 1, pending: 0 } };
+    render(<Portfolio account={{ login: 'tc-admin-qa', name: 'tC Admin QA' }} onFailure={onFailure} />);
+    await answerWhenSent('GET', '/api/portfolio?show=supported', listed);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await answerWhenSent('GET', '/api/portfolio?show=supported', errorOf('door43_unavailable'), 503);
+    expect(screen.getByRole('alert').textContent).toBe('Door43 is unavailable currently. Please refresh later. What is shown was read earlier.');
+    expect(screen.getByText('bahtraku')).toBeTruthy();
+    expect(onFailure).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+    await answerWhenSent('GET', '/api/portfolio?show=supported', errorOf('session_expired'), 401);
+    expect(onFailure).toHaveBeenCalledTimes(1);
   });
 });

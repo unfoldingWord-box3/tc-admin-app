@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, callOperation, failureMessage } from './api/client';
 import { WRITE_LABELS } from './create-project';
 import { freshnessLabel } from './freshness';
+import { withKnownClassification } from './known-report';
 import { useNow } from './use-now';
 import { coverageLabel, healthLabel, releaseHash, releaseTagHash, typeLabel } from './portfolio-labels';
 import { isActive, preparationLink, preparationVersion, withAnswer } from './preparations';
@@ -135,18 +136,29 @@ export function ProjectView({ project: given, onFailure }: Props) {
   const [current, setCurrent] = useState<ProjectSummary | ProjectReport>(given);
   const [reading, setReading] = useState<'read' | 'refresh' | null>('read');
   const [readProblem, setReadProblem] = useState<string | null>(null);
+  // Door43's catalog had not read the project at the last read: the known classification was kept, and the view says so.
+  const [catalogPending, setCatalogPending] = useState(false);
   // The project this view's state belongs to: another project given to the same view starts afresh, in this render, so nothing of the last one is shown under its name.
   const givenKey = `${owner.toLowerCase()}/${repo}`;
-  const [shownFor, setShownFor] = useState(givenKey);
-  if (shownFor !== givenKey) {
-    setShownFor(givenKey);
+  const [shownFor, setShownFor] = useState({ key: givenKey, given });
+  // Bumped when another project, or a newer report of the same one (a retried creation's receipt, #31), is given: it is read again, and an earlier read's answer is not shown.
+  const [opened, setOpened] = useState(0);
+  if (shownFor.given !== given) {
+    if (shownFor.key !== givenKey) setUploaded(null);
+    setShownFor({ key: givenKey, given });
+    setOpened(count => count + 1);
     setCurrent(given);
-    setUploaded(null);
     setReading('read');
     setReadProblem(null);
+    setCatalogPending(false);
   }
   // Bumped by every read and write: an answer for an earlier one, or for another project, is stale and is not shown.
   const ticket = useRef(0);
+  // The report shown, for a read's answer to compare with what the view already knew.
+  const shownRef = useRef<ProjectSummary | ProjectReport>(current);
+  useEffect(() => {
+    shownRef.current = current;
+  }, [current]);
   const now = useNow();
   const project = current;
   const { coverage } = project;
@@ -160,7 +172,10 @@ export function ProjectView({ project: given, onFailure }: Props) {
     (mine: number) => ({
       report: (report: ProjectReport) => {
         if (mine !== ticket.current) return;
-        setCurrent(report);
+        // A read made before Door43's catalog has read the project keeps the classification the view already knew (E28, E45).
+        const merged = withKnownClassification(shownRef.current, report);
+        setCurrent(merged.report);
+        setCatalogPending(merged.catalogPending);
         setReading(null);
       },
       failure: (failure: unknown) => {
@@ -175,7 +190,7 @@ export function ProjectView({ project: given, onFailure }: Props) {
   useEffect(() => {
     const handlers = settle(++ticket.current);
     callOperation('project.read', { owner, repo }).then(handlers.report, handlers.failure);
-  }, [owner, repo, settle]);
+  }, [owner, repo, settle, opened]);
   const refresh = () => {
     const handlers = settle(++ticket.current);
     setReading('refresh');
@@ -186,6 +201,8 @@ export function ProjectView({ project: given, onFailure }: Props) {
   const done = (receipt: UploadReceipt, added: string) => {
     ++ticket.current;
     setReading(null);
+    // The receipt's report is newer than any read that failed before it.
+    setReadProblem(null);
     setUploaded({ receipt, added });
     setCurrent(receipt.result);
     setAdding(null);
@@ -236,6 +253,11 @@ export function ProjectView({ project: given, onFailure }: Props) {
         </button>
       </p>
       {reading === 'read' && <p className="muted" role="status">Reading the project from Door43…</p>}
+      {catalogPending && (
+        <p className="muted" role="status">
+          Door43's catalog has not read this project's latest change yet; its type and coverage are shown as tC Admin wrote them. Refresh in a moment for Door43's reading.
+        </p>
+      )}
       {readProblem && (
         <p className="field-error" role="alert">
           {readProblem}

@@ -7,14 +7,17 @@
 // (`#/<owner>/<repo>`) so a reload keeps it, and `#/new` is the creation
 // wizard (#28); a project it creates is listed at once, since
 // Door43's catalog lists a new repository a few seconds later (E28, S1).
-// "Refresh" reads the portfolio from Door43 again, and its age is labeled
-// (P3, #26). Filters by organization, language, project type, and health,
-// and the order within each owner group, apply in the browser over the list
-// already read (#24).
+// A project the Worker refuses for permission from any view leaves the list
+// at once (A2, #14), and its address says why; a reload reads the portfolio
+// from Door43 again. "Refresh" reads the portfolio from Door43 again, and its
+// age is labeled (P3, #26). Filters by organization, language, project type,
+// and health, and the order within each owner group, apply in the browser over
+// the list already read (#24).
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { catalogMessage } from '@tc-admin/shared/schema';
 import type { HealthState, OperationOutput, ProjectSummary, ProjectType } from '@tc-admin/shared/schema';
-import { callOperation } from './api/client';
+import { ApiError, callOperation, failureMessage } from './api/client';
 import { CreateProject } from './CreateProject';
 import { CREATE_HASH, retireCreated, withCreated } from './create-project';
 import { ProjectView } from './ProjectView';
@@ -26,6 +29,7 @@ import { SORT_LABELS, applyView, filterChoices, filtered, goneChoice, goneLabel,
 import type { PortfolioView, SortOrder } from './portfolio-view';
 import { ageLabel } from './freshness';
 import { canOpen, coverageLabel, formatLabel, hashRef, healthLabel, projectHash, typeLabel } from './portfolio-labels';
+import { onPermissionDenied, projectKey, withoutRevoked } from './revoked';
 
 type PortfolioList = OperationOutput<'portfolio.list'>;
 type Show = 'supported' | 'all';
@@ -46,6 +50,10 @@ export function Portfolio({ account, onFailure }: Props) {
   const [reads, setReads] = useState(0);
   // A refresh asked for and not yet answered: the list stays, labeled with its age, until the new one arrives (P3, #26).
   const [refreshing, setRefreshing] = useState(false);
+  // A read again that failed while a list was shown: the list stays, and this says it was read earlier (P3, #26).
+  const [readProblem, setReadProblem] = useState<string | null>(null);
+  // The `show` whose list is on screen, if any.
+  const listed = useRef<Show | null>(null);
   const now = useNow();
   // The filters and the order (#24); the order is remembered by this browser, the filters are not.
   const [view, setView] = useState<PortfolioView>(rememberedView);
@@ -55,20 +63,37 @@ export function Portfolio({ account, onFailure }: Props) {
       rememberView(next);
       return next;
     });
+  // The projects the Worker refused for permission since this portfolio was opened: dropped from the list (A2, #14).
+  const [revoked, setRevoked] = useState<ReadonlySet<string>>(new Set());
+
+  useEffect(
+    () =>
+      onPermissionDenied(project =>
+        setRevoked(previous => {
+          const key = projectKey(project);
+          return previous.has(key) ? previous : new Set([...previous, key]);
+        }),
+      ),
+    [],
+  );
 
   useEffect(() => {
     let current = true;
     callOperation('portfolio.list', { show }).then(
       portfolio => {
         if (!current) return;
+        listed.current = show;
         setRefreshing(false);
+        setReadProblem(null);
         setResult({ show, portfolio });
         setCreated(previous => retireCreated(portfolio.organizations, previous));
       },
       failure => {
         if (!current) return;
         setRefreshing(false);
-        onFailure(failure);
+        const expired = failure instanceof ApiError && failure.error.code === 'session_expired';
+        if (listed.current === show && !expired) setReadProblem(`${failureMessage(failure)} What is shown was read earlier.`);
+        else onFailure(failure);
       },
     );
     return () => {
@@ -83,7 +108,7 @@ export function Portfolio({ account, onFailure }: Props) {
   }, []);
 
   const portfolio = result?.show === show ? result.portfolio : null;
-  const organizations = withCreated(portfolio?.organizations ?? [], created, account.login);
+  const organizations = withoutRevoked(withCreated(portfolio?.organizations ?? [], created, account.login), revoked);
   const projects = organizations.flatMap(group => group.projects);
   // The list as filtered and ordered; an address still opens any listed project, filtered out or not.
   const shown = applyView(organizations, view);
@@ -105,6 +130,7 @@ export function Portfolio({ account, onFailure }: Props) {
     if (!portfolio) return <p>Loading your projects…</p>;
     return (
       <CreateProject
+        account={account.login}
         onCreated={project => {
           setCreated(project);
           setReads(count => count + 1);
@@ -126,7 +152,12 @@ export function Portfolio({ account, onFailure }: Props) {
         </a>
       </div>
       {!portfolio && <p>Loading your projects…</p>}
-      {portfolio && wanted && <p role="alert">That project is not one you can open here. Choose a project from the list.</p>}
+      {portfolio && wanted && revoked.has(projectKey(wanted)) && (
+        <p role="alert">
+          {catalogMessage('permission_denied')} {wanted.owner}/{wanted.repo} is no longer listed. Reload the page to read your projects from Door43 again.
+        </p>
+      )}
+      {portfolio && wanted && !revoked.has(projectKey(wanted)) && <p role="alert">That project is not one you can open here. Choose a project from the list.</p>}
       {portfolio && projects.length === 0 && (
         <p>
           {show === 'all'
@@ -163,11 +194,17 @@ export function Portfolio({ account, onFailure }: Props) {
             disabled={refreshing}
             onClick={() => {
               setRefreshing(true);
+              setReadProblem(null);
               setReads(count => count + 1);
             }}
           >
             {refreshing ? 'Refreshing…' : 'Refresh'}
           </button>
+        </p>
+      )}
+      {portfolio && readProblem && (
+        <p className="field-error" role="alert">
+          {readProblem}
         </p>
       )}
     </>

@@ -196,14 +196,18 @@ describe('routing', () => {
     }
   });
 
-  test('portfolio.list without a session is session_expired, and Door43 is not asked', async () => {
+  test('A1: portfolio.list without a session is session_expired with the catalog\'s message and next action, and Door43 is not asked', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const fetch = vi.fn<typeof globalThis.fetch>();
     vi.stubGlobal('fetch', fetch);
     try {
       const response = await call('/api/portfolio');
       expect(response.status).toBe(401);
-      expect(OperationErrorShape.parse(await response.json()).code).toBe('session_expired');
+      const body = OperationErrorShape.parse(await response.json());
+      expect(body.code).toBe('session_expired');
+      // The error mapper answers the catalog's message and next action (A1, #15).
+      expect(body.message).toBe('Your Door43 session expired. Please sign in again.');
+      expect(body.next_action).toBe('sign in; unsaved form state preserved where safe');
       expect(fetch).not.toHaveBeenCalled();
     } finally {
       vi.unstubAllGlobals();
