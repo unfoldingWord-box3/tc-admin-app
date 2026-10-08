@@ -1,0 +1,200 @@
+{
+  "host": "qa.door43.org",
+  "read_at": "2026-10-08T20:57:26.279Z",
+  "operation": "project.read",
+  "healthcheck_calls": [
+    "GET /api/v1/repos/tc-admin-qa/id_tcar1546/healthcheck?ref=v2.0.1 200",
+    "GET /api/v1/repos/tc-admin-qa/id_tcar1546/healthcheck?ref=master 200"
+  ],
+  "report": {
+    "ref": {
+      "owner": "tc-admin-qa",
+      "repo": "id_tcar1546",
+      "id": 96921,
+      "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546"
+    },
+    "title": "tC Admin release probe 2026-10-07 1546",
+    "description": "tC Admin release probe 2026-10-07 1546",
+    "default_branch": "master",
+    "language": {
+      "code": "id",
+      "title": "Bahasa Indonesia"
+    },
+    "last_activity_at": "2026-10-08T09:18:44Z",
+    "project_type": "bible",
+    "metadata_format": "sb",
+    "editability": {
+      "state": "editable",
+      "reason": "Scripture Burrito project. Release and editing are available."
+    },
+    "coverage": {
+      "present": 5,
+      "target": 27,
+      "scope": "nt",
+      "basis": "catalog",
+      "units": [
+        {
+          "id": "mat",
+          "present": true
+        },
+        {
+          "id": "mrk",
+          "present": true
+        },
+        {
+          "id": "luk",
+          "present": true
+        },
+        {
+          "id": "jhn",
+          "present": true
+        },
+        {
+          "id": "act",
+          "present": true
+        },
+        {
+          "id": "rom",
+          "present": false
+        },
+        {
+          "id": "1co",
+          "present": false
+        },
+        {
+          "id": "2co",
+          "present": false
+        },
+        {
+          "id": "gal",
+          "present": false
+        },
+        {
+          "id": "eph",
+          "present": false
+        },
+        {
+          "id": "php",
+          "present": false
+        },
+        {
+          "id": "col",
+          "present": false
+        },
+        {
+          "id": "1th",
+          "present": false
+        },
+        {
+          "id": "2th",
+          "present": false
+        },
+        {
+          "id": "1ti",
+          "present": false
+        },
+        {
+          "id": "2ti",
+          "present": false
+        },
+        {
+          "id": "tit",
+          "present": false
+        },
+        {
+          "id": "phm",
+          "present": false
+        },
+        {
+          "id": "heb",
+          "present": false
+        },
+        {
+          "id": "jas",
+          "present": false
+        },
+        {
+          "id": "1pe",
+          "present": false
+        },
+        {
+          "id": "2pe",
+          "present": false
+        },
+        {
+          "id": "1jn",
+          "present": false
+        },
+        {
+          "id": "2jn",
+          "present": false
+        },
+        {
+          "id": "3jn",
+          "present": false
+        },
+        {
+          "id": "jud",
+          "present": false
+        },
+        {
+          "id": "rev",
+          "present": false
+        }
+      ]
+    },
+    "health": {
+      "ref": "master",
+      "checked_at": "2026-10-08T20:57:26.279Z",
+      "source": "door43",
+      "state": "warning",
+      "severity_raw": "warning",
+      "issue_count": 1,
+      "issues": [
+        {
+          "code": "ingredient_title_is_en",
+          "rule": null,
+          "severity": "warning",
+          "title": "Project title is still in English",
+          "details": "The title for the project '**`act`**' is still in English: **`Acts`**",
+          "suggestion": "Edit the <a href=\"/tc-admin-qa/id_tcar1546/src/branch/master/metadata.json\" target=\"_blank\">metadata.json</a> file and translate the **`title`** of the projects. For example, translate **'Acts'** to the resource's language."
+        }
+      ]
+    },
+    "permissions": {
+      "push": true,
+      "admin": true,
+      "checked_at": "2026-10-08T20:57:26.279Z"
+    },
+    "latest_full_release": {
+      "tag": "v2.0.1",
+      "version": "v2.0.1",
+      "sha": "77881f2f6b1dcca8f50972d60c71e87954b98fa8",
+      "published_at": "2026-10-07T17:12:33Z",
+      "author": "tc-admin-qa"
+    },
+    "release_health": {
+      "ref": "v2.0.1",
+      "checked_at": "2026-10-08T20:57:26.279Z",
+      "source": "door43",
+      "state": "healthy",
+      "severity_raw": "success",
+      "issue_count": 0,
+      "issues": []
+    },
+    "default_branch_head": {
+      "sha": "da76985eec7b18cedd8c954f90028da4bb8fa517",
+      "committed_at": "2026-10-08T09:18:42Z"
+    },
+    "active_preparation": null,
+    "setup": {
+      "state": "complete",
+      "failed_step": null
+    },
+    "freshness": {
+      "read_at": "2026-10-08T20:57:26.279Z",
+      "source": "live",
+      "age_seconds": 0
+    }
+  }
+}

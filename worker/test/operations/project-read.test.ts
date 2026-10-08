@@ -21,6 +21,7 @@ const SHA = '2d9dbd1ee09b5a1c28edd8668462f6a64029619b';
 const raw = <T>(path: string): T => JSON.parse(readFileSync(new URL(`../../../fixtures/door43/qa.door43.org/${path}`, import.meta.url), 'utf8')) as T;
 const repository = recorded<Record<string, unknown>>('2026-10-07/repos/bahtraku__Perjanjian-Baru-Pendau.json.gz');
 const health = raw<unknown>('2026-09-21/healthcheck/bahtraku__Perjanjian-Baru-Pendau__master.json');
+const releaseHealth = raw<unknown>('2026-09-21/healthcheck/bahtraku__Perjanjian-Baru-Pendau__v1.2.json');
 const branch = raw<{ commit: Record<string, unknown> }>('2026-10-07/setup-retry/08-GET-branch.json');
 const probeRelease = recorded<Record<string, unknown> & { door43_metadata: Record<string, unknown> }>('2026-09-22/probe-write/14-lookup-by-tag.json');
 const release = { ...probeRelease, tag_name: 'v1.2', target_commitish: SHA, door43_metadata: { ...probeRelease.door43_metadata, commit_sha: SHA } };
@@ -47,6 +48,10 @@ interface State {
   health: unknown;
   /** The branch read's status when it is not the recorded head. */
   branch: 'recorded' | 404;
+  /** The health check's answer for the release tag `v1.2` (#146), as `health` is the branch's. */
+  releaseHealth: unknown;
+  /** Whether the catalog names a full release (E14); without one, no tag is read. */
+  release: boolean;
 }
 
 const NOW = new Date('2026-10-08T12:00:00.000Z');
@@ -58,10 +63,15 @@ const fetch: Fetch = async url => {
   const { pathname, search } = new URL(url);
   calls.push(pathname + search);
   if (pathname === REPO) {
-    const { permissions: _recorded, ...bare } = repository;
+    const { permissions: _recorded, ...recorded } = repository;
+    const catalog = recorded.catalog as Record<string, unknown> | undefined;
+    const bare = state.release ? recorded : { ...recorded, catalog: { ...catalog, prod: null } };
     return Response.json(state.permissions === null ? bare : { ...bare, permissions: state.permissions });
   }
-  if (pathname === `${REPO}/healthcheck`) return typeof state.health === 'number' ? new Response('', { status: state.health }) : Response.json(state.health);
+  if (pathname === `${REPO}/healthcheck`) {
+    const answer = new URLSearchParams(search).get('ref') === 'v1.2' ? state.releaseHealth : state.health;
+    return typeof answer === 'number' ? new Response('', { status: answer }) : Response.json(answer);
+  }
   if (pathname === `${REPO}/branches/master`) return state.branch === 404 ? new Response('', { status: 404 }) : Response.json({ ...branch, name: 'master', commit: { ...branch.commit, id: SHA } });
   if (pathname === `${REPO}/releases/tags/v1.2`) return Response.json(release);
   return new Response('', { status: 404 });
@@ -96,7 +106,7 @@ const preparationOf = (id: string, state: Preparation['state'], at: string): Pre
 beforeEach(() => {
   kv = new MemoryKV();
   calls = [];
-  state = { permissions: { push: true, admin: false, pull: true }, health, branch: 'recorded' };
+  state = { permissions: { push: true, admin: false, pull: true }, health, branch: 'recorded', releaseHealth, release: true };
 });
 
 describe('project.read over the recorded Pendau project', () => {
@@ -136,6 +146,30 @@ describe('project.read over the recorded Pendau project', () => {
     expect(pending.health).toMatchObject({ state: 'checking', severity_raw: null, issue_count: null });
     state.health = 503;
     expect((await read()).health).toMatchObject({ state: 'door43_unavailable', severity_raw: null });
+  });
+
+  test('#146, H1, E28: the latest full release\'s health is read by its tag beside the branch\'s, with its own issues', async () => {
+    const report = await read();
+    // H1: Door43's result for v1.2 as recorded (2026-09-21): a warning, one `ingredient_title_is_en` and 55 `sb_ingredient_mismatch`.
+    expect(report.release_health).toMatchObject({ state: 'warning', severity_raw: 'warning', ref: 'v1.2', checked_at: NOW.toISOString(), issue_count: 56, source: 'door43' });
+    expect(report.release_health?.issues?.filter(issue => issue.code === 'sb_ingredient_mismatch')).toHaveLength(55);
+    expect(report.health).toMatchObject({ ref: 'master', issue_count: 28 });
+    expect(calls).toEqual(expect.arrayContaining([`${REPO}/healthcheck?ref=master`, `${REPO}/healthcheck?ref=v1.2`]));
+  });
+
+  test('#146, H3: a release health check Door43 cannot answer is door43_unavailable, never healthy; the branch\'s is still reported', async () => {
+    state.releaseHealth = 503;
+    const report = await read();
+    expect(report.release_health).toMatchObject({ state: 'door43_unavailable', ref: 'v1.2', issue_count: null, issues: null });
+    expect(report.health).toMatchObject({ state: 'warning', issue_count: 28 });
+  });
+
+  test('#146: a project without a full release has no release health, and no tag\'s health check is read', async () => {
+    state.release = false;
+    const report = await read();
+    expect(report.latest_full_release).toBeNull();
+    expect(report.release_health).toBeNull();
+    expect(calls.filter(call => call.includes('/healthcheck'))).toEqual([`${REPO}/healthcheck?ref=master`]);
   });
 
   test('W4, E10: a default branch with no commit is no head and an incomplete setup', async () => {

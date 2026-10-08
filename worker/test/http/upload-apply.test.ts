@@ -54,6 +54,7 @@ const receipt = {
     coverage: { present: 1, target: 27, scope: 'nt', basis: 'archive', units: [] },
     health: { state: 'never_checked', severity_raw: null, ref: 'c'.repeat(40), checked_at: null, issue_count: null, issues: null, source: 'door43' },
     latest_full_release: null,
+    release_health: null,
     default_branch_head: { sha: 'c'.repeat(40), committed_at: '2026-10-08T12:00:01Z' },
     active_preparation: null,
     setup: { state: 'complete', failed_step: null },
@@ -94,6 +95,14 @@ describe('POST /api/projects/{owner}/{repo}/uploads', () => {
     expect(input.files.map(file => file.name)).toEqual(['GEN.usfm']);
     expect(new TextDecoder().decode(input.files[0]!.content)).toBe('\\id GEN\n');
     expect(input.confirmations).toEqual({ 'GEN.usfm': { book: 'gen' } });
+  });
+
+  test('#146: a receipt stored before release_health existed is answered again as 200, stating none', async () => {
+    const { release_health: _, ...older } = receipt.result;
+    HANDLERS['upload.apply'] = (async (input: unknown) => (seen.push(input), { ...receipt, result: older })) as never;
+    const response = await post(form('p1', [{ name: 'GEN.usfm', content: '\\id GEN\n' }]), { [IDEMPOTENCY_HEADER]: 'p1' });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(receipt);
   });
 
   test('#24: a receipt stored before last_activity_at existed is answered again as 200, stating none, and Door43 is not asked', async () => {

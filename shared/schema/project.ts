@@ -108,6 +108,11 @@ export const ProjectReport = z.object({
   latest_full_release: z
     .object({ tag: z.string(), version: z.string(), sha: z.string(), published_at: z.string(), author: z.string() })
     .nullable(),
+  /**
+   * Door43's health check of the latest full release's tag (E28), with its issues, as `health` is the default branch's;
+   * `null` when there is no full release, or when the report did not read it (a receipt reports what it wrote, #146).
+   */
+  release_health: Health.nullable().default(null),
   /** `null` for a repository without a commit: a project whose setup is incomplete, or an empty repository (E10). */
   default_branch_head: z.object({ sha: z.string(), committed_at: z.string() }).nullable(),
   active_preparation: z.object({ id: z.string(), state: PreparationState, version: z.string() }).nullable(),

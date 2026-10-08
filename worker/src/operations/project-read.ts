@@ -14,6 +14,7 @@ import { CatalogError, Preparation } from '@tc-admin/shared/schema';
 import type { OperationOutput, ParsedInput, ProjectReport } from '@tc-admin/shared/schema';
 import { readBranchHead } from '../door43/branches';
 import { readHealth } from '../door43/health';
+import { repositoryRefs } from '../door43/catalog';
 import { readRepository, repositoryAccess } from '../door43/repos';
 import { healthOfRead } from '../model/health';
 import type { OperationContext } from './context';
@@ -69,8 +70,11 @@ export async function projectRead(input: ParsedInput<'project.read'>, context: O
   const checkedAt = context.now().toISOString();
   const summary = projectSummary(repository, access, checkedAt);
   const branch = summary.default_branch;
-  const [health, head, release, preparation] = await Promise.all([
+  // The latest full release's tag, as the catalog names it (E14): Door43 checks every tag (E28), so its health is read beside the branch's (#146).
+  const releaseTag = repositoryRefs(repository).latest_full_release?.tag ?? null;
+  const [health, releaseHealth, head, release, preparation] = await Promise.all([
     readHealth(client, repository.owner.login, repository.name, branch).then(read => healthOfRead(read, branch, checkedAt)),
+    releaseTag ? readHealth(client, repository.owner.login, repository.name, releaseTag).then(read => healthOfRead(read, releaseTag, checkedAt)) : Promise.resolve(null),
     branchHead(context, repository.owner.login, repository.name, branch, checkedAt),
     latestFullRelease(context, repository),
     preparationUnderWay(context, repository.owner.login, repository.name),
@@ -79,6 +83,7 @@ export async function projectRead(input: ParsedInput<'project.read'>, context: O
     ...summary,
     health,
     latest_full_release: release,
+    release_health: release ? releaseHealth : null,
     default_branch_head: head,
     active_preparation: preparation,
     // A repository with no commit on its default branch is a setup that did not finish its first commit (W4), or an empty repository (E10).
