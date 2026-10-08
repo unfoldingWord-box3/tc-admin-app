@@ -4,14 +4,20 @@
 // (`project.read`) is #25. Opened from the portfolio, it lists the project's
 // release preparations (`preparation.list`, #125): each under way with a link
 // into the stepper at it and the discard, each released with a link to its
-// release.
+// release. "Add books" (or "Add stories") opens the upload screen in its
+// place (#76); the upload's receipt carries the project report, which then
+// replaces the one shown.
 
-import type { Preparation, ProjectSummary } from '@tc-admin/shared/schema';
+import type { Preparation, ProjectReport, ProjectSummary } from '@tc-admin/shared/schema';
 import { useEffect, useState } from 'react';
 import { ApiError, callOperation, failureMessage } from './api/client';
+import { WRITE_LABELS } from './create-project';
 import { coverageLabel, healthLabel, releaseHash, releaseTagHash, typeLabel } from './portfolio-labels';
 import { isActive, preparationLink, preparationVersion, withAnswer } from './preparations';
 import { STATE_LABELS, canDiscard } from './release-stepper';
+import { UploadScreen } from './UploadScreen';
+import { addAction, uploadTypeOf } from './upload';
+import type { UploadReceipt } from './upload';
 
 interface Props {
   project: ProjectSummary;
@@ -108,9 +114,36 @@ function Preparations({ project, onFailure }: { project: ProjectSummary; onFailu
   );
 }
 
-export function ProjectView({ project, onFailure }: Props) {
-  const { coverage } = project;
+/** Whether files can be added to the project now: a Bible or Open Bible Stories project that is editable, and whose setup is complete when the report says. */
+function uploadable(project: ProjectSummary | ProjectReport): boolean {
+  if (project.editability.state !== 'editable' || !uploadTypeOf(project.project_type)) return false;
+  return !('setup' in project) || project.setup.state === 'complete';
+}
+
+export function ProjectView({ project: given, onFailure }: Props) {
   const [tag, setTag] = useState('');
+  const [uploading, setUploading] = useState(false);
+  // The last upload's receipt and what it added: its project report replaces the one this view was given (#76).
+  const [uploaded, setUploaded] = useState<{ receipt: UploadReceipt; added: string } | null>(null);
+  const project: ProjectSummary | ProjectReport = uploaded?.receipt.result ?? given;
+  const { coverage } = project;
+  const type = uploadTypeOf(project.project_type);
+
+  if (uploading && type) {
+    return (
+      <UploadScreen
+        project={project}
+        type={type}
+        onFailure={onFailure}
+        onCancel={() => setUploading(false)}
+        onUploaded={(receipt, added) => {
+          setUploaded({ receipt, added });
+          setUploading(false);
+        }}
+      />
+    );
+  }
+
   return (
     <section>
       <p>
@@ -133,7 +166,33 @@ export function ProjectView({ project, onFailure }: Props) {
         <dt>Health</dt>
         <dd>{healthLabel(project.health.state)}</dd>
       </dl>
+      {uploaded && (
+        <div className="upload-receipt" role="status">
+          <p>
+            <strong>{uploaded.added} in one commit.</strong>
+          </p>
+          {uploaded.receipt.wrote.map(write => (
+            <p key={`${write.kind}:${write.target}`} className="muted">
+              Written: {WRITE_LABELS[write.kind]} <code>{write.target}</code>
+              {write.sha && (
+                <>
+                  {' '}
+                  · <code>{write.sha.slice(0, 8)}</code>
+                </>
+              )}
+            </p>
+          ))}
+          {uploaded.receipt.warnings.map((warning, index) => (
+            <p key={`${warning.code}-${index}`}>{warning.message}</p>
+          ))}
+        </div>
+      )}
       <p className="actions">
+        {type && uploadable(project) && (
+          <button type="button" onClick={() => setUploading(true)}>
+            {addAction(type)}
+          </button>
+        )}
         <a className="button" href={releaseHash(project)}>
           Prepare a release
         </a>
