@@ -55,6 +55,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | [#24](https://github.com/unfoldingWord-box3/tc-admin-app/issues/24) Grouping, filters, async analysis | §5 | — | H3, H5 | Q17 | `portfolio.list` | operations, web | — |
 | [#25](https://github.com/unfoldingWord-box3/tc-admin-app/issues/25) Health states | §5, §9; domain §5 | 0007 | H1, H3, H4 | E7, E15, E28, Q2, Q21 | `project.read`, `preparation.read` | model/health, web | — |
 | [#26](https://github.com/unfoldingWord-box3/tc-admin-app/issues/26) Refresh and freshness | §9; arch §4 | 0002 | P3 | — | `project.refresh` | operations, web | — |
+| [#124](https://github.com/unfoldingWord-box3/tc-admin-app/issues/124) Health findings display | §9, §10 | — | H1, H2, H4 | E16, E60, E65 | `preparation.read` (display only) | web/HealthFindings, web/health-findings, web/door43-text, web/ReleaseStepper | S6 |
 
 ### EPIC: Create a project ([#32](https://github.com/unfoldingWord-box3/tc-admin-app/issues/32))
 
@@ -78,6 +79,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | [#39](https://github.com/unfoldingWord-box3/tc-admin-app/issues/39) Create, pre-release, promote | §10 | 0003 | R3, R5, R6, R7, R8, R9, H2, A2, X1 | E21, E27, E29, Q3, Q5, Q6, E54, E56 | `release.create`, `release.promote` | door43/releases, door43/branches, operations/release-create, operations/release-promote, web/ReleaseStepper | S7 |
 | [#40](https://github.com/unfoldingWord-box3/tc-admin-app/issues/40) Stale source and lost response | §10, §11; arch §6 | — | R5, R6, X1, X2 | E20, E21, E27, E29, E54 | `release.lookup`, `preparation.read`, `release.create`, error catalog | operations/release-lookup, operations/preparation-read, operations/release-create, door43/releases | S6 |
 | [#58](https://github.com/unfoldingWord-box3/tc-admin-app/issues/58) Discard a preparation | §10 | 0003 | R7, A2 | E21, E27, Q14, E54, E56 | `preparation.discard` | operations/preparation-discard, door43/branches, web/ReleaseStepper | — |
+| [#125](https://github.com/unfoldingWord-box3/tc-admin-app/issues/125) Reopen a preparation after its page is closed | §10, §11 | 0011 | R7, X2, A2 | E56, E57, E59 | `release.plan` or a read listing preparations, `preparation.read`, `preparation.discard` | operations, web | S6, S7 |
 
 ### EPIC: Add books: upload and import ([#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45), [#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47))
 

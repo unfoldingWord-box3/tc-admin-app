@@ -322,6 +322,7 @@ web/
   src/ReleaseView.tsx  one release by its tag: the lookup and the promotion of a pre-release from its own page, whether or not the stepper that made it is open (S7, R8)
   src/ReleaseStepper.tsx, src/release-stepper.ts  the release stepper: one operation per step, the selection from the plan's defaults, the health poll, the warnings acknowledged, the release and its promotion, the discard; its logic as pure functions (#41)
   src/ProjectView.tsx  one project's report, shown from the portfolio and after creation
+  src/HealthFindings.tsx, src/health-findings.ts, src/door43-text.ts  Door43's health findings: the summary when a release is blocked or a warning needs confirmation, each finding's severity as an icon and a word (H4), errors first; Door43's bold, code, and links rendered from tokens, never inserted as HTML (H1, #124)
   test/
 fixtures/
   door43/            recorded responses and archives, each with host, ref, and date (ADR 0012)

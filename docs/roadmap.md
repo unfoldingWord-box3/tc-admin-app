@@ -12,7 +12,7 @@ An **epic** is one GitHub issue titled `EPIC: …` with the `epic` label and a t
 
 Only Milestone 1 carries a date. Milestones 2 and 3 carry a target month and are re-planned after the Milestone 1 demo.
 
-Capacity assumption: one primary engineer working part time with agent assistance, with product and design support from Birch. If capacity changes, dates move. Milestone 1 scope was re-set on 1 October 2026 and does not grow further; the date did not move with that re-plan, which is a risk Rich accepted.
+Capacity assumption: one primary engineer working part time with agent assistance, with product and design support from Birch. If capacity changes, dates move. Milestone 1 scope was re-set on 1 October 2026 and does not grow further; the date did not move with that re-plan, which is a risk Rich accepted. **Amended 8 October 2026 by Rich:** [#125](https://github.com/unfoldingWord-box3/tc-admin-app/issues/125), reopening a release preparation after its page is closed or reloaded, joins Milestone 1, since a stranded preparation would strand the demo's release; Milestone 1's due date and the demo both move to Wednesday 21 October, which leaves room for it. The same day Rich added [#124](https://github.com/unfoldingWord-box3/tc-admin-app/issues/124), showing Door43's health findings so that a blocked release is obvious, at his request as a reviewer of the running app: on QA a blocked Open Bible Stories release listed its errors as plain body text with Door43's Markdown shown raw.
 
 The agent assistance is a design input, not a footnote. The build is organized so that an agent can orient from one file ([AGENTS.md](../AGENTS.md)), check any change against a numbered list of what must never break ([invariants.md](invariants.md)), implement against a catalog of named operations with typed errors ([operations.md](operations.md)), test against recorded Door43 fixtures without credentials (ADR 0012), and never re-probe a fact already recorded ([evidence.md](evidence.md)). Each of these costs a document now and saves a cycle every week until the demo.
 
@@ -39,7 +39,7 @@ Recorded in [CONTEXT.md](../CONTEXT.md) and the [ADRs](adr). The ones that shape
 
 ## Milestone 1 — Release
 
-**Due:** Friday 16 October 2026 (unchanged by the 1 October re-plan)
+**Due:** Wednesday 21 October 2026 (moved from Friday 16 October by Rich on 8 October 2026; the 1 October re-plan had left it unchanged); the demo is on the same day, Wednesday 21 October 2026 (Rich, 8 October 2026)
 **Demo:** live on production Door43 against `bahtraku/Perjanjian-Baru-Pendau` (Scripture Burrito, baseline `v1.2`), in front of Birch and the Bahtraku team; import from `bahtraku/id_tb1` (Resource Container) into a new project is rehearsed on QA (re-planned 1 October 2026; the earlier plan released id_tb1 directly)
 **Development host:** QA Door43
 **Acceptance owner:** Birch, using the `birch` account
@@ -87,6 +87,7 @@ The metadata editor, Setup-incomplete recovery beyond a retry link, accessibilit
 - Organization grouping, filters, configurable sorting, asynchronous per-project analysis.
 - Health states from Door43's `healthcheck_severity`, with never-checked, running, unavailable, and error states distinct from healthy.
 - Refresh behavior.
+- Health findings that read at a glance: a summary when the release is blocked or a warning needs confirmation, each finding with a severity badge (icon and word), its details and Door43's suggestion, errors first, and Door43's bold, code, and links rendered ([#124](https://github.com/unfoldingWord-box3/tc-admin-app/issues/124), added 8 October 2026).
 
 **EPIC: Create a project** ([#32](https://github.com/unfoldingWord-box3/tc-admin-app/issues/32))
 - Wizard: owner (organization or own account), project type, title, abbreviation, target language, testament scope for Bible; the repository name derived as `<language>_<abbreviation>` and checked for uniqueness.
@@ -109,6 +110,7 @@ The metadata editor, Setup-incomplete recovery beyond a retry link, accessibilit
 - Health poll: every 5 seconds for 3 minutes, then hand off to a refresh button.
 - Version calculation and edit, required release notes, pre-release option, create, promote.
 - Stale-source protection, lost-response lookup by tag, retained branch on failure, branch deletion after success.
+- A preparation outlives its page: after a reload, a closed tab, or a new sign-in the manager finds it again, to continue or discard it ([#125](https://github.com/unfoldingWord-box3/tc-admin-app/issues/125), added 8 October 2026).
 
 **EPIC: Demo readiness** ([#44](https://github.com/unfoldingWord-box3/tc-admin-app/issues/44))
 - Written demo script against a Bahtraku repository on production.
