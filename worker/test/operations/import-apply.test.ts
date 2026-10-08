@@ -211,6 +211,14 @@ describe('refused before any write', () => {
     expect(writes()).toEqual([]);
   });
 
+  test('R5: a file that appeared at a path the plan creates is source_changed, and nothing is written', async () => {
+    const made = await plan();
+    state.trees = new Map([[SHA, { ...tree, tree: [...tree.tree, { path: 'ingredients/GEN.usfm', type: 'blob', sha: 'e'.repeat(40) }] }]]);
+    const error = await failure(apply(made.id));
+    expect(error).toMatchObject({ code: 'source_changed', details: { path: 'ingredients/GEN.usfm', reason: 'the file is not the one the plan replaces' } });
+    expect(writes()).toEqual([]);
+  });
+
   test('source_unavailable: an archive Door43 no longer serves at apply, before the project is read, and nothing is written', async () => {
     const made = await plan();
     state.sourceArchive = 404;
@@ -287,6 +295,23 @@ describe('X1: a commit whose outcome is unknown is never sent again', () => {
     sent = [];
     expect(await apply(made.id)).toEqual(adopted);
     expect(sent.map(request => request.path)).toEqual(['/api/v1/user']);
+  });
+
+  test('X1: a landed commit whose answer was lost is adopted from the blob ids the attempt recorded, with the source no longer served and nothing written', async () => {
+    const made = await plan();
+    state.commit = 'network';
+    await failure(apply(made.id));
+    const call = contentsCall();
+    const { gitBlobSha } = await import('../../src/model/git-blob');
+    const blobs = await Promise.all(call.files.map(async file => ({ path: file.path, type: 'blob', sha: await gitBlobSha(decode64(file.content)) })));
+    state.head = COMMIT;
+    state.trees.set(COMMIT, { sha: 't'.repeat(40), tree: [...tree.tree.filter(entry => !blobs.some(b => b.path === entry.path)), ...blobs] });
+    state.sourceArchive = 404;
+    sent = [];
+    const adopted = await apply(made.id);
+    expect(adopted.wrote).toEqual([{ kind: 'commit', target: 'bahtraku/Perjanjian-Baru-Pendau@master', sha: COMMIT, url: `https://qa.door43.org/bahtraku/Perjanjian-Baru-Pendau/commit/${COMMIT}` }]);
+    expect(sourceRequests()).toEqual([]);
+    expect(writes()).toEqual([]);
   });
 
   test('X1: a commit Door43 refused is commit_failed quoting its message, with the outcome failed; the plan may then be applied again, which commits once', async () => {

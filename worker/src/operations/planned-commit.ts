@@ -62,8 +62,18 @@ export interface CommitOutcome {
   attempted_at: string;
 }
 
-/** A plan's payload as the apply keeps it: as the plan stored it, with what became of the last commit sent. */
-export type WithOutcome<Payload extends CommitPayload> = Payload & { commit?: CommitOutcome };
+/** A file of the commit by its path and the blob id Door43 will list for it. */
+export interface CommitBlob {
+  path: string;
+  sha: string;
+}
+
+/**
+ * A plan's payload as the apply keeps it: as the plan stored it, with what became of the last commit sent,
+ * and the blob of every file that commit carried, recorded before the write, so a later apply adopts a
+ * landed commit without the bytes (X1): an import's source may no longer be served by then.
+ */
+export type WithOutcome<Payload extends CommitPayload> = Payload & { commit?: CommitOutcome; sent?: CommitBlob[] };
 
 /** One file the commit carries: its path, its bytes, their blob id, and the blob it replaces. */
 export interface PlannedCommitFile {
@@ -106,6 +116,8 @@ export interface LoadedPlan<Payload extends CommitPayload> {
   attempt: StoredAttempt<WithOutcome<Payload>> | null;
   payload: WithOutcome<Payload>;
   unknown: boolean;
+  /** When the outcome is unknown, the blob of every file the attempt sent, as recorded before the write; `null` when none is recorded. */
+  sent: CommitBlob[] | null;
 }
 
 /**
@@ -135,7 +147,9 @@ export async function loadPlan<Payload extends CommitPayload>(
   const refusal = (outcome: CommitOutcome | undefined) => attempt !== null && outcome?.outcome === 'failed' && outcome.attempted_at === attempt.attempted_at;
   const unknown = recorded?.outcome === 'unknown' || (attempt !== null && !refusal(recorded) && !refusal(attempt.stored.payload.commit));
   if (!unknown && expired(stored, context.now())) throw planExpired(input.plan_id);
-  return { stored, kept, attempt, payload, unknown };
+  // The attempt's own record first; once its key is gone, the plan's, which the outcome's record wrote with the same blobs.
+  const sent = unknown ? (attempt?.stored.payload.sent ?? kept?.payload.sent ?? null) : null;
+  return { stored, kept, attempt, payload, unknown, sent };
 }
 
 /** The plan's `metadata.json` as one file of the commit, with the blob id Door43 will list for it (E19, E45). */
@@ -344,13 +358,13 @@ export async function applyPlannedCommit<Payload extends CommitPayload>(planned:
   if (repository.default_branch !== branch) throw sourceChanged(where, 'the default branch is not the one planned');
   const head = await readBranchHead(client, payload.owner, payload.repo, branch);
   const bound = payload.bound_to.default_branch_sha;
-  const blobs = [...planned.files, planned.metadata].map(({ path, sha }) => ({ path, sha }));
+  const blobs: CommitBlob[] = [...planned.files, planned.metadata].map(({ path, sha }) => ({ path, sha }));
   if (head.sha !== bound) {
     // An earlier apply of this plan may have made this commit and lost the answer: the branch holding every planned file, blob for blob, is it, adopted and never made again (X1).
     // A commit Door43 refused is not adopted: the branch moved, and the plan is planned again (R5).
     if (unknown) {
       const tree = await readTree(client, payload.owner, payload.repo, head.sha);
-      if (holdsFiles(blobs, tree.files)) {
+      if (holdsFiles(planned.loaded.sent ?? blobs, tree.files)) {
         const basis = { repository, coverage: committedCoverage(payload, new Set(tree.files.map(file => file.path))), release: await latestFullRelease(context, repository) };
         return answer(planned, context, basis, { sha: head.sha, url: head.url, committed_at: head.committed_at }, head, context.now());
       }
@@ -389,7 +403,7 @@ export async function applyPlannedCommit<Payload extends CommitPayload>(planned:
   // The attempt, recorded before the write in a key of its own and kept a day, so a later apply of this plan reads before it writes.
   // A store that refuses it stops the apply before the write: unrecorded, a lost answer on an unmoved branch would be sent again (X1).
   const attemptedAt = started.toISOString();
-  const plan: WithOutcome<Payload> = { ...payload };
+  const plan: WithOutcome<Payload> = { ...payload, sent: blobs };
   delete plan.commit;
   const attemptRecord: StoredAttempt<WithOutcome<Payload>> = { stored: { ...stored, payload: plan }, attempted_at: attemptedAt };
   let attemptWrittenAt: number;

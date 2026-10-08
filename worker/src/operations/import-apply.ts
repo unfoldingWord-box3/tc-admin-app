@@ -100,7 +100,9 @@ export async function importApply(input: ParsedInput<'import.apply'>, context: O
   const loaded = await loadPlan<ImportPlanPayload>(context, 'import.plan', input, account.login);
   const { payload } = loaded;
   // The bytes before any read of the project, as an upload's are checked first: the source's archive, read and never written (W2).
-  const files = await plannedFiles(client, payload);
+  // A commit whose outcome is unknown is never sent again (X1), so its bytes are not needed: the blob ids its attempt recorded
+  // before the write decide whether the branch holds it, and the source need not still be served.
+  const files = loaded.unknown && loaded.sent ? [] : await plannedFiles(client, payload);
   const metadata = await plannedMetadata(payload, 'import.plan');
 
   return applyPlannedCommit({ operation: 'import.apply', input, account: account.login, loaded, files, metadata, message: commitMessage(files, payload, payload.project_type, context) }, context);
