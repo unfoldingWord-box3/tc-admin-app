@@ -1,0 +1,50 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcai1633/branches/master",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 124,
+    "json": {
+      "name": "master",
+      "commit": {
+        "id": "646113582b97d2496ccfc320a282e433230432c5",
+        "message": "Create tC Admin import probe 2026-10-08 1633\n\nmetadata.json, ingredients/license.md, and README.md, written by tC Admin 0.1.0.\n",
+        "url": "https://qa.door43.org/tc-admin-qa/id_tcai1633/commit/646113582b97d2496ccfc320a282e433230432c5",
+        "author": {
+          "name": "tc-admin-qa",
+          "email": "[redacted]",
+          "username": "tc-admin-qa"
+        },
+        "committer": {
+          "name": "tc-admin-qa",
+          "email": "[redacted]",
+          "username": "tc-admin-qa"
+        },
+        "verification": {
+          "verified": false,
+          "reason": "gpg.error.not_signed_commit",
+          "signature": "",
+          "signer": null,
+          "payload": ""
+        },
+        "timestamp": "2026-10-08T16:33:31Z",
+        "added": null,
+        "removed": null,
+        "modified": null
+      },
+      "protected": false,
+      "required_approvals": 0,
+      "enable_status_check": false,
+      "status_check_contexts": [],
+      "user_can_push": true,
+      "user_can_merge": true,
+      "effective_branch_protection_name": ""
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/repos/bahtraku/id_tb1/sb/1974.zip",
+    "headers": {
+      "accept": "application/zip, application/octet-stream",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 292,
+    "json": {
+      "note": "[zip body: unknown bytes declared]"
+    }
+  }
+}

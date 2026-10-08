@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcai1633/sb/646113582b97d2496ccfc320a282e433230432c5.zip",
+    "headers": {
+      "accept": "application/zip, application/octet-stream",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 135,
+    "json": {
+      "note": "[zip body: unknown bytes declared]"
+    }
+  }
+}

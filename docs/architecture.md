@@ -307,9 +307,11 @@ worker/
     preparation-list.ts  preparation.list: the push permission first (A2), then the project's stored preparations as stored, newest first, an unparseable record left out (R7; #125)
     preparation-read.ts  preparation.read: the stored preparation, restart_required when the default branch moved (R5), the branch's health and the state it moves to (H1, H2; #36)
     upload-plan.ts   upload.plan: the batch checked first (W6), the project writable and editable (A2, W2), every file identified or confirmed, two for one unit refused, overwrites and diffs from the default branch's tree and archive at its head, the proposed metadata (R10), one commit announced, bound to the head (R5), stored without the bytes (Q33; #74)
-    upload-apply.ts  upload.apply: the same files sent again and matched to the plan by size and md5 (Q33), none held back, the plan's confirmations only, permission re-read (A2), still editable (W2), the head still the plan's (R5); one commit with the files and the metadata, create or update by blob, sent once (W5, A3, X1); the attempt recorded first, an unknown outcome never sent again and a landed commit adopted (X1); the receipt by plan id (#75)
+    planned-commit.ts  the commit a plan listed, made once, shared by upload.apply and import.apply (#80): the receipt by plan id (§1 rule 6), the plan loaded with its attempt, permission re-read (A2), still editable (W2), the head still the plan's (R5); one commit with the files and the metadata, create or update by blob, sent once (W5, A3, X1); the attempt recorded first, an unknown outcome never sent again and a landed commit adopted (X1); the project report as the commit left it
+    upload-apply.ts  upload.apply: the same files sent again and matched to the plan by size and md5 (Q33), none held back, the plan's confirmations only; then the planned commit (#75)
     source-search.ts  source.search: an owner's Bible and Open Bible Stories repositories as import sources, at the last release or the default branch (E35, Q25; #78)
     import-plan.ts   import.plan: the project writable and editable (A2, W2), the chosen units checked, the source read and its revision resolved to a release's commit or the default branch's head, the files taken from its archive one at a time (E1, E30), overwrites and diffs as upload.plan, the proposed metadata with one source relationship and the dcs authority (R10, E24, Q34), one commit announced to the project and nothing to the source (W5, W2), bound to the head (R5; #79)
+    import-apply.ts  import.apply: the source's archive read again by the plan's ref and each file matched to the plan's size and md5 (`source_changed` in its source wording when not), the source never written (W2); then the planned commit, with a message naming the source and revision (#80)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)
@@ -336,6 +338,7 @@ scripts/
   probe/             live Door43 probes that write to docs/evidence.md: qa-write-probe (the release writes),
                      qa-create-probe (project.create.plan and apply through the Worker's own code, #30)
                      qa-release-probe (the release flow through the Worker's own code on a seeded repository: plan, prepare, read, create, lookup, promote, discard; E54)
+                     qa-import-probe (import.plan and import.apply through the Worker's own code: a new project, two books from bahtraku/id_tb1 at its release, the commit and metadata re-read; E69)
                      planned: seed-qa (#3)
 docs/                this tower
 prototypes/door43-mcp  a Door43 MCP proof of concept, not a deliverable; prototypes/tc-admin was retired by #7

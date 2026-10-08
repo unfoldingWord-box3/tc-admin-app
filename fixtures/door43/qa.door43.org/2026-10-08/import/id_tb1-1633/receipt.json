@@ -1,0 +1,338 @@
+{
+  "operation": "import.apply",
+  "request_id": "probe-1791477209851",
+  "plan_id": "b3bbc160-50c9-433b-a19f-967d3bcd5ef5",
+  "started_at": "2026-10-08T16:33:44.741Z",
+  "finished_at": "2026-10-08T16:33:46.525Z",
+  "wrote": [
+    {
+      "kind": "commit",
+      "target": "tc-admin-qa/id_tcai1633@master",
+      "sha": "a1c91812614d1a306f62fa88d395789afb322ff4",
+      "url": "https://qa.door43.org/tc-admin-qa/id_tcai1633/commit/a1c91812614d1a306f62fa88d395789afb322ff4"
+    }
+  ],
+  "result": {
+    "ref": {
+      "owner": "tc-admin-qa",
+      "repo": "id_tcai1633",
+      "id": 96950,
+      "url": "https://qa.door43.org/tc-admin-qa/id_tcai1633"
+    },
+    "title": "tC Admin import probe 2026-10-08 1633",
+    "description": "tC Admin import probe 2026-10-08 1633",
+    "default_branch": "master",
+    "language": {
+      "code": "id",
+      "title": "Bahasa Indonesia"
+    },
+    "project_type": "bible",
+    "metadata_format": "sb",
+    "editability": {
+      "state": "editable",
+      "reason": "Scripture Burrito project. Release and editing are available."
+    },
+    "coverage": {
+      "present": 2,
+      "target": 66,
+      "scope": "full",
+      "basis": "archive",
+      "units": [
+        {
+          "id": "gen",
+          "present": true
+        },
+        {
+          "id": "exo",
+          "present": true
+        },
+        {
+          "id": "lev",
+          "present": false
+        },
+        {
+          "id": "num",
+          "present": false
+        },
+        {
+          "id": "deu",
+          "present": false
+        },
+        {
+          "id": "jos",
+          "present": false
+        },
+        {
+          "id": "jdg",
+          "present": false
+        },
+        {
+          "id": "rut",
+          "present": false
+        },
+        {
+          "id": "1sa",
+          "present": false
+        },
+        {
+          "id": "2sa",
+          "present": false
+        },
+        {
+          "id": "1ki",
+          "present": false
+        },
+        {
+          "id": "2ki",
+          "present": false
+        },
+        {
+          "id": "1ch",
+          "present": false
+        },
+        {
+          "id": "2ch",
+          "present": false
+        },
+        {
+          "id": "ezr",
+          "present": false
+        },
+        {
+          "id": "neh",
+          "present": false
+        },
+        {
+          "id": "est",
+          "present": false
+        },
+        {
+          "id": "job",
+          "present": false
+        },
+        {
+          "id": "psa",
+          "present": false
+        },
+        {
+          "id": "pro",
+          "present": false
+        },
+        {
+          "id": "ecc",
+          "present": false
+        },
+        {
+          "id": "sng",
+          "present": false
+        },
+        {
+          "id": "isa",
+          "present": false
+        },
+        {
+          "id": "jer",
+          "present": false
+        },
+        {
+          "id": "lam",
+          "present": false
+        },
+        {
+          "id": "ezk",
+          "present": false
+        },
+        {
+          "id": "dan",
+          "present": false
+        },
+        {
+          "id": "hos",
+          "present": false
+        },
+        {
+          "id": "jol",
+          "present": false
+        },
+        {
+          "id": "amo",
+          "present": false
+        },
+        {
+          "id": "oba",
+          "present": false
+        },
+        {
+          "id": "jon",
+          "present": false
+        },
+        {
+          "id": "mic",
+          "present": false
+        },
+        {
+          "id": "nam",
+          "present": false
+        },
+        {
+          "id": "hab",
+          "present": false
+        },
+        {
+          "id": "zep",
+          "present": false
+        },
+        {
+          "id": "hag",
+          "present": false
+        },
+        {
+          "id": "zec",
+          "present": false
+        },
+        {
+          "id": "mal",
+          "present": false
+        },
+        {
+          "id": "mat",
+          "present": false
+        },
+        {
+          "id": "mrk",
+          "present": false
+        },
+        {
+          "id": "luk",
+          "present": false
+        },
+        {
+          "id": "jhn",
+          "present": false
+        },
+        {
+          "id": "act",
+          "present": false
+        },
+        {
+          "id": "rom",
+          "present": false
+        },
+        {
+          "id": "1co",
+          "present": false
+        },
+        {
+          "id": "2co",
+          "present": false
+        },
+        {
+          "id": "gal",
+          "present": false
+        },
+        {
+          "id": "eph",
+          "present": false
+        },
+        {
+          "id": "php",
+          "present": false
+        },
+        {
+          "id": "col",
+          "present": false
+        },
+        {
+          "id": "1th",
+          "present": false
+        },
+        {
+          "id": "2th",
+          "present": false
+        },
+        {
+          "id": "1ti",
+          "present": false
+        },
+        {
+          "id": "2ti",
+          "present": false
+        },
+        {
+          "id": "tit",
+          "present": false
+        },
+        {
+          "id": "phm",
+          "present": false
+        },
+        {
+          "id": "heb",
+          "present": false
+        },
+        {
+          "id": "jas",
+          "present": false
+        },
+        {
+          "id": "1pe",
+          "present": false
+        },
+        {
+          "id": "2pe",
+          "present": false
+        },
+        {
+          "id": "1jn",
+          "present": false
+        },
+        {
+          "id": "2jn",
+          "present": false
+        },
+        {
+          "id": "3jn",
+          "present": false
+        },
+        {
+          "id": "jud",
+          "present": false
+        },
+        {
+          "id": "rev",
+          "present": false
+        }
+      ]
+    },
+    "health": {
+      "state": "never_checked",
+      "severity_raw": null,
+      "ref": "a1c91812614d1a306f62fa88d395789afb322ff4",
+      "checked_at": null,
+      "issue_count": null,
+      "issues": null,
+      "source": "door43"
+    },
+    "latest_full_release": null,
+    "default_branch_head": {
+      "sha": "a1c91812614d1a306f62fa88d395789afb322ff4",
+      "committed_at": "2026-10-08T16:33:45Z"
+    },
+    "active_preparation": null,
+    "setup": {
+      "state": "complete",
+      "failed_step": null
+    },
+    "permissions": {
+      "push": true,
+      "admin": true,
+      "checked_at": "2026-10-08T16:33:46.525Z"
+    },
+    "freshness": {
+      "read_at": "2026-10-08T16:33:46.525Z",
+      "source": "live",
+      "age_seconds": 0
+    }
+  },
+  "warnings": []
+}

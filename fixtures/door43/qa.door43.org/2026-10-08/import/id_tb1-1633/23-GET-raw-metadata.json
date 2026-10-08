@@ -1,0 +1,146 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa/id_tcai1633/raw/metadata.json?ref=a1c91812614d1a306f62fa88d395789afb322ff4"
+  },
+  "response": {
+    "status": 200,
+    "ms": 121,
+    "json": {
+      "format": "scripture burrito",
+      "meta": {
+        "version": "1.0.0",
+        "category": "source",
+        "generator": {
+          "softwareName": "tC Admin",
+          "softwareVersion": "0.1.0",
+          "userId": "dcs::tc-admin-qa",
+          "userName": "tc-admin-qa"
+        },
+        "defaultLocale": "en",
+        "dateCreated": "2026-10-08T16:33:30.205Z",
+        "normalization": "NFC"
+      },
+      "idAuthorities": {
+        "dcs": {
+          "id": "https://git.door43.org",
+          "name": {
+            "en": "Door43 Content Service"
+          }
+        }
+      },
+      "identification": {
+        "name": {
+          "en": "tC Admin import probe 2026-10-08 1633"
+        },
+        "abbreviation": {
+          "en": "tcai1633"
+        },
+        "primary": {
+          "dcs": {
+            "tc-admin-qa/id_tcai1633": {
+              "revision": "master",
+              "timestamp": "2026-10-08T16:33:30.205Z"
+            }
+          }
+        }
+      },
+      "confidential": false,
+      "languages": [
+        {
+          "tag": "id",
+          "name": {
+            "en": "Bahasa Indonesia"
+          },
+          "scriptDirection": "ltr"
+        }
+      ],
+      "type": {
+        "flavorType": {
+          "name": "scripture",
+          "flavor": {
+            "name": "textTranslation",
+            "projectType": "standard",
+            "translationType": "firstTranslation",
+            "audience": "common",
+            "usfmVersion": "3.0"
+          },
+          "currentScope": {
+            "MAT": [],
+            "MRK": [],
+            "LUK": [],
+            "JHN": [],
+            "ACT": [],
+            "ROM": [],
+            "1CO": [],
+            "2CO": [],
+            "GAL": [],
+            "EPH": [],
+            "PHP": [],
+            "COL": [],
+            "1TH": [],
+            "2TH": [],
+            "1TI": [],
+            "2TI": [],
+            "TIT": [],
+            "PHM": [],
+            "HEB": [],
+            "JAS": [],
+            "1PE": [],
+            "2PE": [],
+            "1JN": [],
+            "2JN": [],
+            "3JN": [],
+            "JUD": [],
+            "REV": []
+          }
+        }
+      },
+      "copyright": {
+        "licenses": [
+          {
+            "ingredient": "ingredients/license.md"
+          }
+        ]
+      },
+      "ingredients": {
+        "ingredients/license.md": {
+          "checksum": {
+            "md5": "0bf7ef1533f6486c8362dcb8bc19bdd1"
+          },
+          "mimeType": "text/markdown",
+          "size": 18535,
+          "role": "x-license"
+        },
+        "ingredients/GEN.usfm": {
+          "checksum": {
+            "md5": "80f52d5b103c46f6fcdeb0bf758cb920"
+          },
+          "mimeType": "text/x-usfm",
+          "size": 242027,
+          "scope": {
+            "GEN": []
+          }
+        },
+        "ingredients/EXO.usfm": {
+          "checksum": {
+            "md5": "364082786f1ef4e888bd6259849e938d"
+          },
+          "mimeType": "text/x-usfm",
+          "size": 205142,
+          "scope": {
+            "EXO": []
+          }
+        }
+      },
+      "relationships": [
+        {
+          "id": "dcs::bahtraku/id_tb1",
+          "relationType": "source",
+          "flavor": "textTranslation",
+          "revision": "1974"
+        }
+      ]
+    }
+  }
+}
