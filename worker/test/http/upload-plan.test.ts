@@ -101,6 +101,45 @@ describe('POST /api/projects/{owner}/{repo}/uploads/plan', () => {
     expect(body.details).toEqual({ batch: { bytes: UPLOAD_REQUEST_BYTES + 1, limit: UPLOAD_REQUEST_BYTES } });
   });
 
+  test('W6: a body over one batch and its framing, sent without a length, is refused once the bytes read pass the limit and the stream is cancelled', async () => {
+    const chunk = new Uint8Array(1024 * 1024);
+    let sent = 0;
+    let cancelled = false;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        sent += chunk.byteLength;
+        controller.enqueue(chunk);
+        if (sent > UPLOAD_REQUEST_BYTES * 2) controller.close();
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const request = new Request(`${ORIGIN}${PATH}`, { method: 'POST', headers: { origin: ORIGIN, 'content-type': 'multipart/form-data; boundary=x' }, body: stream, duplex: 'half' } as RequestInit);
+    expect(request.headers.get('content-length')).toBeNull();
+    const body = await refusal(await worker.fetch(request, env));
+    expect(body.details).toMatchObject({ batch: { limit: UPLOAD_REQUEST_BYTES } });
+    expect(cancelled).toBe(true);
+    expect(sent).toBeLessThanOrEqual(UPLOAD_REQUEST_BYTES + 2 * chunk.byteLength);
+  });
+
+  test('a part sent twice is validation_failed naming it: no copy silently wins', async () => {
+    const data = form([{ name: 'RUT.usfm', content: '\\id RUT\n' }]);
+    data.append(uploadPartName(0, 'content'), new Blob(['\\id JON\n']), 'RUT.usfm');
+    expect((await refusal(await post(data))).details).toEqual({ fields: [{ path: 'files.0.content', message: 'sent more than once' }] });
+  });
+
+  test('a streamed body within the limit, with no declared length, is still read', async () => {
+    const data = form([{ name: 'RUT.usfm', content: '\\id RUT\n' }]);
+    // One encoding, so the boundary in the header is the one in the bytes.
+    const encoded = new Response(data);
+    const contentType = encoded.headers.get('content-type')!;
+    const bytes = new Uint8Array(await encoded.arrayBuffer());
+    const request = new Request(`${ORIGIN}${PATH}`, { method: 'POST', headers: { origin: ORIGIN, 'content-type': contentType }, body: new Blob([bytes]).stream(), duplex: 'half' } as RequestInit);
+    expect((await worker.fetch(request, env)).status).toBe(200);
+    expect(seen).toHaveLength(1);
+  });
+
   test('a part the operation does not take, a missing file, a mode that is no number, or confirmations that are not JSON are validation_failed naming the field', async () => {
     const extra = form([{ name: 'RUT.usfm', content: 'x' }]);
     extra.append('files.0.size', '1');

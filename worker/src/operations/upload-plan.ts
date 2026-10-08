@@ -82,14 +82,24 @@ const quoted = (name: string) => JSON.stringify(name);
 /** The confirmations by the repository-relative name of the file each names; a key that names no file of the batch is `validation_failed`. */
 function confirmationsByName(confirmations: Readonly<Record<string, Unit>>, names: ReadonlySet<string>): Map<string, Unit> {
   const byName = new Map<string, Unit>();
-  const unknown: string[] = [];
+  const keyOf = new Map<string, string>();
+  const fields: { path: string; message: string }[] = [];
   for (const [key, unit] of Object.entries(confirmations)) {
     const path = normalizeUploadName(key);
-    if (path.ok && names.has(path.path)) byName.set(path.path, unit);
-    else unknown.push(key);
+    if (!path.ok || !names.has(path.path)) {
+      fields.push({ path: `confirmations.${key}`, message: `${quoted(key)} names no file of this upload` });
+      continue;
+    }
+    // Two keys for one file (`./GEN.usfm` and `GEN.usfm`) are ambiguous: neither silently wins.
+    const earlier = keyOf.get(path.path);
+    if (earlier !== undefined) {
+      fields.push({ path: `confirmations.${key}`, message: `${quoted(key)} and ${quoted(earlier)} name the same file` });
+      continue;
+    }
+    keyOf.set(path.path, key);
+    byName.set(path.path, unit);
   }
-  if (unknown.length > 0) {
-    const fields = unknown.map(key => ({ path: `confirmations.${key}`, message: `${quoted(key)} names no file of this upload` }));
+  if (fields.length > 0) {
     throw new CatalogError('validation_failed', { message: fields.map(field => `${field.path}: ${field.message}`).join('; '), details: { fields } });
   }
   return byName;

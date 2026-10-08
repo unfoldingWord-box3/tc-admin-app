@@ -204,6 +204,14 @@ describe('W6: the batch is checked first, before identification or any Door43 re
     expect(error).toMatchObject({ code: 'validation_failed', details: { fields: [{ path: 'confirmations.other.usfm' }] } });
     expect(calls).toEqual([]);
   });
+
+  test('W6: two confirmation keys that name one file are validation_failed naming both, before any read', async () => {
+    const { fetch, calls } = door43();
+    const error = await failure(uploadPlan(input([upload('GEN.usfm', '\\id GEN\n')], { './GEN.usfm': { book: 'gen' }, 'GEN.usfm': { book: 'exo' } }), context(fetch)));
+    expect(error).toMatchObject({ code: 'validation_failed' });
+    expect(error?.message).toContain('"GEN.usfm" and "./GEN.usfm" name the same file');
+    expect(calls).toEqual([]);
+  });
 });
 
 describe('W2, A2: only a writable Scripture Burrito project is planned for', () => {
