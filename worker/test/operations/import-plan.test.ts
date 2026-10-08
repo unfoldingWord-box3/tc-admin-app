@@ -21,6 +21,7 @@ import { BIBLE_BOOKS } from '../../src/model/books';
 import { DCS_AUTHORITY, newProjectFiles } from '../../src/model/burrito';
 import { gitBlobSha } from '../../src/model/git-blob';
 import { md5 } from '../../src/model/md5';
+import { MAX_UPLOAD_BYTES } from '../../src/model/upload-paths';
 import { operationContext } from '../../src/operations';
 import type { OperationContext } from '../../src/operations';
 import { importPlan } from '../../src/operations/import-plan';
@@ -439,6 +440,18 @@ describe('the source: it must exist, be of the project\'s type, and be asked for
     expect(await failure(importPlan(fromTb1(['GEN', 'FRT']), context(fetch)))).toMatchObject({ code: 'validation_failed', details: { fields: [{ path: 'units[1]', message: '"FRT" is not a book of a Bible project' }] } });
     expect(await failure(importPlan(fromTb1(['GEN', 'gen']), context(fetch)))).toMatchObject({ code: 'validation_failed', details: { fields: [{ path: 'units[1]', message: '"gen" is chosen twice (also units[0])' }] } });
     expect(calls.filter(call => call.includes('id_tb1'))).toEqual([]);
+  });
+
+  test('Q15, Q22: books that together exceed the bytes one commit carries are validation_failed on units, measured before any file is inflated', async () => {
+    // Two stored entries of 17 MiB each: together over the 32 MiB bound, each under it.
+    const big = 'a'.repeat(17 * 1024 * 1024);
+    const { fetch } = door43({ sourceArchive: storedZip([['id_tb1/ingredients/GEN.usfm', big], ['id_tb1/ingredients/EXO.usfm', big]]) });
+    const error = await failure(importPlan(fromTb1(['GEN', 'EXO']), context(fetch)));
+    expect(error).toMatchObject({ code: 'validation_failed', details: { total_bytes: 2 * big.length, limit_bytes: MAX_UPLOAD_BYTES, fields: [{ path: 'units' }] } });
+    expect(error?.details.fields).toEqual([{ path: 'units', message: `the chosen books are ${(2 * big.length).toLocaleString('en-US')} bytes together, over the ${MAX_UPLOAD_BYTES.toLocaleString('en-US')} bytes one commit carries; choose fewer` }]);
+    const one = await importPlan(fromTb1(['GEN']), context(fetch));
+    expect(one.preview.files[0]!.size).toBe(big.length);
+    expect([...kv.entries.keys()]).toHaveLength(1);
   });
 
   test('validation_failed: all of a source that holds no book under ingredients/', async () => {

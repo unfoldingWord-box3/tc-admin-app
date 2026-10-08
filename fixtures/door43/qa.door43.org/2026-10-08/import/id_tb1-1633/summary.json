@@ -1,0 +1,575 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-10-08T16:33:29.353Z",
+  "source": {
+    "owner": "bahtraku",
+    "repo": "id_tb1",
+    "revision": "1974"
+  },
+  "units": [
+    "GEN",
+    "EXO"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 226
+    },
+    {
+      "step": 2,
+      "name": "GET-repos_tc-admin-qa_id_tcai1633",
+      "status": 404,
+      "ms": 117
+    },
+    {
+      "step": 3,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 109
+    },
+    {
+      "step": 4,
+      "name": "GET-repos_tc-admin-qa_id_tcai1633",
+      "status": 404,
+      "ms": 135
+    },
+    {
+      "step": 5,
+      "name": "POST-user_repos",
+      "status": 201,
+      "ms": 600
+    },
+    {
+      "step": 6,
+      "name": "POST-repos_tc-admin-qa_id_tcai1633_contents",
+      "status": 201,
+      "ms": 768
+    },
+    {
+      "step": 7,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 352
+    },
+    {
+      "step": 8,
+      "name": "GET-repos_tc-admin-qa_id_tcai1633",
+      "status": 200,
+      "ms": 139
+    },
+    {
+      "step": 9,
+      "name": "GET-repos_bahtraku_id_tb1",
+      "status": 200,
+      "ms": 153
+    },
+    {
+      "step": 10,
+      "name": "GET-repos_bahtraku_id_tb1_releases_tags_1974",
+      "status": 200,
+      "ms": 121
+    },
+    {
+      "step": 11,
+      "name": "GET-repos_tc-admin-qa_id_tcai1633_branches_master",
+      "status": 200,
+      "ms": 124
+    },
+    {
+      "step": 12,
+      "name": "GET-repos_tc-admin-qa_id_tcai1633_sb_646113582b97d2496ccfc320a282e433230432c5.zip",
+      "status": 200,
+      "ms": 135
+    },
+    {
+      "step": 13,
+      "name": "GET-repos_tc-admin-qa_id_tcai1633_git_trees_646113582b97d2496ccfc320a282e433230432c5",
+      "status": 200,
+      "ms": 142
+    },
+    {
+      "step": 14,
+      "name": "GET-repos_bahtraku_id_tb1_sb_1974.zip",
+      "status": 200,
+      "ms": 244
+    },
+    {
+      "step": 15,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 118
+    },
+    {
+      "step": 16,
+      "name": "GET-repos_bahtraku_id_tb1_sb_1974.zip",
+      "status": 200,
+      "ms": 292
+    },
+    {
+      "step": 17,
+      "name": "GET-repos_tc-admin-qa_id_tcai1633",
+      "status": 200,
+      "ms": 132
+    },
+    {
+      "step": 18,
+      "name": "GET-repos_tc-admin-qa_id_tcai1633_branches_master",
+      "status": 200,
+      "ms": 128
+    },
+    {
+      "step": 19,
+      "name": "GET-repos_tc-admin-qa_id_tcai1633_git_trees_646113582b97d2496ccfc320a282e433230432c5",
+      "status": 200,
+      "ms": 120
+    },
+    {
+      "step": 20,
+      "name": "POST-repos_tc-admin-qa_id_tcai1633_contents",
+      "status": 201,
+      "ms": 1415
+    },
+    {
+      "step": 21,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 186
+    },
+    {
+      "step": 22,
+      "name": "GET-commit",
+      "status": 200,
+      "ms": 131
+    },
+    {
+      "step": 23,
+      "name": "GET-raw-metadata",
+      "status": 200,
+      "ms": 121
+    },
+    {
+      "step": 24,
+      "name": "GET-branches",
+      "status": 200,
+      "ms": 121
+    },
+    {
+      "step": 25,
+      "name": "health-master",
+      "status": 200,
+      "ms": 148,
+      "sequence": [
+        {
+          "t_ms": 148,
+          "status": 200,
+          "level": "info",
+          "error": null,
+          "issues": {
+            "release_needed": 1
+          }
+        }
+      ],
+      "latency_ms": 148
+    },
+    {
+      "step": 26,
+      "name": "GET-catalog_entry_master",
+      "status": 200,
+      "ms": 116
+    }
+  ],
+  "dcs_version": "28.1.0+423-gbb3a0efeb6",
+  "created": {
+    "project": "tc-admin-qa/id_tcai1633",
+    "commit": "646113582b97d2496ccfc320a282e433230432c5"
+  },
+  "project": "tc-admin-qa/id_tcai1633",
+  "plan": {
+    "id": "b3bbc160-50c9-433b-a19f-967d3bcd5ef5",
+    "bound_to": {
+      "default_branch_sha": "646113582b97d2496ccfc320a282e433230432c5",
+      "release_tag": null,
+      "release_tag_sha": null
+    },
+    "source": {
+      "owner": "bahtraku",
+      "repo": "id_tb1",
+      "revision": "1974",
+      "sha": "6ac2aeb0dbaf97f1d71278c8ac4e5d5dc170dd6f"
+    },
+    "files": [
+      {
+        "name": "ingredients/GEN.usfm",
+        "identified": {
+          "book": "gen"
+        },
+        "path": "ingredients/GEN.usfm",
+        "size": 242027,
+        "md5": "80f52d5b103c46f6fcdeb0bf758cb920",
+        "overwrite": false,
+        "diff_lines": null
+      },
+      {
+        "name": "ingredients/EXO.usfm",
+        "identified": {
+          "book": "exo"
+        },
+        "path": "ingredients/EXO.usfm",
+        "size": 205142,
+        "md5": "364082786f1ef4e888bd6259849e938d",
+        "overwrite": false,
+        "diff_lines": null
+      }
+    ],
+    "relationships": [
+      {
+        "id": "dcs::bahtraku/id_tb1",
+        "relationType": "source",
+        "flavor": "textTranslation",
+        "revision": "1974"
+      }
+    ],
+    "warnings": []
+  },
+  "receipt": {
+    "wrote": [
+      {
+        "kind": "commit",
+        "target": "tc-admin-qa/id_tcai1633@master",
+        "sha": "a1c91812614d1a306f62fa88d395789afb322ff4",
+        "url": "https://qa.door43.org/tc-admin-qa/id_tcai1633/commit/a1c91812614d1a306f62fa88d395789afb322ff4"
+      }
+    ],
+    "warnings": [],
+    "coverage": {
+      "present": 2,
+      "target": 66,
+      "scope": "full",
+      "basis": "archive",
+      "units": [
+        {
+          "id": "gen",
+          "present": true
+        },
+        {
+          "id": "exo",
+          "present": true
+        },
+        {
+          "id": "lev",
+          "present": false
+        },
+        {
+          "id": "num",
+          "present": false
+        },
+        {
+          "id": "deu",
+          "present": false
+        },
+        {
+          "id": "jos",
+          "present": false
+        },
+        {
+          "id": "jdg",
+          "present": false
+        },
+        {
+          "id": "rut",
+          "present": false
+        },
+        {
+          "id": "1sa",
+          "present": false
+        },
+        {
+          "id": "2sa",
+          "present": false
+        },
+        {
+          "id": "1ki",
+          "present": false
+        },
+        {
+          "id": "2ki",
+          "present": false
+        },
+        {
+          "id": "1ch",
+          "present": false
+        },
+        {
+          "id": "2ch",
+          "present": false
+        },
+        {
+          "id": "ezr",
+          "present": false
+        },
+        {
+          "id": "neh",
+          "present": false
+        },
+        {
+          "id": "est",
+          "present": false
+        },
+        {
+          "id": "job",
+          "present": false
+        },
+        {
+          "id": "psa",
+          "present": false
+        },
+        {
+          "id": "pro",
+          "present": false
+        },
+        {
+          "id": "ecc",
+          "present": false
+        },
+        {
+          "id": "sng",
+          "present": false
+        },
+        {
+          "id": "isa",
+          "present": false
+        },
+        {
+          "id": "jer",
+          "present": false
+        },
+        {
+          "id": "lam",
+          "present": false
+        },
+        {
+          "id": "ezk",
+          "present": false
+        },
+        {
+          "id": "dan",
+          "present": false
+        },
+        {
+          "id": "hos",
+          "present": false
+        },
+        {
+          "id": "jol",
+          "present": false
+        },
+        {
+          "id": "amo",
+          "present": false
+        },
+        {
+          "id": "oba",
+          "present": false
+        },
+        {
+          "id": "jon",
+          "present": false
+        },
+        {
+          "id": "mic",
+          "present": false
+        },
+        {
+          "id": "nam",
+          "present": false
+        },
+        {
+          "id": "hab",
+          "present": false
+        },
+        {
+          "id": "zep",
+          "present": false
+        },
+        {
+          "id": "hag",
+          "present": false
+        },
+        {
+          "id": "zec",
+          "present": false
+        },
+        {
+          "id": "mal",
+          "present": false
+        },
+        {
+          "id": "mat",
+          "present": false
+        },
+        {
+          "id": "mrk",
+          "present": false
+        },
+        {
+          "id": "luk",
+          "present": false
+        },
+        {
+          "id": "jhn",
+          "present": false
+        },
+        {
+          "id": "act",
+          "present": false
+        },
+        {
+          "id": "rom",
+          "present": false
+        },
+        {
+          "id": "1co",
+          "present": false
+        },
+        {
+          "id": "2co",
+          "present": false
+        },
+        {
+          "id": "gal",
+          "present": false
+        },
+        {
+          "id": "eph",
+          "present": false
+        },
+        {
+          "id": "php",
+          "present": false
+        },
+        {
+          "id": "col",
+          "present": false
+        },
+        {
+          "id": "1th",
+          "present": false
+        },
+        {
+          "id": "2th",
+          "present": false
+        },
+        {
+          "id": "1ti",
+          "present": false
+        },
+        {
+          "id": "2ti",
+          "present": false
+        },
+        {
+          "id": "tit",
+          "present": false
+        },
+        {
+          "id": "phm",
+          "present": false
+        },
+        {
+          "id": "heb",
+          "present": false
+        },
+        {
+          "id": "jas",
+          "present": false
+        },
+        {
+          "id": "1pe",
+          "present": false
+        },
+        {
+          "id": "2pe",
+          "present": false
+        },
+        {
+          "id": "1jn",
+          "present": false
+        },
+        {
+          "id": "2jn",
+          "present": false
+        },
+        {
+          "id": "3jn",
+          "present": false
+        },
+        {
+          "id": "jud",
+          "present": false
+        },
+        {
+          "id": "rev",
+          "present": false
+        }
+      ]
+    },
+    "started_at": "2026-10-08T16:33:44.741Z",
+    "finished_at": "2026-10-08T16:33:46.525Z"
+  },
+  "repeated_apply_same_receipt": true,
+  "commit": {
+    "sha": "a1c91812614d1a306f62fa88d395789afb322ff4",
+    "parents": [
+      "646113582b97d2496ccfc320a282e433230432c5"
+    ],
+    "files": [
+      "added ingredients/EXO.usfm",
+      "added ingredients/GEN.usfm",
+      "modified metadata.json"
+    ],
+    "author": "tc-admin-qa",
+    "committer": "tc-admin-qa"
+  },
+  "metadata_after": {
+    "relationships": [
+      {
+        "id": "dcs::bahtraku/id_tb1",
+        "relationType": "source",
+        "flavor": "textTranslation",
+        "revision": "1974"
+      }
+    ],
+    "idAuthorities": [
+      "dcs"
+    ],
+    "ingredients": [
+      "ingredients/license.md",
+      "ingredients/GEN.usfm",
+      "ingredients/EXO.usfm"
+    ]
+  },
+  "branches": [
+    "master"
+  ],
+  "health_master": {
+    "level": "info",
+    "issues": {
+      "release_needed": 1
+    },
+    "latency_ms": 149
+  },
+  "catalog_entry": {
+    "is_valid": true,
+    "healthcheck_severity": "info",
+    "ingredients": [
+      "exo",
+      "gen"
+    ],
+    "books": [
+      "exo",
+      "gen"
+    ]
+  }
+}

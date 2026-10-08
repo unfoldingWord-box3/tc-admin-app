@@ -97,7 +97,7 @@ Moved into Milestone 1 on 1 October 2026 (Q25); #47 re-scoped from conversion to
 | [#77](https://github.com/unfoldingWord-box3/tc-admin-app/issues/77) `owner.search` | §8 | 0013 | P3 | E35 | `owner.search` | door43/owners, operations/owner-search | S9 |
 | [#78](https://github.com/unfoldingWord-box3/tc-admin-app/issues/78) `source.search` | §8 | 0013 | H3, P3 | E20, E35, E36, Q23, Q25 | `source.search` | door43/catalog-search, model/project, operations/source-search | S9 |
 | [#79](https://github.com/unfoldingWord-box3/tc-admin-app/issues/79) `import.plan` | §8 | 0008, 0013 | W1, W2, R5, R10 | E1, E17, E18, E24, E30, E34, E36, Q12, Q34 | `import.plan` | door43/archive, model/burrito, operations/import-plan | S9 |
-| [#80](https://github.com/unfoldingWord-box3/tc-admin-app/issues/80) `import.apply` | §8 | 0004, 0011, 0013 | W1, W2, W5, A2, A3, R5, X1 | E21, E27, E31 | `import.apply` | operations/import, door43/repos | S9 |
+| [#80](https://github.com/unfoldingWord-box3/tc-admin-app/issues/80) `import.apply` | §8 | 0004, 0011, 0013 | W1, W2, W5, A2, A3, R5, X1 | E21, E24, E27, E31, E63, Q33 | `import.apply` | operations/import-apply, operations/planned-commit, door43/writes | S9 |
 | [#81](https://github.com/unfoldingWord-box3/tc-admin-app/issues/81) Import screen | §8 | 0013 | X2 | E35, E36 | `owner.search`, `source.search`, `import.plan`, `import.apply` | web | S9 |
 
 ### EPIC: Open Bible Stories ([#48](https://github.com/unfoldingWord-box3/tc-admin-app/issues/48))

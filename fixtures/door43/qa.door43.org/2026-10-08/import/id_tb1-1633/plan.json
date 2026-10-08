@@ -1,0 +1,90 @@
+{
+  "id": "b3bbc160-50c9-433b-a19f-967d3bcd5ef5",
+  "operation": "import.plan",
+  "created_at": "2026-10-08T16:33:42.814Z",
+  "expires_at": "2026-10-08T17:03:42.814Z",
+  "bound_to": {
+    "default_branch_sha": "646113582b97d2496ccfc320a282e433230432c5",
+    "release_tag": null,
+    "release_tag_sha": null
+  },
+  "preview": {
+    "source": {
+      "owner": "bahtraku",
+      "repo": "id_tb1",
+      "revision": "1974",
+      "sha": "6ac2aeb0dbaf97f1d71278c8ac4e5d5dc170dd6f"
+    },
+    "files": [
+      {
+        "name": "ingredients/GEN.usfm",
+        "identified": {
+          "book": "gen"
+        },
+        "path": "ingredients/GEN.usfm",
+        "size": 242027,
+        "md5": "80f52d5b103c46f6fcdeb0bf758cb920",
+        "overwrite": false,
+        "diff": null
+      },
+      {
+        "name": "ingredients/EXO.usfm",
+        "identified": {
+          "book": "exo"
+        },
+        "path": "ingredients/EXO.usfm",
+        "size": 205142,
+        "md5": "364082786f1ef4e888bd6259849e938d",
+        "overwrite": false,
+        "diff": null
+      }
+    ],
+    "metadata_diff": {
+      "ingredients": [
+        {
+          "path": "ingredients/GEN.usfm",
+          "before": null,
+          "after": {
+            "checksum": {
+              "md5": "80f52d5b103c46f6fcdeb0bf758cb920"
+            },
+            "mimeType": "text/x-usfm",
+            "size": 242027,
+            "scope": {
+              "GEN": []
+            }
+          }
+        },
+        {
+          "path": "ingredients/EXO.usfm",
+          "before": null,
+          "after": {
+            "checksum": {
+              "md5": "364082786f1ef4e888bd6259849e938d"
+            },
+            "mimeType": "text/x-usfm",
+            "size": 205142,
+            "scope": {
+              "EXO": []
+            }
+          }
+        }
+      ],
+      "relationships": [
+        {
+          "id": "dcs::bahtraku/id_tb1",
+          "relationType": "source",
+          "flavor": "textTranslation",
+          "revision": "1974"
+        }
+      ]
+    }
+  },
+  "would_write": [
+    {
+      "kind": "commit",
+      "target": "tc-admin-qa/id_tcai1633@master"
+    }
+  ],
+  "warnings": []
+}

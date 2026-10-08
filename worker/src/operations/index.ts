@@ -3,6 +3,7 @@
 
 import type { OperationOutput, ParsedInput, RoutedOperation } from '@tc-admin/shared/schema';
 import type { OperationContext } from './context';
+import { importApply } from './import-apply';
 import { importPlan } from './import-plan';
 import { languageList } from './language-list';
 import { ownerList } from './owner-list';
@@ -49,6 +50,7 @@ export const HANDLERS: OperationHandlers = {
   'upload.plan': uploadPlan,
   'upload.apply': uploadApply,
   'import.plan': importPlan,
+  'import.apply': importApply,
 };
 
 export { operationContext, signedIn } from './context';
