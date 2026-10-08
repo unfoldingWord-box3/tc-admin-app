@@ -1,0 +1,28 @@
+{
+  "sha": "da76985eec7b18cedd8c954f90028da4bb8fa517",
+  "message": "Upload LUK, ACT\n\nThe uploaded files and metadata.json, written by tC Admin 0.1.0.\n",
+  "author": "tc-admin-qa",
+  "committer": "tc-admin-qa",
+  "parents": [
+    "8e3fcd0a478f5f3b89e3d5790fa3692a27d00333"
+  ],
+  "files": [
+    {
+      "filename": "metadata.json",
+      "status": "modified"
+    },
+    {
+      "filename": "ingredients/ACT.usfm",
+      "status": "added"
+    },
+    {
+      "filename": "ingredients/LUK.usfm",
+      "status": "added"
+    }
+  ],
+  "stats": {
+    "total": 2796,
+    "additions": 2796,
+    "deletions": 0
+  }
+}
