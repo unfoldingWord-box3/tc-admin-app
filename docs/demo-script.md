@@ -1,6 +1,6 @@
 # Milestone 1 demo script
 
-The demo of 16 October 2026 (#42, #44): a manager releases a real Bahtraku Bible from production Door43 with tC Admin, then creates a project. Every step names the operation the interface calls and the report or receipt to expect, so a rehearsal (#43) can be checked line by line against this page. Nothing here is improvised on the day: the pre-release the demo promotes is left by the production rehearsal, and the repository has been agreed with the Bahtraku team beforehand.
+The Milestone 1 demo (#42, #44), some time after 16 October 2026, its day not yet fixed (Rich, 8 October 2026): a manager releases a real Bahtraku Bible from production Door43 with tC Admin, then creates a project. Every step names the operation the interface calls and the report or receipt to expect, so a rehearsal (#43) can be checked line by line against this page. Nothing here is improvised on the day: the pre-release the demo promotes is left by the production rehearsal, and the repository has been agreed with the Bahtraku team beforehand.
 
 ## The repository
 

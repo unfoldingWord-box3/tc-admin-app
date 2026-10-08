@@ -12,7 +12,7 @@ An **epic** is one GitHub issue titled `EPIC: …` with the `epic` label and a t
 
 Only Milestone 1 carries a date. Milestones 2 and 3 carry a target month and are re-planned after the Milestone 1 demo.
 
-Capacity assumption: one primary engineer working part time with agent assistance, with product and design support from Birch. If capacity changes, dates move. Milestone 1 scope was re-set on 1 October 2026 and does not grow further; the date did not move with that re-plan, which is a risk Rich accepted.
+Capacity assumption: one primary engineer working part time with agent assistance, with product and design support from Birch. If capacity changes, dates move. Milestone 1 scope was re-set on 1 October 2026 and does not grow further; the date did not move with that re-plan, which is a risk Rich accepted. **Amended 8 October 2026 by Rich:** [#125](https://github.com/unfoldingWord-box3/tc-admin-app/issues/125), reopening a release preparation after its page is closed or reloaded, joins Milestone 1, since a stranded preparation would strand the demo's release; the demo's day is not fixed yet, some time after 16 October, which leaves room for it.
 
 The agent assistance is a design input, not a footnote. The build is organized so that an agent can orient from one file ([AGENTS.md](../AGENTS.md)), check any change against a numbered list of what must never break ([invariants.md](invariants.md)), implement against a catalog of named operations with typed errors ([operations.md](operations.md)), test against recorded Door43 fixtures without credentials (ADR 0012), and never re-probe a fact already recorded ([evidence.md](evidence.md)). Each of these costs a document now and saves a cycle every week until the demo.
 
@@ -39,7 +39,7 @@ Recorded in [CONTEXT.md](../CONTEXT.md) and the [ADRs](adr). The ones that shape
 
 ## Milestone 1 — Release
 
-**Due:** Friday 16 October 2026 (unchanged by the 1 October re-plan)
+**Due:** Friday 16 October 2026 (unchanged by the 1 October re-plan); the demo itself is some time after 16 October, its day not yet fixed (Rich, 8 October 2026)
 **Demo:** live on production Door43 against `bahtraku/Perjanjian-Baru-Pendau` (Scripture Burrito, baseline `v1.2`), in front of Birch and the Bahtraku team; import from `bahtraku/id_tb1` (Resource Container) into a new project is rehearsed on QA (re-planned 1 October 2026; the earlier plan released id_tb1 directly)
 **Development host:** QA Door43
 **Acceptance owner:** Birch, using the `birch` account
@@ -109,6 +109,7 @@ The metadata editor, Setup-incomplete recovery beyond a retry link, accessibilit
 - Health poll: every 5 seconds for 3 minutes, then hand off to a refresh button.
 - Version calculation and edit, required release notes, pre-release option, create, promote.
 - Stale-source protection, lost-response lookup by tag, retained branch on failure, branch deletion after success.
+- A preparation outlives its page: after a reload, a closed tab, or a new sign-in the manager finds it again, to continue or discard it ([#125](https://github.com/unfoldingWord-box3/tc-admin-app/issues/125), added 8 October 2026).
 
 **EPIC: Demo readiness** ([#44](https://github.com/unfoldingWord-box3/tc-admin-app/issues/44))
 - Written demo script against a Bahtraku repository on production.
