@@ -88,6 +88,8 @@ const unitId = (unit: Unit) => ('book' in unit ? unit.book : unit.story);
 const unitName = (unit: Unit) => ('book' in unit ? unit.book.toUpperCase() : `story ${unit.story}`);
 const unitTerm = (type: CreatableProjectType) => (type === 'bible' ? 'book' : 'story');
 const quoted = (value: string) => JSON.stringify(value);
+/** `revisionString` of the recorded Scripture Burrito schema (`common.schema.json`, E24): what a relationship's `revision` may be. */
+const REVISION_STRING = /^[0-9A-Za-z]([0-9A-Za-z_.:-]{0,62}[0-9A-Za-z])?$/;
 /** The project type with its article: "a Bible", "an Open Bible Stories". */
 const aType = (type: CreatableProjectType) => `${/^[aeiou]/i.test(TYPE_TERM[type]) ? 'an' : 'a'} ${TYPE_TERM[type]}`;
 
@@ -187,6 +189,10 @@ async function resolveRevision(client: Door43Client, input: ParsedInput<'import.
     throw fieldsFailed([{ path: 'source.revision', message: `${quoted(revision)} is not a release or the default branch of ${owner}/${repo}` }], { source: input.source });
   }
   if (!release.target_sha) throw new CatalogError('door43_unavailable', { details: { source: input.source, reason: 'the release names no commit' } });
+  // The tag becomes the relationship's `revision`, which the schema narrows further than Git does (E24, W1).
+  if (!REVISION_STRING.test(revision)) {
+    throw fieldsFailed([{ path: 'source.revision', message: `release ${quoted(revision)} of ${owner}/${repo} has a tag Scripture Burrito cannot record as a revision (1 to 64 letters, digits, _ . : -, starting and ending with a letter or digit)` }], { source: input.source });
+  }
   return { owner, repo, revision, sha: release.target_sha, archive_ref: revision, relationship_revision: revision };
 }
 

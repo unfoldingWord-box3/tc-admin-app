@@ -17,6 +17,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { openArchive } from '../../src/door43/archive';
 import type { Fetch } from '../../src/door43/api';
 import type { KVNamespace } from '../../src/env';
+import { BIBLE_BOOKS } from '../../src/model/books';
 import { DCS_AUTHORITY, newProjectFiles } from '../../src/model/burrito';
 import { gitBlobSha } from '../../src/model/git-blob';
 import { md5 } from '../../src/model/md5';
@@ -250,7 +251,7 @@ describe('contract: an import from the recorded id_tb1 archive into the recorded
     const { fetch } = door43();
     const plan = await importPlan(fromTb1('all'), context(fetch));
     expect(plan.preview.files).toHaveLength(66);
-    expect(plan.preview.files.map(file => file.identified)).toEqual([{ book: 'gen' }, { book: 'exo' }, ...plan.preview.files.slice(2).map(file => file.identified)]);
+    expect(plan.preview.files.map(file => file.identified)).toEqual(BIBLE_BOOKS.map(book => ({ book })));
     expect(plan.preview.files.at(-1)).toMatchObject({ identified: { book: 'rev' }, path: 'ingredients/REV.usfm' });
     expect(plan.preview.files.every(file => file.path?.startsWith('ingredients/') && file.path.endsWith('.usfm'))).toBe(true);
     expect(plan.preview.metadata_diff.ingredients).toHaveLength(66);
@@ -373,6 +374,17 @@ describe('the source: it must exist, be of the project\'s type, and be asked for
     expect(error).toMatchObject({ code: 'validation_failed', details: { fields: [{ path: 'source.revision', message: '"v2" is not a release or the default branch of bahtraku/id_tb1' }] } });
     expect(calls).toContain('/api/v1/repos/bahtraku/id_tb1/releases/tags/v2');
     expect(calls.filter(call => call.includes('.zip'))).toEqual([]);
+  });
+
+  test('W1, E24: a release whose tag the schema cannot record as a revision is refused on source.revision, before any archive is read, nothing stored', async () => {
+    const { fetch, calls } = door43();
+    const release = { ...tb1Releases.find(entry => entry.tag_name === '1974'), tag_name: 'v1.0.0+build.1' };
+    const tagged: Fetch = async (url, init) => (new URL(url).pathname.includes('/id_tb1/releases/tags/v1.0.0') ? Response.json(release) : fetch(url, init));
+    const error = await failure(importPlan(fromTb1(['GEN'], 'v1.0.0+build.1'), context(tagged)));
+    expect(error).toMatchObject({ code: 'validation_failed', details: { fields: [{ path: 'source.revision' }] } });
+    expect(error?.message).toContain('cannot record as a revision');
+    expect(calls.filter(call => call.includes('.zip'))).toEqual([]);
+    expect([...kv.entries.keys()]).toEqual([]);
   });
 
   test('source_unavailable: an archive Door43 cannot serve, whether missing or malformed, and nothing stored', async () => {
