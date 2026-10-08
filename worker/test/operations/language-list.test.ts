@@ -23,7 +23,7 @@ const owners: Record<string, unknown> = {
   bahtraku: recorded('catalog__list__languages__owner=bahtraku__stage=latest.json'),
 };
 
-const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {} };
+const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {}, list: async () => ({ keys: [], list_complete: true }) };
 const NOW = new Date('2026-10-06T16:00:00.000Z');
 let calls: string[];
 const door43: Fetch = async url => {

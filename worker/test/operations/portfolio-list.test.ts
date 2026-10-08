@@ -11,7 +11,7 @@ import { SUPPORTED_FLAVORS } from '../../src/model/project';
 import type { KVNamespace } from '../../src/env';
 import { operationContext } from '../../src/operations';
 
-const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {} };
+const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {}, list: async () => ({ keys: [], list_complete: true }) };
 import { isListed, portfolioList } from '../../src/operations/portfolio-list';
 
 const repo = (extra: Partial<Door43SearchRepository>): Door43SearchRepository => ({

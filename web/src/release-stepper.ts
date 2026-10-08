@@ -4,7 +4,7 @@
 // each state, from CONTEXT.md. No I/O; the component calls the operations.
 
 import { catalogMessage } from '@tc-admin/shared/schema';
-import type { CandidateGroup, OperationOutput, Preparation, PreparationState, SelectionState } from '@tc-admin/shared/schema';
+import type { CandidateGroup, OperationErrorShape, OperationOutput, Preparation, PreparationState, SelectionState } from '@tc-admin/shared/schema';
 
 export type ReleasePlan = OperationOutput<'release.plan'>;
 export type Book = ReleasePlan['preview']['books'][number];
@@ -126,10 +126,18 @@ export const STATE_LABELS: Readonly<Record<PreparationState, string>> = {
   discarded: 'Discarded',
 };
 
+/** The failures of a release attempt, which `release.create` takes again (R6, #40); any other failure was the snapshot's or a discard's. */
+const RELEASE_FAILURES: readonly string[] = ['release_failed', 'release_outcome_unknown'];
+
+/** A `retryable_failure` that `release.create` cannot take again: the snapshot was not completed, or a discard did not finish; discarding it is the way on (R7). */
+export const discardOnly = (preparation: Pick<Preparation, 'state'> & { last_error?: Pick<OperationErrorShape, 'code'> | null }): boolean =>
+  preparation.state === 'retryable_failure' && Boolean(preparation.last_error) && !RELEASE_FAILURES.includes(preparation.last_error!.code);
+
 /** Whether the preparation's health lets the release go on, and whether the manager must acknowledge warnings first (H2, Q6). */
-export const releaseGate = (preparation: Pick<Preparation, 'state' | 'health' | 'requires_acknowledgement'>): 'ready' | 'acknowledge' | 'blocked' | 'checking' => {
+export const releaseGate = (preparation: Pick<Preparation, 'state' | 'health' | 'requires_acknowledgement'> & { last_error?: Pick<OperationErrorShape, 'code'> | null }): 'ready' | 'acknowledge' | 'blocked' | 'checking' => {
   if (preparation.state === 'health_checking') return 'checking';
   if (preparation.state !== 'ready_for_release' && preparation.state !== 'retryable_failure') return 'blocked';
+  if (discardOnly(preparation)) return 'blocked';
   return preparation.requires_acknowledgement ? 'acknowledge' : 'ready';
 };
 

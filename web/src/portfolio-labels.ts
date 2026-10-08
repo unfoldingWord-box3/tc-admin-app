@@ -60,19 +60,21 @@ export const canOpen = (project: Pick<ProjectSummary, 'editability'>) => project
 /** A project's address in the interface, `#/<owner>/<repo>`, so a reload keeps the project open. */
 export const projectHash = (project: Pick<ProjectSummary, 'ref'>) => `#/${encodeURIComponent(project.ref.owner)}/${encodeURIComponent(project.ref.repo)}`;
 
-/** The owner and repository a hash names, or `null`. */
+/** The release stepper of a project. */
 export const releaseHash = (project: Pick<ProjectSummary, 'ref'>) => `${projectHash(project)}/release`;
 /** One release of the project by its tag: the lookup, and the promotion of a pre-release (S7). */
 export const releaseTagHash = (project: Pick<ProjectSummary, 'ref'>, tag: string) => `${projectHash(project)}/releases/${encodeURIComponent(tag)}`;
 
-export type HashView = { view: 'project' } | { view: 'release' } | { view: 'tag'; tag: string };
+/** The stepper (`/release`), at one preparation by its version (`/release/<version>`, #125), or one release by its tag (`/releases/<tag>`). */
+export type HashView = { view: 'project' } | { view: 'release' } | { view: 'preparation'; preparation: string } | { view: 'tag'; tag: string };
 
 export function hashRef(hash: string): ({ owner: string; repo: string } & HashView) | null {
-  const match = /^#\/([^/]+)\/([^/]+)(?:(\/release)|\/releases\/([^/]+))?$/.exec(hash);
+  const match = /^#\/([^/]+)\/([^/]+)(?:(\/release)(?:\/([^/]+))?|\/releases\/([^/]+))?$/.exec(hash);
   if (!match) return null;
   try {
     const ref = { owner: decodeURIComponent(match[1]!), repo: decodeURIComponent(match[2]!) };
-    if (match[4]) return { ...ref, view: 'tag', tag: decodeURIComponent(match[4]) };
+    if (match[5]) return { ...ref, view: 'tag', tag: decodeURIComponent(match[5]) };
+    if (match[4]) return { ...ref, view: 'preparation', preparation: decodeURIComponent(match[4]) };
     return { ...ref, view: match[3] ? 'release' : 'project' };
   } catch {
     return null;

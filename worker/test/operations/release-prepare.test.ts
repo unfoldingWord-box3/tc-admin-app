@@ -71,6 +71,9 @@ class MemoryKV implements KVNamespace {
   async delete(key: string) {
     this.entries.delete(key);
   }
+  async list(options: { prefix: string }) {
+    return { keys: [...this.entries.keys()].filter(name => name.startsWith(options.prefix)).map(name => ({ name })), list_complete: true };
+  }
 }
 
 interface Door43Options {
@@ -317,6 +320,16 @@ describe('what the prepare refuses, writing nothing', () => {
     const again = await prepare({ branchAnswer: () => Response.json({ message: 'branch already exists' }, { status: 409 }) }, carried({ gen: 'include' }));
     expect((await failure(again.run()))!.code).toBe('preparation_active');
     expect((JSON.parse(kv.entries.get(`preparation:${PENDAU.owner.toLowerCase()}/${PENDAU.repo}/v1.3.0`)!) as Preparation).state).toBe('health_checking');
+  });
+
+  test('X2, R7: the preparation_active refusal names the preparation it found, by its version, with the catalog message unchanged (#125)', async () => {
+    const { run } = await prepare({ branchAnswer: () => Response.json({ message: 'branch already exists' }, { status: 409 }) }, carried({ gen: 'include' }));
+    const error = (await failure(run()))!;
+    expect(error.code).toBe('preparation_active');
+    expect(error.message).toBe('A release is being prepared for this project. Finish or discard it first.');
+    expect(error.details).toMatchObject({ preparation_id: 'v1.3.0', branch: 'temp-tca-release/v1.3.0', owner: PENDAU.owner, repo: PENDAU.repo });
+    const stored = JSON.parse(kv.entries.get(`preparation:${PENDAU.owner.toLowerCase()}/${PENDAU.repo}/v1.3.0`)!) as Preparation;
+    expect(stored.last_error?.details).toMatchObject({ preparation_id: 'v1.3.0' });
   });
 
   test('R7, X1: a commit Door43 refuses is commit_failed, the branch is kept, nothing is retried, and the preparation records the failure as retryable; a second attempt finds the branch and is preparation_active', async () => {
