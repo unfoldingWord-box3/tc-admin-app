@@ -82,10 +82,14 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
   // Bumped by "Try again" after a failed owner or source search: the search runs again with the same input.
   const [attempt, setAttempt] = useState(0);
 
+  // The write in flight, set before any await, so two confirmations in one turn send one apply (X1); the plan id is the idempotency key besides.
+  const confirming = useRef(false);
+
   const show = (failure: unknown, during: ImportProblem['during']) => {
     if (failure instanceof ApiError && failure.error.code === 'session_expired' && onFailure) return onFailure(failure);
     const error = failure instanceof ApiError ? failure.error : null;
-    setProblem({ code: error?.code ?? 'door43_unavailable', message: failureMessage(failure), during });
+    // A failure without a catalog answer (no answer, or one that is not the catalog's shape) is labeled as such, not as a catalog code it does not carry.
+    setProblem({ code: error?.code ?? 'no_answer', message: failureMessage(failure), during });
   };
 
   // The owners: the account's own organizations before anything is typed, then the catalog's matches as the manager types.
@@ -207,7 +211,8 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
   };
 
   const confirm = async () => {
-    if (!planned || busy || !canConfirmImport(planned.plan, confirmed) || spent === planned.plan.id) return;
+    if (confirming.current || !planned || busy || !canConfirmImport(planned.plan, confirmed) || spent === planned.plan.id) return;
+    confirming.current = true;
     const mine = ++ticket.current;
     const count = planned.plan.preview.files.length;
     const added = `Imported ${count} ${unitNoun(type, count)}`;
@@ -222,6 +227,7 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
       setSpent(planned.plan.id);
       show(failure, 'apply');
     } finally {
+      confirming.current = false;
       if (mine === ticket.current) setBusy(null);
     }
   };
@@ -502,7 +508,7 @@ function ImportReview({ plan, type, confirmed, busy, spent, onConfirmOverwrite, 
         {files.map(file => (
           <li key={file.name} className="upload-file">
             <div className="actions">
-              <strong>{unitLabel(file.identified!)}</strong>
+              <strong>{file.identified ? unitLabel(file.identified) : 'Not identified'}</strong>
               <span>
                 <code>{file.name}</code> from the source to <code>{file.path}</code>
               </span>

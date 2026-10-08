@@ -53,10 +53,11 @@ describe('sources', () => {
     expect(sourceMatches(sourceOf('bahtraku', 'id_tb1'), 'bible')).toBe(true);
   });
 
-  test('E35: the units sent are the chosen ids, `all` when every offered one is chosen or when Door43 itemizes none, and none when nothing is chosen', () => {
+  test('E35: the units sent are the chosen ids, `all` only when Door43 itemizes none, and none when nothing is chosen', () => {
     const source = sourceOf('bahtraku', 'id_tb1');
     expect(unitsInput(source, new Set(['gen', 'exo']))).toEqual(['gen', 'exo']);
-    expect(unitsInput(source, new Set(['gen', 'exo', 'mat']))).toBe('all');
+    // Every listed book chosen is still the list: the Worker's `all` is the archive's every book, which may be more than Door43 itemizes.
+    expect(unitsInput(source, new Set(['gen', 'exo', 'mat']))).toEqual(['gen', 'exo', 'mat']);
     expect(unitsInput(source, new Set())).toBeNull();
     expect(unitsInput(sourceOf('unfoldingWord', 'en_obs', { type: 'obs', books: null }), new Set())).toBe('all');
   });
@@ -91,10 +92,17 @@ describe('refusals', () => {
     expect(importWayForward('source_changed', 'apply')).toBe('plan_again');
     expect(importWayForward('door43_unavailable', 'apply')).toBe('plan_again');
     expect(importWayForward('validation_failed', 'plan')).toBe('choose_again');
+    expect(importWayForward('validation_failed', 'apply')).toBe('plan_again');
+    expect(importWayForward('not_found', 'apply')).toBe('plan_again');
     expect(importWayForward('not_found', 'plan')).toBe('choose_again');
     expect(importWayForward('permission_denied', 'plan')).toBe('back');
     expect(importWayForward('door43_unavailable', 'owners')).toBe('try_again');
     expect(importWayForwardText({ code: 'commit_failed', during: 'apply' })).toContain('does not send the import again by itself');
     expect(importWayForwardText({ code: 'source_changed', during: 'apply' })).toContain('The project or the source changed');
+    // The sentence follows the button: an apply's way forward is a new plan, whatever the code (X1).
+    expect(importWayForward('source_unavailable', 'apply')).toBe('plan_again');
+    expect(importWayForwardText({ code: 'source_unavailable', during: 'apply' })).toContain('plan again');
+    expect(importWayForwardText({ code: 'validation_failed', during: 'apply' })).toContain('Plan again');
+    expect(importWayForwardText({ code: 'not_found', during: 'apply' })).toContain('Plan again');
   });
 });

@@ -81,14 +81,16 @@ export const offeredLabel = (type: UploadType, unit: Offered): string => {
 };
 
 /**
- * The `units` `import.plan` takes: `all` when every offered unit is chosen, or when the source itemizes none (its
- * books or stories are then read from the archive, E35); else the chosen ids. An empty choice is no plan.
+ * The `units` `import.plan` takes. The Worker's contract: `all` is every book or story the source's archive holds
+ * at its Scripture Burrito path, which may be more than the catalog itemizes (`source.search`'s `books`, E35); a list
+ * is exactly those ids. So `all` is sent only when Door43 itemizes nothing and the archive is the only list there is,
+ * and otherwise the chosen ids are sent, every one of them checked or not, so the plan never grows past the
+ * checkboxes (bench round 1 on #137). An empty choice is no plan.
  */
 export function unitsInput(source: Pick<Source, 'books'>, chosen: ReadonlySet<string>): ImportPlanUnits | null {
   if (source.books === null) return 'all';
   if (chosen.size === 0) return null;
-  const offered = source.books.map(unit => unit.id);
-  return offered.every(id => chosen.has(id)) ? 'all' : offered.filter(id => chosen.has(id));
+  return source.books.map(unit => unit.id).filter(id => chosen.has(id));
 }
 export type ImportPlanUnits = 'all' | string[];
 
@@ -111,7 +113,8 @@ export function importBlockers(plan: ImportPlan, confirmedOverwrites: ReadonlySe
 
 export const canConfirmImport = (plan: ImportPlan, confirmedOverwrites: ReadonlySet<string>): boolean => importBlockers(plan, confirmedOverwrites).length === 0;
 
-const list = (files: readonly ImportedFile[]) => files.map(file => unitLabel(file.identified!)).join(', ');
+/** The units of the files, by name; a file the plan did not identify, which the Worker never lists for an import, is named by its path rather than thrown on. */
+const list = (files: readonly ImportedFile[]) => files.map(file => (file.identified ? unitLabel(file.identified) : file.name)).join(', ');
 
 /** The source relationship the commit records, in words: "Source recorded: bahtraku/id_tb1 at 1974." */
 export function relationshipText(plan: ImportPlan): string {
@@ -148,9 +151,9 @@ export type ImportWayForward = 'choose_again' | 'plan_again' | 'back' | 'try_aga
 
 export function importWayForward(code: string, during: ImportProblem['during']): ImportWayForward {
   if (code === 'not_editable' || code === 'permission_denied') return 'back';
-  if (code === 'validation_failed' || code === 'not_found') return 'choose_again';
-  // An apply refused or unanswered is never sent again (X1): a new plan reads what Door43 and the source now hold.
+  // An apply refused or unanswered, whatever the code, is never sent again (X1): a new plan reads what Door43 and the source now hold.
   if (during === 'apply' || code === 'plan_expired' || code === 'source_changed') return 'plan_again';
+  if (code === 'validation_failed' || code === 'not_found') return 'choose_again';
   return 'try_again';
 }
 
@@ -158,11 +161,13 @@ export function importWayForward(code: string, during: ImportProblem['during']):
 export function importWayForwardText(problem: Pick<ImportProblem, 'code' | 'during'>): string {
   switch (problem.code) {
     case 'validation_failed':
-      return 'Nothing was written. Choose the source or its books again.';
+      return problem.during === 'apply' ? 'Nothing was written. Plan again to review the import as things are now.' : 'Nothing was written. Choose the source or its books again.';
     case 'not_found':
-      return 'Nothing was written. The source repository was not found: choose another.';
+      return problem.during === 'apply' ? 'Nothing was written. Plan again to review the import as things are now.' : 'Nothing was written. The source repository was not found: choose another.';
     case 'source_unavailable':
-      return 'Nothing was written. Door43 could not serve the source\'s archive; try again in a moment.';
+      return problem.during === 'apply'
+        ? 'Nothing was written. Door43 could not serve the source\'s archive; plan again in a moment to review the import as things are now.'
+        : 'Nothing was written. Door43 could not serve the source\'s archive; try again in a moment.';
     case 'source_changed':
       return problem.during === 'apply'
         ? 'Nothing was written. The project or the source changed after this plan was made. Plan again to review the import as things are now.'

@@ -141,7 +141,7 @@ describe('plan before apply', () => {
   test('a plan\'s id_line_mismatch warning is shown with the plan', async () => {
     await toSources();
     fireEvent.click(button(/Alkitab Terjemahan Baru/));
-    fireEvent.click(button('Plan the import of all books'));
+    fireEvent.click(button('Plan the import of 3 books'));
     const plan = importPlanOf('p2', [book('gen')]);
     await worker.answer('POST', planUrl, { ...plan, warnings: [{ code: 'id_line_mismatch', message: 'ingredients/GEN.usfm is imported as GEN, but its \\id line does not name it. The file is committed unchanged.' }] });
     expect(screen.getByRole('list', { name: 'Warnings' }).textContent).toContain('is imported as GEN');
@@ -150,7 +150,7 @@ describe('plan before apply', () => {
   test('W5, X1: changing the chosen books after planning retires the plan; nothing can be confirmed until import.plan runs again with the new choice', async () => {
     await toSources();
     fireEvent.click(button(/Alkitab Terjemahan Baru/));
-    fireEvent.click(button('Plan the import of all books'));
+    fireEvent.click(button('Plan the import of 3 books'));
     await worker.answer('POST', planUrl, importPlanOf('p4', [book('gen'), book('exo'), book('mat')]));
     expect(screen.getByText('Review before importing')).toBeTruthy();
     fireEvent.click(screen.getByLabelText('MAT · Matius'));
@@ -169,12 +169,12 @@ describe('plan before apply', () => {
   test('W5: a plan answered after the source or its books changed is dropped, not offered for confirmation', async () => {
     await toSources([TB1, sourceOf('bahtraku', 'id_tb2', { title: 'Kitab Kedua', stage: 'prod' })]);
     fireEvent.click(button(/Alkitab Terjemahan Baru/));
-    fireEvent.click(button('Plan the import of all books'));
+    fireEvent.click(button('Plan the import of 3 books'));
     fireEvent.click(button(/Kitab Kedua/));
     await worker.answer('POST', planUrl, importPlanOf('p6', [book('gen')]));
     expect(screen.queryByText('Review before importing')).toBeNull();
 
-    fireEvent.click(button('Plan the import of all books'));
+    fireEvent.click(button('Plan the import of 3 books'));
     fireEvent.click(screen.getByLabelText('MAT · Matius'));
     await worker.answer('POST', planUrl, importPlanOf('p7', [book('gen')]));
     expect(screen.queryByText('Review before importing')).toBeNull();
@@ -187,7 +187,7 @@ describe('refusals shown in place', () => {
   test('X2: not_editable from import.plan shows the project\'s reason and the way back, and plans nothing more', async () => {
     await toSources();
     fireEvent.click(button(/Alkitab Terjemahan Baru/));
-    fireEvent.click(button('Plan the import of all books'));
+    fireEvent.click(button('Plan the import of 3 books'));
     await worker.answer('POST', planUrl, errorOf('not_editable', {}, 'Resource Container project. Import it into a new project to manage it here.'), 409);
     const alert = screen.getByRole('alert');
     expect(alert.getAttribute('data-code')).toBe('not_editable');
@@ -199,7 +199,7 @@ describe('refusals shown in place', () => {
   test('X1, X2: an apply the source refused (source_changed in its source wording) is shown with the way forward, and the same plan is not sent again; "Plan again" plans anew', async () => {
     await toSources();
     fireEvent.click(button(/Alkitab Terjemahan Baru/));
-    fireEvent.click(button('Plan the import of all books'));
+    fireEvent.click(button('Plan the import of 3 books'));
     await worker.answer('POST', planUrl, importPlanOf('p3', [book('gen')]));
     fireEvent.click(button(/^Import 1 book$/));
     expect(applies()).toHaveLength(1);
