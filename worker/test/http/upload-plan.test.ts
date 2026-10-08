@@ -129,6 +129,15 @@ describe('POST /api/projects/{owner}/{repo}/uploads/plan', () => {
     expect((await refusal(await post(data))).details).toEqual({ fields: [{ path: 'files.0.content', message: 'sent more than once' }] });
   });
 
+  test('W6: a confirmations part sent twice is validation_failed naming it, and the operation is not called: no copy silently wins', async () => {
+    const data = form([{ name: 'notes.md', content: 'notes\n' }], { 'notes.md': { story: '01' } });
+    data.append(UPLOAD_CONFIRMATIONS_PART, JSON.stringify({ 'notes.md': { story: '02' } }));
+    const response = await post(data);
+    expect(response.status).toBe(400);
+    expect((await refusal(response)).details).toEqual({ fields: [{ path: 'confirmations', message: 'sent more than once' }] });
+    expect(seen).toHaveLength(0);
+  });
+
   test('a streamed body within the limit, with no declared length, is still read', async () => {
     const data = form([{ name: 'RUT.usfm', content: '\\id RUT\n' }]);
     // One encoding, so the boundary in the header is the one in the bytes.

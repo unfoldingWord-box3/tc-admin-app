@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { openArchive } from '../../src/door43/archive';
-import { MAX_DIFF_EDITS, MAX_DIFF_LINES, textDiff, textOf } from '../../src/model/text-diff';
+import { MAX_DIFF_BYTES, MAX_DIFF_EDITS, MAX_DIFF_LINES, textDiff, textOf } from '../../src/model/text-diff';
 
 const encode = (text: string) => new TextEncoder().encode(text);
 const diff = (before: string, after: string) => textDiff('ingredients/RUT.usfm', encode(before), encode(after));
@@ -94,5 +94,27 @@ describe('a diff is shown only where practical', () => {
     expect(diff(`${many.join('\n')}\n`, `${many.map(line => `${line}!`).join('\n')}\n`)).toBeNull();
     const long = Array.from({ length: MAX_DIFF_LINES }, (_, i) => `l${i}`);
     expect(diff(`x\n${long.join('\n')}\nx\n`, `y\n${long.join('\n')}\ny\n`)).toBeNull();
+  });
+});
+
+describe('W6: a diff is bounded in the memory it takes, whatever the upload', () => {
+  test(`a side over ${MAX_DIFF_BYTES} bytes is no diff, and the same bytes, however large, are the empty diff, both without decoding`, () => {
+    const big = new TextEncoder().encode('a line\n'.repeat(Math.ceil((MAX_DIFF_BYTES + 1) / 7)));
+    const changed = big.slice();
+    changed[changed.length - 2] = 'b'.charCodeAt(0);
+    expect(big.length).toBeGreaterThan(MAX_DIFF_BYTES);
+    expect(textDiff('ingredients/PSA.usfm', big, changed)).toBeNull();
+    expect(textDiff('ingredients/PSA.usfm', big, big.slice())).toBe('');
+  });
+
+  test('a long common prefix and suffix keep only their context lines, and the hunk is numbered from the file start', () => {
+    const lines = Array.from({ length: 60_000 }, (_, i) => `\\v ${i + 1} line\n`);
+    const before = new TextEncoder().encode(lines.join(''));
+    const edited = [...lines];
+    edited[29_999] = '\\v 30000 changed\n';
+    const diff = textDiff('ingredients/PSA.usfm', before, new TextEncoder().encode(edited.join('')))!;
+    expect(diff).toContain('@@ -29997,7 +29997,7 @@\n');
+    expect(diff).toContain('-\\v 30000 line\n+\\v 30000 changed\n');
+    expect(diff.split('\n').filter(line => line.startsWith(' '))).toHaveLength(6);
   });
 });

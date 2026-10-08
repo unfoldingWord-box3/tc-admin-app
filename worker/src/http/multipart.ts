@@ -75,6 +75,8 @@ export async function readMultipartInput(c: Context<App>): Promise<Record<string
   for (const [key, value] of entries) {
     if (key === UPLOAD_CONFIRMATIONS_PART) {
       if (typeof value !== 'string') throw refused('confirmations: the part must be JSON text.');
+      // Sent twice, it is as ambiguous as a file part sent twice: no copy silently wins.
+      if ('confirmations' in input) throw refused(`${key}: the part is sent more than once`, { fields: [{ path: key, message: 'sent more than once' }] });
       try {
         input.confirmations = JSON.parse(value);
       } catch {

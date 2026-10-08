@@ -3,10 +3,16 @@
 // where practical"). Myers' algorithm on the lines between the common prefix
 // and suffix, written here because the application adds no dependency for one
 // function. "Practical" is bounded: bytes that are not UTF-8 or hold a NUL are
-// not text; a changed region over `MAX_DIFF_LINES` lines, more than
+// not text; a side over `MAX_DIFF_BYTES`, a changed region over `MAX_DIFF_LINES` lines, more than
 // `MAX_DIFF_EDITS` line edits, or a diff longer than `MAX_DIFF_CHARS` is no
 // diff, and the caller says so (`diff: null`). Pure.
 
+/**
+ * The most bytes either version may have for a diff to be made: checked before the bytes are decoded or split
+ * into lines, so the memory a diff takes is bounded whatever the upload's size (an upload may reach 32 MiB).
+ * Larger files, such as aligned books, get no diff.
+ */
+export const MAX_DIFF_BYTES = 4 * 1024 * 1024;
 /** The most lines, old and new together, of the region between the common prefix and suffix that is compared. */
 export const MAX_DIFF_LINES = 20_000;
 /** The most line insertions and deletions a diff may hold: the work and the memory of the comparison grow with their square. */
@@ -97,6 +103,13 @@ function editScript(a: readonly string[], b: readonly string[], maxEdits: number
   return ops.reverse();
 }
 
+/** Whether two byte arrays hold the same bytes, compared without decoding or copying either. */
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
 function rangeOf(start: number, length: number): string {
   // An empty range names the line before it, as `diff -u` does (`-0,0` for an empty old file).
   const first = length === 0 ? start : start + 1;
@@ -114,6 +127,9 @@ function renderLine(op: Op): string {
  * or the diff is not practical (the limits above).
  */
 export function textDiff(path: string, before: Uint8Array, after: Uint8Array): string | null {
+  // The same bytes are no change, whatever they are, and nothing is decoded to say so.
+  if (sameBytes(before, after)) return '';
+  if (before.length > MAX_DIFF_BYTES || after.length > MAX_DIFF_BYTES) return null;
   const oldText = textOf(before);
   const newText = textOf(after);
   if (oldText === null || newText === null) return null;
@@ -129,7 +145,15 @@ export function textDiff(path: string, before: Uint8Array, after: Uint8Array): s
   if (middleA.length + middleB.length > MAX_DIFF_LINES) return null;
   const middle = editScript(middleA, middleB, MAX_DIFF_EDITS);
   if (middle === null) return null;
-  const ops: Op[] = [...a.slice(0, prefix).map((line): Op => ({ kind: ' ', line })), ...middle, ...a.slice(a.length - suffix).map((line): Op => ({ kind: ' ', line }))];
+  // Only the context a hunk can show is kept of the common prefix and suffix, so no unchanged line beyond it
+  // becomes an op; the line numbers start where the kept prefix starts.
+  const keptPrefix = Math.min(prefix, CONTEXT_LINES);
+  const keptSuffix = Math.min(suffix, CONTEXT_LINES);
+  const ops: Op[] = [
+    ...a.slice(prefix - keptPrefix, prefix).map((line): Op => ({ kind: ' ', line })),
+    ...middle,
+    ...a.slice(a.length - suffix, a.length - suffix + keptSuffix).map((line): Op => ({ kind: ' ', line })),
+  ];
 
   // Hunks: each change with its context, changes closer than twice the context joined into one.
   const changed = ops.flatMap((op, index) => (op.kind === ' ' ? [] : [index]));
@@ -143,8 +167,8 @@ export function textDiff(path: string, before: Uint8Array, after: Uint8Array): s
   }
   let out = `--- a/${path}\n+++ b/${path}\n`;
   // Line numbers before each op, in the old and the new file.
-  let oldLine = 0;
-  let newLine = 0;
+  let oldLine = prefix - keptPrefix;
+  let newLine = prefix - keptPrefix;
   let cursor = 0;
   for (const [start, end] of hunks) {
     for (; cursor < start; cursor++) {
