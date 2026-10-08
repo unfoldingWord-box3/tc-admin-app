@@ -238,7 +238,7 @@ function logOutcomeNotRecorded(context: OperationContext, operation: CommitApply
  * whom it was published; `null` when the catalog names none or Door43 has none
  * under that tag. Read before the write, so nothing after it can fail the apply.
  */
-async function latestFullRelease(context: OperationContext, repository: Door43SearchRepository): Promise<ProjectReport['latest_full_release']> {
+export async function latestFullRelease(context: OperationContext, repository: Door43SearchRepository): Promise<ProjectReport['latest_full_release']> {
   const named = repositoryRefs(repository).latest_full_release;
   if (!named) return null;
   const release = await readPublishedRelease(signedIn(context), repository.owner.login, repository.name, named.tag);

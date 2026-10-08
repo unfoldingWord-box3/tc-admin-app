@@ -291,6 +291,7 @@ worker/
     sign-in.ts       begin and complete sign-in for http/session; not catalog operations (#12)
     situation-read.ts  situation.read; the account from /user when signed in
     portfolio-list.ts  the writable filter (P1, P2); the operation: #23
+    project-read.ts  project.read and project.refresh: the writable check (A2, P2), the default branch's health with its issues (H1, H3), the head, the latest full release, the preparation under way from the store, no archive (Q17), live (P3); the refresh is the read, since nothing is cached (#26)
     plans.ts         plans and receipts in Workers KV, by plan id; a creation's attempt and the retry's receipt, each in its own key (Q29, #31); preparations by project and id, for thirty days (operations.md §2), and every preparation of a project, through every page of the key listing (#125)
     project-create-plan.ts  project.create.plan (#29)
     project-create-apply.ts  project.create.apply: the first Door43 writes, idempotent by plan id (#30)
@@ -330,6 +331,7 @@ web/
   src/ProjectView.tsx  one project's report, shown from the portfolio and after creation; from the portfolio, its release preparations, each with a link and the discard (#125); "Add books" or "Add stories" opens the upload screen, whose receipt's report replaces the one shown (#76)
   src/UploadScreen.tsx, src/upload.ts  the upload screen: files, a folder, or a drop to upload.plan; the plan shown before any write (each file's book or story, unknown files held back with a choice or to leave out, each overwrite's diff and its own confirmation, the ingredient entries, the warnings, the summary); a choice plans again; the confirmation through applyUpload, the one call to upload.apply; refusals in place; its wording, gate, diff lines, and refusals as pure functions (#76)
   src/ImportScreen.tsx, src/import.ts  the import screen: the owner found (own organizations first, any owner by name), one of its Bible or Open Bible Stories repositories at its latest content or last release with its format and whether it was released, a source of the other type told before any plan, all or some of its books or stories (all when Door43 itemizes none), one import.plan shown as the upload screen shows a plan with the source relationship, one call to import.apply; refusals in place; the overwrite block shared with the upload screen (#81)
+  src/freshness.ts, src/use-now.ts  a reading's source, time, and age in words, kept true while the page is open (P3; #26)
   src/HealthFindings.tsx, src/health-findings.ts, src/door43-text.ts  Door43's health findings: the summary when a release is blocked or a warning needs confirmation, each finding's severity as an icon and a word (H4), errors first; Door43's bold, code, and links rendered from tokens, never inserted as HTML (H1, #124)
   test/              the pure functions and the client in Node; mounted components (`*-mounted.test.tsx`, marked `// @vitest-environment jsdom`) under jsdom with Testing Library, the Worker stubbed so each answer arrives in the order a test sets; support/ (the stub and the shapes it answers with)
 fixtures/

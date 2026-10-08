@@ -64,8 +64,15 @@ describe('failures', () => {
 
   test('X2: a catalog operation not built yet answers with the catalog error shape', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    const body = OperationErrorShape.parse(await (await call('/api/projects/team/sw_ult')).json());
-    expect(body).toMatchObject({ code: 'unknown_operation', details: { operation: 'project.read' } });
+    // Every Milestone 1 operation is built (#26 built the last, project.read), so one is set aside for the test.
+    const built = HANDLERS['project.read'];
+    delete HANDLERS['project.read'];
+    try {
+      const body = OperationErrorShape.parse(await (await call('/api/projects/team/sw_ult')).json());
+      expect(body).toMatchObject({ code: 'unknown_operation', details: { operation: 'project.read' } });
+    } finally {
+      if (built) HANDLERS['project.read'] = built;
+    }
   });
 
   describe('with a stand-in for an operation', () => {
