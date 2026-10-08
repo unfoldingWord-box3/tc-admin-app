@@ -1,8 +1,9 @@
 // The input of an operation whose route takes `multipart/form-data`
-// (`upload.plan`, operations.md §7, Q33): the files' bytes travel in the
-// request, one part per field, `files.<i>.name`, `files.<i>.mode`, and
-// `files.<i>.content`, with the confirmations as JSON in a `confirmations`
-// part. This module turns the parts into the plain input the operation's
+// (`upload.plan` and `upload.apply`, operations.md §7, Q33): the files' bytes
+// travel in the request, one part per field, `files.<i>.name`,
+// `files.<i>.mode`, and `files.<i>.content`, with the confirmations as JSON in
+// a `confirmations` part and, for an operation whose input names a plan
+// (`upload.apply`), the plan id as text in a `plan_id` part. This module turns the parts into the plain input the operation's
 // schema validates: names as strings, a mode as a number, the bytes as a
 // `Uint8Array`. A body larger than one upload batch and its framing is refused
 // from its declared length before it is read, and, whatever it declared, as soon
@@ -10,7 +11,7 @@
 // twice is refused, never resolved by the last copy.
 // Same-origin and CSRF checks ran before this (csrf.ts, A4).
 
-import { CatalogError, UPLOAD_CONFIRMATIONS_PART, UPLOAD_FILE_FIELDS } from '@tc-admin/shared/schema';
+import { CatalogError, UPLOAD_CONFIRMATIONS_PART, UPLOAD_FILE_FIELDS, UPLOAD_PLAN_ID_PART } from '@tc-admin/shared/schema';
 import type { UploadFileField } from '@tc-admin/shared/schema';
 import type { Context } from 'hono';
 import { UPLOAD_REQUEST_BYTES } from '../operations';
@@ -55,7 +56,12 @@ async function boundedBody(stream: Request['body']): Promise<ArrayBuffer> {
   return body.buffer;
 }
 
-export async function readMultipartInput(c: Context<App>): Promise<Record<string, unknown>> {
+/** What a multipart body may carry besides the files and the confirmations: the plan id, for an operation whose input names one. */
+export interface MultipartParts {
+  planId: boolean;
+}
+
+export async function readMultipartInput(c: Context<App>, parts: MultipartParts = { planId: false }): Promise<Record<string, unknown>> {
   if (!(c.req.header('content-type') ?? '').toLowerCase().startsWith('multipart/form-data')) throw refused('The request body must be multipart/form-data.');
   const declared = Number(c.req.header('content-length'));
   if (Number.isFinite(declared) && declared > UPLOAD_REQUEST_BYTES) throw overLimit(declared);
@@ -82,6 +88,12 @@ export async function readMultipartInput(c: Context<App>): Promise<Record<string
       } catch {
         throw refused('confirmations: the part is not valid JSON.');
       }
+      continue;
+    }
+    if (key === UPLOAD_PLAN_ID_PART && parts.planId) {
+      if (typeof value !== 'string') throw refused(`${key}: the part must be text.`, { fields: [{ path: key, message: 'must be text' }] });
+      if (UPLOAD_PLAN_ID_PART in input) throw refused(`${key}: the part is sent more than once`, { fields: [{ path: key, message: 'sent more than once' }] });
+      input[UPLOAD_PLAN_ID_PART] = value;
       continue;
     }
     const match = PART.exec(key);

@@ -21,6 +21,8 @@ interface Door43Release {
   html_url?: unknown;
   prerelease?: unknown;
   draft?: unknown;
+  published_at?: unknown;
+  author?: { login?: unknown } | null;
   door43_metadata?: { commit_sha?: unknown } | null;
 }
 
@@ -51,18 +53,50 @@ export function releaseShape(body: unknown): Release | null {
   };
 }
 
-/** `GET /repos/{owner}/{repo}/releases/tags/{tag}`: the release, or `null` when Door43 has none under that tag (its 404, which a missing repository also answers). */
-export async function readReleaseByTag(client: Door43Client, owner: string, repo: string, tag: string): Promise<Release | null> {
-  let body: unknown;
+/** The release's answer by its tag, or `null` for Door43's 404 (which a missing repository also answers). */
+async function readReleaseBody(client: Door43Client, owner: string, repo: string, tag: string): Promise<unknown> {
   try {
-    body = await readDoor43(client, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases/tags/${encodeURIComponent(tag)}`);
+    return await readDoor43(client, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases/tags/${encodeURIComponent(tag)}`);
   } catch (error) {
     if (error instanceof CatalogError && error.code === 'not_found') return null;
     throw error;
   }
+}
+
+/** `GET /repos/{owner}/{repo}/releases/tags/{tag}`: the release, or `null` when Door43 has none under that tag (its 404, which a missing repository also answers). */
+export async function readReleaseByTag(client: Door43Client, owner: string, repo: string, tag: string): Promise<Release | null> {
+  const body = await readReleaseBody(client, owner, repo, tag);
+  if (body === null) return null;
   const release = releaseShape(body);
   if (!release) throw new CatalogError('door43_unavailable', { details: { reason: 'unexpected release shape', owner, repo, tag } });
   return release;
+}
+
+/** A full release as the project report names it (operations.md §2): its tag, its commit, when it was published, and who published it. */
+export interface PublishedRelease {
+  tag: string;
+  sha: string;
+  published_at: string | null;
+  author: string | null;
+}
+
+/**
+ * The release under a tag with when and by whom it was published (`published_at`,
+ * `author.login`, recorded in `2026-09-22/probe-write/14-lookup-by-tag.json`), or
+ * `null` when Door43 has none under that tag. A field Door43 does not give is `null`.
+ */
+export async function readPublishedRelease(client: Door43Client, owner: string, repo: string, tag: string): Promise<PublishedRelease | null> {
+  const body = await readReleaseBody(client, owner, repo, tag);
+  if (body === null) return null;
+  const release = releaseShape(body);
+  if (!release) throw new CatalogError('door43_unavailable', { details: { reason: 'unexpected release shape', owner, repo, tag } });
+  const { published_at, author } = body as Door43Release;
+  return {
+    tag: release.tag,
+    sha: release.target_sha,
+    published_at: typeof published_at === 'string' && published_at ? published_at : null,
+    author: typeof author?.login === 'string' && author.login ? author.login : null,
+  };
 }
 
 export interface ReleaseToCreate {

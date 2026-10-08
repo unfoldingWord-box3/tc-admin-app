@@ -38,11 +38,18 @@ function answer(c: Context<App>, status: number, body: unknown): Response {
 /** `{name}` in a catalog route is `:name` in Hono. */
 export const honoPath = (path: string) => path.replace(/\{([a-z_]+)\}/g, ':$1');
 
-async function readInput(c: Context<App>, route: Route): Promise<Record<string, unknown>> {
+/** Whether an operation's input has a field of this name, so a multipart body may carry it as a part. */
+function hasField(definition: OperationDefinition, field: string): boolean {
+  const shape = (definition.input as { shape?: Record<string, unknown> } | null)?.shape;
+  return shape !== undefined && field in shape;
+}
+
+async function readInput(c: Context<App>, definition: OperationDefinition): Promise<Record<string, unknown>> {
+  const route: Route = definition.route!;
   const params = c.req.param() as Record<string, string>;
   if (c.req.method === 'GET') return { ...c.req.query(), ...params };
-  // An operation that takes file bytes reads them from a multipart body (Q33); every other POST from JSON.
-  if (route.body === 'multipart') return { ...(await readMultipartInput(c)), ...params };
+  // An operation that takes file bytes reads them from a multipart body (Q33), with its plan id as a part when it names one; every other POST from JSON.
+  if (route.body === 'multipart') return { ...(await readMultipartInput(c, { planId: hasField(definition, 'plan_id') })), ...params };
   const text = await c.req.text();
   let body: unknown = {};
   if (text) {
@@ -75,7 +82,7 @@ async function runOperation(c: Context<App>, name: RoutedOperation): Promise<Res
   // Until every Milestone 1 operation is built, an unbuilt one answers as no operation (Q26).
   if (!handler) throw new CatalogError('unknown_operation', { details: { reason: 'operation not built yet', operation: name } });
   const definition: OperationDefinition = OPERATIONS[name];
-  const parsed = definition.input!.safeParse(await readInput(c, definition.route!));
+  const parsed = definition.input!.safeParse(await readInput(c, definition));
   if (!parsed.success) throw validationError(parsed.error);
   checkIdempotencyKey(c, parsed.data as Record<string, unknown>);
   const output = definition.output!.safeParse(await handler(parsed.data, context));

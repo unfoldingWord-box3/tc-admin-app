@@ -1,8 +1,9 @@
 // Git's blob SHA-1 of a file, `sha1("blob <size>\0" + bytes)`, the id Door43
 // lists for each file of a tree (E19) and of a commit's answer (E45). The
 // retry of a first commit (`project.create.retry`, #31) compares the default
-// branch's files to the plan's by these ids, so it can tell a commit Door43
-// made from one it did not, without downloading a file (X1).
+// branch's files to the plan's by these ids, and so does a repeated
+// `upload.apply` (#75), so each can tell a commit Door43 made from one it did
+// not, without downloading a file (X1).
 
 /** The blob SHA-1 of one file's bytes, as 40 lowercase hex characters. */
 export async function gitBlobSha(content: Uint8Array | string): Promise<string> {
@@ -21,4 +22,10 @@ export function sameFiles(expected: readonly { path: string; sha: string }[], ac
   const wanted = new Map(expected.map(file => [file.path, file.sha]));
   const paths = new Set(actual.map(file => file.path));
   return wanted.size === expected.length && paths.size === actual.length && actual.every(file => wanted.get(file.path) === file.sha);
+}
+
+/** Whether a ref holds each of these files, path for path and blob for blob, whatever else it holds. */
+export function holdsFiles(expected: readonly { path: string; sha: string }[], actual: readonly { path: string; sha: string }[]): boolean {
+  const held = new Map(actual.map(file => [file.path, file.sha]));
+  return expected.every(file => held.get(file.path) === file.sha);
 }
