@@ -341,6 +341,7 @@ scripts/
                      qa-release-probe (the release flow through the Worker's own code on a seeded repository: plan, prepare, read, create, lookup, promote, discard; E54)
                      qa-import-probe (import.plan and import.apply through the Worker's own code: a new project, two books from bahtraku/id_tb1 at its release, the commit and metadata re-read; E69)
                      planned: seed-qa (#3)
+e2e/                 one Playwright sign-in on QA as the test user (npm run e2e, A1, E70; #10): headed, since Door43 QA's bot check denies a headless browser; not part of npm run check
 docs/                this tower
 prototypes/door43-mcp  a Door43 MCP proof of concept, not a deliverable; prototypes/tc-admin was retired by #7
 ```

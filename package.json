@@ -17,9 +17,11 @@
     "lint": "oxlint --deny-warnings shared worker web",
     "test": "npm test --workspaces",
     "build": "npm run build --workspace web",
-    "dev": "npm run build && wrangler dev"
+    "dev": "npm run build && wrangler dev",
+    "e2e": "playwright test --config e2e/playwright.config.ts"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "oxlint": "^1.86.0",
     "wrangler": "^4.146.0"
   }

@@ -9,3 +9,5 @@ coverage/
 .env.*
 !.env.example
 **/qa-client.json
+test-results/
+playwright-report/
