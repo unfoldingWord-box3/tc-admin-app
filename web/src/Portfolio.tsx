@@ -72,7 +72,8 @@ export function Portfolio({ account, onFailure }: Props) {
     const preparation = wanted.view === 'preparation' ? wanted.preparation : null;
     return <ReleaseStepper key={`${open.ref.owner}/${open.ref.repo}/${preparation ?? ''}`} project={open} preparationId={preparation} onFailure={onFailure} />;
   }
-  if (open) return <ProjectView project={open} onFailure={onFailure} />;
+  // Keyed by the project: another project mounts a fresh view, so no listed preparation, confirmation, or discard of the last one survives it (#125).
+  if (open) return <ProjectView key={`${open.ref.owner}/${open.ref.repo}`} project={open} onFailure={onFailure} />;
 
   if (hash === CREATE_HASH) {
     if (!portfolio) return <p>Loading your projects…</p>;

@@ -93,10 +93,14 @@ export function ReleaseStepper({ project, preparationId = null, onFailure }: Pro
 
   // Step 1: the plan, which writes nothing (ADR 0011). State changes only once Door43 has answered.
   // A notice, such as why the plan was read again, stays up once the new plan is shown.
+  // A plan that answers after a later action started (Continue, a discard, a write) is stale and is not shown: it must not
+  // clear the preparation that action opened, nor move the address off it (#125).
   const readPlan = useCallback(
-    (notice: string | null = null) =>
-      callOperation('release.plan', { owner, repo }).then(
+    (notice: string | null = null) => {
+      const ticket = generation.current;
+      return callOperation('release.plan', { owner, repo }).then(
         planned => {
+          if (ticket !== generation.current) return;
           generation.current += 1;
           setPlan(planned);
           setSelection(selectionOf(planned));
@@ -109,8 +113,11 @@ export function ReleaseStepper({ project, preparationId = null, onFailure }: Pro
           setRestart(false);
           setProblem(notice);
         },
-        (failure: unknown) => fail(failure),
-      ),
+        (failure: unknown) => {
+          if (ticket === generation.current) fail(failure);
+        },
+      );
+    },
     [owner, repo, fail],
   );
 
@@ -142,8 +149,9 @@ export function ReleaseStepper({ project, preparationId = null, onFailure }: Pro
       try {
         const current = await callOperation('preparation.read', { owner, repo, preparation_id: id });
         if (ticket !== generation.current) return;
+        // The new plan is awaited, so the buttons stay disabled until it is shown.
         if (current.state === 'discarded') {
-          void readPlan(`The preparation of version ${id} was discarded. Prepare a new release below.`);
+          await readPlan(`The preparation of version ${id} was discarded. Prepare a new release below.`);
           return;
         }
         setPreparation(current);
@@ -157,7 +165,7 @@ export function ReleaseStepper({ project, preparationId = null, onFailure }: Pro
       } catch (failure) {
         if (ticket !== generation.current) return;
         if (expired(failure)) return onFailure(failure);
-        void readPlan(failureMessage(failure));
+        await readPlan(failureMessage(failure));
       } finally {
         setBusy(null);
       }
