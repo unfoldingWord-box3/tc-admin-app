@@ -79,6 +79,8 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
   const [spent, setSpent] = useState<string | null>(null);
   // Bumped by every search, plan, and apply: an answer for an earlier one is stale and is not shown.
   const ticket = useRef(0);
+  // Bumped by "Try again" after a failed owner or source search: the search runs again with the same input.
+  const [attempt, setAttempt] = useState(0);
 
   const show = (failure: unknown, during: ImportProblem['during']) => {
     if (failure instanceof ApiError && failure.error.code === 'session_expired' && onFailure) return onFailure(failure);
@@ -114,7 +116,7 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
     return () => clearTimeout(handle);
     // `show` reads only props; the search is keyed by what is typed and whether an owner is chosen.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, chosenOwner]);
+  }, [query, chosenOwner, attempt]);
 
   // The chosen owner's sources at the stage.
   useEffect(() => {
@@ -136,7 +138,25 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
       },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chosenOwner, stage]);
+  }, [chosenOwner, stage, attempt]);
+
+  /** Repeats the failed owner or source search with the same input. */
+  const searchAgain = () => {
+    setProblem(null);
+    setAttempt(previous => previous + 1);
+  };
+
+  /** Any change to the source or its chosen units retires the plan of record and drops a plan still being made, so Confirm is offered only for a plan of the current choices. */
+  const retirePlan = () => {
+    if (busy === 'applying') return;
+    ++ticket.current;
+    setPlanned(null);
+    if (busy === 'planning') setBusy(null);
+  };
+  const chooseUnits = (next: (previous: ReadonlySet<string>) => ReadonlySet<string>) => {
+    retirePlan();
+    setChosenUnits(next);
+  };
 
   const chooseOwner = (account: Account) => {
     setChosenOwner(account);
@@ -159,9 +179,9 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
     setPlanned(null);
   };
   const chooseSource = (next: Source) => {
+    retirePlan();
     setSource(next);
     setChosenUnits(new Set(next.books?.map(unit => unit.id) ?? []));
-    setPlanned(null);
     setProblem(null);
   };
 
@@ -224,7 +244,7 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
         confirm the plan below, and nothing is ever written to the repository imported from.
       </p>
 
-      {problem && <ImportProblemNotice problem={problem} busy={busy !== null} onPlanAgain={() => source && void plan(source, chosenUnits)} onChooseAgain={changeOwner} onBack={onCancel} />}
+      {problem && <ImportProblemNotice problem={problem} busy={busy !== null} onPlanAgain={() => source && void plan(source, chosenUnits)} onSearchAgain={searchAgain} onChooseAgain={changeOwner} onBack={onCancel} />}
 
       <fieldset disabled={applying}>
         <legend>Owner</legend>
@@ -333,10 +353,10 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
           ) : (
             <>
               <p className="actions">
-                <button type="button" className="secondary" onClick={() => setChosenUnits(new Set(itemized.map(unit => unit.id)))}>
+                <button type="button" className="secondary" onClick={() => chooseUnits(() => new Set(itemized.map(unit => unit.id)))}>
                   Choose all {itemized.length}
                 </button>
-                <button type="button" className="secondary" onClick={() => setChosenUnits(new Set())}>
+                <button type="button" className="secondary" onClick={() => chooseUnits(() => new Set())}>
                   Choose none
                 </button>
               </p>
@@ -348,7 +368,7 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
                         type="checkbox"
                         checked={chosenUnits.has(unit.id)}
                         onChange={event =>
-                          setChosenUnits(previous => {
+                          chooseUnits(previous => {
                             const next = new Set(previous);
                             if (event.target.checked) next.add(unit.id);
                             else next.delete(unit.id);
@@ -399,12 +419,14 @@ function ImportProblemNotice({
   problem,
   busy,
   onPlanAgain,
+  onSearchAgain,
   onChooseAgain,
   onBack,
 }: {
   problem: ImportProblem;
   busy: boolean;
   onPlanAgain: () => void;
+  onSearchAgain: () => void;
   onChooseAgain: () => void;
   onBack: () => void;
 }) {
@@ -421,7 +443,7 @@ function ImportProblemNotice({
         </button>
       )}
       {forward === 'try_again' && (
-        <button type="button" onClick={problem.during === 'plan' || problem.during === 'apply' ? onPlanAgain : onChooseAgain} disabled={busy}>
+        <button type="button" onClick={problem.during === 'plan' || problem.during === 'apply' ? onPlanAgain : onSearchAgain} disabled={busy}>
           Try again
         </button>
       )}

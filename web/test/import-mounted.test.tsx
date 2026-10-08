@@ -146,6 +146,41 @@ describe('plan before apply', () => {
     await worker.answer('POST', planUrl, { ...plan, warnings: [{ code: 'id_line_mismatch', message: 'ingredients/GEN.usfm is imported as GEN, but its \\id line does not name it. The file is committed unchanged.' }] });
     expect(screen.getByRole('list', { name: 'Warnings' }).textContent).toContain('is imported as GEN');
   });
+
+  test('W5, X1: changing the chosen books after planning retires the plan; nothing can be confirmed until import.plan runs again with the new choice', async () => {
+    await toSources();
+    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    fireEvent.click(button('Plan the import of all books'));
+    await worker.answer('POST', planUrl, importPlanOf('p4', [book('gen'), book('exo'), book('mat')]));
+    expect(screen.getByText('Review before importing')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('MAT · Matius'));
+    expect(screen.queryByText('Review before importing')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Import \d+ books?$/ })).toBeNull();
+    expect(applies()).toEqual([]);
+    fireEvent.click(button('Plan the import of 2 books'));
+    expect(plans()[1]!.body).toEqual({ source: { owner: 'bahtraku', repo: 'id_tb1', revision: '1974' }, units: ['gen', 'exo'] });
+    await worker.answer('POST', planUrl, importPlanOf('p5', [book('gen'), book('exo')]));
+    expect(screen.getByText('Review before importing')).toBeTruthy();
+    fireEvent.click(button('Choose none'));
+    expect(screen.queryByText('Review before importing')).toBeNull();
+    expect(applies()).toEqual([]);
+  });
+
+  test('W5: a plan answered after the source or its books changed is dropped, not offered for confirmation', async () => {
+    await toSources([TB1, sourceOf('bahtraku', 'id_tb2', { title: 'Kitab Kedua', stage: 'prod' })]);
+    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    fireEvent.click(button('Plan the import of all books'));
+    fireEvent.click(button(/Kitab Kedua/));
+    await worker.answer('POST', planUrl, importPlanOf('p6', [book('gen')]));
+    expect(screen.queryByText('Review before importing')).toBeNull();
+
+    fireEvent.click(button('Plan the import of all books'));
+    fireEvent.click(screen.getByLabelText('MAT · Matius'));
+    await worker.answer('POST', planUrl, importPlanOf('p7', [book('gen')]));
+    expect(screen.queryByText('Review before importing')).toBeNull();
+    expect(button('Plan the import of 2 books').disabled).toBe(false);
+    expect(applies()).toEqual([]);
+  });
 });
 
 describe('refusals shown in place', () => {
@@ -180,11 +215,27 @@ describe('refusals shown in place', () => {
     expect(applies()).toHaveLength(1);
   });
 
-  test('X2: a failed owner search is shown in place and can be tried again', async () => {
+  test('X2: a failed owner search is shown in place and "Try again" searches again', async () => {
     mount();
     await answerWhenSent('GET', ownersUrl, errorOf('door43_unavailable'), 503);
     const alert = screen.getByRole('alert');
     expect(alert.getAttribute('data-code')).toBe('door43_unavailable');
-    expect(within(alert).getByRole('button', { name: 'Try again' })).toBeTruthy();
+    fireEvent.click(within(alert).getByRole('button', { name: 'Try again' }));
+    await answerWhenSent('GET', ownersUrl, ownersOf(OWN));
+    expect(worker.sent.filter(request => request.url === ownersUrl)).toHaveLength(2);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('list', { name: 'Your organizations' }).textContent).toContain('tC Admin QA (tc-admin-qa-org)');
+  });
+
+  test('X2: a failed source search is shown in place and "Try again" reads the same owner\'s sources again', async () => {
+    mount();
+    await answerWhenSent('GET', ownersUrl, ownersOf(OWN));
+    fireEvent.click(button('tC Admin QA (tc-admin-qa-org)'));
+    await answerWhenSent('GET', sourcesUrl('tc-admin-qa-org', 'latest'), errorOf('door43_unavailable'), 503);
+    fireEvent.click(within(screen.getByRole('alert')).getByRole('button', { name: 'Try again' }));
+    await answerWhenSent('GET', sourcesUrl('tc-admin-qa-org', 'latest'), sourcesOf([TB1]));
+    expect(worker.sent.filter(request => request.url === sourcesUrl('tc-admin-qa-org', 'latest'))).toHaveLength(2);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(within(screen.getByRole('list', { name: 'Repositories' })).getByRole('button', { name: /Alkitab Terjemahan Baru/ })).toBeTruthy();
   });
 });
