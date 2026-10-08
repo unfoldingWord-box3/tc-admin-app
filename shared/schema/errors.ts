@@ -53,7 +53,16 @@ export const ERROR_CATALOG = {
     invariants: ['R9'],
   },
   plan_expired: { http: 409, retryable: true, message: 'This plan has expired. Review the project again.', next_action: 'rerun the plan', invariants: ['R5'] },
-  source_changed: { http: 409, retryable: true, message: 'Project has been edited. The release process will need to restart.', next_action: 'discard the preparation and plan again', invariants: ['R5'] },
+  source_changed: {
+    http: 409,
+    retryable: true,
+    message: 'Project has been edited. The release process will need to restart.',
+    /** An import whose source no longer holds what the plan showed (#80): the project did not move, the source did. */
+    variants: { source: 'The source repository has changed since the plan. Plan the import again.' },
+    next_action: 'discard the preparation and plan again',
+    next_actions: { source: 'plan the import again' },
+    invariants: ['R5'],
+  },
   commit_failed: { http: 502, retryable: true, message: 'Commit failed: <error message>.', next_action: 'retry', invariants: ['X1', 'R7'] },
   archive_failed: { http: 502, retryable: true, message: 'Door43 could not provide the project archive. Try again later.', next_action: 'retry `release.prepare`', invariants: [] },
   health_blocked: { http: 409, retryable: true, message: null, next_action: 'refresh health; retry when Door43 recovers', invariants: ['H2'] },
