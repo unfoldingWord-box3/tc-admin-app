@@ -20,6 +20,7 @@ import { releasePrepare } from './release-prepare';
 import { releasePromote } from './release-promote';
 import { situationRead } from './situation-read';
 import { sourceSearch } from './source-search';
+import { uploadApply } from './upload-apply';
 import { uploadPlan } from './upload-plan';
 
 export type OperationHandler<Name extends RoutedOperation> = (input: ParsedInput<Name>, context: OperationContext) => Promise<OperationOutput<Name>>;
@@ -45,6 +46,7 @@ export const HANDLERS: OperationHandlers = {
   'release.promote': releasePromote,
   'source.search': sourceSearch,
   'upload.plan': uploadPlan,
+  'upload.apply': uploadApply,
 };
 
 export { operationContext, signedIn } from './context';
