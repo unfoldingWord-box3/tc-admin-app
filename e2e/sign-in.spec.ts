@@ -1,33 +1,45 @@
 // A1 end to end (#10): signing in with Door43 QA as the test user lands on the
 // portfolio, and the Door43 token never reaches the browser: not in storage,
-// not in the address bar, not in any request the page makes after the sign-in,
-// and not in a cookie a script can read. The session cookie is HttpOnly and
+// not in the address bar, not in the callback URL Door43 redirects to (its
+// fragment included, which no network request carries) or any app address
+// after it, not in any request from the callback on, and not in a cookie a
+// script can read. The session cookie is HttpOnly and
 // SameSite, and holds an opaque id only (worker/src/http/session.ts). Nothing
 // is written to Door43.
 
 import { expect, test } from '@playwright/test';
-import { fillSecret } from './secret';
+import { isCallbackUrl, looksLikeToken, urlCarriesToken } from './a1-oracle';
+import { clearedOnFailure, fillSecret } from './secret';
 
 const user = process.env.TEST_USER;
 const password = process.env.TEST_PASSWORD;
 
-/** A Door43 access token's look: Gitea issues 40 hexadecimal characters; an OAuth JWT is three base64url parts. */
-const TOKEN_SHAPES = [/\b[0-9a-f]{40}\b/i, /\beyJ[\w-]+\.[\w-]+\.[\w-]+/];
-const looksLikeToken = (text: string) => /access_token|refresh_token|bearer/i.test(text) || TOKEN_SHAPES.some(shape => shape.test(text));
-/** A URL's query and hash parameters, every one but the callback's one-time `code` and `state`, through the token shapes (paths hold commit SHAs). */
-const urlCarriesToken = (raw: string) => {
-  const url = new URL(raw);
-  const params = [...url.searchParams, ...new URLSearchParams(url.hash.slice(1))];
-  return params.some(([name, value]) => !['code', 'state'].includes(name) && looksLikeToken(`${name}=${value}`));
-};
 /** The password is typed, and the grant given, only on this host. */
 const DOOR43_QA = 'qa.door43.org';
 
 test.skip(!user || !password, 'TEST_USER and TEST_PASSWORD are needed (E23); set them in the root .env');
 
 test('A1: a sign-in on QA lands on the portfolio, and no token reaches storage, the address, a request URL, or a readable cookie', async ({ page, context, baseURL }) => {
+  const origin = new URL(baseURL!).origin;
   const requested: string[] = [];
   page.on('request', request => requested.push(request.url()));
+  // Where a fragment would be (bench round 3 on #144): a request's URL never carries one, and /auth/callback never becomes a
+  // page (the Worker answers it with a redirect, so no document is committed there). Door43 sends the browser to the
+  // callback by a redirect whose Location is the full callback URL, fragment and all, where an implicit or hybrid grant
+  // would put a token; and a fragment the Worker's own redirect does not replace carries on to the next address. So every
+  // redirect Location that points at the app, and every address the browser commits on the app, is kept to be read.
+  const callbackTargets: string[] = [];
+  const appAddresses: string[] = [];
+  page.on('response', response => {
+    const location = response.headers()['location'];
+    if (!location) return;
+    const target = new URL(location, response.url()).href;
+    if (isCallbackUrl(target, origin)) callbackTargets.push(target);
+    else if (new URL(target).origin === origin) appAddresses.push(target);
+  });
+  page.on('framenavigated', frame => {
+    if (frame === page.mainFrame() && new URL(frame.url()).origin === origin) appAddresses.push(frame.url());
+  });
 
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Your projects' })).toBeVisible();
@@ -46,10 +58,14 @@ test('A1: a sign-in on QA lands on the portfolio, and no token reaches storage, 
   if (await username.isVisible()) {
     expect(new URL(page.url()).host, 'the sign-in form is on Door43 QA').toBe(DOOR43_QA);
     await username.fill(user!);
-    // Never `fill` directly: a failed fill's error names the password, and the reporter prints it (bench round 2).
-    await fillSecret(page.getByRole('textbox', { name: 'Password' }), password!, 'the password');
-    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
-    await expect(authorize.or(signedIn)).toBeVisible({ timeout: 30_000 });
+    // Never `fill` directly: a failed fill's error names the password, and the reporter prints it (bench round 2). And if
+    // anything after the typing fails, the field is emptied first: a failed test's page snapshot shows what it holds (round 3).
+    const passwordField = page.getByRole('textbox', { name: 'Password' });
+    await fillSecret(passwordField, password!, 'the password');
+    await clearedOnFailure(passwordField, async () => {
+      await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+      await expect(authorize.or(signedIn)).toBeVisible({ timeout: 30_000 });
+    });
   }
   if (await authorize.isVisible()) {
     expect(new URL(page.url()).host, 'the grant page is on Door43 QA').toBe(DOOR43_QA);
@@ -64,7 +80,7 @@ test('A1: a sign-in on QA lands on the portfolio, and no token reaches storage, 
   // A1: the address bar holds no code, state, or token once the callback is done. Every A1 assertion below compares a
   // boolean under a fixed message, so a failure never prints the URL, storage value, or cookie that carried the token.
   const address = page.url();
-  expect(/[?&#](code|state)=/.test(address) || urlCarriesToken(address), 'the address holds a code, state, or token').toBe(false);
+  expect(/[?&#](code|state)=/.test(address) || urlCarriesToken(address, false), 'the address holds a code, state, or token').toBe(false);
 
   // A1: nothing in either storage looks like a token; each area's entries are read separately, so no key hides another.
   const stored = await page.evaluate(() => [window.localStorage, window.sessionStorage].flatMap(area => Object.keys(area).map(key => `${key}=${area.getItem(key) ?? ''}`)));
@@ -79,10 +95,13 @@ test('A1: a sign-in on QA lands on the portfolio, and no token reaches storage, 
   if (baseURL!.startsWith('https:')) expect(session!.secure).toBe(true);
   expect(looksLikeToken(session!.value), 'the session cookie value looks like a token').toBe(false);
 
-  // A1: the sign-in returned through tC Admin's /auth/callback, and no request URL from that one on (the callback included)
-  // carries a token; the callback's one-time code and state are Door43's, not a token. No token exists before the callback.
-  const origin = new URL(baseURL!).origin;
-  const callbackAt = requested.findIndex(raw => new URL(raw).origin === origin && new URL(raw).pathname === '/auth/callback');
+  // A1: the sign-in returned through tC Admin's /auth/callback. Its document URL, query and fragment, carries no token; its
+  // one-time code and state are Door43's and pass there, and only there. No request URL from the callback on carries a token,
+  // with code and state read like any parameter everywhere but the callback itself. No token exists before the callback.
+  expect(callbackTargets.length, 'Door43 redirected the browser to /auth/callback').toBeGreaterThan(0);
+  for (const target of callbackTargets) expect(urlCarriesToken(target, true), 'the callback URL Door43 sent carries a token').toBe(false);
+  for (const address of appAddresses) expect(urlCarriesToken(address, false), 'an app address after the callback carries a token').toBe(false);
+  const callbackAt = requested.findIndex(raw => isCallbackUrl(raw, origin));
   expect(callbackAt, 'a request to /auth/callback').toBeGreaterThanOrEqual(0);
-  for (const url of requested.slice(callbackAt)) expect(urlCarriesToken(url), 'a request URL carries a token').toBe(false);
+  for (const url of requested.slice(callbackAt)) expect(urlCarriesToken(url, isCallbackUrl(url, origin)), 'a request URL carries a token').toBe(false);
 });
