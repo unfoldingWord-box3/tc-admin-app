@@ -12,7 +12,7 @@ import { HANDLERS, UPLOAD_REQUEST_BYTES } from '../../src/operations';
 
 const ORIGIN = 'https://tc-admin.test';
 const PATH = '/api/projects/bahtraku/Perjanjian-Baru-Pendau/uploads/plan';
-const kv: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {} };
+const kv: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {}, list: async () => ({ keys: [], list_complete: true }) };
 const env: Env = {
   ASSETS: { fetch: async () => new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } }) },
   SESSIONS: kv,
