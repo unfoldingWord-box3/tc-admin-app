@@ -77,11 +77,13 @@ const REASON_TEXT: Record<NameReason | ModeReason, string> = {
  */
 export function normalizeUploadName(name: string): { ok: true; path: string } | { ok: false; reason: NameReason } {
   if (name.length === 0) return { ok: false, reason: 'empty' };
-  // Unicode category Cc (C0 controls, the null byte, DEL, C1 controls), the line
-  // and paragraph separators (Zl, Zp), and the bidirectional embedding, override,
-  // and isolate controls, which can make a name display as another path. Other
-  // Cf characters stay: ZWNJ and ZWJ are spelling in Persian and Indic names.
-  if (/[\p{Cc}\p{Zl}\p{Zp}\u202A-\u202E\u2066-\u2069]/u.test(name)) return { ok: false, reason: 'control_character' };
+  // Unicode category Cc (C0 controls, the null byte, DEL, C1 controls), the line and
+  // paragraph separators (Zl, Zp), and every format character (Cf: the bidirectional
+  // controls, zero-width space, byte-order mark, soft hyphen, ...), any of which can
+  // make a name display as another path, except ZWNJ and ZWJ (U+200C, U+200D), which
+  // are spelling in Persian and Indic names. Written as escapes, so the check itself
+  // holds no character that can reorder or hide its own source.
+  if (/[\p{Cc}\p{Zl}\p{Zp}]/u.test(name) || /\p{Cf}/u.test(name.replace(/[\u200C\u200D]/gu, ''))) return { ok: false, reason: 'control_character' };
   // A percent sign, so no encoded `..` or `.git` (`%2e%2e/a.usfm`) can traverse if a later hop decodes the
   // name; no book, story, or project file needs one (decided 7 October 2026 by Rich, #116).
   if (name.includes('%')) return { ok: false, reason: 'percent_encoding' };
@@ -89,15 +91,17 @@ export function normalizeUploadName(name: string): { ok: true; path: string } | 
   if (/^[/\\]/.test(name) || /^[A-Za-z]:/.test(name)) return { ok: false, reason: 'absolute' };
   if (name.includes('\\')) return { ok: false, reason: 'backslash' };
   const segments: string[] = [];
+  // Segments are compared without ZWNJ and ZWJ, so a joiner cannot disguise `..`, `.git`, an empty segment, or a drive.
+  const bare = (segment: string) => segment.replace(/[\u200C\u200D]/gu, '');
   for (const segment of name.split('/')) {
-    if (segment === '') return { ok: false, reason: 'empty_segment' };
-    if (segment === '..') return { ok: false, reason: 'traversal' };
-    if (segment.toLowerCase() === '.git') return { ok: false, reason: 'git_directory' };
+    if (bare(segment) === '') return { ok: false, reason: 'empty_segment' };
+    if (bare(segment) === '..') return { ok: false, reason: 'traversal' };
+    if (bare(segment).toLowerCase() === '.git') return { ok: false, reason: 'git_directory' };
     if (segment !== '.') segments.push(segment);
   }
   if (segments.length === 0) return { ok: false, reason: 'empty' };
   // A drive revealed by dropping `.` segments (`./C:/x`, `././c:x`).
-  if (/^[A-Za-z]:/.test(segments[0] ?? '')) return { ok: false, reason: 'absolute' };
+  if (/^[A-Za-z]:/.test(bare(segments[0] ?? ''))) return { ok: false, reason: 'absolute' };
   return { ok: true, path: segments.join('/') };
 }
 

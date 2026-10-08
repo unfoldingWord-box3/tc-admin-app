@@ -1,9 +1,12 @@
 // Upload path safety and size limits (W6, #73): every name and the batch as a
 // whole checked before identification (#72) or any Door43 read. The limit is
 // one value, `MAX_UPLOAD_BYTES`, built behind the Q15 proposal.
+import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { CatalogError } from '@tc-admin/shared/schema';
 import { MAX_UPLOAD_BYTES, checkUpload, modeProblem, normalizeUploadName } from '../../src/model/upload-paths';
+
+const [ZWNJ, ZWJ] = [String.fromCodePoint(0x200c), String.fromCodePoint(0x200d)];
 import type { UploadFile } from '../../src/model/upload-paths';
 
 const file = (name: string, size = 10, mode?: number | null): UploadFile => ({ name, size, mode });
@@ -40,6 +43,10 @@ describe('W6: unsafe names are refused as validation_failed naming the file', ()
     ['a\u0085.usfm', 'control_character'],
     ['a\u202Eb.usfm', 'control_character'],
     ['a\u2066b.usfm', 'control_character'],
+    ['a\u200Bb.usfm', 'control_character'],
+    ['a\u200Fb.usfm', 'control_character'],
+    ['\uFEFF../x.usfm', 'control_character'],
+    ['a\u00ADb.usfm', 'control_character'],
     ['a\u2028b.usfm', 'control_character'],
     ['a\u2029b.usfm', 'control_character'],
     ['', 'empty'],
@@ -53,6 +60,10 @@ describe('W6: unsafe names are refused as validation_failed naming the file', ()
     ['%2e%2e%2f%2e%2e%2fa.usfm', 'percent_encoding'],
     ['%2egit/config', 'percent_encoding'],
     ['50%.md', 'percent_encoding'],
+    [`.${ZWNJ}./x.usfm`, 'traversal'],
+    [`.gi${ZWJ}t/a.usfm`, 'git_directory'],
+    [`a/${ZWNJ}/b.usfm`, 'empty_segment'],
+    [`${ZWNJ}C:/x.usfm`, 'absolute'],
   ];
 
   test.each(cases)('W6: %j is refused as %s', (name, reason) => {
@@ -106,7 +117,7 @@ describe('W6: accepted names are repository-relative and none escapes the projec
   });
 
   test('W6: Unicode names are accepted as sent, unnormalized', () => {
-    for (const name of ['ingredients/GÉN.usfm', 'истории/01.md', '故事/01.md', 'אסתר.usfm', 'نامه‌ها.usfm','e\u0301.md', '📖.usfm']) {
+    for (const name of ['ingredients/GÉN.usfm', 'истории/01.md', '故事/01.md', 'אסתר.usfm', 'نامه\u200Cها.usfm','e\u0301.md', '📖.usfm']) {
       expect(normalizeUploadName(name), name).toEqual({ ok: true, path: name });
     }
   });
@@ -182,4 +193,17 @@ describe('W6: files and batches over the configured limit are refused', () => {
     const books = Array.from({ length: 66 }, (_, i) => file(`ingredients/B${String(i).padStart(2, '0')}.usfm`, 80_000));
     expect(checkUpload(books).ok).toBe(true);
   });
+});
+
+test('W6: the checker and these tests hold no raw format, line, or paragraph separator character, only escapes', () => {
+  for (const file of ['../../src/model/upload-paths.ts', './upload-paths.test.ts']) {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    expect(source).not.toMatch(/[\p{Cf}\p{Zl}\p{Zp}]/u);
+  }
+});
+
+test('W6: ZWNJ and ZWJ, spelling in Persian and Indic names, are the only format characters accepted', () => {
+  expect(normalizeUploadName('\u0645\u06cc\u200C\u062e\u0648\u0627\u0647\u0645.usfm')).toEqual({ ok: true, path: '\u0645\u06cc\u200C\u062e\u0648\u0627\u0647\u0645.usfm' });
+  expect(normalizeUploadName('\u0915\u094d\u200D\u0937.usfm')).toEqual({ ok: true, path: '\u0915\u094d\u200D\u0937.usfm' });
+  expect(normalizeUploadName('a\u2060b.usfm')).toEqual({ ok: false, reason: 'control_character' });
 });
