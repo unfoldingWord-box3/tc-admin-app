@@ -86,7 +86,7 @@ Moved into Milestone 1 on 1 October 2026 (Q25); #47 re-scoped from conversion to
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45) Uploads with book and story identification | §8 | 0004, 0013 | W2, W5, W6, A2, R10 | E36, Q15, Q25 | `upload.plan`, `upload.apply` | operations/upload, model/classify | S2 |
-| [#72](https://github.com/unfoldingWord-box3/tc-admin-app/issues/72) Identify a book or story | §8 | 0008, 0013 | W1, W6 | E36, E37 | `upload.plan`, `upload.apply`, `import.plan` | model/upload, model/books | S2, S5 |
+| [#72](https://github.com/unfoldingWord-box3/tc-admin-app/issues/72) Identify a book or story | §8 | 0008, 0013 | W1, W6 | E36, E37 | `upload.plan`, `upload.apply`, `import.plan` | model/upload, model/books, model/burrito | S2, S5 |
 | [#73](https://github.com/unfoldingWord-box3/tc-admin-app/issues/73) Upload path safety and limits | §8 | 0013 | W6 | E30, E31, Q15, Q22 | `upload.plan` | model/upload-paths, operations/upload | S2 |
 | [#74](https://github.com/unfoldingWord-box3/tc-admin-app/issues/74) `upload.plan` | §8 | 0004, 0011, 0013 | W2, W6, R5, R10 | E19, E36, E37, Q15 | `upload.plan` | operations/upload, door43/repos | S2, S5 |
 | [#75](https://github.com/unfoldingWord-box3/tc-admin-app/issues/75) `upload.apply` | §8 | 0004, 0011, 0013 | W2, W5, A2, A3, R5, X1 | E21, E27, E31 | `upload.apply` | operations/upload, door43/repos | S2 |

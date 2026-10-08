@@ -268,7 +268,7 @@ worker/
     language.ts      the language tag rule of the Scripture Burrito schema (E44, Q30; #28)
     project.ts       type, editability, coverage (#19)
     health.ts        Door43 severity to health state, and one health-check read to a health value (H1, H3; #25, #36)
-    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10), and the release merge (#35, Q7, Q8)
+    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10), a book's or story's path and ingredient entry (#72, W1), and the release merge (#35, Q7, Q8)
     burrito-reader.ts  the Scripture Burrito reader: a project's metadata.json as read, every ingredient classified as book, story, or administrative (#17)
     classify.ts      every file of a ref as a book, story, administrative, or unknown file, given its metadata and tree (#20, R1, S5)
     obs-scope.ts     the fixed currentScope of every Open Bible Stories project (E46)
@@ -279,7 +279,8 @@ worker/
     notes.ts         the release notes draft (#38)
     snapshot.ts      what a release snapshot uploads and deletes, by blob SHA against the ref the branch starts from, in commits of at most 32 MB (R1, R2, Q22; #34)
     upload-paths.ts  an upload batch's names as repository-relative paths, and its entries and sizes checked, before anything else reads it (W6, Q15; #73)
-                     planned: upload identification (#45), states
+    upload.ts        an uploaded or imported file identified as a book (its \id line, checked against its name) or a story (its name), or held back; a manager's confirmation applied (E36, W1; #72)
+                     planned: states
   src/operations/    one module per catalog operation, plus shared preconditions
     index.ts         the built operations by name
     context.ts       what every operation receives, with the session's Door43 client (A3)
