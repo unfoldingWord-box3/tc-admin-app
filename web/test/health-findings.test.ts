@@ -114,7 +114,7 @@ describe('the findings (H2, H4)', () => {
     const health: Health = { state: 'warning', severity_raw: 'warning', ref: null, checked_at: null, issue_count: 1, issues: [], source: 'door43' };
     expect(findingsGate({ state: 'health_blocked', health: { ...health, state: 'failing' }, requires_acknowledgement: false })).toBe('blocked');
     expect(findingsGate({ state: 'ready_for_release', health, requires_acknowledgement: true })).toBe('acknowledge');
-    expect(findingsGate({ state: 'retryable_failure', health, requires_acknowledgement: true })).toBe('acknowledge');
+    expect(findingsGate({ state: 'retryable_failure', health, requires_acknowledgement: true, last_error: { code: 'release_failed' } })).toBe('acknowledge');
     expect(findingsGate({ state: 'ready_for_release', health: { ...health, state: 'info' }, requires_acknowledgement: false })).toBe('none');
     expect(findingsGate({ state: 'health_checking', health: { ...health, state: 'checking' }, requires_acknowledgement: false })).toBe('none');
     expect(findingsGate({ state: 'full_release', health, requires_acknowledgement: true })).toBe('none');
