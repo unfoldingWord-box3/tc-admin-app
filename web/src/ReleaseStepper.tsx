@@ -4,6 +4,12 @@
 // a warning asks for the manager's confirmation (H2, Q6); a project edited
 // during preparation restarts from the selection with the fixed message (R5);
 // an unreleased preparation can be discarded after a confirmation (Q14).
+// When it opens, the project's preparations still under way are listed
+// (`preparation.list`), each to continue or discard before planning anew, and
+// a preparation's own address (`#/<owner>/<repo>/release/<version>`) opens it
+// directly, so a reload or a new sign-in lands back on it (#125). The
+// preparation this page made is held from its receipt, never from the list,
+// which Workers KV keeps eventually.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { HEALTH_POLL } from '@tc-admin/shared/schema';
@@ -12,7 +18,8 @@ import { ApiError, callOperation, failureMessage } from './api/client';
 import { WRITE_LABELS } from './create-project';
 import { HealthFindings, door43Origin } from './HealthFindings';
 import { findingsGate } from './health-findings';
-import { healthLabel, projectHash, releaseTagHash } from './portfolio-labels';
+import { healthLabel, projectHash, releaseHash, releaseTagHash } from './portfolio-labels';
+import { activePreparations, activeSummary, preparationHash, refusedFor, withAnswer } from './preparations';
 import {
   GROUP_LABELS,
   RESTART_MESSAGE,
@@ -23,6 +30,7 @@ import {
   canDiscard,
   canPrepare,
   counts,
+  discardOnly,
   releaseGate,
   removalsOf,
   selectionOf,
@@ -37,6 +45,8 @@ import type { ReleasePlan, Selection } from './release-stepper';
 
 interface Props {
   project: ProjectSummary;
+  /** The preparation the address names (`#/<owner>/<repo>/release/<version>`), opened in place of a new plan. */
+  preparationId?: string | null;
   /** A session Door43 no longer accepts: the shell reads the situation again. */
   onFailure: (failure: unknown) => void;
 }
@@ -44,7 +54,16 @@ interface Props {
 const expired = (failure: unknown) => failure instanceof ApiError && failure.error.code === 'session_expired';
 const codeOf = (failure: unknown) => (failure instanceof ApiError ? failure.error.code : null);
 
-export function ReleaseStepper({ project, onFailure }: Props) {
+/**
+ * Keyed by the project and the preparation the address named, so another one mounts a fresh stepper in the same render: no plan,
+ * offer, confirmation, or discard of the last project is offered under this one's name, and no late answer for it is shown (#125).
+ */
+export function ReleaseStepper(props: Props) {
+  const { owner, repo } = props.project.ref;
+  return <Stepper key={`${owner}/${repo}/${props.preparationId ?? ''}`} {...props} />;
+}
+
+function Stepper({ project, preparationId = null, onFailure }: Props) {
   const { owner, repo } = project.ref;
   const [plan, setPlan] = useState<ReleasePlan | null>(null);
   const [selection, setSelection] = useState<Selection>({});
@@ -58,6 +77,13 @@ export function ReleaseStepper({ project, onFailure }: Props) {
   const [problem, setProblem] = useState<string | null>(null);
   const [restart, setRestart] = useState(false);
   const [written, setWritten] = useState<string[]>([]);
+  // The project's preparations still under way when the stepper opened (`preparation.list`); `null` until read.
+  const [offers, setOffers] = useState<Preparation[] | null>(null);
+  const [offersProblem, setOffersProblem] = useState<string | null>(null);
+  const [confirmingOffer, setConfirmingOffer] = useState<string | null>(null);
+  // The preparation a `preparation_active` refusal named, to continue.
+  const [refused, setRefused] = useState<string | null>(null);
+  const initialId = useRef(preparationId);
   // Bumped by every discard, re-plan, and write: a `preparation.read` that answers after one is stale and is not shown.
   const generation = useRef(0);
 
@@ -76,10 +102,14 @@ export function ReleaseStepper({ project, onFailure }: Props) {
 
   // Step 1: the plan, which writes nothing (ADR 0011). State changes only once Door43 has answered.
   // A notice, such as why the plan was read again, stays up once the new plan is shown.
+  // A plan that answers after a later action started (Continue, a discard, a write) is stale and is not shown: it must not
+  // clear the preparation that action opened, nor move the address off it (#125).
   const readPlan = useCallback(
-    (notice: string | null = null) =>
-      callOperation('release.plan', { owner, repo }).then(
+    (notice: string | null = null) => {
+      const ticket = generation.current;
+      return callOperation('release.plan', { owner, repo }).then(
         planned => {
+          if (ticket !== generation.current) return;
           generation.current += 1;
           setPlan(planned);
           setSelection(selectionOf(planned));
@@ -92,14 +122,94 @@ export function ReleaseStepper({ project, onFailure }: Props) {
           setRestart(false);
           setProblem(notice);
         },
-        (failure: unknown) => fail(failure),
-      ),
+        (failure: unknown) => {
+          if (ticket === generation.current) fail(failure);
+        },
+      );
+    },
     [owner, repo, fail],
   );
 
+  // The preparations already under way, from the store by project; a failure to read them leaves planning anew as it is.
+  const readOffers = useCallback(
+    () =>
+      callOperation('preparation.list', { owner, repo }).then(
+        listed => {
+          setOffers(activePreparations(listed.preparations));
+          setOffersProblem(null);
+        },
+        (failure: unknown) => {
+          if (expired(failure)) return onFailure(failure);
+          setOffersProblem(failureMessage(failure));
+        },
+      ),
+    [owner, repo, onFailure],
+  );
+
+  // Continue a preparation this page did not make: read it live (R5, H1) and land on its step. One discarded or not found plans anew.
+  const open = useCallback(
+    async (id: string) => {
+      generation.current += 1;
+      const ticket = generation.current;
+      setBusy('Opening the preparation…');
+      setProblem(null);
+      setRefused(null);
+      setConfirmingOffer(null);
+      try {
+        const current = await callOperation('preparation.read', { owner, repo, preparation_id: id });
+        if (ticket !== generation.current) return;
+        // The new plan is awaited, so the buttons stay disabled until it is shown.
+        if (current.state === 'discarded') {
+          await readPlan(`The preparation of version ${id} was discarded. Prepare a new release below.`);
+          return;
+        }
+        setPreparation(current);
+        setNotes(current.notes.confirmed ?? current.notes.draft);
+        setVersion(current.version.confirmed ?? current.version.proposed);
+        setPrerelease(false);
+        setAcknowledged(false);
+        setWritten([]);
+        setRestart(current.state === 'restart_required');
+        setProblem(current.state === 'restart_required' ? RESTART_MESSAGE : null);
+      } catch (failure) {
+        if (ticket !== generation.current) return;
+        if (expired(failure)) return onFailure(failure);
+        await readPlan(failureMessage(failure));
+      } finally {
+        setBusy(null);
+      }
+    },
+    [owner, repo, onFailure, readPlan],
+  );
+
   useEffect(() => {
-    void readPlan();
-  }, [readPlan]);
+    void readOffers();
+    if (initialId.current) void open(initialId.current);
+    else void readPlan();
+  }, [readOffers, open, readPlan]);
+
+  // The address follows the preparation, so a reload lands back on it; without one it is the stepper's.
+  useEffect(() => {
+    if (!preparation && !plan) return;
+    const target = preparation && preparation.state !== 'discarded' ? preparationHash(project, preparation.id) : releaseHash(project);
+    if (window.location.hash !== target) window.history.replaceState(null, '', target);
+  }, [preparation, plan, project]);
+
+  // A preparation listed when the stepper opened, discarded from there after the inline confirmation.
+  const discardOffer = async (id: string) => {
+    setBusy('Discarding the preparation…');
+    setProblem(null);
+    setConfirmingOffer(null);
+    try {
+      const receipt = await callOperation('preparation.discard', { owner, repo, preparation_id: id });
+      setOffers(current => activePreparations(withAnswer(current ?? [], receipt.result)));
+      if (refused === id) setRefused(null);
+    } catch (failure) {
+      fail(failure);
+    } finally {
+      setBusy(null);
+    }
+  };
 
   // R5: the preparation a source change invalidated is discarded first, so its temporary branch does not block the next one; if the discard fails, the preparation stays and Start again can be tried again.
   const startAgain = async () => {
@@ -108,7 +218,8 @@ export function ReleaseStepper({ project, onFailure }: Props) {
       setBusy('Discarding the preparation…');
       setProblem(null);
       try {
-        await callOperation('preparation.discard', { owner, repo, preparation_id: preparation.id });
+        const receipt = await callOperation('preparation.discard', { owner, repo, preparation_id: preparation.id });
+        setOffers(current => (current ? activePreparations(withAnswer(current, receipt.result)) : current));
       } catch (failure) {
         fail(failure);
         setRestart(true);
@@ -162,6 +273,7 @@ export function ReleaseStepper({ project, onFailure }: Props) {
     if (!plan) return;
     setBusy('Preparing the snapshot on Door43…');
     setProblem(null);
+    setRefused(null);
     generation.current += 1;
     try {
       const receipt = await callOperation('release.prepare', { owner, repo, plan_id: plan.id, selection: selectionToSend(project.project_type, selection), unknown_included: [], version: versionToSend(version, plan.preview.version.proposed) });
@@ -175,7 +287,11 @@ export function ReleaseStepper({ project, onFailure }: Props) {
         setProblem('The plan expired. The selection is read again.');
         setPlan(null);
         void readPlan('The plan expired. The selection was read again: check it before preparing.');
-      } else fail(failure);
+      } else {
+        // The refusal names the preparation already under way, to continue it (#125).
+        setRefused(failure instanceof ApiError ? refusedFor(failure.error) : null);
+        fail(failure);
+      }
     } finally {
       setBusy(null);
     }
@@ -224,7 +340,8 @@ export function ReleaseStepper({ project, onFailure }: Props) {
     setConfirmingDiscard(false);
     generation.current += 1;
     try {
-      await callOperation('preparation.discard', { owner, repo, preparation_id: preparation.id });
+      const receipt = await callOperation('preparation.discard', { owner, repo, preparation_id: preparation.id });
+      setOffers(current => (current ? activePreparations(withAnswer(current, receipt.result)) : current));
       await readPlan();
     } catch (failure) {
       fail(failure);
@@ -259,6 +376,44 @@ export function ReleaseStepper({ project, onFailure }: Props) {
           {problem}
         </p>
       )}
+      {/* The refusal's own way in, only when the preparations listed below do not already offer it. */}
+      {refused && !preparation && !(offers ?? []).some(offer => offer.id === refused) && (
+        <p className="actions">
+          <span>Version {refused} is being prepared.</span>
+          <button type="button" onClick={() => void open(refused)} disabled={busy !== null}>
+            Continue the preparation
+          </button>
+        </p>
+      )}
+      {!preparation && !restart && offers && offers.length > 0 && (
+        <section aria-label="Release preparations under way">
+          {offers.map(offer => (
+            <div key={offer.id} className="actions">
+              <span>{activeSummary(offer)}</span>
+              <button type="button" onClick={() => void open(offer.id)} disabled={busy !== null}>
+                Continue the preparation
+              </button>
+              {confirmingOffer === offer.id ? (
+                <>
+                  <span>Discard this preparation? The temporary branch is deleted; the default branch is untouched.</span>
+                  <button type="button" onClick={() => void discardOffer(offer.id)} disabled={busy !== null}>
+                    Discard the preparation
+                  </button>
+                  <button type="button" className="secondary" onClick={() => setConfirmingOffer(null)}>
+                    Keep it
+                  </button>
+                </>
+              ) : (
+                <button type="button" className="secondary" onClick={() => setConfirmingOffer(offer.id)} disabled={busy !== null}>
+                  Discard the preparation
+                </button>
+              )}
+            </div>
+          ))}
+          <p className="muted">Or prepare a new release below.</p>
+        </section>
+      )}
+      {offersProblem && !preparation && <p className="muted">The preparations already under way could not be read: {offersProblem}</p>}
       {restart && (
         <p className="actions">
           <button type="button" onClick={() => void startAgain()} disabled={busy !== null}>
@@ -267,7 +422,7 @@ export function ReleaseStepper({ project, onFailure }: Props) {
         </p>
       )}
       {busy && <p className="muted">{busy}</p>}
-      {!plan && !problem && !busy && <p className="muted">Comparing the default branch with the last release…</p>}
+      {!plan && !preparation && !problem && !busy && <p className="muted">Comparing the default branch with the last release…</p>}
 
       {step === 'Select books' && plan && !restart && (
         <>
@@ -402,6 +557,7 @@ export function ReleaseStepper({ project, onFailure }: Props) {
             </p>
           )}
           {preparation.state === 'retryable_failure' && preparation.last_error && <p className="field-error">{preparation.last_error.message}</p>}
+          {discardOnly(preparation) && <p>This preparation cannot be released: discard it, then prepare the snapshot again.</p>}
 
           {(gate === 'ready' || gate === 'acknowledge') && (
             <form

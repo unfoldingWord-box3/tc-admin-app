@@ -227,6 +227,14 @@ export const OPERATIONS = {
     }),
     output: receipt(Preparation),
   },
+  'preparation.list': {
+    kind: 'read',
+    milestone: 1,
+    route: { method: 'GET', path: '/api/projects/{owner}/{repo}/preparations' },
+    input: RepoRef,
+    /** The project's stored preparations, newest first, each as last stored (decided 8 October 2026 by Rich, #125); `preparation.read` gives one live. */
+    output: z.object({ preparations: z.array(Preparation), freshness: Freshness }),
+  },
   'preparation.read': {
     kind: 'read',
     milestone: 1,

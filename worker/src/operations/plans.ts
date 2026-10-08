@@ -55,6 +55,12 @@ export interface PlanStore {
   /** The addressable preparation of a project (operations.md §2), by its id, the version it was created with. */
   getPreparation<Preparation = unknown>(owner: string, repo: string, id: string): Promise<Preparation | null>;
   putPreparation(owner: string, repo: string, id: string, preparation: unknown, ttlSeconds?: number): Promise<void>;
+  /**
+   * Every preparation stored for a project, as stored, read through every page of the
+   * key listing (#125). Workers KV lists eventually: one stored a moment ago may be missing.
+   * A record that no longer parses as JSON is left out.
+   */
+  listPreparations(owner: string, repo: string): Promise<unknown[]>;
 }
 
 export const newPlanId = (): string => crypto.randomUUID();
@@ -63,7 +69,9 @@ const planKey = (id: string) => `plan:${id}`;
 const receiptKey = (id: string) => `receipt:${id}`;
 const attemptKey = (id: string) => `attempt:${id}`;
 const retryReceiptKey = (id: string) => `retry-receipt:${id}`;
-const preparationKey = (owner: string, repo: string, id: string) => `preparation:${owner.toLowerCase()}/${repo}/${id}`;
+/** The key prefix of one project's preparations; the closing `/` keeps `id_tb` from listing `id_tb1`'s. */
+export const preparationPrefix = (owner: string, repo: string) => `preparation:${owner.toLowerCase()}/${repo}/`;
+const preparationKey = (owner: string, repo: string, id: string) => `${preparationPrefix(owner, repo)}${id}`;
 
 function parse<T>(stored: string | null): T | null {
   if (!stored) return null;
@@ -105,6 +113,23 @@ export function planStore(kv: KVNamespace): PlanStore {
     },
     async putPreparation(owner, repo, id, preparation, ttlSeconds = PREPARATION_SECONDS) {
       await kv.put(preparationKey(owner, repo, id), JSON.stringify(preparation), { expirationTtl: ttlSeconds });
+    },
+    async listPreparations(owner, repo) {
+      const prefix = preparationPrefix(owner, repo);
+      const names: string[] = [];
+      let cursor: string | undefined;
+      do {
+        const page = await kv.list(cursor === undefined ? { prefix } : { prefix, cursor });
+        // A key under the prefix whose id holds another `/` is not one this store wrote.
+        names.push(...page.keys.map(key => key.name).filter(name => name.startsWith(prefix) && !name.slice(prefix.length).includes('/')));
+        cursor = page.list_complete ? undefined : page.cursor;
+      } while (cursor);
+      const found: unknown[] = [];
+      for (const name of names) {
+        const stored = parse<unknown>(await kv.get(name));
+        if (stored !== null) found.push(stored);
+      }
+      return found;
     },
   };
 }

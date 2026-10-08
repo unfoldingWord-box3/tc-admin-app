@@ -6,7 +6,7 @@ import type { Env, KVNamespace } from '../../src/env';
 import worker from '../../src/index';
 import { HANDLERS } from '../../src/operations';
 
-const kv: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {} };
+const kv: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {}, list: async () => ({ keys: [], list_complete: true }) };
 const env = (extra: Partial<Env> = {}): Env => ({
   ASSETS: { fetch: async () => new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } }) },
   SESSIONS: kv,

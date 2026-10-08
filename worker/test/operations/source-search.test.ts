@@ -32,7 +32,7 @@ const projection = (name: string): Projection => JSON.parse(readFileSync(new URL
 const PAST_LAST_PAGE = projection('search__uw__prod_p2.json');
 const NO_ENTRIES = projection('search__none__latest.json');
 
-const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {} };
+const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {}, list: async () => ({ keys: [], list_complete: true }) };
 const NOW = new Date('2026-10-07T16:00:00.000Z');
 
 /** Door43 stubbed by owner and stage: page 1 is the answer, every later page the recorded empty one; an owner without an answer has no entries (E62). */

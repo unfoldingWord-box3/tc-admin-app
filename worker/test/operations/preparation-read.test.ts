@@ -37,6 +37,9 @@ class MemoryKV implements KVNamespace {
   async delete(key: string) {
     this.store.delete(key);
   }
+  async list(options: { prefix: string }) {
+    return { keys: [...this.store.keys()].filter(name => name.startsWith(options.prefix)).map(name => ({ name })), list_complete: true };
+  }
 }
 
 const NOW = new Date('2026-10-07T15:05:00.000Z');

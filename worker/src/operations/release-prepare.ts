@@ -273,7 +273,9 @@ export async function releasePrepare(input: ParsedInput<'release.prepare'>, cont
   let branch: { sha: string };
   try {
     branch = await createBranch(client, owner, repo, branchName, startSha);
-  } catch (error) {
+  } catch (caught) {
+    // A branch already there names the preparation it belongs to, so the refusal can lead the manager to it (#125).
+    const error = caught instanceof CatalogError && caught.code === 'preparation_active' ? new CatalogError('preparation_active', { details: { ...caught.details, preparation_id: version }, cause: caught }) : caught;
     // Door43 created the branch (201) but its answer could not be read: the branch exists, so its preparation is stored too.
     if (error instanceof CatalogError && error.details.door43_status === 201) await recordFailure(startSha, error, 'branch');
     // The branch is already there (409) and no preparation names it, or the request was lost before Door43 answered and the
