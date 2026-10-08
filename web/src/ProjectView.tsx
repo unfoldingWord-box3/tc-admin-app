@@ -10,9 +10,12 @@
 // one shown.
 
 import type { Preparation, ProjectReport, ProjectSummary } from '@tc-admin/shared/schema';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, callOperation, failureMessage } from './api/client';
 import { WRITE_LABELS } from './create-project';
+import { freshnessLabel } from './freshness';
+import { withKnownClassification } from './known-report';
+import { useNow } from './use-now';
 import { coverageLabel, healthLabel, releaseHash, releaseTagHash, typeLabel } from './portfolio-labels';
 import { isActive, preparationLink, preparationVersion, withAnswer } from './preparations';
 import { STATE_LABELS, canDiscard } from './release-stepper';
@@ -124,16 +127,84 @@ function uploadable(project: ProjectSummary | ProjectReport): boolean {
 }
 
 export function ProjectView({ project: given, onFailure }: Props) {
+  const { owner, repo } = given.ref;
   const [tag, setTag] = useState('');
   const [adding, setAdding] = useState<'upload' | 'import' | null>(null);
   // The last upload's or import's receipt and what it added: its project report replaces the one this view was given (#76, #81).
   const [uploaded, setUploaded] = useState<{ receipt: UploadReceipt; added: string } | null>(null);
-  const project: ProjectSummary | ProjectReport = uploaded?.receipt.result ?? given;
+  // The project as last read or written: the view's summary at first, then the full report `project.read` answers, a receipt's, or a refresh's (#26).
+  const [current, setCurrent] = useState<ProjectSummary | ProjectReport>(given);
+  const [reading, setReading] = useState<'read' | 'refresh' | null>('read');
+  const [readProblem, setReadProblem] = useState<string | null>(null);
+  // Door43's catalog had not read the project at the last read: the known classification was kept, and the view says so.
+  const [catalogPending, setCatalogPending] = useState(false);
+  // The project this view's state belongs to: another project given to the same view starts afresh, in this render, so nothing of the last one is shown under its name.
+  const givenKey = `${owner.toLowerCase()}/${repo}`;
+  const [shownFor, setShownFor] = useState({ key: givenKey, given });
+  // Bumped when another project, or a newer report of the same one (a retried creation's receipt, #31), is given: it is read again, and an earlier read's answer is not shown.
+  const [opened, setOpened] = useState(0);
+  if (shownFor.given !== given) {
+    if (shownFor.key !== givenKey) setUploaded(null);
+    setShownFor({ key: givenKey, given });
+    setOpened(count => count + 1);
+    setCurrent(given);
+    setReading('read');
+    setReadProblem(null);
+    setCatalogPending(false);
+  }
+  // Bumped by every read and write: an answer for an earlier one, or for another project, is stale and is not shown.
+  const ticket = useRef(0);
+  // The report shown, for a read's answer to compare with what the view already knew.
+  const shownRef = useRef<ProjectSummary | ProjectReport>(current);
+  useEffect(() => {
+    shownRef.current = current;
+  }, [current]);
+  const now = useNow();
+  const project = current;
   const { coverage } = project;
   const type = uploadTypeOf(project.project_type);
 
+  /**
+   * The full report, read live (`project.read` on opening, `project.refresh` on request), settled for the read `mine`
+   * only; a failure keeps what is shown and says so.
+   */
+  const settle = useCallback(
+    (mine: number) => ({
+      report: (report: ProjectReport) => {
+        if (mine !== ticket.current) return;
+        // A read made before Door43's catalog has read the project keeps the classification the view already knew (E28, E45).
+        const merged = withKnownClassification(shownRef.current, report);
+        setCurrent(merged.report);
+        setCatalogPending(merged.catalogPending);
+        setReading(null);
+      },
+      failure: (failure: unknown) => {
+        if (mine !== ticket.current) return;
+        setReading(null);
+        if (expired(failure) && onFailure) onFailure(failure);
+        else setReadProblem(`${failureMessage(failure)} What is shown was read earlier.`);
+      },
+    }),
+    [onFailure],
+  );
+  useEffect(() => {
+    const handlers = settle(++ticket.current);
+    callOperation('project.read', { owner, repo }).then(handlers.report, handlers.failure);
+  }, [owner, repo, settle, opened]);
+  const refresh = () => {
+    const handlers = settle(++ticket.current);
+    setReading('refresh');
+    setReadProblem(null);
+    callOperation('project.refresh', { owner, repo }).then(handlers.report, handlers.failure);
+  };
+
   const done = (receipt: UploadReceipt, added: string) => {
+    ++ticket.current;
+    setReading(null);
+    // The receipt's report is newer than any read that failed before it.
+    setReadProblem(null);
     setUploaded({ receipt, added });
+    setCurrent(receipt.result);
     setAdding(null);
   };
   if (adding === 'upload' && type) {
@@ -163,8 +234,35 @@ export function ProjectView({ project: given, onFailure }: Props) {
         <dt>Coverage</dt>
         <dd>{coverageLabel(project)}</dd>
         <dt>Health</dt>
-        <dd>{healthLabel(project.health.state)}</dd>
+        <dd>
+          {healthLabel(project.health.state)}
+          {project.health.issue_count !== null && project.health.issue_count > 0 && ` · ${project.health.issue_count} ${project.health.issue_count === 1 ? 'finding' : 'findings'}`}
+          {project.health.ref && <span className="muted"> · on {project.health.ref}</span>}
+        </dd>
+        {'latest_full_release' in project && (
+          <>
+            <dt>Latest release</dt>
+            <dd>{project.latest_full_release ? project.latest_full_release.tag : 'None yet'}</dd>
+          </>
+        )}
       </dl>
+      <p className="freshness actions">
+        <span>{'freshness' in project ? freshnessLabel(project.freshness, now) : 'Read with the portfolio.'}</span>
+        <button type="button" className="secondary" onClick={refresh} disabled={reading !== null}>
+          {reading === 'refresh' ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </p>
+      {reading === 'read' && <p className="muted" role="status">Reading the project from Door43…</p>}
+      {catalogPending && (
+        <p className="muted" role="status">
+          Door43's catalog has not read this project's latest change yet; its type and coverage are shown as tC Admin wrote them. Refresh in a moment for Door43's reading.
+        </p>
+      )}
+      {readProblem && (
+        <p className="field-error" role="alert">
+          {readProblem}
+        </p>
+      )}
       {uploaded && (
         <div className="upload-receipt" role="status">
           <p>

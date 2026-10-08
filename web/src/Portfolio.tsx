@@ -9,18 +9,20 @@
 // Door43's catalog lists a new repository a few seconds later (E28, S1).
 // A project the Worker refuses for permission from any view leaves the list
 // at once (A2, #14), and its address says why; a reload reads the portfolio
-// from Door43 again. Filters and sorting are #24, refresh is #26, and the
-// full project report (`project.read`) is #25.
+// from Door43 again. "Refresh" reads the portfolio from Door43 again, and its
+// age is labeled (P3, #26). Filters and sorting are #24.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { catalogMessage } from '@tc-admin/shared/schema';
 import type { OperationOutput, ProjectSummary } from '@tc-admin/shared/schema';
-import { callOperation } from './api/client';
+import { ApiError, callOperation, failureMessage } from './api/client';
 import { CreateProject } from './CreateProject';
 import { CREATE_HASH, retireCreated, withCreated } from './create-project';
 import { ProjectView } from './ProjectView';
 import { ReleaseStepper } from './ReleaseStepper';
 import { ReleaseView } from './ReleaseView';
+import { freshnessLabel } from './freshness';
+import { useNow } from './use-now';
 import { canOpen, coverageLabel, formatLabel, hashRef, healthLabel, projectHash, typeLabel } from './portfolio-labels';
 import { onPermissionDenied, projectKey, withoutRevoked } from './revoked';
 
@@ -41,6 +43,13 @@ export function Portfolio({ account, onFailure }: Props) {
   // A project created in this view, listed until a read of Door43's catalog lists it (then retired, so a later read rules); a creation also reads the portfolio again.
   const [created, setCreated] = useState<ProjectSummary | null>(null);
   const [reads, setReads] = useState(0);
+  // A refresh asked for and not yet answered: the list stays, labeled with its age, until the new one arrives (P3, #26).
+  const [refreshing, setRefreshing] = useState(false);
+  // A read again that failed while a list was shown: the list stays, and this says it was read earlier (P3, #26).
+  const [readProblem, setReadProblem] = useState<string | null>(null);
+  // The `show` whose list is on screen, if any.
+  const listed = useRef<Show | null>(null);
+  const now = useNow();
   // The projects the Worker refused for permission since this portfolio was opened: dropped from the list (A2, #14).
   const [revoked, setRevoked] = useState<ReadonlySet<string>>(new Set());
 
@@ -60,10 +69,19 @@ export function Portfolio({ account, onFailure }: Props) {
     callOperation('portfolio.list', { show }).then(
       portfolio => {
         if (!current) return;
+        listed.current = show;
+        setRefreshing(false);
+        setReadProblem(null);
         setResult({ show, portfolio });
         setCreated(previous => retireCreated(portfolio.organizations, previous));
       },
-      failure => current && onFailure(failure),
+      failure => {
+        if (!current) return;
+        setRefreshing(false);
+        const expired = failure instanceof ApiError && failure.error.code === 'session_expired';
+        if (listed.current === show && !expired) setReadProblem(`${failureMessage(failure)} What is shown was read earlier.`);
+        else onFailure(failure);
+      },
     );
     return () => {
       current = false;
@@ -142,7 +160,28 @@ export function Portfolio({ account, onFailure }: Props) {
             </ul>
           </section>
         ))}
-      {portfolio && <p className="freshness">Read from Door43 at {new Date(portfolio.freshness.read_at).toLocaleTimeString()}.</p>}
+      {portfolio && (
+        <p className="freshness actions">
+          <span>{freshnessLabel(portfolio.freshness, now)}</span>
+          <button
+            type="button"
+            className="secondary"
+            disabled={refreshing}
+            onClick={() => {
+              setRefreshing(true);
+              setReadProblem(null);
+              setReads(count => count + 1);
+            }}
+          >
+            {refreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
+        </p>
+      )}
+      {portfolio && readProblem && (
+        <p className="field-error" role="alert">
+          {readProblem}
+        </p>
+      )}
     </>
   );
 }
