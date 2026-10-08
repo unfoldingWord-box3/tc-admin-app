@@ -318,13 +318,14 @@ worker/
     multipart.ts     a multipart body to an operation's plain input: each file's name, mode, and bytes, the confirmations, and the plan id for an operation that names one (upload.plan, upload.apply, Q33); an oversized body refused before it is read (W6)
   test/              model/, door43/, operations/, http/, contract/ (against fixtures); support/ (the recordings reader, a zip builder)
 web/
-  src/api/client.ts  typed client: one call per operation, from shared/schema
+  src/api/client.ts  typed client: one call per operation, from shared/schema; a route that says body: 'multipart' is sent as multipart/form-data, the files' bytes as file parts (upload.plan, Q33)
   src/               the application shell; portfolio, wizard, stepper, design system (#8)
   src/CreateProject.tsx, src/create-project.ts  the creation wizard, and its form logic, owners, language search, field errors, and the retry of an incomplete setup as pure functions (#28, #31)
   src/ReleaseView.tsx  one release by its tag: the lookup and the promotion of a pre-release from its own page, whether or not the stepper that made it is open (S7, R8)
   src/ReleaseStepper.tsx, src/release-stepper.ts  the release stepper: one operation per step, the selection from the plan's defaults, the health poll, the warnings acknowledged, the release and its promotion, the discard; its logic as pure functions (#41); on opening, the preparations under way to continue or discard, a preparation's own address, and the preparation a preparation_active refusal names (#125)
   src/preparations.ts  which preparations are under way and which finished, their words, a preparation's address and links, the preparation a refusal names, as pure functions (#125)
-  src/ProjectView.tsx  one project's report, shown from the portfolio and after creation; from the portfolio, its release preparations, each with a link and the discard (#125)
+  src/ProjectView.tsx  one project's report, shown from the portfolio and after creation; from the portfolio, its release preparations, each with a link and the discard (#125); "Add books" or "Add stories" opens the upload screen, whose receipt's report replaces the one shown (#76)
+  src/UploadScreen.tsx, src/upload.ts  the upload screen: files, a folder, or a drop to upload.plan; the plan shown before any write (each file's book or story, unknown files held back with a choice or to leave out, each overwrite's diff and its own confirmation, the ingredient entries, the warnings, the summary); a choice plans again; the confirmation through applyUpload, the one call to upload.apply; refusals in place; its wording, gate, diff lines, and refusals as pure functions (#76)
   src/HealthFindings.tsx, src/health-findings.ts, src/door43-text.ts  Door43's health findings: the summary when a release is blocked or a warning needs confirmation, each finding's severity as an icon and a word (H4), errors first; Door43's bold, code, and links rendered from tokens, never inserted as HTML (H1, #124)
   test/              the pure functions and the client in Node; mounted components (`*-mounted.test.tsx`, marked `// @vitest-environment jsdom`) under jsdom with Testing Library, the Worker stubbed so each answer arrives in the order a test sets; support/ (the stub and the shapes it answers with)
 fixtures/

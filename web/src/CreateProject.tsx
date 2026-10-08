@@ -16,6 +16,8 @@
 // setup is incomplete offers `project.create.retry`, whose receipt replaces it
 // (W4, #31); a taken name after an apply of the same plan that got no answer
 // offers the same retry, which adopts the repository only under Q29's rule.
+// The wizard's last step is the upload (#76): the created project's view
+// offers "Add books" or "Add stories" at once.
 
 import { useCallback, useEffect, useId, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -47,6 +49,7 @@ import {
 import type { CreatableType, Field, FieldErrors, Form, Language, Owner, TestamentScope, TranslationDetails } from './create-project';
 import { projectHash, typeLabel } from './portfolio-labels';
 import { ProjectView } from './ProjectView';
+import { addAction, uploadTypeOf } from './upload';
 
 type Plan = OperationOutput<'project.create.plan'>;
 type Receipt = OperationOutput<'project.create.apply'>;
@@ -220,6 +223,8 @@ export function CreateProject({ onCreated, onFailure }: Props) {
   if (receipt) {
     const summary = receiptSummary(receipt);
     const retry = retryInput(receipt);
+    const uploadType = uploadTypeOf(receipt.result.project_type);
+    const addition = uploadType ? addAction(uploadType) : null;
     return (
       <section>
         <h2>{summary.heading}</h2>
@@ -230,6 +235,7 @@ export function CreateProject({ onCreated, onFailure }: Props) {
         ))}
         {problem && <p role="alert">{problem}</p>}
         <p>{summary.text}</p>
+        {receipt.result.setup.state === 'complete' && addition && <p>Next, add the project's {addition.toLowerCase().replace('add ', '')}: choose "{addition}" below, or do it later from the project.</p>}
         {receipt.wrote.length > 0 && <p className="muted">Written: {receipt.wrote.map(write => `${WRITE_LABELS[write.kind]} ${write.target}`).join(' · ')}</p>}
         <ProjectView project={receipt.result} />
         <p className="actions">

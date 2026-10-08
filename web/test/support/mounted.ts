@@ -10,6 +10,9 @@ export interface Sent {
   method: string;
   url: string;
   body: unknown;
+  /** A multipart body as sent (`upload.plan`, `upload.apply`); `null` for any other. */
+  form: FormData | null;
+  headers: Headers;
 }
 
 interface Pending extends Sent {
@@ -22,7 +25,13 @@ export function heldWorker() {
   const sent: Sent[] = [];
   const fetch = (url: string, init?: RequestInit): Promise<Response> =>
     new Promise(answer => {
-      const request = { method: init?.method ?? 'GET', url, body: typeof init?.body === 'string' ? JSON.parse(init.body) : null };
+      const request = {
+        method: init?.method ?? 'GET',
+        url,
+        body: typeof init?.body === 'string' ? JSON.parse(init.body) : null,
+        form: init?.body instanceof FormData ? init.body : null,
+        headers: new Headers(init?.headers),
+      };
       sent.push(request);
       pending.push({ ...request, answer });
     });
