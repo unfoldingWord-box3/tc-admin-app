@@ -200,7 +200,7 @@ describe('overlapping choices', () => {
   });
 
   test('X1: files chosen while an apply is sent are not taken, and the apply\'s receipt is still delivered', async () => {
-    const onUploaded = vi.fn();
+    const onUploaded = vi.fn<Parameters<typeof UploadScreen>[0]['onUploaded']>();
     render(<UploadScreen project={project} type="obs" onUploaded={onUploaded} onCancel={() => {}} />);
     await choose(file('05.md'));
     await worker.answer('POST', planUrl, uploadPlanOf('p1', [story('05.md', '05')]));
