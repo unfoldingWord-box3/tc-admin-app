@@ -105,6 +105,12 @@ const MetadataEntryChange = z.object({
 });
 
 /**
+ * The `source` relationship an import adds to `metadata.json` (E24): the source repository as a prefixed id under
+ * the `dcs` authority, and the revision imported, a release tag or the default branch's commit.
+ */
+const SourceRelationship = z.object({ id: z.string(), relationType: z.literal('source'), flavor: z.string(), revision: z.string() });
+
+/**
  * How an upload's files travel (operations.md §7, Q33): a `multipart/form-data` body with, for the file at
  * index `i`, the parts `files.<i>.name`, `files.<i>.mode` (optional, decimal), and `files.<i>.content` (the bytes),
  * and an optional `confirmations` part holding the confirmations as JSON. `upload.apply` sends the same parts
@@ -375,7 +381,13 @@ export const OPERATIONS = {
       units: z.union([z.array(z.string()), z.literal('all')]),
     }),
     output: plan(
-      z.object({ source: RepoRef.extend({ revision: z.string() }), files: z.array(PlannedFile), metadata_diff: z.unknown() }),
+      z.object({
+        /** The source as read: the revision asked for and the commit it named (a release's commit, or the default branch's head). */
+        source: RepoRef.extend({ revision: z.string(), sha: z.string() }),
+        /** Each chosen book or story, named by its path in the source's archive, as `upload.plan` lists a file. */
+        files: z.array(PlannedFile),
+        metadata_diff: z.object({ ingredients: z.array(MetadataEntryChange), relationships: z.array(SourceRelationship) }),
+      }),
     ),
   },
   'import.apply': {

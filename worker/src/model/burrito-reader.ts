@@ -63,7 +63,8 @@ export class MetadataError extends Error {
   }
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+/** A JSON object: not null, not an array. */
+export const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const text = (value: unknown): string | null => (typeof value === 'string' && value ? value : null);
 const localized = (value: unknown): LocalizedText => (isRecord(value) ? Object.fromEntries(Object.entries(value).flatMap(([key, v]) => (typeof v === 'string' ? [[key, v]] : []))) : {});
 
