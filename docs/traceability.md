@@ -35,7 +35,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | [#12](https://github.com/unfoldingWord-box3/tc-admin-app/issues/12) Code exchange | §2; arch §3 | 0001 | A1, A3 | E8, Q10 | `situation.read` | door43/auth, operations/sign-in, http/session | — |
 | [#13](https://github.com/unfoldingWord-box3/tc-admin-app/issues/13) CSRF and origin | arch §8 | — | A4 | — | every apply | http | — |
 | [#14](https://github.com/unfoldingWord-box3/tc-admin-app/issues/14) Live permission re-check | §2; arch §3 | — | A2, P2 | E7 | every apply (precondition) | operations, web (client, revoked, Portfolio) | — |
-| [#15](https://github.com/unfoldingWord-box3/tc-admin-app/issues/15) Expired session | §11 `session_expired` | 0001 | A1, X2 | — | error catalog | http, web | — |
+| [#15](https://github.com/unfoldingWord-box3/tc-admin-app/issues/15) Expired session | §11 `session_expired` | 0001 | A1, X2 | — | error catalog, `preparation.read` | http, web (resume, App, CreateProject) | — |
 
 ### EPIC: Project model ([#22](https://github.com/unfoldingWord-box3/tc-admin-app/issues/22))
 

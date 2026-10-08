@@ -130,7 +130,7 @@ Issues: #19, #24, #82.
 No Door43 access token appears in JavaScript-visible state, browser storage, URLs, or client or server logs. The browser holds only an opaque HttpOnly session cookie.
 Source: ADR 0001; architecture §2 and §8.
 Enforced in: `worker/src/http/session` (token lives in Workers KV keyed by a hash of the session id; the cookie is HttpOnly, SameSite=Lax, and Secure on HTTPS); `worker/src/http` response serialization; logging redaction (the sign-in failure log carries only the code and the error kind).
-Verified by: response-shape tests assert no token field on any route; log redaction test; Playwright smoke test inspects storage and URLs.
+Verified by: response-shape tests assert no token field on any route; log redaction test; Playwright smoke test inspects storage and URLs. What the browser keeps across a sign-in is an app address and the creation wizard's fields, never a token: the `A1` tests in `web/test/resume.test.ts` (only `#/…` addresses are kept, a fragment such as `#access_token=…` never is; the address comes back only to the same account or to a visitor, within half an hour) and `web/test/resume-mounted.test.tsx`; and a session that expired answers the catalog's message and next action, the `A1:` test in `worker/test/http/app.test.ts` (#15).
 Issues: #12, #15, #51.
 
 ### A2 — Permission is checked live before every mutation
