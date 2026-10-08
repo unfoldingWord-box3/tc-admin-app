@@ -357,7 +357,8 @@ export function ReleaseStepper({ project, preparationId = null, onFailure }: Pro
           {problem}
         </p>
       )}
-      {refused && !preparation && (
+      {/* The refusal's own way in, only when the preparations listed below do not already offer it. */}
+      {refused && !preparation && !(offers ?? []).some(offer => offer.id === refused) && (
         <p className="actions">
           <span>Version {refused} is being prepared.</span>
           <button type="button" onClick={() => void open(refused)} disabled={busy !== null}>
