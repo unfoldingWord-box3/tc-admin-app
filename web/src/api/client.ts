@@ -8,6 +8,7 @@
 
 import { CSRF_HEADER, ERROR_CATALOG, IDEMPOTENCY_HEADER, OPERATIONS, OperationErrorShape, UPLOAD_CONFIRMATIONS_PART, catalogMessage, routeParams, uploadPartName } from '@tc-admin/shared/schema';
 import type { OperationDefinition, OperationInput, OperationOutput, RoutedOperation } from '@tc-admin/shared/schema';
+import { reportPermissionDenied } from '../revoked';
 
 export class ApiError extends Error {
   readonly error: OperationErrorShape;
@@ -140,7 +141,10 @@ export async function sendOperation<Name extends RoutedOperation>(
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const parsed = OperationErrorShape.safeParse(body);
-    throw new ApiError(parsed.success ? parsed.data : unexpected(response.headers.get('x-request-id') ?? 'unknown'), response.status);
+    const error = new ApiError(parsed.success ? parsed.data : unexpected(response.headers.get('x-request-id') ?? 'unknown'), response.status);
+    // A project the manager lost write access to leaves the portfolio (A2, #14), whichever view made the call.
+    if (error.error.code === 'permission_denied') reportPermissionDenied(url);
+    throw error;
   }
   return (OPERATIONS[name] as OperationDefinition).output!.parse(body) as OperationOutput<Name>;
 }
