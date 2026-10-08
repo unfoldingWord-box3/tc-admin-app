@@ -304,10 +304,22 @@ Files the manager has, identified as books or stories before anything is written
 
 ### `owner.search`
 
+The owners an import can come from (product spec §8): the account's organizations first and always, then any owner found by partial name.
+
 - Inputs: `{ q | null }`.
-- Door43 reads: `GET /user/orgs` for the account's organizations, listed first; `GET /catalog/list/owners?owner=<q>&partialMatch=1&stage=latest` for every owner with a catalog entry whose name contains `q` (E35).
-- Returns: `{ own: [{ login, name }], matches: [{ login, name }], freshness }`.
+- Door43 reads: `GET /user/orgs`, every page, for the account's organizations, listed first (E61); `GET /catalog/list/owners?owner=<q>&partialMatch=1&stage=latest` for every owner with a catalog entry whose name contains `q`, all of them in one answer (E35, E61).
+- Returns: `{ own: [{ login, name }], matches: [{ login, name }], freshness }`. `name` is the owner's display name, its login when Door43 has none.
 - Errors: `session_expired`, `door43_unavailable`.
+
+Built behind (#77, `worker/src/operations/owner-search.ts`, `worker/src/door43/owners.ts`), each the narrowest reading of the text above, for Rich to confirm:
+
+- **`q` absent, empty, or blank** (after trimming): `own` only, `matches` empty, and the catalog is not asked.
+- **`GET /user/orgs`** is read every page with `readPages`, as `GET /user/teams` is (E43): it pages by `page` and `limit` and ends on an empty page (E61), so an organization past the first page is listed. The login is `username`, the display name `full_name`.
+- **The catalog is asked once.** `/catalog/list/owners` ignores `limit` and `page` and answers every match at once (E61: 1,656 owners for `a`, the same body for any `limit` or `page`), so `matches` is complete from one request, however long, and neither parameter is sent: nothing reads them, and sending `limit` would suggest a cap Door43 does not apply. No match is `{ ok: true, data: null }` (E61) and is an empty `matches`; any other shape that is not a list is `door43_unavailable`, never an empty `matches`.
+- **`matches` is every owner the catalog lists**, organization or user account alike, since the catalog answers with Gitea's user shape for both (E35) and the output does not distinguish them.
+- **Each list answers its own question**: an organization of the account that the search also matches is in both `own` and `matches`; the client presents `own` first.
+- **Order and repeats**: each list by login, case-insensitive, as `owner.list` orders organizations; an owner Door43 lists twice in one list, by any spelling of its login, is listed once.
+- **Errors**: a 401 from either read is `session_expired`; any other refusal or failure, including a 403 or 404, is `door43_unavailable`, since neither read names a project.
 
 ### `source.search`
 

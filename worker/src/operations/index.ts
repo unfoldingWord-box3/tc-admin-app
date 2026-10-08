@@ -5,6 +5,7 @@ import type { OperationOutput, ParsedInput, RoutedOperation } from '@tc-admin/sh
 import type { OperationContext } from './context';
 import { languageList } from './language-list';
 import { ownerList } from './owner-list';
+import { ownerSearch } from './owner-search';
 import { portfolioList } from './portfolio-list';
 import { preparationDiscard } from './preparation-discard';
 import { preparationRead } from './preparation-read';
@@ -28,6 +29,7 @@ export const HANDLERS: OperationHandlers = {
   'project.create.apply': projectCreateApply,
   'language.list': languageList,
   'owner.list': ownerList,
+  'owner.search': ownerSearch,
   'release.lookup': releaseLookup,
   'release.plan': releasePlan,
   'release.prepare': releasePrepare,
