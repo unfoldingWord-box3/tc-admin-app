@@ -7,10 +7,13 @@
 // (`#/<owner>/<repo>`) so a reload keeps it, and `#/new` is the creation
 // wizard (#28); a project it creates is listed at once, since
 // Door43's catalog lists a new repository a few seconds later (E28, S1).
-// "Refresh" reads the portfolio from Door43 again, and its age is labeled
-// (P3, #26). Filters and sorting are #24.
+// A project the Worker refuses for permission from any view leaves the list
+// at once (A2, #14), and its address says why; a reload reads the portfolio
+// from Door43 again. "Refresh" reads the portfolio from Door43 again, and its
+// age is labeled (P3, #26). Filters and sorting are #24.
 
 import { useEffect, useRef, useState } from 'react';
+import { catalogMessage } from '@tc-admin/shared/schema';
 import type { OperationOutput, ProjectSummary } from '@tc-admin/shared/schema';
 import { ApiError, callOperation, failureMessage } from './api/client';
 import { CreateProject } from './CreateProject';
@@ -21,6 +24,7 @@ import { ReleaseView } from './ReleaseView';
 import { freshnessLabel } from './freshness';
 import { useNow } from './use-now';
 import { canOpen, coverageLabel, formatLabel, hashRef, healthLabel, projectHash, typeLabel } from './portfolio-labels';
+import { onPermissionDenied, projectKey, withoutRevoked } from './revoked';
 
 type PortfolioList = OperationOutput<'portfolio.list'>;
 type Show = 'supported' | 'all';
@@ -46,6 +50,19 @@ export function Portfolio({ account, onFailure }: Props) {
   // The `show` whose list is on screen, if any.
   const listed = useRef<Show | null>(null);
   const now = useNow();
+  // The projects the Worker refused for permission since this portfolio was opened: dropped from the list (A2, #14).
+  const [revoked, setRevoked] = useState<ReadonlySet<string>>(new Set());
+
+  useEffect(
+    () =>
+      onPermissionDenied(project =>
+        setRevoked(previous => {
+          const key = projectKey(project);
+          return previous.has(key) ? previous : new Set([...previous, key]);
+        }),
+      ),
+    [],
+  );
 
   useEffect(() => {
     let current = true;
@@ -78,7 +95,7 @@ export function Portfolio({ account, onFailure }: Props) {
   }, []);
 
   const portfolio = result?.show === show ? result.portfolio : null;
-  const organizations = withCreated(portfolio?.organizations ?? [], created, account.login);
+  const organizations = withoutRevoked(withCreated(portfolio?.organizations ?? [], created, account.login), revoked);
   const projects = organizations.flatMap(group => group.projects);
   const wanted = hashRef(hash);
   const open = wanted && projects.find(project => project.ref.owner === wanted.owner && project.ref.repo === wanted.repo && canOpen(project));
@@ -118,7 +135,12 @@ export function Portfolio({ account, onFailure }: Props) {
         </a>
       </div>
       {!portfolio && <p>Loading your projects…</p>}
-      {portfolio && wanted && <p role="alert">That project is not one you can open here. Choose a project from the list.</p>}
+      {portfolio && wanted && revoked.has(projectKey(wanted)) && (
+        <p role="alert">
+          {catalogMessage('permission_denied')} {wanted.owner}/{wanted.repo} is no longer listed. Reload the page to read your projects from Door43 again.
+        </p>
+      )}
+      {portfolio && wanted && !revoked.has(projectKey(wanted)) && <p role="alert">That project is not one you can open here. Choose a project from the list.</p>}
       {portfolio && projects.length === 0 && (
         <p>
           {show === 'all'

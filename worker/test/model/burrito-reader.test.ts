@@ -6,6 +6,7 @@ import { describe, expect, test } from 'vitest';
 import { openArchive } from '../../src/door43/archive';
 import { newProjectFiles } from '../../src/model/burrito';
 import { OBS_SCOPE } from '../../src/model/obs-scope';
+import { coverage } from '../../src/model/project';
 import { MetadataError, administrativeIngredients, classifyIngredient, parseMetadata, readMetadata, unitIngredients } from '../../src/model/burrito-reader';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/', import.meta.url);
@@ -17,6 +18,23 @@ const FILES = {
   tc: '2026-10-07/sb-archives/birch__en_web_mrk_book__master.metadata.json',
   obs: '2026-10-01/sb-archives/unfoldingWord__en_obs__v9.metadata.json',
 } as const;
+
+describe('Open Bible Stories in its archive (E36, #83)', () => {
+  test('H5, E36: en_obs v9\'s archive holds the 50 stories at ingredients/content/<NN>.md, front.md and back.md are administrative, and coverage reads 50 of 50 with nothing missing', async () => {
+    const archive = openArchive(new Uint8Array(readFileSync(new URL('2026-10-01/sb-archives/unfoldingWord__en_obs__v9.zip', fixtures))));
+    const metadata = parseMetadata(await archive.bytes('metadata.json'));
+    const stories = [...unitIngredients(metadata).values()];
+    const paths = new Set(archive.entries.map(entry => entry.path));
+    expect(stories.map(story => story.path).sort()).toEqual(Array.from({ length: 50 }, (_, i) => `ingredients/content/${String(i + 1).padStart(2, '0')}.md`));
+    expect(stories.every(story => paths.has(story.path))).toBe(true);
+    expect(administrativeIngredients(metadata).map(ingredient => ingredient.path)).toEqual(expect.arrayContaining(['ingredients/content/front.md', 'ingredients/content/back.md']));
+    // Coverage from the archive, as a commit's receipt counts it (basis archive): each listed story present when the archive holds its path.
+    const ingredients = stories.map(story => ({ id: story.unit!, path: story.path, exists: paths.has(story.path), is_dir: false, title: '' }));
+    const counted = coverage({ flavor: 'textStories', metadata_format: 'sb', ingredients }, 'obs');
+    expect(counted).toMatchObject({ present: 50, target: 50, scope: 'obs' });
+    expect(counted.units.every(unit => unit.present)).toBe(true);
+  });
+});
 
 describe('the recorded files', () => {
   test.each([
