@@ -118,6 +118,54 @@ export function testamentScope(books: Iterable<string>): CoverageScope {
   return ot && nt ? 'full' : ot ? 'ot' : nt ? 'nt' : 'unknown';
 }
 
+/** A book or story the catalog itemizes, in canonical spelling, with the title Door43 gives its ingredient. */
+export interface ItemizedUnit {
+  unit: string;
+  title: string;
+  exists: boolean;
+}
+
+/**
+ * The books (Bible) or stories (Open Bible Stories) the catalog itemizes, in
+ * the catalog's order, or `null` when that is unknown (H3): Door43 lists no
+ * ingredients, or lists no recognized unit but does list a directory that may
+ * hold units it does not itemize, as the `content` container of a Resource
+ * Container Open Bible Stories repository (E35) or the `ingredients` one of a
+ * storyless Scripture Burrito one (E47). A project of type `other` has no
+ * units tC Admin recognizes, which is unknown too. Coverage and `source.search`
+ * read this one rule.
+ */
+export function itemizedUnits(catalog: ProjectCatalog, type: ProjectType): ItemizedUnit[] | null {
+  if (type === 'other') return null;
+  const listed = catalog.ingredients;
+  if (listed === null) return null;
+  const recognize = type === 'bible' ? bookId : storyId;
+  const recognized = listed.flatMap(ingredient => {
+    const unit = recognize(ingredient.id);
+    return unit === null ? [] : [{ unit, title: ingredient.title ?? '', exists: ingredient.exists }];
+  });
+  if (recognized.length === 0 && listed.some(ingredient => ingredient.is_dir)) return null;
+  return recognized;
+}
+
+/**
+ * The books or stories a ref offers, from the catalog: each itemized unit whose
+ * file Door43 found, once, in canonical order (Genesis to Revelation, story 01
+ * to 50), titled as Door43 titles its ingredient or by its id when it gives no
+ * title. `null` when the catalog does not itemize them ({@link itemizedUnits}).
+ */
+export function offeredUnits(catalog: ProjectCatalog, type: ProjectType): { id: string; title: string }[] | null {
+  const itemized = itemizedUnits(catalog, type);
+  if (itemized === null) return null;
+  const order = type === 'bible' ? BIBLE_BOOKS : STORIES;
+  const byUnit = new Map<string, string>();
+  for (const { unit, title, exists } of itemized) if (exists && !byUnit.has(unit)) byUnit.set(unit, title.trim() || unit);
+  return order.flatMap(id => {
+    const title = byUnit.get(id);
+    return title === undefined ? [] : [{ id, title }];
+  });
+}
+
 /**
  * File coverage from the catalog (H5, basis `catalog`).
  *
@@ -133,24 +181,18 @@ export function testamentScope(books: Iterable<string>): CoverageScope {
 export function coverage(catalog: ProjectCatalog, type: ProjectType): Coverage {
   if (type === 'other') return { present: null, target: null, scope: 'unknown', basis: 'catalog', units: [] };
 
-  const recognize = type === 'bible' ? bookId : storyId;
-  const listed = catalog.ingredients;
-  const recognized = (listed ?? []).flatMap(ingredient => {
-    const unit = recognize(ingredient.id);
-    return unit === null ? [] : [{ unit, exists: ingredient.exists }];
-  });
+  const recognized = itemizedUnits(catalog, type);
 
   let scope: CoverageScope;
   if (type === 'obs') {
     scope = 'obs';
   } else {
     const declared = (catalog.current_scope ?? []).flatMap(value => bookId(value) ?? []);
-    scope = testamentScope([...declared, ...recognized.map(r => r.unit)]);
+    scope = testamentScope([...declared, ...(recognized ?? []).map(r => r.unit)]);
   }
   const target = TARGET_BY_SCOPE[scope];
 
-  const unknown = listed === null || (recognized.length === 0 && listed.some(ingredient => ingredient.is_dir));
-  if (unknown) return { present: null, target, scope, basis: 'catalog', units: [] };
+  if (recognized === null) return { present: null, target, scope, basis: 'catalog', units: [] };
 
   const presentIds = new Set(recognized.filter(r => r.exists).map(r => r.unit));
   const units: CoverageUnit[] = UNITS_BY_SCOPE[scope].map(id => ({ id, present: presentIds.has(id) }));

@@ -107,7 +107,7 @@ Issues: #36, #39.
 Unknown, unavailable, running, or never-checked health is never displayed as healthy. Unknown coverage is never displayed as complete or as zero.
 Source: product spec §5; issues #19, #25.
 Enforced in: `worker/src/model/health`, `worker/src/model/project` (coverage `present` is `null`, not `0`, when unknown); `web` renders each state distinctly.
-Verified by: the prototype tests carried over by #7: the `H3:` tests in `worker/test/model/health.test.ts` (a missing or unknown severity is `never_checked`; a pending, unavailable, or failed health-check read is `checking`, `door43_unavailable`, or `health_error`, and no read but a success result is `healthy`), the `H3` tests in `worker/test/door43/health.test.ts` and `worker/test/operations/preparation-read.test.ts` (the 422 before the check has run stays `checking`), and the OBS container test in `worker/test/model/project.test.ts`. Coverage: the `H3:` tests in `worker/test/model/project.test.ts` and `worker/test/contract/project-catalog.test.ts` (no ingredients, a container directory, and unknown never equal to the target).
+Verified by: the prototype tests carried over by #7: the `H3:` tests in `worker/test/model/health.test.ts` (a missing or unknown severity is `never_checked`; a pending, unavailable, or failed health-check read is `checking`, `door43_unavailable`, or `health_error`, and no read but a success result is `healthy`), the `H3` tests in `worker/test/door43/health.test.ts` and `worker/test/operations/preparation-read.test.ts` (the 422 before the check has run stays `checking`), and the OBS container test in `worker/test/model/project.test.ts`. Coverage: the `H3:` tests in `worker/test/model/project.test.ts` and `worker/test/contract/project-catalog.test.ts` (no ingredients, a container directory, and unknown never equal to the target). Import sources: the `H3` tests in `worker/test/operations/source-search.test.ts` and `worker/test/model/project.test.ts` (a container-only Open Bible Stories source, and a default branch moved since the release the catalog describes, offer `books: null`, never an empty or stale list).
 Issues: #19, #25.
 
 ### H4 — Health is never color alone
@@ -160,8 +160,8 @@ Issues: #13.
 Every project tC Admin creates is Scripture Burrito with tC Admin recorded as generator. tC Admin never writes Resource Container, translationStudio, or translationCore metadata.
 Source: ADR 0008.
 Enforced in: `worker/src/model/burrito` is the only metadata writer.
-Verified by: the `W1:` tests in `worker/test/model/burrito.test.ts` (a new Bible project's metadata validates against the recorded Scripture Burrito source schema, E44, for every testament scope, and names tC Admin as generator with the flavor `scripture/textTranslation`; a new Open Bible Stories project's validates with `gloss/textStories` and the fixed scope, E46) and in `worker/test/operations/project-create-plan.test.ts`; no writer for other formats exists.
-Issues: #17, #29, #82.
+Verified by: the `W1:` tests in `worker/test/model/burrito.test.ts` (a new Bible project's metadata validates against the recorded Scripture Burrito source schema, E44, for every testament scope, and names tC Admin as generator with the flavor `scripture/textTranslation`; a new Open Bible Stories project's validates with `gloss/textStories` and the fixed scope, E46), in `worker/test/operations/project-create-plan.test.ts`, and in `worker/test/model/upload.test.ts` (an uploaded book or story, identified or confirmed, takes its Scripture Burrito path and an ingredient entry the schema accepts, whatever name it was uploaded under); no writer for other formats exists.
+Issues: #17, #29, #72, #82.
 
 ### W2 — Only a Scripture Burrito project is ever written
 tC Admin writes only to repositories it manages: Scripture Burrito Bible and Open Bible Stories projects. A repository in any other format, of any other type, or without recognized metadata is read for import and never written, released, or converted in place (amended 1 October 2026, ADR 0013).
@@ -194,9 +194,9 @@ Issues: #30, #34, #45, #46.
 ### W6 — Upload paths are safe
 Uploads reject absolute paths, path traversal, symlinks, executable behavior, and files or batches over the configured limits.
 Source: product spec §8; architecture §5.
-Enforced in: `worker/src/operations/upload-plan` path normalization.
-Verified by: table-driven rejection tests.
-Issues: #45, #51.
+Enforced in: `worker/src/model/upload-paths.ts` `checkUpload`, which `upload.plan` runs first, before identification or any Door43 read: names are normalized to repository-relative paths and an absolute, traversing, backslash, control-character, percent-sign (decided 7 October 2026 by Rich, so no encoded `..` or `.git` can traverse), empty-segment, or `.git` name is refused; an entry whose reported `mode` is a symlink, not a regular file, or executable is refused; so is a file or a batch over `MAX_UPLOAD_BYTES`, one value (the Q15 proposal), each as `validation_failed` naming the file.
+Verified by: the table-driven `W6:` tests in `worker/test/model/upload-paths.test.ts` (each unsafe name, symlink, executable, and non-file entry refused naming the file; `./a.usfm` and Unicode names accepted as repository-relative; a file and a batch of exactly the limit accepted and one byte over refused). That `upload.plan` runs the check before anything else is #74's test.
+Issues: #45, #51, #73.
 
 ### W7 — No metadata edit during an active preparation (Milestone 2)
 Metadata edits are rejected while a release preparation for the project is active.
@@ -225,8 +225,8 @@ Issues: #23.
 Every cached or derived fact carries its read time and source; the UI labels stale data with its age. tC Admin holds no durable content or release ledger.
 Source: ADR 0002; architecture §4.
 Enforced in: operation outputs carry `freshness`; Workers KV entries carry a read timestamp.
-Verified by: output-shape tests; refresh test shows age reset.
-Issues: #26.
+Verified by: output-shape tests; refresh test shows age reset. So far: the `P3` tests in `worker/test/operations/owner-search.test.ts` and `worker/test/http/owner-search.test.ts` (`owner.search` answers with a live `freshness`, with or without a search).
+Issues: #26, #77.
 
 ## X — Failure and diagnostics
 

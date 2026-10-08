@@ -498,5 +498,7 @@ describe('an Open Bible Stories release (#84)', () => {
     const lost = { id: '01', group: 'unchanged' as const, selection: 'leave_out' as const, default_branch: null, baseline: { id: '01', path: 'ingredients/content/01.md', title: '', sha: 'a', size: 1 } };
     expect(() => confirmedSelection({ project_type: 'obs', candidates: [lost] } as never, {})).toThrow(expect.objectContaining({ code: 'invalid_selection' }));
     expect(() => confirmedSelection({ project_type: 'obs', candidates: [] } as never, {})).toThrow(expect.objectContaining({ code: 'invalid_selection' }));
+    // The refusal carries the catalog's fixed sentence for the code, quoted, not the plan's.
+    expect(() => confirmedSelection({ project_type: 'obs', candidates: [] } as never, {})).toThrow('Include or carry forward at least one book.');
   });
 });

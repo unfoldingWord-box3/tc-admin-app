@@ -259,16 +259,18 @@ worker/
     catalog.ts       the catalog view of a repository (#19); its stages and the catalog entry of one ref (E14, E20; #33)
     trees.ts         the recursive git tree of a ref, every page; its own sha is the tree's, not a commit's (E19, E52, E63; #33)
     languages.ts     the full language list and an owner's languages, in glossary names (E25; #28)
+    owners.ts        the owners an import can come from: the account's organizations, every page, and the catalog's owners by partial name, every match in one answer (E43, E35, E61; #77)
     writes.ts        repository creation and the multi-file commit, uploads and deletions by blob SHA, sent once and never retried (W5, X1, A3, W4; #30, #34); a created repository's state for the retry (#31)
     branches.ts      the temporary branch a release is prepared on, created from a commit; one already there is preparation_active (E21, E27; #34); its deletion after the release, reported and never thrown (R7; #39, #58); a branch's head commit, for the retry of a first commit (E63; #31)
     health.ts        the health check of one ref, read once per call: a result with its issues, pending, unavailable, or an error (E15, E28; #36)
     releases.ts      one release by its tag, with the commit it targets (E21, E20, R6; #40); the release created on the snapshot commit, tag and all, and the one edit that promotes it (E27, R8; #39)
+    catalog-search.ts  an owner's Bible and Open Bible Stories catalog entries at a stage, every page, with each repository's stages (E35, E14; #78)
   src/model/         no I/O
     books.ts         book and story ids (#19)
     language.ts      the language tag rule of the Scripture Burrito schema (E44, Q30; #28)
-    project.ts       type, editability, coverage (#19)
+    project.ts       type, editability, coverage (#19); the books or stories a ref offers as an import source (H3; #78)
     health.ts        Door43 severity to health state, and one health-check read to a health value (H1, H3; #25, #36)
-    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10), and the release merge (#35, Q7, Q8)
+    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10), a book's or story's path and ingredient entry (#72, W1), and the release merge (#35, Q7, Q8)
     burrito-reader.ts  the Scripture Burrito reader: a project's metadata.json as read, every ingredient classified as book, story, or administrative (#17)
     classify.ts      every file of a ref as a book, story, administrative, or unknown file, given its metadata and tree (#20, R1, S5)
     obs-scope.ts     the fixed currentScope of every Open Bible Stories project (E46)
@@ -279,7 +281,9 @@ worker/
     version.ts       the version rules: coercion, baseline, increment (R9; #37)
     notes.ts         the release notes draft (#38)
     snapshot.ts      what a release snapshot uploads and deletes, by blob SHA against the ref the branch starts from, in commits of at most 32 MB (R1, R2, Q22; #34)
-                     planned: upload identification (#45), states
+    upload-paths.ts  an upload batch's names as repository-relative paths, and its entries and sizes checked, before anything else reads it (W6, Q15; #73)
+    upload.ts        an uploaded or imported file identified as a book (its \id line, checked against its name) or a story (its name), or held back; a manager's confirmation applied (E36, W1; #72)
+                     planned: states
   src/operations/    one module per catalog operation, plus shared preconditions
     index.ts         the built operations by name
     context.ts       what every operation receives, with the session's Door43 client (A3)
@@ -292,6 +296,7 @@ worker/
     project-create-retry.ts  project.create.retry: the first commit of a setup-incomplete project, once, after reading the repository; a commit already made adopted; Q29's adoption of a repository the plan could not learn of (W4, X1, A2; #31)
     language-list.ts  language.list: the wizard's language list, each tag marked as accepted or not (#28)
     owner-list.ts    owner.list: the owners the account may create a project in, from its teams (E43, A2; #28)
+    owner-search.ts  owner.search: the account's organizations first and always, then the catalog's owners by partial name (E35, P3; #77)
     release-plan.ts  release.plan: candidates, defaults, version, notes, bound to both refs (#33)
     release-lookup.ts  release.lookup: is there a release under this tag, and which commit does it target (R6; #40)
     release-prepare.ts  release.prepare: the confirmed selection and version, the snapshot's branch and commits, no more than the plan announced, the preparation stored (#34)
@@ -299,6 +304,7 @@ worker/
     release-promote.ts  release.promote: one edit of the pre-release flag (R8; #39)
     preparation-discard.ts  preparation.discard: the manager's confirmed abandonment, one branch deletion, the preparation discarded (R7, A2, Q14; #58)
     preparation-read.ts  preparation.read: the stored preparation, restart_required when the default branch moved (R5), the branch's health and the state it moves to (H1, H2; #36)
+    source-search.ts  source.search: an owner's Bible and Open Bible Stories repositories as import sources, at the last release or the default branch (E35, Q25; #78)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
     app.ts           Hono: one route per operation from shared/schema; validate input, run, validate output, answer (Q27)
