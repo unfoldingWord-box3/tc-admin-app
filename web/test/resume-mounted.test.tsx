@@ -68,30 +68,47 @@ describe('#15: the address survives a sign-in', () => {
   });
 
   test('#15: a return to the wizard not applied over an address in the bar does not offer its form to a later opening', async () => {
-    saveDraft({ ...newForm('tc-admin-qa-org'), title: 'Alkitab Pendau' });
+    saveDraft({ ...newForm('tc-admin-qa-org'), title: 'Alkitab Pendau' }, 'tc-admin-qa');
     rememberReturn('#/new', 'tc-admin-qa');
     window.history.replaceState(null, '', '/#/bahtraku/id_tb1');
     render(<App />);
     await answerWhenSent('GET', '/api/situation', situation({ login: 'tc-admin-qa', name: 'tC Admin QA' }));
     expect(window.location.hash).toBe('#/bahtraku/id_tb1');
     cleanup();
-    render(<CreateProject onCreated={() => {}} onFailure={() => {}} />);
+    render(<CreateProject account="tc-admin-qa" onCreated={() => {}} onFailure={() => {}} />);
     expect((screen.getByLabelText('Project title') as HTMLInputElement).value).toBe('');
   });
 });
 
 describe('#15: the wizard\'s form survives a sign-in', () => {
-  test('#15: returning to the wizard as the same account restores the title, abbreviation, and scope; a later opening starts afresh', async () => {
-    saveDraft({ ...newForm('tc-admin-qa-org'), title: 'Alkitab Pendau', abbreviation: 'APD', testament_scope: 'nt' });
+  test('#15: account A\'s form is never shown to account B, whose own return lands on the wizard in the same tab (bench round 2)', async () => {
+    // A filled the wizard and left; B opened the wizard, and B's session expired before it mounted; B signs in again.
+    saveDraft({ ...newForm('tc-admin-qa-org'), title: 'A form of another account' }, 'birch');
     rememberReturn('#/new', 'tc-admin-qa');
     expect(takeReturn('tc-admin-qa')).toBe('#/new');
-    render(<CreateProject onCreated={() => {}} onFailure={() => {}} />);
+    render(<CreateProject account="tc-admin-qa" onCreated={() => {}} onFailure={() => {}} />);
+    expect((screen.getByLabelText('Project title') as HTMLInputElement).value).toBe('');
+  });
+
+  test('#15: signing out forgets the kept form', async () => {
+    saveDraft({ ...newForm('tc-admin-qa-org'), title: 'Alkitab Pendau' }, 'tc-admin-qa');
+    render(<App />);
+    await answerWhenSent('GET', '/api/situation', situation({ login: 'tc-admin-qa', name: 'tC Admin QA' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(window.sessionStorage.getItem('tca:wizard-draft')).toBeNull();
+  });
+
+  test('#15: returning to the wizard as the same account restores the title, abbreviation, and scope; a later opening starts afresh', async () => {
+    saveDraft({ ...newForm('tc-admin-qa-org'), title: 'Alkitab Pendau', abbreviation: 'APD', testament_scope: 'nt' }, 'tc-admin-qa');
+    rememberReturn('#/new', 'tc-admin-qa');
+    expect(takeReturn('tc-admin-qa')).toBe('#/new');
+    render(<CreateProject account="tc-admin-qa" onCreated={() => {}} onFailure={() => {}} />);
     expect((screen.getByLabelText('Project title') as HTMLInputElement).value).toBe('Alkitab Pendau');
     expect((screen.getByLabelText('Abbreviation') as HTMLInputElement).value).toBe('APD');
     expect(document.querySelector<HTMLInputElement>('input[name="testament_scope"][value="nt"]')?.checked).toBe(true);
     cleanup();
 
-    render(<CreateProject onCreated={() => {}} onFailure={() => {}} />);
+    render(<CreateProject account="tc-admin-qa" onCreated={() => {}} onFailure={() => {}} />);
     expect((screen.getByLabelText('Project title') as HTMLInputElement).value).toBe('');
   });
 });

@@ -57,6 +57,8 @@ type Receipt = OperationOutput<'project.create.apply'>;
 type LanguageList = OperationOutput<'language.list'>;
 
 interface Props {
+  /** The signed-in account's login: the form it keeps across a sign-in is its own (#15). */
+  account: string;
   onCreated: (project: ProjectReport) => void;
   /** A session Door43 no longer accepts, which ends the signed-in view. */
   onFailure: (failure: unknown) => void;
@@ -73,11 +75,11 @@ function without(errors: FieldErrors, field: Field): FieldErrors {
   return rest;
 }
 
-export function CreateProject({ onCreated, onFailure }: Props) {
+export function CreateProject({ account, onCreated, onFailure }: Props) {
   const ids = { title: useId(), abbreviation: useId(), language: useId() };
   const [owners, setOwners] = useState<Owner[] | null>(null);
   // The form a sign-in in the middle left behind, when this opening is the return from it (#15); otherwise a new form.
-  const [form, setForm] = useState<Form>(() => resumedDraft() ?? newForm(''));
+  const [form, setForm] = useState<Form>(() => resumedDraft(account) ?? newForm(''));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [problem, setProblem] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -138,8 +140,8 @@ export function CreateProject({ onCreated, onFailure }: Props) {
   useEffect(() => endResume(), []);
   useEffect(() => {
     if (receipt) clearDraft();
-    else saveDraft(form);
-  }, [form, receipt]);
+    else saveDraft(form, account);
+  }, [form, receipt, account]);
 
   const update = (patch: Partial<Form>, field?: Field) => {
     setForm(previous => ({ ...previous, ...patch }));

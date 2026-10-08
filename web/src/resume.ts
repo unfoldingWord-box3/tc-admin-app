@@ -98,11 +98,13 @@ export function takeReturn(account: string, now = Date.now(), store: Store | nul
 interface DraftRecord {
   form: Form;
   at: number;
+  /** The account that typed it, lowercased: the form is offered back to that account only (bench round 2 on #140). */
+  account: string;
 }
 
-/** Keeps the wizard's form as the manager fills it, so a sign-in in the middle loses nothing. */
-export function saveDraft(form: Form, now = Date.now(), store: Store | null = tabStore()): void {
-  write(store, DRAFT_KEY, { form, at: now } satisfies DraftRecord);
+/** Keeps the wizard's form as the manager fills it, with the account filling it, so a sign-in in the middle loses nothing. */
+export function saveDraft(form: Form, account: string, now = Date.now(), store: Store | null = tabStore()): void {
+  write(store, DRAFT_KEY, { form, at: now, account: account.toLowerCase() } satisfies DraftRecord);
 }
 
 /** Forgets the wizard's form: once a project is created, or when the wizard opens afresh. */
@@ -117,10 +119,13 @@ export function clearDraft(store: Store | null = tabStore()): void {
  * answer; the wizard calls `endResume` once it has opened, and from then on keeps its own form with `saveDraft`, so an
  * abandoned form never comes back by surprise.
  */
-export function resumedDraft(now = Date.now(), store: Store | null = tabStore()): Form | null {
-  const resume = read<{ at: number }>(store, RESUME_DRAFT_KEY);
+export function resumedDraft(account: string, now = Date.now(), store: Store | null = tabStore()): Form | null {
+  const resume = read<{ at: number; account?: unknown }>(store, RESUME_DRAFT_KEY);
   const draft = read<DraftRecord>(store, DRAFT_KEY);
   if (!resume || !draft || typeof draft.at !== 'number' || typeof resume.at !== 'number') return null;
+  // Only the account that typed the form, signed in again, has it back: never another account in the same tab (bench round 2 on #140).
+  const signedIn = account.toLowerCase();
+  if (draft.account !== signedIn || resume.account !== signedIn) return null;
   if (now - draft.at > RESUME_MS || now - resume.at > RESUME_MS) return null;
   const form = draft.form;
   if (!form || typeof form !== 'object' || typeof form.owner !== 'string' || (form.project_type !== 'bible' && form.project_type !== 'obs')) return null;

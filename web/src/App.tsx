@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { OperationOutput } from '@tc-admin/shared/schema';
 import { ApiError, callOperation, failureMessage, signOut } from './api/client';
 import { Portfolio } from './Portfolio';
-import { endResume, rememberReturn, takeReturn } from './resume';
+import { clearDraft, endResume, rememberReturn, takeReturn } from './resume';
 import { signInFailure } from './sign-in';
 
 type Situation = OperationOutput<'situation.read'>;
@@ -79,6 +79,8 @@ export function App() {
   );
 
   const endSession = async () => {
+    // Signing out forgets the wizard's kept form, so the next account in this tab never sees it (bench round 2 on #140).
+    clearDraft();
     try {
       await signOut();
       window.location.assign('/');

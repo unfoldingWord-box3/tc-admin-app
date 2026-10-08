@@ -89,42 +89,51 @@ describe('the address', () => {
 describe('the wizard\'s form', () => {
   test('#15: a return to the wizard as the same account offers its form back, as often as a render asks, until the wizard has opened', () => {
     const store = memory();
-    saveDraft(form, T, store);
+    saveDraft(form, 'tc-admin-qa', T, store);
     rememberReturn('#/new', 'tc-admin-qa', T, store);
     expect(takeReturn('tc-admin-qa', T + 1000, store)).toBe('#/new');
-    expect(resumedDraft(T + 2000, store)).toEqual(form);
-    expect(resumedDraft(T + 2000, store)).toEqual(form);
+    expect(resumedDraft('tc-admin-qa', T + 2000, store)).toEqual(form);
+    expect(resumedDraft('tc-admin-qa', T + 2000, store)).toEqual(form);
     endResume(store);
-    expect(resumedDraft(T + 3000, store)).toBeNull();
+    expect(resumedDraft('tc-admin-qa', T + 3000, store)).toBeNull();
   });
 
   test('a wizard opened any other way, a return as another account or to another address, or an old form starts afresh', () => {
     const store = memory();
-    saveDraft(form, T, store);
-    expect(resumedDraft(T, store)).toBeNull();
+    saveDraft(form, 'tc-admin-qa', T, store);
+    expect(resumedDraft('tc-admin-qa', T, store)).toBeNull();
     rememberReturn('#/new', 'tc-admin-qa', T, store);
     takeReturn('birch', T, store);
-    expect(resumedDraft(T, store)).toBeNull();
+    expect(resumedDraft('tc-admin-qa', T, store)).toBeNull();
     rememberReturn('#/new', null, T, store);
     takeReturn('tc-admin-qa', T, store);
-    expect(resumedDraft(T, store)).toBeNull();
+    expect(resumedDraft('tc-admin-qa', T, store)).toBeNull();
     rememberReturn('#/new', 'tc-admin-qa', T, store);
     takeReturn('tc-admin-qa', T + RESUME_MS + 1, store);
-    expect(resumedDraft(T + RESUME_MS + 1, store)).toBeNull();
+    expect(resumedDraft('tc-admin-qa', T + RESUME_MS + 1, store)).toBeNull();
   });
 
   test('#15: a form offered back to one account and not yet opened is withdrawn when another account signs in', () => {
     const store = memory();
-    saveDraft(form, T, store);
+    saveDraft(form, 'tc-admin-qa', T, store);
     rememberReturn('#/new', 'tc-admin-qa', T, store);
     takeReturn('tc-admin-qa', T, store);
     expect(takeReturn('birch', T + 1000, store)).toBeNull();
-    expect(resumedDraft(T + 2000, store)).toBeNull();
+    expect(resumedDraft('tc-admin-qa', T + 2000, store)).toBeNull();
+  });
+
+  test('#15: a form another account typed is never offered back, even when this account\'s return lands on the wizard (bench round 2)', () => {
+    const store = memory();
+    saveDraft(form, 'birch', T, store);
+    rememberReturn('#/new', 'tc-admin-qa', T, store);
+    expect(takeReturn('tc-admin-qa', T + 1000, store)).toBe('#/new');
+    expect(resumedDraft('tc-admin-qa', T + 2000, store)).toBeNull();
+    expect(resumedDraft('birch', T + 2000, store)).toBeNull();
   });
 
   test('a created project forgets the form', () => {
     const store = memory();
-    saveDraft(form, T, store);
+    saveDraft(form, 'tc-admin-qa', T, store);
     clearDraft(store);
     expect(store.entries.has(DRAFT_KEY)).toBe(false);
   });

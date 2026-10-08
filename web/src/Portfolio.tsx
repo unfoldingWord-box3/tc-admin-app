@@ -79,6 +79,7 @@ export function Portfolio({ account, onFailure }: Props) {
     if (!portfolio) return <p>Loading your projects…</p>;
     return (
       <CreateProject
+        account={account.login}
         onCreated={project => {
           setCreated(project);
           setReads(count => count + 1);
