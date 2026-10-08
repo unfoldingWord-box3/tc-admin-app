@@ -93,8 +93,8 @@ Issues: #29, #35, #84.
 Door43's health-check result is the health result. tC Admin maps severities to display states and never reinterprets a result into a more permissive release decision.
 Source: ADR 0007; product spec §9.
 Enforced in: `worker/src/model/health` (pure mapping, no local judgement); `worker/src/operations/release-create` (reads the state, adds no exceptions).
-Verified by: mapping tests over every observed severity (the `H1:` tests in `worker/test/model/health.test.ts`, over the catalog severity and over one health-check read, with a severity outside the vocabulary as `health_error`); no code path sets `healthy` without a Door43 success result. So far: the `H1` tests in `worker/test/door43/health.test.ts` (the recorded success, info, and warning answers in tC Admin's words, the issues as Door43 wrote them) and `worker/test/operations/preparation-read.test.ts` (each result moves the preparation as domain model §6 says, and the health stored is the read's); the release gate is #39.
-Issues: #25, #36.
+Verified by: mapping tests over every observed severity (the `H1:` tests in `worker/test/model/health.test.ts`, over the catalog severity and over one health-check read, with a severity outside the vocabulary as `health_error`); no code path sets `healthy` without a Door43 success result. So far: the `H1` tests in `worker/test/door43/health.test.ts` (the recorded success, info, and warning answers in tC Admin's words, the issues as Door43 wrote them) and `worker/test/operations/preparation-read.test.ts` (each result moves the preparation as domain model §6 says, and the health stored is the read's); the release gate is #39. In the web, the `H1` tests in `web/test/health-findings.test.ts`: Door43's details and suggestions over its recorded answers (E16, E60) keep their words, with only bold, code, and links rendered, and every finding listed under the severity Door43 gave it (#124).
+Issues: #25, #36, #124.
 
 ### H2 — Health blocks release, and a warning needs acknowledgement
 A failing, unavailable, errored, running, or never-run health check on the snapshot branch blocks release creation. A `warning` result does not block, but release creation requires the manager to have seen the warnings and confirmed they want to proceed; without that confirmation it is refused (decided 18 September 2026, Q6).
@@ -114,7 +114,7 @@ Issues: #19, #25.
 Every health state is conveyed with text or an icon in addition to color.
 Source: product spec §5; architecture §8; roadmap Milestone 3 accessibility epic.
 Enforced in: `web` health components (label map is the source of visible text).
-Verified by: component test that every health state renders a visible label; Milestone 3 WCAG audit.
+Verified by: component test that every health state renders a visible label; Milestone 3 WCAG audit. So far: the `H4` tests in `web/test/health-findings.test.ts` (each finding's severity is an icon of its own shape and a word, Error, Warning, or Information, and a blocked release's summary says so in words, #124).
 Issues: #8, #25, #50.
 
 ### H5 — Coverage is file coverage
