@@ -47,6 +47,24 @@ describe('telling the portfolio', () => {
   });
 });
 
+describe('robustness', () => {
+  test('A2: a listener that throws neither stops the others nor escapes to the caller', () => {
+    const heard = vi.fn<(project: { owner: string; repo: string }) => void>();
+    const stopThrowing = onPermissionDenied(() => {
+      throw new Error('a broken listener');
+    });
+    const stop = onPermissionDenied(heard);
+    expect(() => reportPermissionDenied('/api/projects/o/r/releases', { owner: 'o', repo: 'r' })).not.toThrow();
+    expect(heard).toHaveBeenCalledTimes(1);
+    stop();
+    stopThrowing();
+  });
+
+  test('two projects whose names would join to the same text keep different keys', () => {
+    expect(projectKey({ owner: 'a/b', repo: 'c' })).not.toBe(projectKey({ owner: 'a', repo: 'b/c' }));
+  });
+});
+
 describe('the portfolio without the revoked projects', () => {
   test('A2: a revoked project is dropped, its owner\'s group too when it held only that project; nothing changes without a revocation', () => {
     const groups = [

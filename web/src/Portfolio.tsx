@@ -119,7 +119,7 @@ export function Portfolio({ account, onFailure }: Props) {
       {!portfolio && <p>Loading your projects…</p>}
       {portfolio && wanted && revoked.has(projectKey(wanted)) && (
         <p role="alert">
-          {catalogMessage('permission_denied')} {wanted.owner}/{wanted.repo} is no longer listed, and nothing was written. Reload the page to read your projects from Door43 again.
+          {catalogMessage('permission_denied')} {wanted.owner}/{wanted.repo} is no longer listed. Reload the page to read your projects from Door43 again.
         </p>
       )}
       {portfolio && wanted && !revoked.has(projectKey(wanted)) && <p role="alert">That project is not one you can open here. Choose a project from the list.</p>}

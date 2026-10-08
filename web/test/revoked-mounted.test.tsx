@@ -44,7 +44,9 @@ describe('A2: a project the manager lost write access to leaves the portfolio', 
 
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toContain('You no longer have write access to this project.');
-    expect(alert.textContent).toContain('bahtraku/id_tb1 is no longer listed, and nothing was written.');
+    // No write outcome is claimed: a refusal can follow a partial write, such as a preparation's branch (bench round 1).
+    expect(alert.textContent).toContain('bahtraku/id_tb1 is no longer listed. Reload the page');
+    expect(alert.textContent).not.toContain('nothing was written');
     expect(screen.queryByRole('heading', { name: 'bahtraku/id_tb1' })).toBeNull();
     expect(screen.queryByRole('link', { name: /bahtraku\/id_tb1/ })).toBeNull();
     expect(screen.getByText('bahtraku/Perjanjian-Baru-Pendau')).toBeTruthy();

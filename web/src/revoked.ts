@@ -13,8 +13,8 @@ export interface ProjectKey {
   repo: string;
 }
 
-/** The key the portfolio compares by: the owner in any case (Door43's logins are case-insensitive), the repository as named. */
-export const projectKey = (project: ProjectKey): string => `${project.owner.toLowerCase()}/${project.repo}`;
+/** The key the portfolio compares by: the owner in any case (Door43's logins are case-insensitive), the repository as named, kept apart so no decoded name can make two projects one key. */
+export const projectKey = (project: ProjectKey): string => JSON.stringify([project.owner.toLowerCase(), project.repo]);
 
 /** The project a route names, `/api/projects/<owner>/<repo>[/…]`; `null` for any other route. */
 export function projectOfPath(url: string): ProjectKey | null {
@@ -49,7 +49,14 @@ export function reportPermissionDenied(url: string, details: Readonly<Record<str
   if (!project) return;
   const { owner, repo } = details;
   if (typeof owner !== 'string' || typeof repo !== 'string' || projectKey({ owner, repo }) !== projectKey(project)) return;
-  for (const listener of [...listeners]) listener(project);
+  for (const listener of [...listeners]) {
+    // A listener that fails must not replace the refusal the calling view is about to catch.
+    try {
+      listener(project);
+    } catch {
+      // The portfolio keeps listing the project until a reload; the view still shows the refusal.
+    }
+  }
 }
 
 /** The groups without the revoked projects, and without a group left empty by them. */
