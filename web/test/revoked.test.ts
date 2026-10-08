@@ -26,13 +26,24 @@ describe('telling the portfolio', () => {
   test('A2: a refusal on a project route reaches every listener until it stops; one on any other route reaches none', () => {
     const heard = vi.fn<(project: { owner: string; repo: string }) => void>();
     const stop = onPermissionDenied(heard);
-    reportPermissionDenied('/api/projects/o/r/releases');
-    reportPermissionDenied('/api/portfolio');
+    reportPermissionDenied('/api/projects/o/r/releases', { owner: 'O', repo: 'r' });
+    reportPermissionDenied('/api/portfolio', { owner: 'o', repo: 'r' });
     expect(heard).toHaveBeenCalledTimes(1);
     expect(heard).toHaveBeenCalledWith({ owner: 'o', repo: 'r' });
     stop();
-    reportPermissionDenied('/api/projects/o/r/releases');
+    reportPermissionDenied('/api/projects/o/r/releases', { owner: 'o', repo: 'r' });
     expect(heard).toHaveBeenCalledTimes(1);
+  });
+
+  test('A2: a refusal that does not name the route\'s project (an import source\'s 403) reaches no listener', () => {
+    const heard = vi.fn<(project: { owner: string; repo: string }) => void>();
+    const stop = onPermissionDenied(heard);
+    reportPermissionDenied('/api/projects/o/r/imports', { door43_status: 403 });
+    reportPermissionDenied('/api/projects/o/r/imports', { owner: 'bahtraku', repo: 'id_tb1' });
+    expect(heard).not.toHaveBeenCalled();
+    reportPermissionDenied('/api/projects/o/r/imports', { owner: 'o', repo: 'r' });
+    expect(heard).toHaveBeenCalledTimes(1);
+    stop();
   });
 });
 

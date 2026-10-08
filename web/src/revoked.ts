@@ -37,10 +37,18 @@ export function onPermissionDenied(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
-/** Tells every listener that the route's project was refused for permission. A route that names no project tells nobody. */
-export function reportPermissionDenied(url: string): void {
+/**
+ * Tells every listener that the route's project was refused for permission,
+ * only when the refusal's details name that same project: a refusal of another
+ * repository the operation read (an import's source, whose 403 carries only
+ * `door43_status`) is not the project's push right, and tells nobody. A route
+ * that names no project tells nobody.
+ */
+export function reportPermissionDenied(url: string, details: Readonly<Record<string, unknown>>): void {
   const project = projectOfPath(url);
   if (!project) return;
+  const { owner, repo } = details;
+  if (typeof owner !== 'string' || typeof repo !== 'string' || projectKey({ owner, repo }) !== projectKey(project)) return;
   for (const listener of [...listeners]) listener(project);
 }
 

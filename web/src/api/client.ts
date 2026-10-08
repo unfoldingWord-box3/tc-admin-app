@@ -142,8 +142,8 @@ export async function sendOperation<Name extends RoutedOperation>(
   if (!response.ok) {
     const parsed = OperationErrorShape.safeParse(body);
     const error = new ApiError(parsed.success ? parsed.data : unexpected(response.headers.get('x-request-id') ?? 'unknown'), response.status);
-    // A project the manager lost write access to leaves the portfolio (A2, #14), whichever view made the call.
-    if (error.error.code === 'permission_denied') reportPermissionDenied(url);
+    // A project the manager lost write access to leaves the portfolio (A2, #14), whichever view made the call; only when the refusal names that project.
+    if (error.error.code === 'permission_denied') reportPermissionDenied(url, error.error.details);
     throw error;
   }
   return (OPERATIONS[name] as OperationDefinition).output!.parse(body) as OperationOutput<Name>;
