@@ -54,7 +54,16 @@ interface Props {
 const expired = (failure: unknown) => failure instanceof ApiError && failure.error.code === 'session_expired';
 const codeOf = (failure: unknown) => (failure instanceof ApiError ? failure.error.code : null);
 
-export function ReleaseStepper({ project, preparationId = null, onFailure }: Props) {
+/**
+ * Keyed by the project and the preparation the address named, so another one mounts a fresh stepper in the same render: no plan,
+ * offer, confirmation, or discard of the last project is offered under this one's name, and no late answer for it is shown (#125).
+ */
+export function ReleaseStepper(props: Props) {
+  const { owner, repo } = props.project.ref;
+  return <Stepper key={`${owner}/${repo}/${props.preparationId ?? ''}`} {...props} />;
+}
+
+function Stepper({ project, preparationId = null, onFailure }: Props) {
   const { owner, repo } = project.ref;
   const [plan, setPlan] = useState<ReleasePlan | null>(null);
   const [selection, setSelection] = useState<Selection>({});

@@ -153,7 +153,8 @@ export function ProjectView({ project, onFailure }: Props) {
           Open the release
         </button>
       </form>
-      {onFailure && <Preparations project={project} onFailure={onFailure} />}
+      {/* Keyed by the project: another project mounts a fresh list in the same render, so none of the last project's rows, confirmation, or discard is offered under this one's name before its own list has arrived (#125). */}
+      {onFailure && <Preparations key={`${project.ref.owner}/${project.ref.repo}`} project={project} onFailure={onFailure} />}
       {coverage.units.length > 0 && (
         <ul className="units" aria-label="Books and stories in scope">
           {coverage.units.map(unit => (
