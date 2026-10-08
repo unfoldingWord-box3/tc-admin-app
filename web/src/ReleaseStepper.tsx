@@ -42,6 +42,7 @@ import {
   versionToSend,
 } from './release-stepper';
 import type { ReleasePlan, Selection } from './release-stepper';
+import { VERSION_RULE_LABELS } from './labels';
 
 interface Props {
   project: ProjectSummary;
@@ -485,7 +486,9 @@ function Stepper({ project, preparationId = null, onFailure }: Props) {
             Version
             <input id="release-version" value={version} onChange={event => setVersion(event.target.value)} />
           </label>
-          <p className="derived">Calculated: {plan.preview.version.proposed}. The version must be after {plan.preview.version.baseline_tag ?? 'none'} and can be edited.</p>
+          <p className="derived">
+            Calculated: {plan.preview.version.proposed}, {VERSION_RULE_LABELS[plan.preview.version.rule_applied]}. The version must be after {plan.preview.version.baseline_tag ?? 'none'} and can be edited.
+          </p>
           <p className="muted">Nothing is written until the snapshot is prepared: then a branch {`temp-tca-release/<version>`} and its commits, never the default branch.</p>
           <div className="actions">
             <button type="button" onClick={() => void prepare()} disabled={busy !== null || !canPrepare(books, selection)}>

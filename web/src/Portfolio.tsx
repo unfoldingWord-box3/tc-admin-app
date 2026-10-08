@@ -23,6 +23,7 @@ import { CREATE_HASH, retireCreated, withCreated } from './create-project';
 import { ProjectView } from './ProjectView';
 import { ReleaseStepper } from './ReleaseStepper';
 import { ReleaseView } from './ReleaseView';
+import { EDITABILITY_LABELS } from './labels';
 import { freshnessLabel } from './freshness';
 import { useNow } from './use-now';
 import { SORT_LABELS, applyView, filterChoices, filtered, goneChoice, goneLabel, rememberView, rememberedView } from './portfolio-view';
@@ -227,7 +228,7 @@ function ProjectRow({ project, now }: { project: ProjectSummary; now: number }) 
           <div className="facts">Health: {healthLabel(project.health.state)}</div>
         ) : (
           <div className="reason">
-            <span className="badge">Unsupported</span> {project.editability.reason}
+            <span className="badge">{EDITABILITY_LABELS[project.editability.state]}</span> {project.editability.reason}
           </div>
         )}
       </div>
