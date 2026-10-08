@@ -111,7 +111,7 @@ Three resources carry state across calls:
 
 - The **project report** (`project.read`) is the complete situation of one project: type, format, editability with reason, coverage with basis, health with provenance, latest full release, default-branch head, active preparation, setup state, permissions, freshness. Type, coverage, and health come from the catalog metadata in Door43's repository search, which is the same for every project type (E12, Q17); no archive is downloaded for a portfolio or a project report.
 - A **plan** is bound to the source SHAs it was computed from, lists `would_write`, expires, and is the idempotency key of its apply. Plans live in Workers KV for their lifetime; a release plan is small because it holds tree comparisons, not archives, which `release.prepare` downloads when it needs the bytes (E17: about one second and 1.5 MB for a 66-book Bible).
-- A **preparation** is the release state machine in [domain-model.md](domain-model.md) §6 as an addressable record: state, binding, selection, snapshot, health, version, notes, release, last error, history. `preparation.read` is how the UI polls and how a lost session, a support engineer, or an agent resumes.
+- A **preparation** is the release state machine in [domain-model.md](domain-model.md) §6 as an addressable record: state, binding, selection, snapshot, health, version, notes, release, last error, history. `preparation.read` is how the UI polls and how a lost session, a support engineer, or an agent resumes; `preparation.list` is how they find a preparation's id again, from the store by project (#125).
 
 ### Health adapter
 
@@ -205,7 +205,7 @@ Required user-visible behaviors:
 
 Diagnostics may include request ID, project, commit SHA, version, target ref, health status, and Door43 response status. They must exclude file contents, OAuth tokens, and secrets.
 
-Concurrency (decided 7 October 2026 by Rich): plans, receipts, and preparations live in Workers KV, which offers no compare-and-set, so two calls that overlap on one preparation can each store the state it read, and the later write wins. Milestone 1 accepts this: a project has one manager preparing one release at a time, the interface disables its buttons while a call is in flight, every apply re-reads Door43 before it writes, and a receipt stored under its key answers a repeated request. If the pilot shows overlapping writes, the preparation moves to a store with a precondition (a Durable Object), a Milestone 2 change recorded as an ADR.
+Concurrency (decided 7 October 2026 by Rich): plans, receipts, and preparations live in Workers KV, which offers no compare-and-set, so two calls that overlap on one preparation can each store the state it read, and the later write wins. Milestone 1 accepts this: a project has one manager preparing one release at a time, the interface disables its buttons while a call is in flight, every apply re-reads Door43 before it writes, and a receipt stored under its key answers a repeated request. If the pilot shows overlapping writes, the preparation moves to a store with a precondition (a Durable Object), a Milestone 2 change recorded as an ADR. Listing is eventually consistent too: `preparation.list` may miss a preparation stored a moment ago, or show the state before the last write, so the stepper holds the preparation it made from its receipt and never relies on the list for it (#125).
 
 ## 8. Security requirements
 
@@ -249,7 +249,7 @@ shared/              @tc-admin/shared
   test/              the schema against docs/operations.md and CONTEXT.md
 worker/
   src/index.ts       the Worker: /api/ and /auth/ to the HTTP projection, everything else to the web assets
-  src/env.ts         bindings and variables
+  src/env.ts         bindings and variables; of KV, get, put, delete, and the key listing by prefix, a page at a time (#125)
   src/door43/        Door43 shapes stop here
     host.ts          the configured host, QA or production only
     api.ts           reads with the session token, pagination (P1)
@@ -290,7 +290,7 @@ worker/
     sign-in.ts       begin and complete sign-in for http/session; not catalog operations (#12)
     situation-read.ts  situation.read; the account from /user when signed in
     portfolio-list.ts  the writable filter (P1, P2); the operation: #23
-    plans.ts         plans and receipts in Workers KV, by plan id; a creation's attempt and the retry's receipt, each in its own key (Q29, #31); preparations by project and id, for thirty days (operations.md §2)
+    plans.ts         plans and receipts in Workers KV, by plan id; a creation's attempt and the retry's receipt, each in its own key (Q29, #31); preparations by project and id, for thirty days (operations.md §2), and every preparation of a project, through every page of the key listing (#125)
     project-create-plan.ts  project.create.plan (#29)
     project-create-apply.ts  project.create.apply: the first Door43 writes, idempotent by plan id (#30)
     project-create-retry.ts  project.create.retry: the first commit of a setup-incomplete project, once, after reading the repository; a commit already made adopted; Q29's adoption of a repository the plan could not learn of (W4, X1, A2; #31)
@@ -303,6 +303,7 @@ worker/
     release-create.ts  release.create: the gates (H2, R9, R5, A2), one release on the snapshot commit, the branch deleted after, a refusal kept for retry, a lost answer never retried, and the tag looked up before any retry after one (R3, R6, R7, X1; #39, #40)
     release-promote.ts  release.promote: one edit of the pre-release flag (R8; #39)
     preparation-discard.ts  preparation.discard: the manager's confirmed abandonment, one branch deletion, the preparation discarded (R7, A2, Q14; #58)
+    preparation-list.ts  preparation.list: the push permission first (A2), then the project's stored preparations as stored, newest first, an unparseable record left out (R7; #125)
     preparation-read.ts  preparation.read: the stored preparation, restart_required when the default branch moved (R5), the branch's health and the state it moves to (H1, H2; #36)
     source-search.ts  source.search: an owner's Bible and Open Bible Stories repositories as import sources, at the last release or the default branch (E35, Q25; #78)
                      planned: one module per remaining operation; preconditions (#14)
@@ -317,8 +318,9 @@ web/
   src/               the application shell; portfolio, wizard, stepper, design system (#8)
   src/CreateProject.tsx, src/create-project.ts  the creation wizard, and its form logic, owners, language search, field errors, and the retry of an incomplete setup as pure functions (#28, #31)
   src/ReleaseView.tsx  one release by its tag: the lookup and the promotion of a pre-release from its own page, whether or not the stepper that made it is open (S7, R8)
-  src/ReleaseStepper.tsx, src/release-stepper.ts  the release stepper: one operation per step, the selection from the plan's defaults, the health poll, the warnings acknowledged, the release and its promotion, the discard; its logic as pure functions (#41)
-  src/ProjectView.tsx  one project's report, shown from the portfolio and after creation
+  src/ReleaseStepper.tsx, src/release-stepper.ts  the release stepper: one operation per step, the selection from the plan's defaults, the health poll, the warnings acknowledged, the release and its promotion, the discard; its logic as pure functions (#41); on opening, the preparations under way to continue or discard, a preparation's own address, and the preparation a preparation_active refusal names (#125)
+  src/preparations.ts  which preparations are under way and which finished, their words, a preparation's address and links, the preparation a refusal names, as pure functions (#125)
+  src/ProjectView.tsx  one project's report, shown from the portfolio and after creation; from the portfolio, its release preparations, each with a link and the discard (#125)
   test/
 fixtures/
   door43/            recorded responses and archives, each with host, ref, and date (ADR 0012)
