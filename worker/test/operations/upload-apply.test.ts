@@ -411,4 +411,59 @@ describe('X1: a commit whose outcome is unknown is never sent again', () => {
     expect(receipt.wrote).toHaveLength(1);
     expect(writes()).toEqual([`POST ${REPO}/contents`, `POST ${REPO}/contents`]);
   });
+
+  test('X1: a commit Door43 refused is not adopted when the branch has since moved onto a tree holding the planned blobs; it is source_changed, with no receipt', async () => {
+    const files = [upload('GEN.usfm', GEN)];
+    const made = await plan(files);
+    state.commit = 409;
+    expect(await failure(apply(made.id, files))).toMatchObject({ code: 'commit_failed', details: { outcome: 'failed' } });
+    const metadata = decode64(contentsCall().files.find(file => file.path === 'metadata.json')!.content);
+    const landed = new Map([['ingredients/GEN.usfm', await gitBlobSha(GEN)], ['metadata.json', await gitBlobSha(metadata)]]);
+    const after = { ...tree, sha: MOVED, tree: [...tree.tree.map(entry => (landed.has(entry.path) ? { ...entry, sha: landed.get(entry.path)! } : entry)), { path: 'ingredients/GEN.usfm', type: 'blob', sha: landed.get('ingredients/GEN.usfm')! }] };
+    state.head = MOVED;
+    state.trees.set(MOVED, after);
+    expect(await failure(apply(made.id, files))).toMatchObject({ code: 'source_changed', details: { bound: SHA, head: MOVED } });
+    expect(kv.entries.has(`receipt:${made.id}`)).toBe(false);
+    expect(writes()).toEqual([`POST ${REPO}/contents`]);
+  });
+
+  test('X1: an outcome recorded as unknown stays unknown after the attempt\'s key is gone; an apply on an unmoved branch writes nothing', async () => {
+    const files = [upload('GEN.usfm', GEN)];
+    const made = await plan(files);
+    state.commit = 'network';
+    await failure(apply(made.id, files));
+    kv.entries.delete(`attempt:${made.id}`);
+    state.commit = 'created';
+    expect(await failure(apply(made.id, files))).toMatchObject({ code: 'commit_failed', details: { outcome: 'unknown' } });
+    expect(writes()).toEqual([`POST ${REPO}/contents`]);
+  });
+
+  test('X1: an attempt the store refuses to record stops the apply before any write, as commit_failed with the outcome failed; the plan may be applied again', async () => {
+    const files = [upload('GEN.usfm', GEN)];
+    const made = await plan(files);
+    const put = kv.put.bind(kv);
+    kv.put = async (key, value, options) => {
+      if (key.startsWith('attempt:')) throw new Error('KV unavailable');
+      return put(key, value, options);
+    };
+    expect(await failure(apply(made.id, files))).toMatchObject({ code: 'commit_failed', details: { outcome: 'failed', reason: 'attempt_not_recorded' } });
+    expect(writes()).toEqual([]);
+    expect(storedPlan(made.id).payload.commit).toBeUndefined();
+    kv.put = put;
+    expect((await apply(made.id, files)).wrote).toHaveLength(1);
+    expect(writes()).toEqual([`POST ${REPO}/contents`]);
+  });
+
+  test('X1: a 5xx or a 408 from the contents call is an unknown outcome, recorded; a second apply on an unmoved branch writes nothing', async () => {
+    for (const status of [500, 504, 408]) {
+      const files = [upload('GEN.usfm', GEN)];
+      const made = await plan(files);
+      state.commit = status;
+      expect(await failure(apply(made.id, files))).toMatchObject({ code: 'commit_failed', details: { outcome: 'unknown', door43_status: status } });
+      expect(storedPlan(made.id).payload.commit).toMatchObject({ outcome: 'unknown', door43_status: status });
+      state.commit = 'created';
+      expect(await failure(apply(made.id, files))).toMatchObject({ code: 'commit_failed', details: { outcome: 'unknown' } });
+      expect(writes()).toEqual([`POST ${REPO}/contents`]);
+    }
+  });
 });

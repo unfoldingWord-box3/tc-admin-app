@@ -180,10 +180,15 @@ function commitMessage(files: readonly Planned[], type: CreatableProjectType, co
   return `${subject}\n\nThe uploaded files and metadata.json, written by ${context.application.name} ${context.application.version}.`;
 }
 
-/** What became of a commit that did not return one: `unknown` when Door43 may have made it anyway (X1). */
+/**
+ * What became of a commit that did not return one: `unknown` when Door43 may have made it anyway (X1).
+ * Only a 4xx other than 408 is a refusal; a 5xx or a timeout from the contents call may have committed,
+ * as `createRelease` reads the same statuses (releases.ts).
+ */
 function outcomeOf(error: CatalogError): Omit<UploadCommitOutcome, 'attempted_at'> {
   const status = typeof error.details.door43_status === 'number' ? error.details.door43_status : null;
-  const unknown = error.code === 'door43_unavailable' || error.details.outcome === 'unknown';
+  const refused = status !== null && status >= 400 && status < 500 && status !== 408;
+  const unknown = error.code === 'door43_unavailable' || error.details.outcome === 'unknown' || (error.code === 'commit_failed' && !refused);
   return { outcome: unknown ? 'unknown' : 'failed', door43_status: status };
 }
 
@@ -302,9 +307,10 @@ export async function uploadApply(input: ParsedInput<'upload.apply'>, context: O
   const payload = stored.payload;
   if (!sameLogin(payload.owner, input.owner) || payload.repo !== input.repo) throw anotherProject(payload.owner, payload.repo);
   const where = { owner: payload.owner, repo: payload.repo };
-  // An earlier apply of this plan sent its commit, and Door43's refusal of it is not on record: what it did is unknown (X1).
+  // An earlier apply of this plan sent its commit, and Door43's refusal of it is not on record, or its outcome is recorded
+  // as unknown (which holds after the attempt's key is gone): what it did is unknown (X1). One predicate for not sending and for adopting.
   const recorded = kept?.payload.commit;
-  const unknown = attempt !== null && !(recorded?.outcome === 'failed' && recorded.attempted_at === attempt.attempted_at);
+  const unknown = recorded?.outcome === 'unknown' || (attempt !== null && !(recorded?.outcome === 'failed' && recorded.attempted_at === attempt.attempted_at));
   if (!unknown && expired(stored, context.now())) throw planExpired(input.plan_id);
 
   refuseHeldBack(payload.files);
@@ -329,7 +335,8 @@ export async function uploadApply(input: ParsedInput<'upload.apply'>, context: O
   const blobs = [...planned.files, planned.metadata].map(({ path, sha }) => ({ path, sha }));
   if (head.sha !== bound) {
     // An earlier apply of this plan may have made this commit and lost the answer: the branch holding every planned file, blob for blob, is it, adopted and never made again (X1).
-    if (attempt) {
+    // A commit Door43 refused is not adopted: the branch moved, and the plan is planned again (R5).
+    if (unknown) {
       const tree = await readTree(client, payload.owner, payload.repo, head.sha);
       if (holdsFiles(blobs, tree.files)) {
         const basis = { repository, coverage: uploadedCoverage(payload, new Set(tree.files.map(file => file.path))), release: await latestFullRelease(context, repository) };
@@ -368,15 +375,16 @@ export async function uploadApply(input: ParsedInput<'upload.apply'>, context: O
   if (changes.length === 0) return answer(input, context, account.login, payload, basis, null, head, started);
 
   // The attempt, recorded before the write in a key of its own and kept a day, so a later apply of this plan reads before it writes.
-  // A store that refuses it does not stop the apply: without it, a lost answer reads as source_changed, the safe side.
+  // A store that refuses it stops the apply before the write: unrecorded, a lost answer on an unmoved branch would be sent again (X1).
   const attemptedAt = started.toISOString();
   const plan: UploadApplyPayload = { ...payload };
   delete plan.commit;
   const attemptRecord: StoredAttempt<UploadApplyPayload> = { stored: { ...stored, payload: plan }, attempted_at: attemptedAt };
   try {
     await context.plans.putAttempt(input.plan_id, attemptRecord, RECEIPT_SECONDS);
-  } catch {
-    // As above: nothing recorded, nothing adopted later.
+  } catch (cause) {
+    // Nothing was sent, so the outcome is failed and the plan may be applied again.
+    throw new CatalogError('commit_failed', { values: { 'error message': 'the attempt could not be recorded, and nothing was sent' }, cause, details: { ...where, outcome: 'failed', reason: 'attempt_not_recorded' } });
   }
 
   let commit: Commit;
@@ -390,7 +398,7 @@ export async function uploadApply(input: ParsedInput<'upload.apply'>, context: O
     } catch {
       // Unrecorded, a refusal reads as an unknown outcome: the next apply reads before it writes, and never writes again.
     }
-    if (outcome.outcome === 'failed' || error.code === 'commit_failed') throw error;
+    if (outcome.outcome === 'failed' || error.details.outcome === 'unknown') throw error;
     throw outcomeUnknown({ ...where, door43_status: outcome.door43_status }, 'Door43 did not confirm the commit', error);
   }
   return answer(input, context, account.login, payload, basis, commit, head, started);
