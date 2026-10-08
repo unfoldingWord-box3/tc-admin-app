@@ -121,7 +121,7 @@ Issues: #8, #25, #50.
 Coverage counts recognized books present against the testament-scope target (27, 39, 66) for a Bible project, or stories against 50 for an Open Bible Stories project. It is never presented as translation completeness. It is computed from catalog metadata (E12), and it is distinct from a release's `currentScope`, which lists only released books (Q7).
 Source: CONTEXT.md "Coverage"; product spec §5.
 Enforced in: `worker/src/model/project` (coverage carries `basis` and `target`); `web` copy uses the glossary wording.
-Verified by: the `H5:` tests in `worker/test/model/project.test.ts` over each scope, in `worker/test/contract/project-catalog.test.ts` over the seed repositories (E32), and in `worker/test/operations/project-create-apply.test.ts` (a new Open Bible Stories project's report counts 0 of 50 stories); UI copy review against CONTEXT.md.
+Verified by: the `H5:` tests in `worker/test/model/project.test.ts` over each scope, in `worker/test/contract/project-catalog.test.ts` over the seed repositories (E32), and in `worker/test/operations/project-create-apply.test.ts` (a new Open Bible Stories project's report counts 0 of 50 stories); UI copy review against CONTEXT.md. For Open Bible Stories in an archive, the `H5, E36` test in `worker/test/model/burrito-reader.test.ts` (en_obs v9's archive holds the 50 stories at their paths, `front.md` and `back.md` are administrative, and coverage reads 50 of 50; #83).
 Issues: #19, #24, #82.
 
 ## A — Access and identity
