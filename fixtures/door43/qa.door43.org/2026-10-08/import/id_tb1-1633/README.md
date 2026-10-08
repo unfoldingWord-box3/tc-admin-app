@@ -1,6 +1,6 @@
 # The import rehearsal on QA, 8 October 2026
 
-`scripts/probe/qa-import-probe.mjs` run with `TEST_TOKEN` as `tc-admin-qa` (ADR 0012, #80): `import.plan` and `import.apply` through the Worker's own operation code, bundled with esbuild, importing Genesis and Exodus from `bahtraku/id_tb1` at its release `1974` (a Resource Container Bible, E1, E17) into a New Testament Bible project the probe created first, `tc-admin-qa/id_tcai1633`, as the wizard creates one (`project.create.plan`, `project.create.apply`). DCS `28.1.0+423-gbb3a0efeb6`. The facts derived are E69 in `docs/evidence.md`.
+`scripts/probe/qa-import-probe.mjs` run with `TEST_TOKEN` as `tc-admin-qa` (ADR 0012, #80): `import.plan` and `import.apply` through the Worker's own operation code, bundled with esbuild, importing Genesis and Exodus from `bahtraku/id_tb1` at its release `1974` (a Resource Container Bible, E1, E17) into a New Testament Bible project the probe created first, `tc-admin-qa/id_tcai1633`, as the wizard creates one (`project.create.plan`, `project.create.apply`). DCS `28.1.0+423-gbb3a0efeb6`. The facts derived are E69 in `docs/evidence.md`. The numbered recordings are stored gzipped (`gunzip -c 22-GET-commit.json.gz` reads one), as the 7 October 2026 recordings are, so the set does not crowd the review bench's packet; `plan.json`, `receipt.json`, `metadata-after.json`, and `summary.json` stay plain.
 
 | File | What it holds |
 | --- | --- |
