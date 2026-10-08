@@ -1,0 +1,36 @@
+{
+  "name": "master",
+  "commit": {
+    "id": "da76985eec7b18cedd8c954f90028da4bb8fa517",
+    "message": "Upload LUK, ACT\n\nThe uploaded files and metadata.json, written by tC Admin 0.1.0.\n",
+    "url": "https://qa.door43.org/tc-admin-qa/id_tcar1546/commit/da76985eec7b18cedd8c954f90028da4bb8fa517",
+    "author": {
+      "name": "tc-admin-qa",
+      "email": "[redacted]",
+      "username": "tc-admin-qa"
+    },
+    "committer": {
+      "name": "tc-admin-qa",
+      "email": "[redacted]",
+      "username": "tc-admin-qa"
+    },
+    "verification": {
+      "verified": false,
+      "reason": "gpg.error.not_signed_commit",
+      "signature": "",
+      "signer": null,
+      "payload": ""
+    },
+    "timestamp": "2026-10-08T09:18:42Z",
+    "added": null,
+    "removed": null,
+    "modified": null
+  },
+  "protected": false,
+  "required_approvals": 0,
+  "enable_status_check": false,
+  "status_check_contexts": [],
+  "user_can_push": false,
+  "user_can_merge": false,
+  "effective_branch_protection_name": ""
+}
