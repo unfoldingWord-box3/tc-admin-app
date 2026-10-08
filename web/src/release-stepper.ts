@@ -131,7 +131,8 @@ const RELEASE_FAILURES: readonly string[] = ['release_failed', 'release_outcome_
 
 /** A `retryable_failure` that `release.create` cannot take again: the snapshot was not completed, or a discard did not finish; discarding it is the way on (R7). */
 export const discardOnly = (preparation: Pick<Preparation, 'state'> & { last_error?: Pick<OperationErrorShape, 'code'> | null }): boolean =>
-  preparation.state === 'retryable_failure' && Boolean(preparation.last_error) && !RELEASE_FAILURES.includes(preparation.last_error!.code);
+  // Fail closed: the release is offered again only after a release attempt Door43 refused or did not confirm.
+  preparation.state === 'retryable_failure' && !(preparation.last_error && RELEASE_FAILURES.includes(preparation.last_error.code));
 
 /** Whether the preparation's health lets the release go on, and whether the manager must acknowledge warnings first (H2, Q6). */
 export const releaseGate = (preparation: Pick<Preparation, 'state' | 'health' | 'requires_acknowledgement'> & { last_error?: Pick<OperationErrorShape, 'code'> | null }): 'ready' | 'acknowledge' | 'blocked' | 'checking' => {

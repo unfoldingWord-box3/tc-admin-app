@@ -106,7 +106,9 @@ describe('the steps (domain model §6)', () => {
   test('H2, Q6: the gate is ready on a passing health, asks for an acknowledgement on a warning, waits while checking, and blocks otherwise', () => {
     expect(releaseGate(preparation('ready_for_release'))).toBe('ready');
     expect(releaseGate(preparation('ready_for_release', true))).toBe('acknowledge');
-    expect(releaseGate(preparation('retryable_failure'))).toBe('ready');
+    // A release Door43 refused can be tried again; a retryable failure with no error recorded cannot (fail closed).
+    expect(releaseGate({ ...preparation('retryable_failure'), last_error: { code: 'release_failed' } })).toBe('ready');
+    expect(releaseGate(preparation('retryable_failure'))).toBe('blocked');
     expect(releaseGate(preparation('health_checking'))).toBe('checking');
     for (const state of ['health_blocked', 'snapshot_prepared', 'restart_required', 'pre_release', 'discarded'] as const) expect(releaseGate(preparation(state))).toBe('blocked');
   });

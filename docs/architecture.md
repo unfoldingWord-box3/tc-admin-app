@@ -263,7 +263,7 @@ worker/
     writes.ts        repository creation and the multi-file commit, uploads and deletions by blob SHA, sent once and never retried (W5, X1, A3, W4; #30, #34); a created repository's state for the retry (#31)
     branches.ts      the temporary branch a release is prepared on, created from a commit; one already there is preparation_active (E21, E27; #34); its deletion after the release, reported and never thrown (R7; #39, #58); a branch's head commit, for the retry of a first commit (E63; #31)
     health.ts        the health check of one ref, read once per call: a result with its issues, pending, unavailable, or an error (E15, E28; #36)
-    releases.ts      one release by its tag, with the commit it targets (E21, E20, R6; #40); the release created on the snapshot commit, tag and all, and the one edit that promotes it (E27, R8; #39)
+    releases.ts      one release by its tag, with the commit it targets (E21, E20, R6; #40), and with when and by whom it was published, for a project report (#75); the release created on the snapshot commit, tag and all, and the one edit that promotes it (E27, R8; #39)
     catalog-search.ts  an owner's Bible and Open Bible Stories catalog entries at a stage, every page, with each repository's stages (E35, E14; #78)
   src/model/         no I/O
     books.ts         book and story ids (#19)
@@ -275,7 +275,7 @@ worker/
     classify.ts      every file of a ref as a book, story, administrative, or unknown file, given its metadata and tree (#20, R1, S5)
     obs-scope.ts     the fixed currentScope of every Open Bible Stories project (E46)
     md5.ts           ingredient checksums (R10)
-    git-blob.ts      git blob ids, and whether a ref holds exactly a plan's files (X1; #31)
+    git-blob.ts      git blob ids, whether a ref holds exactly a plan's files (X1; #31), and whether it holds an upload's planned files among others (X1; #75)
     license-cc-by-sa-4.0.ts  the license text of ingredients/license.md (Q20)
     candidates.ts    candidate detection by blob SHA, the R4 defaults, removals, administrative files (#33)
     version.ts       the version rules: coercion, baseline, increment (R9; #37)
@@ -307,6 +307,7 @@ worker/
     preparation-list.ts  preparation.list: the push permission first (A2), then the project's stored preparations as stored, newest first, an unparseable record left out (R7; #125)
     preparation-read.ts  preparation.read: the stored preparation, restart_required when the default branch moved (R5), the branch's health and the state it moves to (H1, H2; #36)
     upload-plan.ts   upload.plan: the batch checked first (W6), the project writable and editable (A2, W2), every file identified or confirmed, two for one unit refused, overwrites and diffs from the default branch's tree and archive at its head, the proposed metadata (R10), one commit announced, bound to the head (R5), stored without the bytes (Q33; #74)
+    upload-apply.ts  upload.apply: the same files sent again and matched to the plan by size and md5 (Q33), none held back, the plan's confirmations only, permission re-read (A2), still editable (W2), the head still the plan's (R5); one commit with the files and the metadata, create or update by blob, sent once (W5, A3, X1); the attempt recorded first, an unknown outcome never sent again and a landed commit adopted (X1); the receipt by plan id (#75)
     source-search.ts  source.search: an owner's Bible and Open Bible Stories repositories as import sources, at the last release or the default branch (E35, Q25; #78)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
@@ -314,7 +315,7 @@ worker/
     errors.ts        every failure to the error shape (X2, X3)
     session.ts       /auth/login, /auth/callback, /auth/logout; the token in Workers KV under a hash of the cookie (A1)
     csrf.ts          same-origin and CSRF token checks ahead of every POST (A4)
-    multipart.ts     a multipart body to an operation's plain input: each file's name, mode, and bytes, and the confirmations (upload.plan, Q33); an oversized body refused before it is read (W6)
+    multipart.ts     a multipart body to an operation's plain input: each file's name, mode, and bytes, the confirmations, and the plan id for an operation that names one (upload.plan, upload.apply, Q33); an oversized body refused before it is read (W6)
   test/              model/, door43/, operations/, http/, contract/ (against fixtures); support/ (the recordings reader, a zip builder)
 web/
   src/api/client.ts  typed client: one call per operation, from shared/schema; a route that says body: 'multipart' is sent as multipart/form-data, the files' bytes as file parts (upload.plan, Q33)

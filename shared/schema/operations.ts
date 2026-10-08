@@ -20,7 +20,7 @@ export interface Route {
   method: HttpMethod;
   /** A path under `/api/`; `{name}` is a path segment that fills the input field `name`. */
   path: string;
-  /** How a `POST` sends its input: a JSON body unless this says `multipart`, a `multipart/form-data` body carrying file bytes (`upload.plan`, Q33). */
+  /** How a `POST` sends its input: a JSON body unless this says `multipart`, a `multipart/form-data` body carrying file bytes (`upload.plan`, `upload.apply`, Q33). */
   body?: 'multipart';
 }
 
@@ -105,16 +105,25 @@ const MetadataEntryChange = z.object({
 });
 
 /**
- * How `upload.plan`'s files travel (operations.md §7, Q33): a `multipart/form-data` body with, for the file at
+ * How an upload's files travel (operations.md §7, Q33): a `multipart/form-data` body with, for the file at
  * index `i`, the parts `files.<i>.name`, `files.<i>.mode` (optional, decimal), and `files.<i>.content` (the bytes),
- * and an optional `confirmations` part holding the confirmations as JSON.
+ * and an optional `confirmations` part holding the confirmations as JSON. `upload.apply` sends the same parts
+ * again, the same files the plan was made from, and its plan id in a `plan_id` part.
  */
 export const UPLOAD_FILE_FIELDS = ['name', 'mode', 'content'] as const;
 export type UploadFileField = (typeof UPLOAD_FILE_FIELDS)[number];
 export const uploadPartName = (index: number, field: UploadFileField): string => `files.${index}.${field}`;
 export const UPLOAD_CONFIRMATIONS_PART = 'confirmations';
+/** `upload.apply`'s plan id, as a text part of its multipart body (and as the `Idempotency-Key` header, §7). */
+export const UPLOAD_PLAN_ID_PART = 'plan_id';
 /** A file's bytes, as the HTTP projection reads them from a multipart part: any `Uint8Array`. */
 const FileBytes = z.custom<Uint8Array>(value => value instanceof Uint8Array, { message: 'expected the file\'s bytes as a file part' });
+/**
+ * The files of an upload, as `upload.plan` and `upload.apply` both receive them. `mode`: the POSIX file mode the
+ * client read, when it has one; a browser reports none (W6, #73). `content`: the file's bytes, sent in the request
+ * and never stored; a file's size is the length of its bytes (Q33).
+ */
+const UploadedFiles = z.array(z.object({ name: z.string().min(1), mode: z.number().int().min(0).max(0o177777).nullish(), content: FileBytes })).min(1);
 
 const PortfolioList = z.object({
   organizations: z.array(z.object({ name: z.string(), projects: z.array(ProjectSummary) })),
@@ -309,10 +318,8 @@ export const OPERATIONS = {
     milestone: 1,
     route: { method: 'POST', path: '/api/projects/{owner}/{repo}/uploads/plan', body: 'multipart' },
     input: RepoRef.extend({
-      // `mode`: the POSIX file mode the client read, when it has one; a browser reports none (W6, #73). `content`: the file's bytes,
-      // sent in the request and never stored; a file's size is the length of its bytes (Q33).
-      files: z.array(z.object({ name: z.string().min(1), mode: z.number().int().min(0).max(0o177777).nullish(), content: FileBytes })).min(1),
-      /** The manager's choice of book or story for a file, by its name: the same confirmations `upload.apply` takes, so the plan shows what they write. */
+      files: UploadedFiles,
+      /** The manager's choice of book or story for a file, by its name; the plan lists what they write, and `upload.apply` writes only that. */
       confirmations: z.record(z.string(), Unit).optional(),
     }),
     output: plan(z.object({ files: z.array(PlannedFile), metadata_diff: z.object({ ingredients: z.array(MetadataEntryChange) }), unknown: z.array(z.string()) })),
@@ -320,8 +327,14 @@ export const OPERATIONS = {
   'upload.apply': {
     kind: 'apply',
     milestone: 1,
-    route: { method: 'POST', path: '/api/projects/{owner}/{repo}/uploads' },
-    input: RepoRef.extend({ plan_id: z.string().min(1), confirmations: z.record(z.string(), Unit) }),
+    route: { method: 'POST', path: '/api/projects/{owner}/{repo}/uploads', body: 'multipart' },
+    input: RepoRef.extend({
+      plan_id: z.string().min(1),
+      /** The same files the plan was made from, sent again (Q33): each the plan lists, by name, with the bytes whose size and md5 it holds. */
+      files: UploadedFiles,
+      /** Optional; when sent, exactly the confirmations the plan was made with (built behind, #75): a changed choice is planned again, never applied. */
+      confirmations: z.record(z.string(), Unit).optional(),
+    }),
     output: receipt(ProjectReport),
   },
   'owner.search': {

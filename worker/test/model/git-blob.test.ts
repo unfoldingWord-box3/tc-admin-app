@@ -1,9 +1,10 @@
-// Git blob ids for the retry of a first commit (#31): the same ids Door43
-// listed for the files tC Admin committed on QA (E45), and a comparison that
-// holds a ref to exactly the plan's files (X1).
+// Git blob ids for the retry of a first commit (#31) and a repeated upload
+// (#75): the same ids Door43 listed for the files tC Admin committed on QA
+// (E45), a comparison that holds a ref to exactly the plan's files, and one
+// that asks only that a ref holds them (X1).
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
-import { gitBlobSha, sameFiles } from '../../src/model/git-blob';
+import { gitBlobSha, holdsFiles, sameFiles } from '../../src/model/git-blob';
 
 const commit = JSON.parse(
   readFileSync(new URL('../../../fixtures/door43/qa.door43.org/2026-10-05/project-create/tc-admin-qa-org/08-POST-repos_tc-admin-qa-org_id_tcap1856_contents.json', import.meta.url), 'utf8'),
@@ -37,5 +38,21 @@ describe('sameFiles', () => {
     expect(sameFiles(planned, [planned[0]!])).toBe(false);
     expect(sameFiles(planned, [...planned, { path: 'ingredients/MAT.usfm', sha: 'd' }])).toBe(false);
     expect(sameFiles(planned, [planned[0]!, planned[0]!])).toBe(false);
+  });
+});
+
+describe('holdsFiles', () => {
+  const planned = [
+    { path: 'metadata.json', sha: 'a' },
+    { path: 'ingredients/GEN.usfm', sha: 'b' },
+  ];
+
+  test('X1: a ref holding every planned file at its blob holds them, whatever else it holds', () => {
+    expect(holdsFiles(planned, [{ path: 'ingredients/MAT.usfm', sha: 'c' }, planned[1]!, planned[0]!])).toBe(true);
+  });
+
+  test('X1: a changed blob or a missing file is not held', () => {
+    expect(holdsFiles(planned, [planned[0]!, { path: 'ingredients/GEN.usfm', sha: 'c' }])).toBe(false);
+    expect(holdsFiles(planned, [planned[0]!])).toBe(false);
   });
 });
