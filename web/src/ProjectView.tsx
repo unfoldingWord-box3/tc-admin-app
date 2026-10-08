@@ -5,8 +5,9 @@
 // release preparations (`preparation.list`, #125): each under way with a link
 // into the stepper at it and the discard, each released with a link to its
 // release. "Add books" (or "Add stories") opens the upload screen in its
-// place (#76); the upload's receipt carries the project report, which then
-// replaces the one shown.
+// place (#76), and "Import books" (or "Import stories") the import screen
+// (#81); either receipt carries the project report, which then replaces the
+// one shown.
 
 import type { Preparation, ProjectReport, ProjectSummary } from '@tc-admin/shared/schema';
 import { useEffect, useState } from 'react';
@@ -15,6 +16,8 @@ import { WRITE_LABELS } from './create-project';
 import { coverageLabel, healthLabel, releaseHash, releaseTagHash, typeLabel } from './portfolio-labels';
 import { isActive, preparationLink, preparationVersion, withAnswer } from './preparations';
 import { STATE_LABELS, canDiscard } from './release-stepper';
+import { ImportScreen } from './ImportScreen';
+import { importAction } from './import';
 import { UploadScreen } from './UploadScreen';
 import { addAction, uploadTypeOf } from './upload';
 import type { UploadReceipt } from './upload';
@@ -122,26 +125,22 @@ function uploadable(project: ProjectSummary | ProjectReport): boolean {
 
 export function ProjectView({ project: given, onFailure }: Props) {
   const [tag, setTag] = useState('');
-  const [uploading, setUploading] = useState(false);
-  // The last upload's receipt and what it added: its project report replaces the one this view was given (#76).
+  const [adding, setAdding] = useState<'upload' | 'import' | null>(null);
+  // The last upload's or import's receipt and what it added: its project report replaces the one this view was given (#76, #81).
   const [uploaded, setUploaded] = useState<{ receipt: UploadReceipt; added: string } | null>(null);
   const project: ProjectSummary | ProjectReport = uploaded?.receipt.result ?? given;
   const { coverage } = project;
   const type = uploadTypeOf(project.project_type);
 
-  if (uploading && type) {
-    return (
-      <UploadScreen
-        project={project}
-        type={type}
-        onFailure={onFailure}
-        onCancel={() => setUploading(false)}
-        onUploaded={(receipt, added) => {
-          setUploaded({ receipt, added });
-          setUploading(false);
-        }}
-      />
-    );
+  const done = (receipt: UploadReceipt, added: string) => {
+    setUploaded({ receipt, added });
+    setAdding(null);
+  };
+  if (adding === 'upload' && type) {
+    return <UploadScreen project={project} type={type} onFailure={onFailure} onCancel={() => setAdding(null)} onUploaded={done} />;
+  }
+  if (adding === 'import' && type) {
+    return <ImportScreen project={project} type={type} onFailure={onFailure} onCancel={() => setAdding(null)} onImported={done} />;
   }
 
   return (
@@ -189,9 +188,14 @@ export function ProjectView({ project: given, onFailure }: Props) {
       )}
       <p className="actions">
         {type && uploadable(project) && (
-          <button type="button" onClick={() => setUploading(true)}>
-            {addAction(type)}
-          </button>
+          <>
+            <button type="button" onClick={() => setAdding('upload')}>
+              {addAction(type)}
+            </button>
+            <button type="button" className="secondary" onClick={() => setAdding('import')}>
+              {importAction(type)}
+            </button>
+          </>
         )}
         <a className="button" href={releaseHash(project)}>
           Prepare a release

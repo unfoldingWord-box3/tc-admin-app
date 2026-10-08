@@ -69,8 +69,8 @@ interface Picked {
   file: Blob;
 }
 
-const time = (iso: string) => new Date(iso).toLocaleTimeString();
-const bytes = (size: number) => `${size.toLocaleString()} ${size === 1 ? 'byte' : 'bytes'}`;
+export const time = (iso: string) => new Date(iso).toLocaleTimeString();
+export const bytes = (size: number) => `${size.toLocaleString()} ${size === 1 ? 'byte' : 'bytes'}`;
 
 /** The files a drop carries: a dropped folder's files by their paths inside it, where the browser offers its entries. */
 async function droppedFiles(data: DataTransfer): Promise<Picked[]> {
@@ -630,14 +630,14 @@ function PlanReview({ plan, type, confirmations, confirmed, busy, spent, onConfi
   );
 }
 
-const sizeOf = (entry: Readonly<Record<string, unknown>>): number | null => (typeof entry.size === 'number' ? entry.size : null);
-const md5Of = (entry: Readonly<Record<string, unknown>>): string | null => {
+export const sizeOf = (entry: Readonly<Record<string, unknown>>): number | null => (typeof entry.size === 'number' ? entry.size : null);
+export const md5Of = (entry: Readonly<Record<string, unknown>>): string | null => {
   const checksum = entry.checksum;
   return checksum && typeof checksum === 'object' && typeof (checksum as { md5?: unknown }).md5 === 'string' ? (checksum as { md5: string }).md5 : null;
 };
 
-/** One overwrite: the clear warning, its diff (or why there is none, with the old and new size and checksum), and its own confirmation. */
-function Overwrite({
+/** One overwrite: the clear warning, its diff (or why there is none, with the old and new size and checksum), and its own confirmation. Shared with the import screen (#81). */
+export function Overwrite({
   file,
   entry,
   checked,
