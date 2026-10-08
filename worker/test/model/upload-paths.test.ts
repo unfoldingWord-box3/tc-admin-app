@@ -6,7 +6,7 @@ import { CatalogError } from '@tc-admin/shared/schema';
 import { MAX_UPLOAD_BYTES, checkUpload, modeProblem, normalizeUploadName } from '../../src/model/upload-paths';
 import type { UploadFile } from '../../src/model/upload-paths';
 
-const file = (name: string, size = 10, mode?: number | null): UploadFile => ({ name, size, content_ref: `ref-${name.length}-${size}`, mode });
+const file = (name: string, size = 10, mode?: number | null): UploadFile => ({ name, size, mode });
 
 /** The refusal of a batch, asserted to be one `validation_failed` naming each file it lists. */
 function refusal(files: UploadFile[], limit?: number) {
@@ -38,10 +38,10 @@ describe('W6: unsafe names are refused as validation_failed naming the file', ()
     ['a\nb.usfm', 'control_character'],
     ['a\u007f.usfm', 'control_character'],
     ['a\u0085.usfm', 'control_character'],
-    ['a‮b.usfm', 'control_character'],
-    ['a⁦b.usfm', 'control_character'],
-    ['a b.usfm', 'control_character'],
-    ['a b.usfm', 'control_character'],
+    ['a\u202Eb.usfm', 'control_character'],
+    ['a\u2066b.usfm', 'control_character'],
+    ['a\u2028b.usfm', 'control_character'],
+    ['a\u2029b.usfm', 'control_character'],
     ['', 'empty'],
     ['.', 'empty'],
     ['./', 'empty_segment'],
@@ -122,8 +122,8 @@ describe('W6: accepted names are repository-relative and none escapes the projec
     expect(result).toEqual({
       ok: true,
       files: [
-        { name: 'GEN.usfm', size: 5, content_ref: 'ref-10-5', mode: undefined },
-        { name: 'content/01.md', size: 7, content_ref: 'ref-13-7', mode: 0o100644 },
+        { name: 'GEN.usfm', size: 5, mode: undefined },
+        { name: 'content/01.md', size: 7, mode: 0o100644 },
       ],
     });
     if (!result.ok) return;

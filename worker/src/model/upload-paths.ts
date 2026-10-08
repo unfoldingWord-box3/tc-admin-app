@@ -7,8 +7,9 @@
 // Every problem in the batch is reported at once, each naming its file, as one
 // `validation_failed`. Pure.
 //
-// The sizes checked are the ones the client declares; the bytes `content_ref`
-// names are measured against them where they are read (#74).
+// The sizes checked are the lengths of the bytes the request carried, measured
+// by `upload.plan` (#74): the client declares no size, so there is none to
+// trust or to disagree with (decided 8 October 2026 by Rich, Q33).
 
 import { CatalogError } from '@tc-admin/shared/schema';
 
@@ -21,11 +22,11 @@ import { CatalogError } from '@tc-admin/shared/schema';
  */
 export const MAX_UPLOAD_BYTES = 32 * 1024 * 1024;
 
-/** One file of an `upload.plan` batch, as the operation receives it. */
+/** One file of an `upload.plan` batch, as the check reads it. */
 export interface UploadFile {
   name: string;
+  /** The length of the bytes received (Q33). */
   size: number;
-  content_ref: string;
   /** The POSIX file mode the client read, when it has one (a zip entry, a local file); a browser reports none. */
   mode?: number | null | undefined;
 }
@@ -46,8 +47,8 @@ export interface UploadProblem {
   message: string;
 }
 
-export type UploadCheck =
-  | { ok: true; files: UploadFile[] }
+export type UploadCheck<Entry extends UploadFile = UploadFile> =
+  | { ok: true; files: Entry[] }
   | { ok: false; error: CatalogError; problems: UploadProblem[]; batch: { bytes: number; limit: number } | null };
 
 const S_IFMT = 0o170000;
@@ -80,7 +81,7 @@ export function normalizeUploadName(name: string): { ok: true; path: string } | 
   // and paragraph separators (Zl, Zp), and the bidirectional embedding, override,
   // and isolate controls, which can make a name display as another path. Other
   // Cf characters stay: ZWNJ and ZWJ are spelling in Persian and Indic names.
-  if (/[\p{Cc}\p{Zl}\p{Zp}‪-‮⁦-⁩]/u.test(name)) return { ok: false, reason: 'control_character' };
+  if (/[\p{Cc}\p{Zl}\p{Zp}\u202A-\u202E\u2066-\u2069]/u.test(name)) return { ok: false, reason: 'control_character' };
   // A percent sign, so no encoded `..` or `.git` (`%2e%2e/a.usfm`) can traverse if a later hop decodes the
   // name; no book, story, or project file needs one (decided 7 October 2026 by Rich, #116).
   if (name.includes('%')) return { ok: false, reason: 'percent_encoding' };
@@ -119,9 +120,9 @@ const quoted = (name: string) => JSON.stringify(name);
  * sent; refused, the error names every file at fault and, when the files are
  * each within the limit but together exceed it, the batch.
  */
-export function checkUpload(files: readonly UploadFile[], limit: number = MAX_UPLOAD_BYTES): UploadCheck {
+export function checkUpload<Entry extends UploadFile>(files: readonly Entry[], limit: number = MAX_UPLOAD_BYTES): UploadCheck<Entry> {
   const problems: UploadProblem[] = [];
-  const accepted: UploadFile[] = [];
+  const accepted: Entry[] = [];
   const firstAt = new Map<string, number>();
   let bytes = 0;
   let fileOverLimit = false;
