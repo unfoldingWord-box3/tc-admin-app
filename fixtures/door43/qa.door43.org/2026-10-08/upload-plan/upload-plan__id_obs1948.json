@@ -1,0 +1,82 @@
+{
+ "id": "55f18b53-c6a6-4b50-addd-49a90e1b5db1",
+ "operation": "upload.plan",
+ "created_at": "2026-10-08T01:56:43.585Z",
+ "expires_at": "2026-10-08T02:26:43.585Z",
+ "bound_to": {
+  "default_branch_sha": "928afcf7c9c6022ae11304ca7fce04f39230ecce",
+  "release_tag": null,
+  "release_tag_sha": null
+ },
+ "preview": {
+  "files": [
+   {
+    "name": "05.md",
+    "identified": {
+     "story": "05"
+    },
+    "path": "ingredients/content/05.md",
+    "size": 3839,
+    "md5": "0408a70af06b8ec6cfc9e09b56bb286f",
+    "overwrite": false,
+    "diff": null
+   },
+   {
+    "name": "04.md",
+    "identified": {
+     "story": "04"
+    },
+    "path": "ingredients/content/04.md",
+    "size": 3597,
+    "md5": "c7da03b4cea376d67e41b4a7834312db",
+    "overwrite": true,
+    "diff": ""
+   },
+   {
+    "name": "notes.txt",
+    "identified": null,
+    "path": null,
+    "size": 12,
+    "md5": "487713bcf8a59a3f5b83e751093bd00c",
+    "overwrite": false,
+    "diff": null
+   }
+  ],
+  "metadata_diff": {
+   "ingredients": [
+    {
+     "path": "ingredients/content/05.md",
+     "before": null,
+     "after": {
+      "checksum": {
+       "md5": "0408a70af06b8ec6cfc9e09b56bb286f"
+      },
+      "mimeType": "text/markdown",
+      "size": 3839
+     }
+    },
+    {
+     "path": "ingredients/content/04.md",
+     "before": null,
+     "after": {
+      "checksum": {
+       "md5": "c7da03b4cea376d67e41b4a7834312db"
+      },
+      "mimeType": "text/markdown",
+      "size": 3597
+     }
+    }
+   ]
+  },
+  "unknown": [
+   "notes.txt"
+  ]
+ },
+ "would_write": [
+  {
+   "kind": "commit",
+   "target": "tc-admin-qa-org/id_obs1948@master"
+  }
+ ],
+ "warnings": []
+}
