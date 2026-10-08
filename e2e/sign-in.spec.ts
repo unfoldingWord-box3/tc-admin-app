@@ -14,8 +14,8 @@ import { clearedOnFailure, fillSecret } from './secret';
 const user = process.env.TEST_USER;
 const password = process.env.TEST_PASSWORD;
 
-/** The password is typed, and the grant given, only on this host. */
-const DOOR43_QA = 'qa.door43.org';
+/** The password is typed, and the grant given, only on this origin: the QA host, over https (bench, #144). */
+const DOOR43_QA = 'https://qa.door43.org';
 
 test.skip(!user || !password, 'TEST_USER and TEST_PASSWORD are needed (E23); set them in the root .env');
 
@@ -56,7 +56,7 @@ test('A1: a sign-in on QA lands on the portfolio, and no token reaches storage, 
   await expect(username.or(authorize).or(signedIn).or(denied)).toBeVisible({ timeout: 30_000 });
   expect(await denied.isVisible(), "Door43 QA's bot check (Anubis) denied this browser; run headed (E70)").toBe(false);
   if (await username.isVisible()) {
-    expect(new URL(page.url()).host, 'the sign-in form is on Door43 QA').toBe(DOOR43_QA);
+    expect(new URL(page.url()).origin, 'the sign-in form is on Door43 QA, over https').toBe(DOOR43_QA);
     await username.fill(user!);
     // Never `fill` directly: a failed fill's error names the password, and the reporter prints it (bench round 2). And if
     // anything after the typing fails, the field is emptied first: a failed test's page snapshot shows what it holds (round 3).
@@ -68,7 +68,7 @@ test('A1: a sign-in on QA lands on the portfolio, and no token reaches storage, 
     });
   }
   if (await authorize.isVisible()) {
-    expect(new URL(page.url()).host, 'the grant page is on Door43 QA').toBe(DOOR43_QA);
+    expect(new URL(page.url()).origin, 'the grant page is on Door43 QA, over https').toBe(DOOR43_QA);
     await authorize.click();
   }
 
