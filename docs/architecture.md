@@ -278,6 +278,7 @@ worker/
     version.ts       the version rules: coercion, baseline, increment (R9; #37)
     notes.ts         the release notes draft (#38)
     snapshot.ts      what a release snapshot uploads and deletes, by blob SHA against the ref the branch starts from, in commits of at most 32 MB (R1, R2, Q22; #34)
+    upload-paths.ts  an upload batch's names as repository-relative paths, and its entries and sizes checked, before anything else reads it (W6, Q15; #73)
                      planned: upload identification (#45), states
   src/operations/    one module per catalog operation, plus shared preconditions
     index.ts         the built operations by name
