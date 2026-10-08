@@ -13,6 +13,8 @@ import type { KVNamespace } from '../env';
 export const PLAN_SECONDS = 30 * 60;
 /** A receipt is kept a day, so a retried apply inside that time answers the same receipt. */
 export const RECEIPT_SECONDS = 24 * 60 * 60;
+/** Workers KV takes at most one write a second to the same key; a faster second write is refused (429). */
+export const SAME_KEY_WRITE_MS = 1000;
 
 /** What a plan operation stores: the plan as returned, the apply's payload, and who planned. */
 export interface StoredPlan<Payload = unknown> {

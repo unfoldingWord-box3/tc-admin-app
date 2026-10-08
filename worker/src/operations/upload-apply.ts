@@ -15,7 +15,8 @@
 // `metadata.json` (W5), as the signed-in manager (A3), sent once (X1).
 //
 // What the plan cannot learn from a lost answer is recorded before the write:
-// the attempt, in a key of its own, and after a refusal what became of it. A
+// the attempt, in a key of its own, and after a refusal what became of it, on
+// the plan and on the attempt, so either record keeps the refusal. A
 // repeated apply of a plan whose commit's outcome is unknown never sends it
 // again: it reads the branch, adopts the commit when the head holds every
 // planned file blob for blob, and otherwise answers the outcome as still
@@ -44,13 +45,13 @@ import { confirmFile } from '../model/upload';
 import { checkUpload, normalizeUploadName } from '../model/upload-paths';
 import type { OperationContext } from './context';
 import { signedIn } from './context';
-import { RECEIPT_SECONDS } from './plans';
+import { RECEIPT_SECONDS, SAME_KEY_WRITE_MS } from './plans';
 import type { StoredAttempt, StoredPlan } from './plans';
 import type { PlannedUpload, UploadPlanPayload } from './upload-plan';
 
 export type UploadReceipt = OperationOutput<'upload.apply'>;
 
-/** What became of the commit an attempt sent, recorded on the plan for that attempt: `failed` when Door43 refused it, `unknown` when it may have made it (X1). */
+/** What became of the commit an attempt sent, recorded on the plan, and a refusal also on the attempt, for that attempt: `failed` when Door43 refused it, `unknown` when it may have made it (X1). */
 export interface UploadCommitOutcome {
   outcome: 'failed' | 'unknown';
   door43_status: number | null;
@@ -198,6 +199,62 @@ function outcomeUnknown(where: Record<string, unknown>, message: string, cause?:
 }
 
 /**
+ * What became of the commit, recorded on the plan, and a refusal also on the attempt the apply recorded
+ * before the write, so a refusal either store write keeps is never read as an unknown outcome and never
+ * adopted (X1). The attempt's second write waits out Workers KV's one write a second to a key. A record the
+ * store refuses still fails closed: a refusal recorded nowhere reads as unknown, and the next apply reads
+ * before it writes and never writes again. Each refused record is logged in one JSON line, as `logFailure`
+ * logs a failure (worker/src/http/errors.ts), at warning level since the apply answers as it would have.
+ */
+async function recordOutcome(
+  context: OperationContext,
+  planId: string,
+  where: { owner: string; repo: string },
+  stored: StoredPlan<UploadApplyPayload>,
+  attempt: StoredAttempt<UploadApplyPayload>,
+  attemptWrittenAt: number,
+): Promise<void> {
+  const outcome = stored.payload.commit!;
+  const refused: { record: 'plan' | 'attempt'; cause: unknown }[] = [];
+  try {
+    await context.plans.putPlan(stored, RECEIPT_SECONDS);
+  } catch (cause) {
+    refused.push({ record: 'plan', cause });
+  }
+  if (outcome.outcome === 'failed') {
+    const wait = attemptWrittenAt + SAME_KEY_WRITE_MS - Date.now();
+    if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait));
+    try {
+      await context.plans.putAttempt(planId, { ...attempt, stored }, RECEIPT_SECONDS);
+    } catch (cause) {
+      refused.push({ record: 'attempt', cause });
+    }
+  }
+  if (refused.length > 0) logOutcomeNotRecorded(context, planId, where, outcome, refused);
+}
+
+/**
+ * The line logged when the store refused a record of what became of a commit: the request id, the
+ * operation, the plan id, the project, the outcome and Door43's status, and for each refused record its
+ * name and the kind of the store's error only; never a token, a file, its bytes, or the error's message (X3).
+ */
+function logOutcomeNotRecorded(context: OperationContext, planId: string, where: { owner: string; repo: string }, outcome: UploadCommitOutcome, refused: readonly { record: 'plan' | 'attempt'; cause: unknown }[]): void {
+  console.warn(
+    JSON.stringify({
+      request_id: context.requestId,
+      operation: 'upload.apply',
+      event: 'commit_outcome_not_recorded',
+      plan_id: planId,
+      owner: where.owner,
+      repo: where.repo,
+      outcome: outcome.outcome,
+      door43_status: outcome.door43_status,
+      not_recorded: refused.map(({ record, cause }) => ({ record, kind: cause instanceof Error ? cause.name : typeof cause })),
+    }),
+  );
+}
+
+/**
  * The latest full release the catalog names (E14), read by its tag for when and by
  * whom it was published; `null` when the catalog names none or Door43 has none
  * under that tag. Read before the write, so nothing after it can fail the apply.
@@ -307,10 +364,12 @@ export async function uploadApply(input: ParsedInput<'upload.apply'>, context: O
   const payload = stored.payload;
   if (!sameLogin(payload.owner, input.owner) || payload.repo !== input.repo) throw anotherProject(payload.owner, payload.repo);
   const where = { owner: payload.owner, repo: payload.repo };
-  // An earlier apply of this plan sent its commit, and Door43's refusal of it is not on record, or its outcome is recorded
-  // as unknown (which holds after the attempt's key is gone): what it did is unknown (X1). One predicate for not sending and for adopting.
+  // An earlier apply of this plan sent its commit, and Door43's refusal of it is on record neither on the plan nor on the
+  // attempt, or its outcome is recorded as unknown (which holds after the attempt's key is gone): what it did is unknown (X1).
+  // One predicate for not sending and for adopting.
   const recorded = kept?.payload.commit;
-  const unknown = recorded?.outcome === 'unknown' || (attempt !== null && !(recorded?.outcome === 'failed' && recorded.attempted_at === attempt.attempted_at));
+  const refusal = (outcome: UploadCommitOutcome | undefined) => attempt !== null && outcome?.outcome === 'failed' && outcome.attempted_at === attempt.attempted_at;
+  const unknown = recorded?.outcome === 'unknown' || (attempt !== null && !refusal(recorded) && !refusal(attempt.stored.payload.commit));
   if (!unknown && expired(stored, context.now())) throw planExpired(input.plan_id);
 
   refuseHeldBack(payload.files);
@@ -380,8 +439,10 @@ export async function uploadApply(input: ParsedInput<'upload.apply'>, context: O
   const plan: UploadApplyPayload = { ...payload };
   delete plan.commit;
   const attemptRecord: StoredAttempt<UploadApplyPayload> = { stored: { ...stored, payload: plan }, attempted_at: attemptedAt };
+  let attemptWrittenAt: number;
   try {
     await context.plans.putAttempt(input.plan_id, attemptRecord, RECEIPT_SECONDS);
+    attemptWrittenAt = Date.now();
   } catch (cause) {
     // Nothing was sent, so the outcome is failed and the plan may be applied again.
     throw new CatalogError('commit_failed', { values: { 'error message': 'the attempt could not be recorded, and nothing was sent' }, cause, details: { ...where, outcome: 'failed', reason: 'attempt_not_recorded' } });
@@ -393,11 +454,7 @@ export async function uploadApply(input: ParsedInput<'upload.apply'>, context: O
   } catch (error) {
     if (!(error instanceof CatalogError)) throw error;
     const outcome: UploadCommitOutcome = { ...outcomeOf(error), attempted_at: attemptedAt };
-    try {
-      await context.plans.putPlan({ ...stored, payload: { ...plan, commit: outcome } }, RECEIPT_SECONDS);
-    } catch {
-      // Unrecorded, a refusal reads as an unknown outcome: the next apply reads before it writes, and never writes again.
-    }
+    await recordOutcome(context, input.plan_id, where, { ...stored, payload: { ...plan, commit: outcome } }, attemptRecord, attemptWrittenAt);
     if (outcome.outcome === 'failed' || error.details.outcome === 'unknown') throw error;
     throw outcomeUnknown({ ...where, door43_status: outcome.door43_status }, 'Door43 did not confirm the commit', error);
   }

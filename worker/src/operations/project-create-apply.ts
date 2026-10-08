@@ -29,7 +29,7 @@ import { FLAVOR_BY_TYPE, LICENSE_PATH, projectScope } from '../model/burrito';
 import { coverage, editability } from '../model/project';
 import type { OperationContext } from './context';
 import { signedIn } from './context';
-import { RECEIPT_SECONDS } from './plans';
+import { RECEIPT_SECONDS, SAME_KEY_WRITE_MS } from './plans';
 import type { StoredPlan } from './plans';
 import { ownerForCreation } from './project-create-plan';
 import type { ProjectCreatePayload } from './project-create-plan';
@@ -164,9 +164,6 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
   await context.plans.putReceipt(input.plan_id, { receipt, account: account.login });
   return receipt;
 }
-
-/** Workers KV takes at most one write a second to the same key; a faster second write is refused (429). */
-const SAME_KEY_WRITE_MS = 1000;
 
 /**
  * Stores what became of the first commit on the plan, the plan's second write
