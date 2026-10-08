@@ -1,0 +1,53 @@
+{
+  "branch_or_tag_name": "v16",
+  "commit_sha": "70003541b063cc647beb6708767e07eae9ba8dcb",
+  "released": "2025-01-24T06:38:37Z",
+  "stage": "prod",
+  "ingredients": [
+    {
+      "identifier": "col",
+      "path": "./52-COL.usfm",
+      "exists": true
+    },
+    {
+      "identifier": "1th",
+      "path": "./53-1TH.usfm",
+      "exists": true
+    },
+    {
+      "identifier": "2th",
+      "path": "./54-2TH.usfm",
+      "exists": true
+    },
+    {
+      "identifier": "1ti",
+      "path": "./55-1TI.usfm",
+      "exists": true
+    },
+    {
+      "identifier": "2ti",
+      "path": "./56-2TI.usfm",
+      "exists": true
+    },
+    {
+      "identifier": "tit",
+      "path": "./57-TIT.usfm",
+      "exists": true
+    },
+    {
+      "identifier": "phm",
+      "path": "./58-PHM.usfm",
+      "exists": true
+    },
+    {
+      "identifier": "2pe",
+      "path": "./62-2PE.usfm",
+      "exists": true
+    },
+    {
+      "identifier": "3jn",
+      "path": "./65-3JN.usfm",
+      "exists": true
+    }
+  ]
+}
