@@ -28,6 +28,8 @@ export interface Door43Repository {
   full_name: string;
   owner: { login: string };
   html_url?: string | null;
+  /** When Door43 last recorded a change to the repository (E32). */
+  updated_at?: string | null;
   title?: string | null;
   description?: string | null;
   default_branch?: string | null;

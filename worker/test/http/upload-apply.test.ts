@@ -47,6 +47,7 @@ const receipt = {
     description: '',
     default_branch: 'master',
     language: { code: 'ped', title: 'Pendau' },
+    last_activity_at: '2026-10-08T10:00:00.000Z',
     project_type: 'bible',
     metadata_format: 'sb',
     editability: { state: 'editable', reason: 'Scripture Burrito Bible project.' },
@@ -93,6 +94,17 @@ describe('POST /api/projects/{owner}/{repo}/uploads', () => {
     expect(input.files.map(file => file.name)).toEqual(['GEN.usfm']);
     expect(new TextDecoder().decode(input.files[0]!.content)).toBe('\\id GEN\n');
     expect(input.confirmations).toEqual({ 'GEN.usfm': { book: 'gen' } });
+  });
+
+  test('#24: a receipt stored before last_activity_at existed is answered again as 200, stating none, and Door43 is not asked', async () => {
+    const { last_activity_at: _, ...older } = receipt.result;
+    HANDLERS['upload.apply'] = (async (input: unknown) => (seen.push(input), { ...receipt, result: older })) as never;
+    const fetch = vi.fn<typeof globalThis.fetch>();
+    vi.stubGlobal('fetch', fetch);
+    const response = await post(form('p1', [{ name: 'GEN.usfm', content: '\\id GEN\n' }]), { [IDEMPOTENCY_HEADER]: 'p1' });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ...receipt, result: { ...older, last_activity_at: null } });
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   test('A4: a multipart POST from another origin is csrf_rejected and the operation does not run', async () => {

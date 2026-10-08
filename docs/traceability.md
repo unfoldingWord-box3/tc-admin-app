@@ -52,9 +52,9 @@ Keep this file current: an issue's Traceability section and its row here say the
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#23](https://github.com/unfoldingWord-box3/tc-admin-app/issues/23) Writable discovery | §2, §5 | 0002, 0014 | P1, P2 | E7, E40, E41, E42 | `portfolio.list` | door43/api, operations | — |
-| [#24](https://github.com/unfoldingWord-box3/tc-admin-app/issues/24) Grouping, filters, async analysis | §5 | — | H3, H5 | Q17 | `portfolio.list` | operations, web | — |
+| [#24](https://github.com/unfoldingWord-box3/tc-admin-app/issues/24) Grouping, filters, async analysis | §5 | — | H3, H5 | E32, Q17 | `portfolio.list`, `project.read` | operations/portfolio-list, web (portfolio-view, Portfolio) | — |
 | [#25](https://github.com/unfoldingWord-box3/tc-admin-app/issues/25) Health states | §5, §9; domain §5 | 0007 | H1, H3, H4 | E7, E15, E28, Q2, Q21 | `project.read`, `preparation.read` | model/health, web | — |
-| [#26](https://github.com/unfoldingWord-box3/tc-admin-app/issues/26) Refresh and freshness | §9; arch §4 | 0002 | P3 | — | `project.refresh` | operations, web | — |
+| [#26](https://github.com/unfoldingWord-box3/tc-admin-app/issues/26) Refresh and freshness | §9; arch §4 | 0002 | P3, H1, H3, A2 | E10, E15, E27, E63, Q17 | `project.read`, `project.refresh`, `portfolio.list` | operations/project-read, web (freshness, ProjectView, Portfolio) | — |
 | [#124](https://github.com/unfoldingWord-box3/tc-admin-app/issues/124) Health findings display | §9, §10 | — | H1, H2, H4 | E16, E60, E65 | `preparation.read` (display only) | web/HealthFindings, web/health-findings, web/door43-text, web/ReleaseStepper | S6 |
 
 ### EPIC: Create a project ([#32](https://github.com/unfoldingWord-box3/tc-admin-app/issues/32))

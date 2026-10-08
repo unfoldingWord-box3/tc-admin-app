@@ -15,6 +15,7 @@ import { preparationRead } from './preparation-read';
 import { projectCreateApply } from './project-create-apply';
 import { projectCreatePlan } from './project-create-plan';
 import { projectCreateRetry } from './project-create-retry';
+import { projectRead, projectRefresh } from './project-read';
 import { releaseLookup } from './release-lookup';
 import { releaseCreate } from './release-create';
 import { releasePlan } from './release-plan';
@@ -32,6 +33,8 @@ export type OperationHandlers = { [Name in RoutedOperation]?: OperationHandler<N
 export const HANDLERS: OperationHandlers = {
   'situation.read': situationRead,
   'portfolio.list': portfolioList,
+  'project.read': projectRead,
+  'project.refresh': projectRefresh,
   'project.create.plan': projectCreatePlan,
   'project.create.apply': projectCreateApply,
   'project.create.retry': projectCreateRetry,
