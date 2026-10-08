@@ -130,7 +130,7 @@ Issues: #19, #24, #82.
 No Door43 access token appears in JavaScript-visible state, browser storage, URLs, or client or server logs. The browser holds only an opaque HttpOnly session cookie.
 Source: ADR 0001; architecture §2 and §8.
 Enforced in: `worker/src/http/session` (token lives in Workers KV keyed by a hash of the session id; the cookie is HttpOnly, SameSite=Lax, and Secure on HTTPS); `worker/src/http` response serialization; logging redaction (the sign-in failure log carries only the code and the error kind).
-Verified by: response-shape tests assert no token field on any route; log redaction test; Playwright smoke test inspects storage and URLs: `e2e/sign-in.spec.ts` (`npm run e2e`, #10), a real sign-in on QA after which the address, both storages, every request URL, and every script-readable cookie hold no token and the session cookie is HttpOnly, SameSite, and Secure (E70).
+Verified by: response-shape tests assert no token field on any route; log redaction test; Playwright smoke test inspects storage and URLs: `e2e/sign-in.spec.ts` (`npm run e2e`, #10), a real sign-in on QA after which the address, both storages, every request URL from the callback on (the callback included, its one-time code and state aside; no token exists before it), every script-readable cookie, and the session cookie's value hold no token and the session cookie is HttpOnly, SameSite, and Secure (E70).
 Issues: #12, #15, #51.
 
 ### A2 — Permission is checked live before every mutation
