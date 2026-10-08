@@ -198,6 +198,30 @@ function outcomeUnknown(where: Record<string, unknown>, message: string, cause?:
 }
 
 /**
+ * The store refused the record of what became of a commit: the apply still fails closed (the next apply
+ * reads before it writes), and the failure is logged as one JSON line, as `logFailure` logs a failure
+ * (worker/src/http/errors.ts), at warning level since the apply answers as it would have. The line carries
+ * the request id, the operation, the plan id, the project, the outcome and Door43's status, and the kind of
+ * the store's error only; never a token, a file, its bytes, or the error's message (X3).
+ */
+function logOutcomeNotRecorded(context: OperationContext, planId: string, where: { owner: string; repo: string }, outcome: UploadCommitOutcome, cause: unknown): void {
+  const kind = cause instanceof Error ? cause.name : typeof cause;
+  console.warn(
+    JSON.stringify({
+      request_id: context.requestId,
+      operation: 'upload.apply',
+      event: 'commit_outcome_not_recorded',
+      plan_id: planId,
+      owner: where.owner,
+      repo: where.repo,
+      outcome: outcome.outcome,
+      door43_status: outcome.door43_status,
+      kind,
+    }),
+  );
+}
+
+/**
  * The latest full release the catalog names (E14), read by its tag for when and by
  * whom it was published; `null` when the catalog names none or Door43 has none
  * under that tag. Read before the write, so nothing after it can fail the apply.
@@ -395,8 +419,10 @@ export async function uploadApply(input: ParsedInput<'upload.apply'>, context: O
     const outcome: UploadCommitOutcome = { ...outcomeOf(error), attempted_at: attemptedAt };
     try {
       await context.plans.putPlan({ ...stored, payload: { ...plan, commit: outcome } }, RECEIPT_SECONDS);
-    } catch {
+    } catch (cause) {
       // Unrecorded, a refusal reads as an unknown outcome: the next apply reads before it writes, and never writes again.
+      // Logged as one line of non-secret fields (X3): never the token, the files, their bytes, or the store's message.
+      logOutcomeNotRecorded(context, input.plan_id, where, outcome, cause);
     }
     if (outcome.outcome === 'failed' || error.details.outcome === 'unknown') throw error;
     throw outcomeUnknown({ ...where, door43_status: outcome.door43_status }, 'Door43 did not confirm the commit', error);

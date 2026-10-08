@@ -10,7 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { CatalogError, OPERATIONS } from '@tc-admin/shared/schema';
 import type { ParsedInput } from '@tc-admin/shared/schema';
-import { beforeAll, beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { openArchive } from '../../src/door43/archive';
 import type { Fetch } from '../../src/door43/api';
 import type { KVNamespace } from '../../src/env';
@@ -143,6 +143,10 @@ beforeEach(() => {
   clock = new Date('2026-10-08T12:00:00.000Z');
 });
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('a successful apply', () => {
   test('W5, A3: exactly one Door43 write, one contents call on the default branch with every identified file and the plan\'s metadata.json, with the session\'s token only; the receipt\'s wrote is the plan\'s would_write', async () => {
     const files = [upload('41-MAT.usfm', mat), upload('books/GEN.usfm', GEN)];
@@ -269,6 +273,19 @@ describe('refused before any write', () => {
     const error = await failure(apply(made.id, files));
     expect(error).toMatchObject({ code: 'source_changed', details: { path: 'ingredients/MAT.usfm' } });
     expect(writes()).toEqual([]);
+  });
+
+  test('R5: a file that appeared at a path the plan creates is source_changed, and nothing is written', async () => {
+    const files = [upload('GEN.usfm', GEN)];
+    const made = await plan(files);
+    expect(storedPlan(made.id).payload.files[0]).toMatchObject({ path: 'ingredients/GEN.usfm', replaces_sha: null });
+    // Someone else added Genesis to the bound commit's tree after the plan read it.
+    state.trees.set(SHA, { ...tree, tree: [...tree.tree, { path: 'ingredients/GEN.usfm', type: 'blob', sha: 'e'.repeat(40) }] });
+    const error = await failure(apply(made.id, files));
+    expect(error).toMatchObject({ code: 'source_changed', details: { path: 'ingredients/GEN.usfm' } });
+    expect(writes()).toEqual([]);
+    expect(kv.entries.has(`attempt:${made.id}`)).toBe(false);
+    expect(kv.entries.has(`receipt:${made.id}`)).toBe(false);
   });
 
   test('Q33: a file whose bytes differ from the plan\'s, one the plan lists and was not sent, and one it does not list are refused naming each; only the account is read, and nothing is written', async () => {
@@ -465,5 +482,55 @@ describe('X1: a commit whose outcome is unknown is never sent again', () => {
       expect(await failure(apply(made.id, files))).toMatchObject({ code: 'commit_failed', details: { outcome: 'unknown' } });
       expect(writes()).toEqual([`POST ${REPO}/contents`]);
     }
+  });
+
+  test('A2, X1: after an unknown outcome, the repeated apply reads the push permission again first; lost, it is permission_denied before the branch is read, and nothing is written', async () => {
+    const files = [upload('GEN.usfm', GEN)];
+    const made = await plan(files);
+    state.commit = 'network';
+    expect(await failure(apply(made.id, files))).toMatchObject({ code: 'commit_failed', details: { outcome: 'unknown' } });
+    const before = sent.length;
+    state.writable = false;
+    state.commit = 'created';
+    const error = await failure(apply(made.id, files));
+    expect(error).toMatchObject({ code: 'permission_denied', details: PENDAU });
+    expect(sent.slice(before).map(request => `${request.method} ${request.path}`)).toEqual([`GET /api/v1/user`, `GET ${REPO}`]);
+    expect(writes()).toEqual([`POST ${REPO}/contents`]);
+    expect(kv.entries.has(`receipt:${made.id}`)).toBe(false);
+  });
+
+  test('X1, X3: a refusal the store will not record is logged as one line of non-secret fields, never the token or the files; the next apply reads it as unknown and writes nothing', async () => {
+    const files = [upload('GEN.usfm', GEN)];
+    const made = await plan(files);
+    const put = kv.put.bind(kv);
+    kv.put = async (key, value, options) => {
+      if (key.startsWith('plan:')) throw new Error(`KV unavailable for ${value}`);
+      return put(key, value, options);
+    };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    state.commit = 409;
+    expect(await failure(apply(made.id, files))).toMatchObject({ code: 'commit_failed', details: { outcome: 'failed', door43_status: 409 } });
+    expect(storedPlan(made.id).payload.commit).toBeUndefined();
+
+    expect(warn).toHaveBeenCalledOnce();
+    const text = String(warn.mock.calls[0]![0]);
+    expect(JSON.parse(text)).toEqual({
+      request_id: 'request-75',
+      operation: 'upload.apply',
+      event: 'commit_outcome_not_recorded',
+      plan_id: made.id,
+      owner: PENDAU.owner,
+      repo: PENDAU.repo,
+      outcome: 'failed',
+      door43_status: 409,
+      kind: 'Error',
+    });
+    for (const secret of ['door43-token', 'Pada mulanya', btoa(GEN), 'KV unavailable', 'GEN.usfm']) expect(text).not.toContain(secret);
+
+    // Fail closed: unrecorded, the refusal reads as unknown, and the unmoved branch is not written again (X1).
+    kv.put = put;
+    state.commit = 'created';
+    expect(await failure(apply(made.id, files))).toMatchObject({ code: 'commit_failed', details: { outcome: 'unknown' } });
+    expect(writes()).toEqual([`POST ${REPO}/contents`]);
   });
 });
