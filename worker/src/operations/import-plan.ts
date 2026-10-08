@@ -42,6 +42,7 @@ import { md5 } from '../model/md5';
 import { classifyProject, projectTypeFromFlavor } from '../model/project';
 import { textDiff } from '../model/text-diff';
 import { headerBook } from '../model/upload';
+import { MAX_UPLOAD_BYTES } from '../model/upload-paths';
 import type { OperationContext } from './context';
 import { signedIn } from './context';
 import { PLAN_SECONDS, newPlanId } from './plans';
@@ -264,6 +265,17 @@ export async function importPlan(input: ParsedInput<'import.plan'>, context: Ope
     throw fieldsFailed(
       missing.map(unit => ({ path: `units[${units.indexOf(unit)}]`, message: `${source.owner}/${source.repo} at ${quoted(source.revision)} has no ${unitName(unit)} (${unitPath(unit)})` })),
       { source: input.source, units: missing.map(unit => ({ id: unitId(unit), reason: 'not_in_source' })) },
+    );
+  }
+
+  // One commit carries at most MAX_UPLOAD_BYTES of files (Q15, Q22), measured from the sizes the archive declares before any
+  // file is inflated: a whole aligned Bible (E30) is imported in parts, as it is uploaded in batches.
+  const declared = new Map(sourceArchive.entries.map(entry => [entry.path, entry.size]));
+  const total = units.reduce((sum, unit) => sum + (declared.get(unitPath(unit)) ?? 0), 0);
+  if (total > MAX_UPLOAD_BYTES) {
+    throw fieldsFailed(
+      [{ path: 'units', message: `the chosen ${unitTerm(type)}s are ${total.toLocaleString('en-US')} bytes together, over the ${MAX_UPLOAD_BYTES.toLocaleString('en-US')} bytes one commit carries; choose fewer` }],
+      { source: input.source, total_bytes: total, limit_bytes: MAX_UPLOAD_BYTES },
     );
   }
 
