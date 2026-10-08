@@ -52,7 +52,7 @@ project
   coverage:          { present | null, target | null, scope: nt | ot | full | obs | unknown, basis: catalog | archive, units: [{ id, present }] }
   health:            { state, severity_raw, ref, checked_at, issue_count | null, issues: [{ code, rule | null, severity, title, details, suggestion }] | null, source: door43 }
   latest_full_release: { tag, version, sha, published_at, author } | null
-  release_health:    the health of the latest full release's tag, shaped as `health` (E28) | null   (null with no full release, and in a receipt, #146)
+  release_health:    the health of the latest full release's tag, shaped as `health` (E28) | null   (null with no full release, when the release cannot be read by its tag, when the release answer names another tag than the one checked, and in a receipt, #146)
   default_branch_head: { sha, committed_at } | null   (null for a repository without a commit: setup incomplete, or empty, E10)
   active_preparation: { id, state, version } | null
   setup:             { state: complete | incomplete, failed_step | null }
