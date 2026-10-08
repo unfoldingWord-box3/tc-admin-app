@@ -112,6 +112,25 @@ describe('the project view reads the full report', () => {
   });
 });
 
+describe('a creation\'s report survives a read made too early (bench round 2)', () => {
+  test('E45: the project just created stays a Bible with "Add books" and "Import books" when Door43\'s catalog has not read it yet, and the view says so', async () => {
+    const created = reportOf({ coverage: { present: 0, target: 27, scope: 'nt', basis: 'archive', units: [] }, latest_full_release: null });
+    render(<ProjectView project={created} />);
+    expect(screen.getByRole('button', { name: 'Add books' })).toBeTruthy();
+    const notYetRead = reportOf({
+      project_type: 'other',
+      metadata_format: 'none',
+      editability: { state: 'unsupported', reason: 'Door43 found no project metadata it recognizes. Release and editing are not available.' },
+      coverage: { present: null, target: null, scope: 'unknown', basis: 'catalog', units: [] },
+      latest_full_release: null,
+    });
+    await answerWhenSent('GET', READ, notYetRead);
+    expect(screen.getByRole('button', { name: 'Add books' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Import books' })).toBeTruthy();
+    expect(screen.getByText(/Door43's catalog has not read this project's latest change yet/)).toBeTruthy();
+  });
+});
+
 describe('the portfolio refreshes', () => {
   test('P3: "Refresh" reads portfolio.list again, and the list shows its age', async () => {
     render(<Portfolio account={{ login: 'tc-admin-qa', name: 'tC Admin QA' }} onFailure={() => {}} />);
