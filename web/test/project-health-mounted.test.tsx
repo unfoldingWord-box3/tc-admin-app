@@ -99,6 +99,17 @@ describe('#146: the project view lists its health findings without a release', (
     expect(within(branch).queryByRole('list')).toBeNull();
   });
 
+  test('#146: a receipt\'s health, of the commit it wrote, is headed by the default branch, never the commit hash; the heading counts what Door43 counted', async () => {
+    const commit = 'c'.repeat(40);
+    const section = await opened(reportOf({ health: { ...healthOf(commit, 'never_checked', null), severity_raw: null }, release_health: null }));
+    expect(within(section).getByRole('region', { name: 'Default branch, master' })).toBeTruthy();
+    expect(within(section).queryByText(new RegExp(`Default branch, ${commit}`))).toBeNull();
+    cleanup();
+
+    const counted = await opened(reportOf({ health: { ...healthOf('master', 'warning', [issueOf('ingredient_title_is_en', 'warning', 'Ingredient title is in English')]), issue_count: 3 } }));
+    expect(within(within(counted).getByRole('region', { name: 'Default branch, master' })).getByRole('heading', { level: 4 }).textContent).toBe('Default branch, master · Warning · 3 findings');
+  });
+
   test('#146: a project without a full release says there is no release to check; a report that did not read the release\'s health says so', async () => {
     const section = await opened(reportOf({ latest_full_release: null, release_health: null }));
     expect(within(section).getByText('No full release yet, so there is no release to check.')).toBeTruthy();

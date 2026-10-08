@@ -52,6 +52,8 @@ interface State {
   releaseHealth: unknown;
   /** Whether the catalog names a full release (E14); without one, no tag is read. */
   release: boolean;
+  /** The tag Door43's release answer names, when it is not the one asked for. */
+  releaseTag?: string;
 }
 
 const NOW = new Date('2026-10-08T12:00:00.000Z');
@@ -73,7 +75,7 @@ const fetch: Fetch = async url => {
     return typeof answer === 'number' ? new Response('', { status: answer }) : Response.json(answer);
   }
   if (pathname === `${REPO}/branches/master`) return state.branch === 404 ? new Response('', { status: 404 }) : Response.json({ ...branch, name: 'master', commit: { ...branch.commit, id: SHA } });
-  if (pathname === `${REPO}/releases/tags/v1.2`) return Response.json(release);
+  if (pathname === `${REPO}/releases/tags/v1.2`) return Response.json(state.releaseTag ? { ...release, tag_name: state.releaseTag } : release);
   return new Response('', { status: 404 });
 };
 
@@ -162,6 +164,13 @@ describe('project.read over the recorded Pendau project', () => {
     const report = await read();
     expect(report.release_health).toMatchObject({ state: 'door43_unavailable', ref: 'v1.2', issue_count: null, issues: null });
     expect(report.health).toMatchObject({ state: 'warning', issue_count: 28 });
+  });
+
+  test('#146: a release answer naming another tag than the catalog\'s has no release health, so no health is shown under another release (bench round 1 on #147)', async () => {
+    state.releaseTag = 'v1.3';
+    const report = await read();
+    expect(report.latest_full_release?.tag).toBe('v1.3');
+    expect(report.release_health).toBeNull();
   });
 
   test('#146: a project without a full release has no release health, and no tag\'s health check is read', async () => {

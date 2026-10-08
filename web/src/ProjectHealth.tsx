@@ -33,11 +33,13 @@ export function healthStatement(health: Pick<Health, 'state' | 'ref' | 'issues' 
 function HealthPart({ heading, health, origin }: { heading: string; health: Health; origin: string | null }) {
   const statement = healthStatement(health);
   const findings = health.issues ?? [];
+  // Door43's own count heads the list, so a list shorter than the count never under-reports (bench round 1 on #147).
+  const count = health.issue_count ?? findings.length;
   return (
     <section aria-label={heading}>
       <h4>
         {heading} · {healthLabel(health.state)}
-        {findings.length > 0 && ` · ${findings.length} ${findings.length === 1 ? 'finding' : 'findings'}`}
+        {count > 0 && ` · ${count} ${count === 1 ? 'finding' : 'findings'}`}
       </h4>
       {statement && <p className="muted">{statement}</p>}
       {findings.length > 0 && <HealthFindings issues={findings} gate="none" origin={origin} />}
@@ -58,7 +60,8 @@ export function ProjectHealth({ url, defaultBranch, health, release, releaseHeal
   return (
     <section className="project-health" aria-label="Health check">
       <h3>Health check</h3>
-      <HealthPart heading={`Default branch, ${health.ref ?? defaultBranch}`} health={health} origin={origin} />
+      {/* Named by the branch: a receipt's health is of the commit it wrote, whose ref is a commit hash (bench round 1 on #147). */}
+      <HealthPart heading={`Default branch, ${defaultBranch}`} health={health} origin={origin} />
       {release && releaseHealth && <HealthPart heading={`Latest release, ${release.tag}`} health={releaseHealth} origin={origin} />}
       {release && !releaseHealth && <p className="muted">The health check of the latest release, {release.tag}, was not read with this report. Refresh to read it.</p>}
       {!release && <p className="muted">No full release yet, so there is no release to check.</p>}

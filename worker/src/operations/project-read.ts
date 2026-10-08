@@ -83,7 +83,8 @@ export async function projectRead(input: ParsedInput<'project.read'>, context: O
     ...summary,
     health,
     latest_full_release: release,
-    release_health: release ? releaseHealth : null,
+    // The health shown is the shown release's: both are read by the catalog's tag, and a release by another tag gets none (bench round 1 on #147).
+    release_health: release && release.tag === releaseTag ? releaseHealth : null,
     default_branch_head: head,
     active_preparation: preparation,
     // A repository with no commit on its default branch is a setup that did not finish its first commit (W4), or an empty repository (E10).
