@@ -18,6 +18,7 @@ import { CREATE_HASH, retireCreated, withCreated } from './create-project';
 import { ProjectView } from './ProjectView';
 import { ReleaseStepper } from './ReleaseStepper';
 import { ReleaseView } from './ReleaseView';
+import { EDITABILITY_LABELS } from './labels';
 import { canOpen, coverageLabel, formatLabel, hashRef, healthLabel, projectHash, typeLabel } from './portfolio-labels';
 
 type PortfolioList = OperationOutput<'portfolio.list'>;
@@ -139,7 +140,7 @@ function ProjectRow({ project }: { project: ProjectSummary }) {
           <div className="facts">Health: {healthLabel(project.health.state)}</div>
         ) : (
           <div className="reason">
-            <span className="badge">Unsupported</span> {project.editability.reason}
+            <span className="badge">{EDITABILITY_LABELS[project.editability.state]}</span> {project.editability.reason}
           </div>
         )}
       </div>

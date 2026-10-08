@@ -5,13 +5,13 @@
 
 import type { Coverage, HealthState, MetadataFormat, ProjectSummary, ProjectType } from '@tc-admin/shared/schema';
 
-const TYPE_LABELS: Readonly<Record<ProjectType, string>> = {
+export const TYPE_LABELS: Readonly<Record<ProjectType, string>> = {
   bible: 'Bible',
   obs: 'Open Bible Stories',
   other: 'Other type',
 };
 
-const FORMAT_LABELS: Readonly<Record<MetadataFormat, string>> = {
+export const FORMAT_LABELS: Readonly<Record<MetadataFormat, string>> = {
   sb: 'Scripture Burrito',
   rc: 'Resource Container',
   ts: 'translationStudio',
@@ -20,7 +20,7 @@ const FORMAT_LABELS: Readonly<Record<MetadataFormat, string>> = {
 };
 
 /** The health states of product spec §5. */
-const HEALTH_LABELS: Readonly<Record<HealthState, string>> = {
+export const HEALTH_LABELS: Readonly<Record<HealthState, string>> = {
   healthy: 'Healthy',
   info: 'Information',
   warning: 'Warning',
@@ -32,12 +32,12 @@ const HEALTH_LABELS: Readonly<Record<HealthState, string>> = {
   unsupported: 'Unsupported project type',
 };
 
-const SCOPE_LABELS: Readonly<Record<Coverage['scope'], string>> = {
+export const SCOPE_LABELS: Readonly<Record<Coverage['scope'], string>> = {
   nt: 'New Testament',
   ot: 'Old Testament',
   full: 'Old and New Testament',
   obs: 'Open Bible Stories',
-  unknown: '',
+  unknown: 'Scope unknown',
 };
 
 export const typeLabel = (type: ProjectType) => TYPE_LABELS[type];

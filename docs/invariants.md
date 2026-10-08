@@ -114,7 +114,7 @@ Issues: #19, #25.
 Every health state is conveyed with text or an icon in addition to color.
 Source: product spec §5; architecture §8; roadmap Milestone 3 accessibility epic.
 Enforced in: `web` health components (label map is the source of visible text).
-Verified by: component test that every health state renders a visible label; Milestone 3 WCAG audit. So far: the `H4` tests in `web/test/health-findings.test.ts` (each finding's severity is an icon of its own shape and a word, Error, Warning, or Information, and a blocked release's summary says so in words, #124).
+Verified by: component test that every health state renders a visible label; Milestone 3 WCAG audit. So far: the `H4` tests in `web/test/health-findings.test.ts` (each finding's severity is an icon of its own shape and a word, Error, Warning, or Information, and a blocked release's summary says so in words, #124). Every health state has words of its own, and each project row in the portfolio shows them: the `H4` tests in `web/test/labels.test.ts` and `web/test/health-words-mounted.test.tsx` (#8).
 Issues: #8, #25, #50.
 
 ### H5 — Coverage is file coverage
