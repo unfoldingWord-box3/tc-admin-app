@@ -66,7 +66,13 @@ export function Portfolio({ account, onFailure }: Props) {
   const open = wanted && projects.find(project => project.ref.owner === wanted.owner && project.ref.repo === wanted.repo && canOpen(project));
   // Keyed by the release's identity: a change of tag mounts a fresh page, so no lookup, alert, or late answer of another release survives it.
   if (open && wanted.view === 'tag') return <ReleaseView key={`${open.ref.owner}/${open.ref.repo}/${wanted.tag}`} project={open} tag={wanted.tag} onFailure={onFailure} />;
-  if (open) return wanted.view === 'release' ? <ReleaseStepper project={open} onFailure={onFailure} /> : <ProjectView project={open} />;
+  // The stepper, or the stepper at one preparation (#125): keyed by the preparation the address named when it opened, so another one opens fresh,
+  // while the stepper's own address updates (which replace the address without a hashchange) keep it mounted.
+  if (open && (wanted.view === 'release' || wanted.view === 'preparation')) {
+    const preparation = wanted.view === 'preparation' ? wanted.preparation : null;
+    return <ReleaseStepper key={`${open.ref.owner}/${open.ref.repo}/${preparation ?? ''}`} project={open} preparationId={preparation} onFailure={onFailure} />;
+  }
+  if (open) return <ProjectView project={open} onFailure={onFailure} />;
 
   if (hash === CREATE_HASH) {
     if (!portfolio) return <p>Loading your projects…</p>;
