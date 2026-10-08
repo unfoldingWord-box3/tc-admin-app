@@ -321,6 +321,7 @@ web/
   src/ReleaseStepper.tsx, src/release-stepper.ts  the release stepper: one operation per step, the selection from the plan's defaults, the health poll, the warnings acknowledged, the release and its promotion, the discard; its logic as pure functions (#41); on opening, the preparations under way to continue or discard, a preparation's own address, and the preparation a preparation_active refusal names (#125)
   src/preparations.ts  which preparations are under way and which finished, their words, a preparation's address and links, the preparation a refusal names, as pure functions (#125)
   src/ProjectView.tsx  one project's report, shown from the portfolio and after creation; from the portfolio, its release preparations, each with a link and the discard (#125)
+  src/HealthFindings.tsx, src/health-findings.ts, src/door43-text.ts  Door43's health findings: the summary when a release is blocked or a warning needs confirmation, each finding's severity as an icon and a word (H4), errors first; Door43's bold, code, and links rendered from tokens, never inserted as HTML (H1, #124)
   test/
 fixtures/
   door43/            recorded responses and archives, each with host, ref, and date (ADR 0012)

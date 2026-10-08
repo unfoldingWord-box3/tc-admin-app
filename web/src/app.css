@@ -3,6 +3,19 @@
   --uw-ocean: #014263;
   --text-body: #231f20;
   --surface-app: #f5f8fa;
+  /* Status tones, copied from the translationCore 4 design system (src/ds/tokens/colors.css, border.css, tone.css) ahead of #8. */
+  --uw-black: #231f20;
+  --uw-kindle: #e59d33;
+  --uw-inspire-50: #eaf6fc;
+  --uw-mist: #d9e2e8;
+  --uw-frost: #ecf2f5;
+  --uw-slate: #4f5e6a;
+  --tc-invalid: #a21309;
+  --tc-invalid-surface: #faedeb;
+  --border-danger: rgba(162, 19, 9, 0.35);
+  --tc-warn-surface: #fcf6ea;
+  --tc-warn-border: rgba(229, 157, 51, 0.45);
+  --tc-warn-text: #8a5b12;
   font-family: system-ui, sans-serif;
   color: var(--text-body);
   background: var(--surface-app);
@@ -68,6 +81,26 @@ code { font-size: 0.95em; }
 .choice.inline { display: inline-flex; align-items: center; gap: 4px; margin-right: 16px; }
 .meanings { font-size: 14px; }
 .meanings div { display: contents; }
-.issues { padding-left: 20px; font-size: 14px; }
-.issues li + li { margin-top: 8px; }
+/* Door43's health-check findings (#124): one tone per severity, as the design system's tone slots
+   (invalid, warn, ocean, neutral); each also has its own icon shape and word, never color alone (H4). */
+[data-severity='error'] { --tone: var(--tc-invalid); --tone-on-fill: #fff; --tone-soft: var(--tc-invalid-surface); --tone-text: var(--tc-invalid); --tone-border: var(--border-danger); }
+[data-severity='warning'] { --tone: var(--uw-kindle); --tone-on-fill: var(--uw-black); --tone-soft: var(--tc-warn-surface); --tone-text: var(--tc-warn-text); --tone-border: var(--tc-warn-border); }
+[data-severity='info'] { --tone: var(--uw-ocean); --tone-on-fill: #fff; --tone-soft: var(--uw-inspire-50); --tone-text: var(--uw-ocean); --tone-border: var(--uw-ocean); }
+[data-severity='other'] { --tone: var(--uw-slate); --tone-on-fill: #fff; --tone-soft: var(--uw-frost); --tone-text: var(--uw-slate); --tone-border: var(--uw-mist); }
+.health-findings { margin: 16px 0; }
+.health-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--tone-border); border-left: 4px solid var(--tone); background: var(--tone-soft); color: var(--tone-text); }
+.health-summary > strong { flex: 1 1 240px; }
+.findings { list-style: none; margin: 12px 0 0; padding: 0; font-size: 14px; }
+.finding { padding: 12px 16px; border-radius: 12px; background: #fff; border: 1px solid var(--uw-mist); border-left: 4px solid var(--tone); overflow-wrap: anywhere; }
+.finding + .finding { margin-top: 8px; }
+.finding p { margin: 0; }
+.finding p + p { margin-top: 6px; }
+.finding-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.severity-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 8px 2px 4px; background: var(--tone-soft); color: var(--tone-text); border: 1px solid var(--tone-border); }
+.severity-icon { flex: none; }
+.severity-icon .shape { fill: var(--tone); }
+.severity-icon .mark { fill: var(--tone-on-fill); }
+.severity-icon .mark-line { stroke: var(--tone-on-fill); stroke-width: 1.8; stroke-linecap: round; fill: none; }
+.finding-label { color: #5b6770; font-weight: 600; }
+.finding code { background: var(--uw-frost); border-radius: 4px; padding: 0 4px; }
 .stepper textarea { width: 100%; max-width: 640px; font: inherit; }

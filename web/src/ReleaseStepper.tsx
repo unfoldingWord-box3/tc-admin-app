@@ -16,6 +16,8 @@ import { HEALTH_POLL } from '@tc-admin/shared/schema';
 import type { Preparation, ProjectSummary, SelectionState } from '@tc-admin/shared/schema';
 import { ApiError, callOperation, failureMessage } from './api/client';
 import { WRITE_LABELS } from './create-project';
+import { HealthFindings, door43Origin } from './HealthFindings';
+import { findingsGate } from './health-findings';
 import { healthLabel, projectHash, releaseHash, releaseTagHash } from './portfolio-labels';
 import { activePreparations, activeSummary, preparationHash, refusedFor, withAnswer } from './preparations';
 import {
@@ -522,30 +524,18 @@ export function ReleaseStepper({ project, preparationId = null, onFailure }: Pro
               </table>
             </details>
           )}
-          {preparation.health.issues && preparation.health.issues.length > 0 && (
-            <ul className="issues" aria-label="Health check findings">
-              {preparation.health.issues.map((issue, index) => (
-                <li key={`${issue.code}-${index}`}>
-                  <strong>{issue.title}</strong> <span className="muted">· {issue.severity}</span>
-                  <br />
-                  {issue.details}
-                </li>
-              ))}
-            </ul>
-          )}
+          <HealthFindings issues={preparation.health.issues} gate={findingsGate(preparation)} origin={door43Origin(project.ref.url)}>
+            {preparation.state === 'health_blocked' && (
+              <button type="button" className="secondary" onClick={() => void read(preparation.id)} disabled={busy !== null}>
+                Check again
+              </button>
+            )}
+          </HealthFindings>
           {gate === 'checking' && (
             <p className="actions">
               <span>Door43 is checking the snapshot. This usually takes a few seconds.</span>
               <button type="button" className="secondary" onClick={() => void read(preparation.id)} disabled={busy !== null}>
                 Refresh
-              </button>
-            </p>
-          )}
-          {preparation.state === 'health_blocked' && (
-            <p className="actions">
-              <span>The release is blocked until the health check passes.</span>
-              <button type="button" className="secondary" onClick={() => void read(preparation.id)} disabled={busy !== null}>
-                Check again
               </button>
             </p>
           )}
