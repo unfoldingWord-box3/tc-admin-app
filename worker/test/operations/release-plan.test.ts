@@ -30,6 +30,9 @@ class MemoryKV implements KVNamespace {
   async delete(key: string) {
     this.entries.delete(key);
   }
+  async list(options: { prefix: string }) {
+    return { keys: [...this.entries.keys()].filter(name => name.startsWith(options.prefix)).map(name => ({ name })), list_complete: true };
+  }
 }
 
 /** A Door43 of recorded answers: the repository (writable unless said otherwise), its entries by ref, and its trees by SHA. */

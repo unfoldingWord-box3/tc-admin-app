@@ -20,7 +20,7 @@ const pendau = recorded<object>('2026-09-21/releases/bahtraku__Perjanjian-Baru-P
 const probe = recorded<object>('2026-09-22/probe-write/14-lookup-by-tag.json');
 const afterDelete = recorded<object>('2026-09-22/probe-write/16-lookup-after-delete.json');
 
-const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {} };
+const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {}, list: async () => ({ keys: [], list_complete: true }) };
 const context = (fetch: Fetch, token: string | null = 'door43-token'): OperationContext => {
   const base = operationContext({ door43Origin: 'https://qa.door43.org', door43ClientId: 'id' }, 'request-1', token, noPlans);
   return { ...base, door43: base.door43 ? { ...base.door43, fetch } : null };

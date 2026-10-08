@@ -24,7 +24,7 @@ const noMatch = body('2026-10-07/owners/list-owners__nomatch.json');
 /** QA, 7 October 2026 (E61): `owner=a`, every one of 1,656 owners in one answer whatever `limit` and `page` say; reduced to `login` and `full_name`. */
 const everyA = body<{ data: { login: string }[] }>('2026-10-07/owners/list-owners__a__partialMatch__login-fullname.json.gz');
 
-const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {} };
+const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {}, list: async () => ({ keys: [], list_complete: true }) };
 const NOW = new Date('2026-10-07T12:00:00.000Z');
 let calls: string[];
 let pages: unknown[][];

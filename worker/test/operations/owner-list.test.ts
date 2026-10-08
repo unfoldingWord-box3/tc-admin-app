@@ -15,7 +15,7 @@ const recorded = <T>(path: string): T => (JSON.parse(readFileSync(new URL(path, 
 const user = recorded<{ id: number; login: string }>('2026-10-05/user/user.json');
 const teams = recorded<unknown[]>('2026-10-05/user/user__teams.json');
 
-const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {} };
+const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delete: async () => {}, list: async () => ({ keys: [], list_complete: true }) };
 const NOW = new Date('2026-10-06T21:00:00.000Z');
 let calls: string[] = [];
 let pages: unknown[][] = [teams];
