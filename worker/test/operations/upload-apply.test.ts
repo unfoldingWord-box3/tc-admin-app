@@ -499,12 +499,45 @@ describe('X1: a commit whose outcome is unknown is never sent again', () => {
     expect(kv.entries.has(`receipt:${made.id}`)).toBe(false);
   });
 
-  test('X1, X3: a refusal the store will not record is logged as one line of non-secret fields, never the token or the files; the next apply reads it as unknown and writes nothing', async () => {
+  test('X1: a refusal the plan\'s record will not take is kept on the attempt; a branch that later holds the planned blobs is not adopted but source_changed, and on the bound head the plan commits once', async () => {
     const files = [upload('GEN.usfm', GEN)];
     const made = await plan(files);
     const put = kv.put.bind(kv);
     kv.put = async (key, value, options) => {
-      if (key.startsWith('plan:')) throw new Error(`KV unavailable for ${value}`);
+      if (key.startsWith('plan:')) throw new Error('KV unavailable');
+      return put(key, value, options);
+    };
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    state.commit = 409;
+    expect(await failure(apply(made.id, files))).toMatchObject({ code: 'commit_failed', details: { outcome: 'failed', door43_status: 409 } });
+    expect(storedPlan(made.id).payload.commit).toBeUndefined();
+    const attempt = JSON.parse(kv.entries.get(`attempt:${made.id}`)!.value) as { stored: StoredPlan<UploadApplyPayload>; attempted_at: string };
+    expect(attempt.stored.payload.commit).toEqual({ outcome: 'failed', door43_status: 409, attempted_at: attempt.attempted_at });
+    kv.put = put;
+
+    const metadata = decode64(contentsCall().files.find(file => file.path === 'metadata.json')!.content);
+    const landed = new Map([['ingredients/GEN.usfm', await gitBlobSha(GEN)], ['metadata.json', await gitBlobSha(metadata)]]);
+    const after = { ...tree, sha: MOVED, tree: [...tree.tree.map(entry => (landed.has(entry.path) ? { ...entry, sha: landed.get(entry.path)! } : entry)), { path: 'ingredients/GEN.usfm', type: 'blob', sha: landed.get('ingredients/GEN.usfm')! }] };
+    state.head = MOVED;
+    state.trees.set(MOVED, after);
+    expect(await failure(apply(made.id, files))).toMatchObject({ code: 'source_changed', details: { bound: SHA, head: MOVED } });
+    expect(kv.entries.has(`receipt:${made.id}`)).toBe(false);
+    expect(writes()).toEqual([`POST ${REPO}/contents`]);
+
+    state.head = SHA;
+    state.commit = 'created';
+    clock = new Date('2026-10-08T12:01:00.000Z');
+    expect((await apply(made.id, files)).wrote).toHaveLength(1);
+    expect(writes()).toEqual([`POST ${REPO}/contents`, `POST ${REPO}/contents`]);
+  });
+
+  test('X1, X3: a refusal the store will record nowhere is logged as one line of non-secret fields, never the token or the files; the next apply reads it as unknown and writes nothing', async () => {
+    const files = [upload('GEN.usfm', GEN)];
+    const made = await plan(files);
+    const put = kv.put.bind(kv);
+    let attempts = 0;
+    kv.put = async (key, value, options) => {
+      if (key.startsWith('plan:') || (key.startsWith('attempt:') && attempts++ > 0)) throw new Error(`KV unavailable for ${value}`);
       return put(key, value, options);
     };
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -523,7 +556,7 @@ describe('X1: a commit whose outcome is unknown is never sent again', () => {
       repo: PENDAU.repo,
       outcome: 'failed',
       door43_status: 409,
-      kind: 'Error',
+      not_recorded: [{ record: 'plan', kind: 'Error' }, { record: 'attempt', kind: 'Error' }],
     });
     for (const secret of ['door43-token', 'Pada mulanya', btoa(GEN), 'KV unavailable', 'GEN.usfm']) expect(text).not.toContain(secret);
 
