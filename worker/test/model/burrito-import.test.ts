@@ -107,7 +107,7 @@ describe('E24, W1: an import adds one source relationship and the dcs authority,
     }
   });
 
-  test('Q34, W1: an Open Bible Stories import validates only with the custom flavor, since the schema allows a source no story flavor; the project\'s own flavor is refused', () => {
+  test('Q34, W1: an Open Bible Stories import carries x-textStories, decided 8 October 2026, since the schema allows a source no story flavor; textStories and glossedTextStory are refused', () => {
     const story = encode('# 1. Penciptaan\n');
     const { metadata, relationships } = mergeImportMetadata(obsProject(), [identified('1.md', story, 'obs')], { owner: 'unfoldingWord', repo: 'en_obs', revision: 'v9' });
     expect(relationships).toEqual([{ id: 'dcs::unfoldingWord/en_obs', relationType: 'source', flavor: SOURCE_RELATIONSHIP_FLAVOR.obs, revision: 'v9' }]);

@@ -306,8 +306,9 @@ export interface SourceRelationship {
  * allows a `source` only `textTranslation` or `audioTranslation`, or a custom
  * `x-` flavor, so a Bible's is its own flavor and an Open Bible Stories project's
  * is the custom spelling of its flavor: the schema names no story flavor a source
- * may carry, and tC Admin writes only what the schema accepts (W1). Built behind
- * the catalog's "the project's flavor", for Rich to confirm or change (Q34, #79).
+ * may carry, and tC Admin writes only what the schema accepts (W1). Decided
+ * 8 October 2026 by Rich (Q34, #79): the custom spelling, until upstream admits
+ * the story flavor for a source.
  */
 export const SOURCE_RELATIONSHIP_FLAVOR: Readonly<Record<CreatableProjectType, string>> = { bible: 'textTranslation', obs: 'x-textStories' };
 

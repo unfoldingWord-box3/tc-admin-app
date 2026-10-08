@@ -328,7 +328,7 @@ describe('contract: stories from the recorded en_obs v9 archive into an Open Bib
     expect(plan.preview.metadata_diff.ingredients).toHaveLength(50);
   });
 
-  test('Q34: the source relationship of an Open Bible Stories import carries the custom flavor the relationship schema accepts, built behind for Rich', async () => {
+  test('Q34: the source relationship of an Open Bible Stories import carries x-textStories, the custom flavor the relationship schema accepts (decided 8 October 2026)', async () => {
     const { fetch } = door43();
     const plan = await importPlan(fromEnObs(['01']), context(fetch));
     expect(plan.preview.metadata_diff.relationships).toEqual([{ id: 'dcs::unfoldingWord/en_obs', relationType: 'source', flavor: 'x-textStories', revision: 'v9' }]);
