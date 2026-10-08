@@ -17,4 +17,4 @@
 | `26-GET-catalog_entry_master.json` | the catalog entry: `is_valid: true`, `healthcheck_severity: info`, books `exo` and `gen` |
 | `summary.json` | the run's summary |
 
-Every `authorization` header is `token [redacted]` and every `email` is `[redacted]`. Nothing was written to `bahtraku/id_tb1`: every request to it is a `GET`.
+Every `authorization` header is `token [redacted]` and every `email` is `[redacted]`. In the two `POST-…contents` recordings the request body and, in the answer, each committed file's base64 `content` are replaced by notes with their lengths (the files are the archive's, E18; their sizes and md5s are in `metadata-after.json`). Nothing was written to `bahtraku/id_tb1`: every request to it is a `GET`.

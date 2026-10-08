@@ -102,6 +102,10 @@ const recording = async (url, init = {}) => {
       json = { unparsed: text.slice(0, 2000) };
     }
     if (json && typeof json === 'object' && typeof json.email === 'string' && json.email) json.email = '[redacted]';
+    // The contents endpoint answers with every committed file's base64: not evidence, and it crowds the review packet (E31 has the sizes).
+    if (json && typeof json === 'object' && Array.isArray(json.files)) {
+      for (const file of json.files) if (file && typeof file.content === 'string') file.content = `[${file.content.length} base64 characters omitted: the file as committed; its size and md5 are in metadata-after.json]`;
+    }
   }
   const method = init.method || 'GET';
   let body = init.body === undefined ? undefined : String(init.body);

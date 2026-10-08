@@ -297,6 +297,18 @@ describe('X1: a commit whose outcome is unknown is never sent again', () => {
     expect(sent.map(request => request.path)).toEqual(['/api/v1/user']);
   });
 
+  test('X1: after a lost answer on an unmoved branch, the source is not read either: the outcome stays unknown, nothing is sent', async () => {
+    const made = await plan();
+    state.commit = 'network';
+    await failure(apply(made.id));
+    state.sourceArchive = 404;
+    sent = [];
+    const again = await failure(apply(made.id));
+    expect(again).toMatchObject({ code: 'commit_failed', details: { outcome: 'unknown' } });
+    expect(sourceRequests()).toEqual([]);
+    expect(writes()).toEqual([]);
+  });
+
   test('X1: a landed commit whose answer was lost is adopted from the blob ids the attempt recorded, with the source no longer served and nothing written', async () => {
     const made = await plan();
     state.commit = 'network';
