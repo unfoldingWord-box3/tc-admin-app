@@ -3,7 +3,9 @@
 // apply's idempotency key (operations.md §1 rule 6), and the apply reads it
 // back, refuses it once expired or made by another account (`plan_expired`),
 // and stores its receipt under the same id so a repeated apply answers the
-// same receipt and writes nothing more.
+// same receipt and writes nothing more. A creation records its attempt in a
+// key of its own before it creates the repository, and the retry of its first
+// commit stores its receipt in another (Q29, #31).
 
 import type { KVNamespace } from '../env';
 
@@ -25,6 +27,17 @@ export interface StoredReceipt<Receipt = unknown> {
   account: string;
 }
 
+/**
+ * What `project.create.apply` records under its plan id just before it asks Door43
+ * to create the repository, in a key of its own (decided 6 October 2026 by Rich,
+ * Q29): the plan as it stood and when the attempt began, so the retry (#31) can
+ * tell a repository this attempt created from one someone else did.
+ */
+export interface StoredAttempt<Payload = unknown> {
+  stored: StoredPlan<Payload>;
+  attempted_at: string;
+}
+
 /** A preparation is kept while its temporary branch may exist: thirty days. */
 export const PREPARATION_SECONDS = 30 * 24 * 60 * 60;
 
@@ -33,6 +46,12 @@ export interface PlanStore {
   putPlan(stored: StoredPlan, ttlSeconds?: number): Promise<void>;
   getReceipt<Receipt = unknown>(planId: string): Promise<StoredReceipt<Receipt> | null>;
   putReceipt(planId: string, stored: StoredReceipt, ttlSeconds?: number): Promise<void>;
+  /** The creation attempt of a plan (Q29), kept a day like the receipt. */
+  getAttempt<Payload = unknown>(planId: string): Promise<StoredAttempt<Payload> | null>;
+  putAttempt(planId: string, attempt: StoredAttempt, ttlSeconds?: number): Promise<void>;
+  /** The receipt of `project.create.retry` for a plan, so a repeated retry answers it and writes nothing (§1 rule 6). */
+  getRetryReceipt<Receipt = unknown>(planId: string): Promise<StoredReceipt<Receipt> | null>;
+  putRetryReceipt(planId: string, stored: StoredReceipt, ttlSeconds?: number): Promise<void>;
   /** The addressable preparation of a project (operations.md §2), by its id, the version it was created with. */
   getPreparation<Preparation = unknown>(owner: string, repo: string, id: string): Promise<Preparation | null>;
   putPreparation(owner: string, repo: string, id: string, preparation: unknown, ttlSeconds?: number): Promise<void>;
@@ -42,6 +61,8 @@ export const newPlanId = (): string => crypto.randomUUID();
 
 const planKey = (id: string) => `plan:${id}`;
 const receiptKey = (id: string) => `receipt:${id}`;
+const attemptKey = (id: string) => `attempt:${id}`;
+const retryReceiptKey = (id: string) => `retry-receipt:${id}`;
 const preparationKey = (owner: string, repo: string, id: string) => `preparation:${owner.toLowerCase()}/${repo}/${id}`;
 
 function parse<T>(stored: string | null): T | null {
@@ -66,6 +87,18 @@ export function planStore(kv: KVNamespace): PlanStore {
     },
     async putReceipt(planId, stored, ttlSeconds = RECEIPT_SECONDS) {
       await kv.put(receiptKey(planId), JSON.stringify(stored), { expirationTtl: ttlSeconds });
+    },
+    async getAttempt(planId) {
+      return parse(await kv.get(attemptKey(planId)));
+    },
+    async putAttempt(planId, attempt, ttlSeconds = RECEIPT_SECONDS) {
+      await kv.put(attemptKey(planId), JSON.stringify(attempt), { expirationTtl: ttlSeconds });
+    },
+    async getRetryReceipt(planId) {
+      return parse(await kv.get(retryReceiptKey(planId)));
+    },
+    async putRetryReceipt(planId, stored, ttlSeconds = RECEIPT_SECONDS) {
+      await kv.put(retryReceiptKey(planId), JSON.stringify(stored), { expirationTtl: ttlSeconds });
     },
     async getPreparation(owner, repo, id) {
       return parse(await kv.get(preparationKey(owner, repo, id)));

@@ -12,11 +12,14 @@
 // refuses is shown and cannot be chosen (Q30). The project type is asked once,
 // right after the owner (W3). The Bible's translation details are shown with
 // the defaults preselected (Q4); Open Bible Stories has no testament scope and
-// is abbreviated OBS unless the manager says otherwise (#82).
+// is abbreviated OBS unless the manager says otherwise (#82). A receipt whose
+// setup is incomplete offers `project.create.retry`, whose receipt replaces it
+// (W4, #31); a taken name after an apply of the same plan that got no answer
+// offers the same retry, which adopts the repository only under Q29's rule.
 
 import { useCallback, useEffect, useId, useState } from 'react';
 import type { FormEvent } from 'react';
-import type { OperationOutput, ProjectReport } from '@tc-admin/shared/schema';
+import type { OperationInput, OperationOutput, ProjectReport } from '@tc-admin/shared/schema';
 import { ApiError, callOperation, failureMessage } from './api/client';
 import {
   DETAIL_LABELS,
@@ -25,13 +28,18 @@ import {
   LICENSE_LABEL,
   TESTAMENT_SCOPE_LABELS,
   WRITE_LABELS,
+  applyFailure,
   fieldErrors,
   initialOwner,
   languageLabel,
   missing,
   newForm,
+  outcomeUnknown,
   planInput,
+  receiptSummary,
+  reconcileText,
   repositoryNameOf,
+  retryInput,
   searchLanguages,
   tagRefused,
   withProjectType,
@@ -75,6 +83,9 @@ export function CreateProject({ onCreated, onFailure }: Props) {
   const plan = planned?.plan ?? null;
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [busy, setBusy] = useState(false);
+  // An apply of this plan ended without knowing what Door43 did (X1), and then a taken name to reconcile by the retry (Q29).
+  const [unknownOutcome, setUnknownOutcome] = useState(false);
+  const [reconcile, setReconcile] = useState(false);
 
   // A session Door43 no longer accepts is the shell's to report; every other failure is this form's.
   const expired = useCallback(
@@ -128,6 +139,12 @@ export function CreateProject({ onCreated, onFailure }: Props) {
   };
 
   const fieldsOf = (failure: unknown) => (failure instanceof ApiError ? fieldErrors(failure.error) : null);
+  const errorOf = (failure: unknown) => (failure instanceof ApiError ? failure.error : null);
+  const newPlan = (next: { plan: Plan; form: Form } | null) => {
+    setPlanned(next);
+    setUnknownOutcome(false);
+    setReconcile(false);
+  };
 
   const review = async (event: FormEvent) => {
     event.preventDefault();
@@ -138,7 +155,7 @@ export function CreateProject({ onCreated, onFailure }: Props) {
     setProblem(null);
     try {
       const submitted = form;
-      setPlanned({ plan: await callOperation('project.create.plan', planInput({ ...submitted, language: form.language })), form: submitted });
+      newPlan({ plan: await callOperation('project.create.plan', planInput({ ...submitted, language: form.language })), form: submitted });
     } catch (failure) {
       if (!expired(failure)) {
         const fields = fieldsOf(failure);
@@ -160,11 +177,39 @@ export function CreateProject({ onCreated, onFailure }: Props) {
       onCreated(result.result);
     } catch (failure) {
       if (!expired(failure)) {
-        const fields = fieldsOf(failure);
+        const next = applyFailure(errorOf(failure), unknownOutcome);
+        // A taken name that may be the repository the earlier apply created: the retry reconciles it (Q29).
+        if (next === 'reconcile') setReconcile(true);
         // The owner's right or the name changed since the plan: back to the form, at the field (A2).
-        if (fields) {
+        else if (next === 'field') {
+          setErrors(fieldsOf(failure) ?? {});
+          newPlan(null);
+        } else {
+          setProblem(failureMessage(failure));
+          if (outcomeUnknown(errorOf(failure))) setUnknownOutcome(true);
+        }
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // The first commit again, from the plan the apply kept (#31); its receipt replaces the one shown.
+  const retrySetup = async (input: OperationInput<'project.create.retry'>) => {
+    setBusy(true);
+    setProblem(null);
+    try {
+      const result = await callOperation('project.create.retry', input);
+      setReceipt(result);
+      setReconcile(false);
+      onCreated(result.result);
+    } catch (failure) {
+      if (!expired(failure)) {
+        const fields = fieldsOf(failure);
+        // Not this plan's repository after all (Q29): the name is taken, and the form says so at the abbreviation.
+        if (!receipt && errorOf(failure)?.code === 'name_taken' && fields) {
           setErrors(fields);
-          setPlanned(null);
+          newPlan(null);
         } else setProblem(failureMessage(failure));
       }
     } finally {
@@ -173,23 +218,26 @@ export function CreateProject({ onCreated, onFailure }: Props) {
   };
 
   if (receipt) {
-    const incomplete = receipt.result.setup.state === 'incomplete';
+    const summary = receiptSummary(receipt);
+    const retry = retryInput(receipt);
     return (
       <section>
-        <h2>{incomplete ? 'Setup incomplete' : 'Project created'}</h2>
+        <h2>{summary.heading}</h2>
         {receipt.warnings.map(warning => (
           <p role="alert" key={warning.code}>
             {warning.message}
           </p>
         ))}
-        <p>
-          {incomplete
-            ? 'The repository exists on Door43, and its first commit failed or could not be confirmed. tC Admin cannot retry it yet, so the project shows as setup incomplete.'
-            : 'Door43 has the repository and its first commit. It can take Door43 a few seconds to list the new project.'}
-        </p>
-        <p className="muted">Written: {receipt.wrote.map(write => `${WRITE_LABELS[write.kind]} ${write.target}`).join(' · ')}</p>
+        {problem && <p role="alert">{problem}</p>}
+        <p>{summary.text}</p>
+        {receipt.wrote.length > 0 && <p className="muted">Written: {receipt.wrote.map(write => `${WRITE_LABELS[write.kind]} ${write.target}`).join(' · ')}</p>}
         <ProjectView project={receipt.result} />
         <p className="actions">
+          {retry && (
+            <button type="button" onClick={() => void retrySetup(retry)} disabled={busy}>
+              {busy ? 'Retrying the first commit…' : 'Retry the first commit'}
+            </button>
+          )}
           <a className="button" href={projectHash(receipt.result)}>
             Open the project
           </a>
@@ -258,16 +306,23 @@ export function CreateProject({ onCreated, onFailure }: Props) {
             {warning.message}
           </p>
         ))}
+        {reconcile && <p role="alert">{reconcileText(submitted.owner, plan.preview.repo_name)}</p>}
         <div className="actions">
-          <button type="button" onClick={() => void create()} disabled={busy}>
-            {busy ? 'Creating the project…' : 'Create the project'}
-          </button>
+          {reconcile ? (
+            <button type="button" onClick={() => void retrySetup({ owner: submitted.owner, repo: plan.preview.repo_name, plan_id: plan.id })} disabled={busy}>
+              {busy ? 'Retrying the first commit…' : 'Retry the first commit'}
+            </button>
+          ) : (
+            <button type="button" onClick={() => void create()} disabled={busy}>
+              {busy ? 'Creating the project…' : 'Create the project'}
+            </button>
+          )}
           <button
             type="button"
             className="secondary"
             disabled={busy}
             onClick={() => {
-              setPlanned(null);
+              newPlan(null);
               setProblem(null);
             }}
           >

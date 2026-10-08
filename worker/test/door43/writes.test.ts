@@ -8,7 +8,7 @@ import { bytesToBase64, writeDoor43 } from '../../src/door43/api';
 import type { Door43Client, Fetch } from '../../src/door43/api';
 import { door43Host } from '../../src/door43/host';
 import * as writes from '../../src/door43/writes';
-import { commitFiles, createRepository } from '../../src/door43/writes';
+import { commitFiles, createRepository, readRepositoryState } from '../../src/door43/writes';
 
 const fixtures = new URL('../../../fixtures/door43/qa.door43.org/2026-09-22/probe-write/', import.meta.url);
 const recorded = <T>(name: string): { request: { body?: string }; response: { status: number; json: T } } => JSON.parse(readFileSync(new URL(name, fixtures), 'utf8'));
@@ -221,5 +221,27 @@ describe('a commit that deletes a file (E55)', () => {
     });
     expect(commit.sha).toBe('ad7c29a9ea1ba6e6fc4da6f67fbbdf84da2b5fb7');
     expect(commit.files).toEqual([{ path: 'metadata.json', sha: '91baa09de40914344e92dccbacf85d60877d2932' }]);
+  });
+});
+
+describe('the state of a created repository (#31)', () => {
+  const created = new URL('../../2026-10-05/project-create/tc-admin-qa-org/', fixtures);
+  const answer = (name: string) => (JSON.parse(readFileSync(new URL(name, created), 'utf8')) as { response: { json: unknown } }).response.json;
+
+  test('W4: Door43 says a repository created without a commit is empty, with its owner and creation time to the second (E45)', async () => {
+    const state = await readRepositoryState(client(async () => json(answer('07-POST-orgs_tc-admin-qa-org_repos.json'), 200)), 'tc-admin-qa-org', 'id_tcap1856');
+    expect(state).toMatchObject({ owner: 'tc-admin-qa-org', empty: true, created_at: '2026-10-05T18:56:41Z' });
+    expect(state.repository).toMatchObject({ full_name: 'tc-admin-qa-org/id_tcap1856', default_branch: 'master', permissions: { push: true, admin: true } });
+  });
+
+  test('X1: and no longer empty once its first commit is made (E45)', async () => {
+    const state = await readRepositoryState(client(async () => json(answer('10-GET-repos_catalog-view.json'), 200)), 'tc-admin-qa-org', 'id_tcap1856');
+    expect(state.empty).toBe(false);
+  });
+
+  test('X1: an answer that does not say whether it is empty says nothing, and a missing repository is not_found', async () => {
+    const body = { ...(answer('07-POST-orgs_tc-admin-qa-org_repos.json') as Record<string, unknown>), empty: 'yes' };
+    expect((await readRepositoryState(client(async () => json(body, 200)), 'o', 'r')).empty).toBeNull();
+    expect((await failure(readRepositoryState(client(async () => json({ message: 'not found' }, 404)), 'o', 'r')))!.code).toBe('not_found');
   });
 });

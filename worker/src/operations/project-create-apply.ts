@@ -12,8 +12,9 @@
 // and before the commit, and with what became of the commit. What the plan
 // cannot learn (a create whose answer never arrived, a record the store refused
 // or does not show yet) reads as a taken name until the retry reconciles it:
-// the accepted window of Q29. The report is
-// built from what was written, because Door43's catalog
+// the accepted window of Q29, narrowed by the attempt the apply records in a
+// key of its own just before the create, which the retry reconciles from.
+// The report is built from what was written, because Door43's catalog
 // reads the new repository a few seconds later (E28), and says so: coverage
 // from the metadata just written, 0 of the testament scope's books or of the
 // fifty stories (H5), health never checked (H3).
@@ -74,6 +75,10 @@ export function createdProjectReport(
   };
 }
 
+/** The first commit's message, the same from the apply and from the retry (#31). */
+export const firstCommitMessage = (payload: ProjectCreatePayload, context: OperationContext) =>
+  `Create ${payload.project.title}\n\nmetadata.json, ingredients/license.md, and README.md, written by ${context.application.name} ${context.application.version}.`;
+
 const expired = (stored: StoredPlan, now: Date) => new Date(stored.plan.expires_at).getTime() <= now.getTime();
 
 /** What became of a first commit that did not return one: `unknown` when Door43 may have made it anyway (X1). */
@@ -126,6 +131,14 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
   }
 
   const started = context.now();
+  // The attempt, recorded before the create in a key of its own (Q29): a repository whose creation answer never reaches
+  // this plan can then be told apart by the retry (#31) from one someone else created. A store that refuses it does not
+  // stop the apply; without it the retry adopts nothing, and the name reads as taken, as before.
+  try {
+    await context.plans.putAttempt(input.plan_id, { stored, attempted_at: started.toISOString() }, RECEIPT_SECONDS);
+  } catch {
+    // Q29: the retry finds no attempt and adopts no repository.
+  }
   const repository = await createRepository(client, owner, { name: payload.repo_name, description: payload.project.title });
   // Recorded before the commit, and kept with the receipt for the retry (#31), so a later apply of this plan finds it.
   // A store that refuses this write does not stop the apply: the repository exists and the commit is what matters;
@@ -140,10 +153,7 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
 
   let commit: Commit | null = null;
   try {
-    commit = await commitFiles(client, owner.login, payload.repo_name, {
-      message: `Create ${payload.project.title}\n\nmetadata.json, ingredients/license.md, and README.md, written by ${context.application.name} ${context.application.version}.`,
-      files: payload.files,
-    });
+    commit = await commitFiles(client, owner.login, payload.repo_name, { message: firstCommitMessage(payload, context), files: payload.files });
   } catch (error) {
     // The repository exists and is never deleted (W4); the commit is not retried (X1). Setup is incomplete, and the retry (#31) learns what became of it.
     if (!(error instanceof CatalogError)) throw error;

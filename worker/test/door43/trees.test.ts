@@ -4,9 +4,10 @@ import { CatalogError } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import type { Fetch } from '../../src/door43/api';
 import { door43Host } from '../../src/door43/host';
+import { readBranchHead } from '../../src/door43/branches';
 import { readTree } from '../../src/door43/trees';
 
-import { recorded as recordedAt } from '../support/recorded';
+import { recorded as recordedAt, recordedText } from '../support/recorded';
 
 const recorded = <T>(name: string): T => recordedAt<T>(`2026-10-07/repos/${name}`);
 const client = (fetch: Fetch) => ({ host: door43Host('https://qa.door43.org'), token: 'test-only', fetch });
@@ -66,5 +67,36 @@ describe('readTree', () => {
     expect(await code(readTree(client(async () => Response.json({ unexpected: true })), 'o', 'r', 'main'))).toBe('door43_unavailable');
     expect(await code(readTree(client(async () => Response.json({ sha: 's', tree: [], truncated: true })), 'o', 'r', 'main'))).toBe('door43_unavailable');
     expect(await code(readTree(client(async () => new Response('', { status: 404 })), 'o', 'r', 'gone'))).toBe('not_found');
+  });
+});
+
+describe('the tree\'s sha and the branch\'s commit (E63)', () => {
+  const answer = (name: string): unknown => JSON.parse(recordedText(`2026-10-07/setup-retry/${name}`));
+  const COMMIT = '5d4fe92978571095326c44a2da6d6c624ab4c35d';
+  const TREE = '87f5d12742dfb0fc7e8c21d2a943643e87ca111e';
+
+  test('X1, E63: a tree read by branch or by commit answers the tree object\'s SHA, never the commit\'s', async () => {
+    const byBranch = await readTree(client(async () => Response.json(answer('05-GET-tree.json'))), 'tc-admin-qa', 'tcadmin-retry-probe-2352', 'master');
+    const byCommit = await readTree(client(async () => Response.json(answer('07-GET-tree-by-commit.json'))), 'tc-admin-qa', 'tcadmin-retry-probe-2352', COMMIT);
+    expect([byBranch.sha, byCommit.sha]).toEqual([TREE, TREE]);
+    expect(byBranch.sha).not.toBe(COMMIT);
+    expect(byCommit.files).toEqual([{ path: 'README.md', sha: 'da0c4eb8d9a48d171a33574b380752e183286751', size: 6 }]);
+  });
+
+  test('X1, E63: the branch read names the head commit, with its url and time', async () => {
+    const urls: string[] = [];
+    const head = await readBranchHead(
+      client(async url => (urls.push(url), Response.json(answer('08-GET-branch.json')))),
+      'tc-admin-qa',
+      'tcadmin-retry-probe-2352',
+      'master',
+    );
+    expect(urls).toEqual(['https://qa.door43.org/api/v1/repos/tc-admin-qa/tcadmin-retry-probe-2352/branches/master']);
+    expect(head).toEqual({ sha: COMMIT, url: `https://qa.door43.org/tc-admin-qa/tcadmin-retry-probe-2352/commit/${COMMIT}`, committed_at: '2026-10-07T23:52:58Z' });
+  });
+
+  test('a branch answer without a commit id is door43_unavailable, and a missing branch is not_found', async () => {
+    expect(await code(readBranchHead(client(async () => Response.json({ name: 'master', commit: null })), 'o', 'r', 'master'))).toBe('door43_unavailable');
+    expect(await code(readBranchHead(client(async () => Response.json({ message: 'not found' }, { status: 404 })), 'o', 'r', 'master'))).toBe('not_found');
   });
 });

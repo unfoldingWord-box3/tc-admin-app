@@ -1,8 +1,9 @@
 // The creation wizard's logic (#28): owners, the form's defaults, the plan input,
 // which field a failure is shown at (X2), the language search (Q20, Q30), the
-// words for the translation details, and the project just created in the portfolio.
-import { ERROR_CATALOG, TEXT_TRANSLATION_AUDIENCES, TEXT_TRANSLATION_PROJECT_TYPES, TEXT_TRANSLATION_TYPES, WRITE_KINDS } from '@tc-admin/shared/schema';
-import type { OperationErrorShape, ProjectSummary } from '@tc-admin/shared/schema';
+// words for the translation details, the project just created in the portfolio,
+// and the retry of a first commit when the setup is incomplete (#31, Q29).
+import { OPERATIONS, ERROR_CATALOG, TEXT_TRANSLATION_AUDIENCES, TEXT_TRANSLATION_PROJECT_TYPES, TEXT_TRANSLATION_TYPES, WRITE_KINDS } from '@tc-admin/shared/schema';
+import type { OperationErrorShape, OperationOutput, ProjectSummary } from '@tc-admin/shared/schema';
 import { describe, expect, test } from 'vitest';
 import {
   CREATE_HASH,
@@ -12,13 +13,18 @@ import {
   DETAIL_VALUE_LABELS,
   TESTAMENT_SCOPE_LABELS,
   WRITE_LABELS,
+  applyFailure,
   fieldErrors,
   initialOwner,
   languageLabel,
   missing,
   newForm,
+  outcomeUnknown,
   planInput,
+  receiptSummary,
+  reconcileText,
   repositoryNameOf,
+  retryInput,
   retireCreated,
   searchLanguages,
   tagRefused,
@@ -255,5 +261,66 @@ describe('the project just created in the portfolio (S1)', () => {
     // Absent again (access removed): the project stays out.
     expect(withCreated(portfolio, retired, 'tc-admin-qa')).toBe(portfolio);
     expect(retireCreated(portfolio, null)).toBeNull();
+  });
+});
+
+describe('a setup that is incomplete (#31)', () => {
+  type Receipt = OperationOutput<'project.create.apply'>;
+  const receipt = (setup: 'complete' | 'incomplete', plan_id: string | null = 'plan-1'): Receipt =>
+    OPERATIONS['project.create.apply'].output.parse({
+      operation: 'project.create.apply',
+      request_id: 'r1',
+      plan_id,
+      started_at: '2026-10-07T12:00:00.000Z',
+      finished_at: '2026-10-07T12:00:01.000Z',
+      wrote: [{ kind: 'repo', target: 'tc-admin-qa-org/id_tcap', url: 'https://qa.door43.org/tc-admin-qa-org/id_tcap' }],
+      result: {
+        ref: { owner: 'tc-admin-qa-org', repo: 'id_tcap', id: 1, url: 'https://qa.door43.org/tc-admin-qa-org/id_tcap' },
+        title: 'Alkitab Percobaan',
+        description: 'Alkitab Percobaan',
+        default_branch: 'master',
+        language: { code: 'id', title: 'Bahasa Indonesia' },
+        project_type: 'bible',
+        metadata_format: 'sb',
+        editability: { state: 'editable', reason: '' },
+        coverage: { present: 0, target: 27, scope: 'nt', basis: 'archive', units: [] },
+        health: { state: 'never_checked', severity_raw: null, ref: 'master', checked_at: null, issue_count: null, issues: null, source: 'door43' },
+        latest_full_release: null,
+        default_branch_head: null,
+        active_preparation: null,
+        setup: setup === 'complete' ? { state: 'complete', failed_step: null } : { state: 'incomplete', failed_step: 'first_commit' },
+        permissions: { push: true, admin: true, checked_at: '2026-10-07T12:00:01.000Z' },
+        freshness: { read_at: '2026-10-07T12:00:01.000Z', source: 'live', age_seconds: 0 },
+      },
+      warnings: setup === 'complete' ? [] : [{ code: 'setup_incomplete', message: ERROR_CATALOG.setup_incomplete.message! }],
+    });
+
+  test('W4: a receipt whose setup is incomplete is headed Setup incomplete, says the repository is kept, and offers the retry of its plan', () => {
+    const shown = receiptSummary(receipt('incomplete'));
+    expect(shown.heading).toBe('Setup incomplete');
+    expect(shown.text).toContain('does not delete the repository');
+    expect(retryInput(receipt('incomplete'))).toEqual({ owner: 'tc-admin-qa-org', repo: 'id_tcap', plan_id: 'plan-1' });
+  });
+
+  test('W4: a complete setup, or a receipt that names no plan, offers no retry', () => {
+    expect(receiptSummary(receipt('complete')).heading).toBe('Project created');
+    expect(retryInput(receipt('complete'))).toBeNull();
+    expect(retryInput(receipt('incomplete', null))).toBeNull();
+  });
+
+  test('X1: no answer, Door43 unavailable, or an unexpected failure leaves the outcome unknown; a refusal does not', () => {
+    expect(outcomeUnknown(null)).toBe(true);
+    expect(outcomeUnknown(error({ code: 'door43_unavailable' }))).toBe(true);
+    expect(outcomeUnknown(error({ code: 'unexpected' }))).toBe(true);
+    for (const code of ['name_taken', 'permission_denied', 'validation_failed', 'plan_expired'] as const) expect(outcomeUnknown(error({ code })), code).toBe(false);
+  });
+
+  test('Q29: a taken name after an apply of the same plan whose outcome is unknown offers the retry; otherwise it is the abbreviation\'s, as before', () => {
+    const taken = error({ code: 'name_taken', message: 'A repository named id_tcap already exists in tc-admin-qa-org. Change the abbreviation.' });
+    expect(applyFailure(taken, true)).toBe('reconcile');
+    expect(applyFailure(taken, false)).toBe('field');
+    expect(applyFailure(error({ code: 'door43_unavailable' }), true)).toBe('problem');
+    expect(applyFailure(null, false)).toBe('problem');
+    expect(reconcileText('tc-admin-qa-org', 'id_tcap')).toContain('only if it is empty, belongs to tc-admin-qa-org, and was created after this attempt');
   });
 });

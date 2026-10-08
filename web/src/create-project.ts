@@ -1,8 +1,9 @@
 // The creation wizard's logic, pure so it can be tested without a browser
 // (product spec §6, #28): the owner it starts with, the form and its defaults,
 // the plan input it sends, which field a failure belongs to (X2), the
-// language search over `language.list` (Q20), and the words for the
-// translation details and the writes. The Worker owns every rule; what is
+// language search over `language.list` (Q20), the words for the translation
+// details and the writes, and the retry of a first commit when the setup is
+// incomplete (#31, Q29). The Worker owns every rule; what is
 // mirrored here is for feedback before a plan is asked for (invariants.md).
 
 import {
@@ -283,3 +284,53 @@ export function withCreated(organizations: Organizations, created: ProjectSummar
   if (sameLogin(created.ref.owner, accountLogin) || ownIndex < 0) return [...organizations, added];
   return [...organizations.slice(0, ownIndex), added, ...organizations.slice(ownIndex)];
 }
+
+type Receipt = OperationOutput<'project.create.apply'>;
+
+/**
+ * The input of `project.create.retry` for a receipt whose setup is incomplete
+ * (W4, #31): its project and the plan the apply kept, which is also the retry's
+ * idempotency key; `null` when the setup is complete or the receipt names no plan.
+ */
+export function retryInput(receipt: Receipt): OperationInput<'project.create.retry'> | null {
+  if (receipt.result.setup.state !== 'incomplete' || !receipt.plan_id) return null;
+  return { owner: receipt.result.ref.owner, repo: receipt.result.ref.repo, plan_id: receipt.plan_id };
+}
+
+/** The receipt's heading and what it means, in glossary words: Setup incomplete (product spec §6, §11) or created. */
+export function receiptSummary(receipt: Receipt): { heading: string; text: string } {
+  if (receipt.result.setup.state === 'incomplete') {
+    return {
+      heading: 'Setup incomplete',
+      text: 'The repository exists on Door43, and its first commit failed or could not be confirmed. tC Admin does not delete the repository. Retrying reads the repository first, so a commit Door43 already made is not made twice.',
+    };
+  }
+  return { heading: 'Project created', text: 'Door43 has the repository and its first commit. It can take Door43 a few seconds to list the new project.' };
+}
+
+/**
+ * A failure after which Door43 may have done what was asked anyway (X1): no answer
+ * arrived (Door43 unavailable, or the network), or the Worker failed unexpectedly.
+ * After a creation that ended so, the repository may exist although the plan
+ * does not know it (Q29).
+ */
+export function outcomeUnknown(error: OperationErrorShape | null): boolean {
+  return error === null || error.code === 'door43_unavailable' || error.code === 'unexpected';
+}
+
+/**
+ * What the wizard does with a failed `project.create.apply`: a taken name, after an
+ * earlier apply of the same plan whose outcome is unknown, may be the repository
+ * that apply created, so the retry is offered to reconcile it (decided 6 October
+ * 2026 by Rich, Q29); a failure a field answers for goes back to the form; anything
+ * else is shown on the review.
+ */
+export function applyFailure(error: OperationErrorShape | null, earlierUnknown: boolean): 'reconcile' | 'field' | 'problem' {
+  if (error?.code === 'name_taken' && earlierUnknown) return 'reconcile';
+  if (error && fieldErrors(error)) return 'field';
+  return 'problem';
+}
+
+/** Why the retry is offered for a taken name (Q29), and what it checks before it writes. */
+export const reconcileText = (owner: string, repo: string) =>
+  `Door43 did not answer when tC Admin asked it to create the repository, and a repository named ${repo} now exists in ${owner}. If this plan created it, retrying the first commit finishes the setup. tC Admin writes to it only if it is empty, belongs to ${owner}, and was created after this attempt.`;

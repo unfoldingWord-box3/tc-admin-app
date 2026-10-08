@@ -2,11 +2,39 @@
 // on, created from the previous release's commit or the default-branch head
 // (ADR 0010), and deleted once the release exists (R7, #39) or the manager
 // discards the preparation (#58); each sent once and never retried (X1).
-// Door43's shapes stop here.
+// Also the read of a branch's head commit, which the retry of a first commit
+// adopts (#31, E63). Door43's shapes stop here.
 
 import { CatalogError } from '@tc-admin/shared/schema';
-import { door43Message, writeDoor43 } from './api';
+import { door43Message, readDoor43, writeDoor43 } from './api';
 import type { Door43Client } from './api';
+
+/** A branch's head commit, in glossary terms. */
+export interface BranchHead {
+  sha: string;
+  url: string;
+  /** When Door43 recorded the commit; `null` when it did not say. */
+  committed_at: string | null;
+}
+
+/**
+ * `GET /repos/{owner}/{repo}/branches/{branch}`: the branch's head commit as
+ * `commit.id`, with its `url` and `timestamp` (E63). A missing branch is
+ * `not_found`; an answer without a commit id is `door43_unavailable`.
+ */
+export async function readBranchHead(client: Door43Client, owner: string, repo: string, branch: string): Promise<BranchHead> {
+  const body = await readDoor43<{ commit?: { id?: unknown; url?: unknown; timestamp?: unknown } | null } | null>(
+    client,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches/${encodeURIComponent(branch)}`,
+  );
+  const commit = body?.commit;
+  if (typeof commit?.id !== 'string' || !commit.id) throw new CatalogError('door43_unavailable', { details: { reason: 'unexpected branch shape', owner, repo, branch } });
+  return {
+    sha: commit.id,
+    url: typeof commit.url === 'string' ? commit.url : '',
+    committed_at: typeof commit.timestamp === 'string' && commit.timestamp ? commit.timestamp : null,
+  };
+}
 
 export interface CreatedBranch {
   name: string;

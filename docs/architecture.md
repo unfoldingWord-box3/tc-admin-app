@@ -257,11 +257,11 @@ worker/
     archive.ts       the Scripture Burrito archive of a ref, opened from its central directory, each file inflated on demand (E34, E4, E53; #18)
     repos.ts         repository search and permissions read strictly (P2); one repository; whether a name is taken; the account's creation rights (E43)
     catalog.ts       the catalog view of a repository (#19); its stages and the catalog entry of one ref (E14, E20; #33)
-    trees.ts         the recursive git tree of a ref, every page (E19, E52; #33)
+    trees.ts         the recursive git tree of a ref, every page; its own sha is the tree's, not a commit's (E19, E52, E63; #33)
     languages.ts     the full language list and an owner's languages, in glossary names (E25; #28)
     owners.ts        the owners an import can come from: the account's organizations, every page, and the catalog's owners by partial name, every match in one answer (E43, E35, E61; #77)
-    writes.ts        repository creation and the multi-file commit, uploads and deletions by blob SHA, sent once and never retried (W5, X1, A3, W4; #30, #34)
-    branches.ts      the temporary branch a release is prepared on, created from a commit; one already there is preparation_active (E21, E27; #34); its deletion after the release, reported and never thrown (R7; #39, #58)
+    writes.ts        repository creation and the multi-file commit, uploads and deletions by blob SHA, sent once and never retried (W5, X1, A3, W4; #30, #34); a created repository's state for the retry (#31)
+    branches.ts      the temporary branch a release is prepared on, created from a commit; one already there is preparation_active (E21, E27; #34); its deletion after the release, reported and never thrown (R7; #39, #58); a branch's head commit, for the retry of a first commit (E63; #31)
     health.ts        the health check of one ref, read once per call: a result with its issues, pending, unavailable, or an error (E15, E28; #36)
     releases.ts      one release by its tag, with the commit it targets (E21, E20, R6; #40); the release created on the snapshot commit, tag and all, and the one edit that promotes it (E27, R8; #39)
     catalog-search.ts  an owner's Bible and Open Bible Stories catalog entries at a stage, every page, with each repository's stages (E35, E14; #78)
@@ -275,6 +275,7 @@ worker/
     classify.ts      every file of a ref as a book, story, administrative, or unknown file, given its metadata and tree (#20, R1, S5)
     obs-scope.ts     the fixed currentScope of every Open Bible Stories project (E46)
     md5.ts           ingredient checksums (R10)
+    git-blob.ts      git blob ids, and whether a ref holds exactly a plan's files (X1; #31)
     license-cc-by-sa-4.0.ts  the license text of ingredients/license.md (Q20)
     candidates.ts    candidate detection by blob SHA, the R4 defaults, removals, administrative files (#33)
     version.ts       the version rules: coercion, baseline, increment (R9; #37)
@@ -289,9 +290,10 @@ worker/
     sign-in.ts       begin and complete sign-in for http/session; not catalog operations (#12)
     situation-read.ts  situation.read; the account from /user when signed in
     portfolio-list.ts  the writable filter (P1, P2); the operation: #23
-    plans.ts         plans and receipts in Workers KV, by plan id; preparations by project and id, for thirty days (operations.md §2)
+    plans.ts         plans and receipts in Workers KV, by plan id; a creation's attempt and the retry's receipt, each in its own key (Q29, #31); preparations by project and id, for thirty days (operations.md §2)
     project-create-plan.ts  project.create.plan (#29)
     project-create-apply.ts  project.create.apply: the first Door43 writes, idempotent by plan id (#30)
+    project-create-retry.ts  project.create.retry: the first commit of a setup-incomplete project, once, after reading the repository; a commit already made adopted; Q29's adoption of a repository the plan could not learn of (W4, X1, A2; #31)
     language-list.ts  language.list: the wizard's language list, each tag marked as accepted or not (#28)
     owner-list.ts    owner.list: the owners the account may create a project in, from its teams (E43, A2; #28)
     owner-search.ts  owner.search: the account's organizations first and always, then the catalog's owners by partial name (E35, P3; #77)
@@ -313,7 +315,7 @@ worker/
 web/
   src/api/client.ts  typed client: one call per operation, from shared/schema
   src/               the application shell; portfolio, wizard, stepper, design system (#8)
-  src/CreateProject.tsx, src/create-project.ts  the creation wizard, and its form logic, owners, language search, and field errors as pure functions (#28)
+  src/CreateProject.tsx, src/create-project.ts  the creation wizard, and its form logic, owners, language search, field errors, and the retry of an incomplete setup as pure functions (#28, #31)
   src/ReleaseView.tsx  one release by its tag: the lookup and the promotion of a pre-release from its own page, whether or not the stepper that made it is open (S7, R8)
   src/ReleaseStepper.tsx, src/release-stepper.ts  the release stepper: one operation per step, the selection from the plan's defaults, the health poll, the warnings acknowledged, the release and its promotion, the discard; its logic as pure functions (#41)
   src/ProjectView.tsx  one project's report, shown from the portfolio and after creation

@@ -1,0 +1,36 @@
+{
+  "name": "master",
+  "commit": {
+    "id": "5d4fe92978571095326c44a2da6d6c624ab4c35d",
+    "message": "Probe first commit (#31)\n",
+    "url": "https://qa.door43.org/tc-admin-qa/tcadmin-retry-probe-2352/commit/5d4fe92978571095326c44a2da6d6c624ab4c35d",
+    "author": {
+      "name": "tc-admin-qa",
+      "email": "[redacted]",
+      "username": "tc-admin-qa"
+    },
+    "committer": {
+      "name": "tc-admin-qa",
+      "email": "[redacted]",
+      "username": "tc-admin-qa"
+    },
+    "verification": {
+      "verified": false,
+      "reason": "gpg.error.not_signed_commit",
+      "signature": "",
+      "signer": null,
+      "payload": ""
+    },
+    "timestamp": "2026-10-07T23:52:58Z",
+    "added": null,
+    "removed": null,
+    "modified": null
+  },
+  "protected": false,
+  "required_approvals": 0,
+  "enable_status_check": false,
+  "status_check_contexts": [],
+  "user_can_push": true,
+  "user_can_merge": true,
+  "effective_branch_protection_name": ""
+}

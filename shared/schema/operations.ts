@@ -180,7 +180,8 @@ export const OPERATIONS = {
     kind: 'apply',
     milestone: 1,
     route: { method: 'POST', path: '/api/projects/{owner}/{repo}/setup/retry' },
-    input: RepoRef,
+    /** The plan whose first commit is retried, which is also the idempotency key (operations.md §1 rule 6, §7). */
+    input: RepoRef.extend({ plan_id: z.string().min(1) }),
     output: receipt(ProjectReport),
   },
   'language.list': {
