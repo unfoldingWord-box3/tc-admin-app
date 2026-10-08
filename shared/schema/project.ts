@@ -101,8 +101,8 @@ export const ProjectReport = z.object({
   description: z.string(),
   default_branch: z.string(),
   language: z.object({ code: z.string(), title: z.string() }),
-  /** When Door43 last recorded a change to the repository (its `updated_at`, E32); `null` when it says nothing. The portfolio sorts by it (#24). */
-  last_activity_at: z.string().nullable(),
+  /** When Door43 last recorded a change to the repository (its `updated_at`, E32); `null` when it says nothing, and in a receipt stored before #24, which a repeated apply answers unchanged. The portfolio sorts by it (#24). */
+  last_activity_at: z.string().nullable().default(null),
   ...ProjectClassification.shape,
   health: Health,
   latest_full_release: z

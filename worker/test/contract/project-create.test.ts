@@ -17,11 +17,8 @@ const runs = new URL('../../../fixtures/door43/qa.door43.org/2026-10-05/project-
 const run = new URL('tc-admin-qa-org/', runs);
 const read = (name: string, dir = run) => readFileSync(new URL(name, dir), 'utf8');
 const recorded = <T>(name: string, dir = run): T => (JSON.parse(read(name, dir)) as { response: { json: T } }).response.json;
-/** A recorded creation receipt, parsed as the client parses one. The recordings predate the report's `last_activity_at` (#24): each is read as stating none, never edited. */
-const recordedReceipt = (text: string) => {
-  const recorded = JSON.parse(text) as { result: Record<string, unknown> };
-  return OPERATIONS['project.create.apply'].output.parse({ ...recorded, result: { last_activity_at: null, ...recorded.result } });
-};
+/** A recorded creation receipt, parsed as the client parses one. The recordings predate the report's `last_activity_at` (#24): the schema reads each as stating none, never edited. */
+const recordedReceipt = (text: string) => OPERATIONS['project.create.apply'].output.parse(JSON.parse(text));
 const GENERATOR = { name: 'tC Admin', version: '0.1.0', user: { login: 'tc-admin-qa', name: 'tc-admin-qa' } };
 
 describe('the recorded QA creation (E45)', () => {
