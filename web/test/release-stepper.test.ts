@@ -81,7 +81,7 @@ describe('the selection (product spec §10)', () => {
     ];
     expect(storySummary(lost)).toEqual({
       count: '1 of 50 stories in this release.',
-      removed: 'Removed from this release onward, since the default branch no longer has it: story 12. Earlier releases keep it. The version must then increase its first number.',
+      removed: 'Removed from this release onward, since the default branch no longer has it: story 12. Earlier releases keep it. The version must then increase its first number, and Door43\'s health check blocks the release until every story is present.',
     });
     expect(storySummary([...lost, { id: '13', group: 'unchanged', selection: 'leave_out' }]).removed).toContain('no longer has them: stories 12, 13. Earlier releases keep them.');
   });

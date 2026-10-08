@@ -68,7 +68,7 @@ export function storySummary(books: readonly Book[]): { count: string; removed: 
     removed:
       removed.length === 0
         ? null
-        : `Removed from this release onward, since the default branch no longer has ${removed.length === 1 ? 'it' : 'them'}: ${removed.length === 1 ? 'story' : 'stories'} ${removed.join(', ')}. Earlier releases keep ${removed.length === 1 ? 'it' : 'them'}. The version must then increase its first number.`,
+        : `Removed from this release onward, since the default branch no longer has ${removed.length === 1 ? 'it' : 'them'}: ${removed.length === 1 ? 'story' : 'stories'} ${removed.join(', ')}. Earlier releases keep ${removed.length === 1 ? 'it' : 'them'}. The version must then increase its first number, and Door43's health check blocks the release until every story is present.`,
   };
 }
 

@@ -245,14 +245,17 @@ describe('an Open Bible Stories release', () => {
     const branch = edited(obs, document => {
       delete (document.ingredients as Record<string, unknown>)['ingredients/content/01.md'];
     });
-    // The prepare sends `include` for every story the tree has (confirmedSelection), and the merge's own default.
-    for (const selection of [{ '01': 'include' as const }, {}]) {
-      const merged = mergeReleaseMetadata({ current: branch, base: obs, selection, files });
-      expect(ingredientsOf(merged.metadata)).not.toHaveProperty(['ingredients/content/01.md']);
-      expect(merged.released).not.toContain('01');
-      expect(merged.released).toHaveLength(49);
-    }
-    expect(mergeReleaseMetadata({ current: branch, base: obs, selection: { '01': 'include' }, files }).removed).toEqual([]);
+    // The prepare sends `include` for every story the tree has (confirmedSelection): the story is left unlisted, not removed.
+    const included = mergeReleaseMetadata({ current: branch, base: obs, selection: { '01': 'include' }, files });
+    expect(ingredientsOf(included.metadata)).not.toHaveProperty(['ingredients/content/01.md']);
+    expect(included.released).not.toContain('01');
+    expect(included.released).toHaveLength(49);
+    expect(included.removed).toEqual([]);
+    // With no selection, the merge's own default reads a story the current metadata lacks as left out, so it is
+    // removed instead: the prepare never sends that, and the unlisted-story waiver is not what this case reaches.
+    const unselected = mergeReleaseMetadata({ current: branch, base: obs, selection: {}, files });
+    expect(ingredientsOf(unselected.metadata)).not.toHaveProperty(['ingredients/content/01.md']);
+    expect(unselected.removed).toEqual(['01']);
   });
 
 });
