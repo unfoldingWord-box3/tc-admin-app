@@ -90,15 +90,17 @@ export function normalizeUploadName(name: string): { ok: true; path: string } | 
   if (/^[/\\]/.test(name) || /^[A-Za-z]:/.test(name)) return { ok: false, reason: 'absolute' };
   if (name.includes('\\')) return { ok: false, reason: 'backslash' };
   const segments: string[] = [];
+  // Segments are compared without ZWNJ and ZWJ, so a joiner cannot disguise `..`, `.git`, an empty segment, or a drive.
+  const bare = (segment: string) => segment.replace(/[\u200C\u200D]/gu, '');
   for (const segment of name.split('/')) {
-    if (segment === '') return { ok: false, reason: 'empty_segment' };
-    if (segment === '..') return { ok: false, reason: 'traversal' };
-    if (segment.toLowerCase() === '.git') return { ok: false, reason: 'git_directory' };
+    if (bare(segment) === '') return { ok: false, reason: 'empty_segment' };
+    if (bare(segment) === '..') return { ok: false, reason: 'traversal' };
+    if (bare(segment).toLowerCase() === '.git') return { ok: false, reason: 'git_directory' };
     if (segment !== '.') segments.push(segment);
   }
   if (segments.length === 0) return { ok: false, reason: 'empty' };
   // A drive revealed by dropping `.` segments (`./C:/x`, `././c:x`).
-  if (/^[A-Za-z]:/.test(segments[0] ?? '')) return { ok: false, reason: 'absolute' };
+  if (/^[A-Za-z]:/.test(bare(segments[0] ?? ''))) return { ok: false, reason: 'absolute' };
   return { ok: true, path: segments.join('/') };
 }
 

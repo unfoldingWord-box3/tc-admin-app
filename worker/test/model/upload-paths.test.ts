@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { CatalogError } from '@tc-admin/shared/schema';
 import { MAX_UPLOAD_BYTES, checkUpload, modeProblem, normalizeUploadName } from '../../src/model/upload-paths';
+
+const [ZWNJ, ZWJ] = [String.fromCodePoint(0x200c), String.fromCodePoint(0x200d)];
 import type { UploadFile } from '../../src/model/upload-paths';
 
 const file = (name: string, size = 10, mode?: number | null): UploadFile => ({ name, size, content_ref: `ref-${name.length}-${size}`, mode });
@@ -58,6 +60,10 @@ describe('W6: unsafe names are refused as validation_failed naming the file', ()
     ['%2e%2e%2f%2e%2e%2fa.usfm', 'percent_encoding'],
     ['%2egit/config', 'percent_encoding'],
     ['50%.md', 'percent_encoding'],
+    [`.${ZWNJ}./x.usfm`, 'traversal'],
+    [`.gi${ZWJ}t/a.usfm`, 'git_directory'],
+    [`a/${ZWNJ}/b.usfm`, 'empty_segment'],
+    [`${ZWNJ}C:/x.usfm`, 'absolute'],
   ];
 
   test.each(cases)('W6: %j is refused as %s', (name, reason) => {
