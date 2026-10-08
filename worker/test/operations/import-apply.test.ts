@@ -72,7 +72,8 @@ interface Sent {
 
 /** What Door43 holds and answers, changed by a test between the plan and the apply. */
 interface Door43State {
-  writable: boolean;
+  /** The account's push right: granted, refused, or the `permissions` object missing from Door43's answer altogether. */
+  writable: boolean | 'missing';
   head: string;
   trees: Map<string, typeof tree>;
   /** The source's archive at `1974`: id_tb1's recording, other bytes, or a status Door43 answers instead. */
@@ -89,7 +90,13 @@ const door43: Fetch = async (url, init) => {
   const method = init?.method ?? 'GET';
   sent.push({ method, path: pathname + search, headers: new Headers(init?.headers), body: init?.body ? JSON.parse(String(init.body)) : null });
   if (pathname === '/api/v1/user') return Response.json(user);
-  if (pathname === REPO && method === 'GET') return Response.json({ ...repository, permissions: state.writable ? { push: true, admin: false, pull: true } : { pull: true } });
+  if (pathname === REPO && method === 'GET') {
+    if (state.writable === 'missing') {
+      const { permissions: _permissions, ...bare } = repository;
+      return Response.json(bare);
+    }
+    return Response.json({ ...repository, permissions: state.writable ? { push: true, admin: false, pull: true } : { pull: true } });
+  }
   if (pathname === `${REPO}/branches/master`) return Response.json({ ...branch, name: 'master', commit: { ...branch.commit, id: state.head, url: `https://qa.door43.org/bahtraku/Perjanjian-Baru-Pendau/commit/${state.head}` } });
   const treeAt = /^\/api\/v1\/repos\/bahtraku\/Perjanjian-Baru-Pendau\/git\/trees\/([0-9a-f]{40})$/.exec(pathname);
   if (treeAt) {
@@ -190,6 +197,14 @@ describe('refused before any write', () => {
   test('A2: a push permission lost since the plan is permission_denied, and nothing is written', async () => {
     const made = await plan();
     state.writable = false;
+    const error = await failure(apply(made.id));
+    expect(error?.code).toBe('permission_denied');
+    expect(writes()).toEqual([]);
+  });
+
+  test('A2: a permissions object missing from Door43\'s answer is no permission: permission_denied, and nothing is written', async () => {
+    const made = await plan();
+    state.writable = 'missing';
     const error = await failure(apply(made.id));
     expect(error?.code).toBe('permission_denied');
     expect(writes()).toEqual([]);
