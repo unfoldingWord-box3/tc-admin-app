@@ -46,7 +46,9 @@ async function answerWhenSent(method: string, url: string, body: unknown, status
 }
 
 const OWN = [{ login: 'tc-admin-qa-org', name: 'tC Admin QA' }];
-const TB1 = sourceOf('bahtraku', 'id_tb1', { title: 'Alkitab Terjemahan Baru', stage: 'prod', format: 'rc' });
+/** id_tb1 as the latest content offers it (its default branch), and as the last release does (its tag `1974`). */
+const TB1 = sourceOf('bahtraku', 'id_tb1', { title: 'Alkitab Terjemahan Baru', stage: 'latest', format: 'rc' });
+const TB1_RELEASE = sourceOf('bahtraku', 'id_tb1', { title: 'Alkitab Terjemahan Baru', stage: 'prod', format: 'rc' });
 
 /** Mounts, answers the owner search, types an owner, and picks it; answers its sources at the latest content. */
 async function toSources(sources = [TB1]) {
@@ -65,7 +67,7 @@ describe('finding the source', () => {
     expect(screen.getByText('Yayasan BahtraKu (bahtraku)')).toBeTruthy();
     const list = screen.getByRole('list', { name: 'Repositories' });
     expect(within(list).getByRole('button', { name: /Alkitab Terjemahan Baru/ })).toBeTruthy();
-    expect(list.textContent).toContain('Bible · Resource Container · Released · release 1974');
+    expect(list.textContent).toContain('Bible · Resource Container · Released · branch master');
   });
 
   test('before typing, the organizations are offered under their own heading', async () => {
@@ -75,11 +77,24 @@ describe('finding the source', () => {
     expect(screen.queryByRole('list', { name: 'Matching owners' })).toBeNull();
   });
 
-  test('"Last release" reads the sources again at that stage', async () => {
+  test('"Last release" retires the list, the source, and a plan in flight at once, and reads the sources again at that stage; the other stage\'s list is never shown or planned', async () => {
     await toSources();
+    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    fireEvent.click(button('Plan the import of 3 books'));
+    expect(plans()).toHaveLength(1);
+    expect(plans()[0]!.body).toMatchObject({ source: { revision: 'master' } });
+    // Switched while the plan is in flight: the list is gone before the new one is read, and nothing can be picked.
     fireEvent.click(screen.getByLabelText(/Last release/));
-    await worker.answer('GET', sourcesUrl('bahtraku', 'prod'), sourcesOf([TB1]));
-    expect(worker.sent.at(-1)!.url).toBe(sourcesUrl('bahtraku', 'prod'));
+    expect(screen.queryByRole('list', { name: 'Repositories' })).toBeNull();
+    // The late answer for the old stage's plan is not shown.
+    await worker.answer('POST', planUrl, importPlanOf('stale', [book('gen')], { owner: 'bahtraku', repo: 'id_tb1', revision: 'master' }));
+    expect(screen.queryByText('Review before importing')).toBeNull();
+    await answerWhenSent('GET', sourcesUrl('bahtraku', 'prod'), sourcesOf([TB1_RELEASE]));
+    expect(screen.getByRole('list', { name: 'Repositories' }).textContent).toContain('release 1974');
+    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    fireEvent.click(button('Plan the import of 3 books'));
+    expect(plans()).toHaveLength(2);
+    expect(plans()[1]!.body).toMatchObject({ source: { revision: '1974' } });
   });
 
   test('a source of the other project type is shown with why it cannot be picked, and no plan is sent for it', async () => {
@@ -113,7 +128,7 @@ describe('plan before apply', () => {
     fireEvent.click(screen.getByLabelText('MAT · Matius'));
     fireEvent.click(button('Plan the import of 2 books'));
     expect(plans()).toHaveLength(1);
-    expect(plans()[0]!.body).toEqual({ source: { owner: 'bahtraku', repo: 'id_tb1', revision: '1974' }, units: ['gen', 'exo'] });
+    expect(plans()[0]!.body).toEqual({ source: { owner: 'bahtraku', repo: 'id_tb1', revision: 'master' }, units: ['gen', 'exo'] });
 
     await worker.answer('POST', planUrl, importPlanOf('p1', [book('gen'), book('exo', true, '@@ -1 +1 @@\n-old\n+new\n')]));
     expect(screen.getByText('Review before importing')).toBeTruthy();
@@ -158,7 +173,7 @@ describe('plan before apply', () => {
     expect(screen.queryByRole('button', { name: /^Import \d+ books?$/ })).toBeNull();
     expect(applies()).toEqual([]);
     fireEvent.click(button('Plan the import of 2 books'));
-    expect(plans()[1]!.body).toEqual({ source: { owner: 'bahtraku', repo: 'id_tb1', revision: '1974' }, units: ['gen', 'exo'] });
+    expect(plans()[1]!.body).toEqual({ source: { owner: 'bahtraku', repo: 'id_tb1', revision: 'master' }, units: ['gen', 'exo'] });
     await worker.answer('POST', planUrl, importPlanOf('p5', [book('gen'), book('exo')]));
     expect(screen.getByText('Review before importing')).toBeTruthy();
     fireEvent.click(button('Choose none'));
@@ -167,7 +182,7 @@ describe('plan before apply', () => {
   });
 
   test('W5: a plan answered after the source or its books changed is dropped, not offered for confirmation', async () => {
-    await toSources([TB1, sourceOf('bahtraku', 'id_tb2', { title: 'Kitab Kedua', stage: 'prod' })]);
+    await toSources([TB1, sourceOf('bahtraku', 'id_tb2', { title: 'Kitab Kedua' })]);
     fireEvent.click(button(/Alkitab Terjemahan Baru/));
     fireEvent.click(button('Plan the import of 3 books'));
     fireEvent.click(button(/Kitab Kedua/));

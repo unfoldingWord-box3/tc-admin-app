@@ -177,10 +177,12 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
     setProblem(null);
     setBusy(null);
   };
+  /** The other stage: the list and the source of this one are retired at once, with any plan or plan in flight, so nothing of the other revision can be picked, planned, or confirmed (bench round 2). */
   const chooseStage = (next: Stage) => {
+    retirePlan();
     setStage(next);
+    setSources(null);
     setSource(null);
-    setPlanned(null);
   };
   const chooseSource = (next: Source) => {
     retirePlan();
@@ -191,6 +193,8 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
 
   /** Plans the import of the chosen units from the source; the answer becomes the plan of record, or the failure is shown in its place. */
   const plan = async (from: Source, units: ReadonlySet<string>) => {
+    // A source of another stage than the one chosen is never planned: its revision is the other one.
+    if (from.stage !== stage) return;
     const input = unitsInput(from, units);
     if (!input) return;
     const mine = ++ticket.current;
@@ -318,8 +322,8 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
             ))}
           </div>
           {busy === 'sources' && <p className="muted" role="status">Reading the repositories of {chosenOwner.login}…</p>}
-          {sources && sources.list.length === 0 && <p className="derived">{chosenOwner.login} has no Bible or Open Bible Stories repository at its {STAGE_LABELS[stage].toLowerCase()}.</p>}
-          {sources && sources.list.length > 0 && (
+          {sources && sources.stage === stage && sources.list.length === 0 && <p className="derived">{chosenOwner.login} has no Bible or Open Bible Stories repository at its {STAGE_LABELS[stage].toLowerCase()}.</p>}
+          {sources && sources.stage === stage && sources.list.length > 0 && (
             <ul className="languages" aria-label="Repositories">
               {sources.list.map(candidate => {
                 const key = `${candidate.ref.owner}/${candidate.ref.repo}`;
@@ -343,7 +347,7 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
               })}
             </ul>
           )}
-          {sources && <p className="freshness">Read from Door43's catalog.</p>}
+          {sources && sources.stage === stage && <p className="freshness">Read from Door43's catalog.</p>}
         </fieldset>
       )}
 
