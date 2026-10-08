@@ -101,6 +101,8 @@ export const ProjectReport = z.object({
   description: z.string(),
   default_branch: z.string(),
   language: z.object({ code: z.string(), title: z.string() }),
+  /** When Door43 last recorded a change to the repository (its `updated_at`, E32); `null` when it says nothing. The portfolio sorts by it (#24). */
+  last_activity_at: z.string().nullable(),
   ...ProjectClassification.shape,
   health: Health,
   latest_full_release: z
@@ -127,6 +129,7 @@ export const ProjectSummary = ProjectReport.pick({
   description: true,
   default_branch: true,
   language: true,
+  last_activity_at: true,
   project_type: true,
   metadata_format: true,
   editability: true,

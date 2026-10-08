@@ -47,6 +47,7 @@ const receipt = {
     description: '',
     default_branch: 'master',
     language: { code: 'ped', title: 'Pendau' },
+    last_activity_at: '2026-10-08T10:00:00.000Z',
     project_type: 'bible',
     metadata_format: 'sb',
     editability: { state: 'editable', reason: 'Scripture Burrito Bible project.' },

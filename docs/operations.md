@@ -45,6 +45,7 @@ project
   ref:               { owner, repo, id, url }
   title, description, default_branch
   language:          { code, title }
+  last_activity_at:  when Door43 last recorded a change to the repository (its `updated_at`, E32), or the commit a receipt reports; null when unknown (#24)
   project_type:      bible | obs | other   (see CONTEXT.md "Identifiers")
   metadata_format:   sb | rc | ts | tc | none
   editability:       { state: editable | unsupported, reason }
@@ -58,7 +59,7 @@ project
   freshness
 ```
 
-The project summary `portfolio.list` returns is the part of the report the repository search carries (E7, E32): `ref`, `title` (the repository name when Door43 has no title), `description`, `default_branch`, `language`, `project_type`, `metadata_format`, `editability`, `coverage`, `health`, and `permissions`. The search does not say which ref or when its health severity was checked, so a summary's `health.ref` and `health.checked_at` are `null`, and `health.issue_count` and `health.issues` are `null` until the health-check read (#25, #36).
+The project summary `portfolio.list` returns is the part of the report the repository search carries (E7, E32): `ref`, `title` (the repository name when Door43 has no title), `description`, `default_branch`, `language`, `last_activity_at`, `project_type`, `metadata_format`, `editability`, `coverage`, `health`, and `permissions`. The search does not say which ref or when its health severity was checked, so a summary's `health.ref` and `health.checked_at` are `null`, and `health.issue_count` and `health.issues` are `null` until the health-check read (#25, #36).
 
 `health.state` is one of the health states in [domain-model.md](domain-model.md) section 5. `editability.reason` is one sentence in glossary language, for example "Resource Container project. Import it into a new project to manage it here."
 
@@ -168,7 +169,7 @@ The orientation call. One request tells a client who is signed in, which host, a
 - Door43 reads: repository search for the signed-in user, every page, de-duplicated by repository id (carried over from the prototype); with `show: supported`, filtered by Door43 to `metadataType=sb` and `flavor` `textTranslation` or `textStories` (E41). Per-project type, coverage, and health come from the catalog metadata in that response (E12); no archive is downloaded.
 - Returns: `{ organizations: [{ name, projects: [project summary] }], freshness, analysis: { complete, pending } }`. Projects appear immediately with `health.state = never_checked` and `coverage.present = null` until analysis completes (H3).
 - Filters: non-archived repositories with explicit push or admin permission (P1, P2). Nothing else is filtered out beyond the `show: supported` search filter.
-- Order: owner groups by name, the account's own repositories last (product spec §2); projects in a group by repository name. The configurable sort is #24. Because the catalog metadata arrives with the search, analysis is complete when the list is (`analysis.pending = 0`).
+- Order: owner groups by name, the account's own repositories last (product spec §2); projects in a group by repository name. The interface orders projects within each group by name, language, or most recent activity (`last_activity_at`, newest first, a project with none last), and filters by organization, language, project type, and health state, all over the list already read, so a change reads nothing (#24, `web/src/portfolio-view.ts`); the order is remembered by the browser, the filters are not, so a filter never hides projects on the next visit. The `organization`, `language`, `project_type`, `health_state`, and `sort` inputs stay in the schema for a client without the whole list; `sort` is not read by the Worker (built behind). Because the catalog metadata arrives with the search, analysis is complete when the list is (`analysis.pending = 0`).
 - Errors: `session_expired`, `door43_unavailable`, `portfolio_too_large` (the prototype's read limit, retained until Milestone 3 performance work).
 
 ### `project.read`

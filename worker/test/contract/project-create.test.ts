@@ -17,12 +17,17 @@ const runs = new URL('../../../fixtures/door43/qa.door43.org/2026-10-05/project-
 const run = new URL('tc-admin-qa-org/', runs);
 const read = (name: string, dir = run) => readFileSync(new URL(name, dir), 'utf8');
 const recorded = <T>(name: string, dir = run): T => (JSON.parse(read(name, dir)) as { response: { json: T } }).response.json;
+/** A recorded creation receipt, parsed as the client parses one. The recordings predate the report's `last_activity_at` (#24): each is read as stating none, never edited. */
+const recordedReceipt = (text: string) => {
+  const recorded = JSON.parse(text) as { result: Record<string, unknown> };
+  return OPERATIONS['project.create.apply'].output.parse({ ...recorded, result: { last_activity_at: null, ...recorded.result } });
+};
 const GENERATOR = { name: 'tC Admin', version: '0.1.0', user: { login: 'tc-admin-qa', name: 'tc-admin-qa' } };
 
 describe('the recorded QA creation (E45)', () => {
   const summary = JSON.parse(read('summary.json')) as { input: { owner: string; title: string; abbreviation: string; language: { code: string; title: string; direction: 'ltr' }; testament_scope: 'nt' } };
   const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json')));
-  const receipt = OPERATIONS['project.create.apply'].output.parse(JSON.parse(read('receipt.json')));
+  const receipt = recordedReceipt(read('receipt.json'));
   const committed = read('metadata.json');
 
   test('W1: the metadata.json committed is byte for byte what the writer generates for the recorded inputs and time', () => {
@@ -94,7 +99,7 @@ describe('the recorded QA creation of an Open Bible Stories project (E47)', () =
   const obs = new URL('tc-admin-qa-org-obs/', runs);
   const summary = JSON.parse(read('summary.json', obs)) as { input: { owner: string; title: string; abbreviation: string; language: { code: string; title: string; direction: 'ltr' } } };
   const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', obs)));
-  const receipt = OPERATIONS['project.create.apply'].output.parse(JSON.parse(read('receipt.json', obs)));
+  const receipt = recordedReceipt(read('receipt.json', obs));
   const committed = read('metadata.json', obs);
 
   test('W1: the metadata.json committed is byte for byte what the writer generates, with tC Admin as generator and the fixed scope (E46)', () => {
@@ -145,7 +150,7 @@ describe('the recorded QA creation of an Open Bible Stories project (E47)', () =
 describe('the recorded creation under the signed-in account (E48, Q28)', () => {
   const own = new URL('tc-admin-qa-oauth/', runs);
   const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', own)));
-  const receipt = OPERATIONS['project.create.apply'].output.parse(JSON.parse(read('receipt.json', own)));
+  const receipt = recordedReceipt(read('receipt.json', own));
   const committed = read('metadata.json', own);
 
   test('W1: the metadata.json committed under the account is byte for byte what the writer generates', () => {
@@ -194,7 +199,7 @@ describe('the recorded creation in the user\'s own namespace with the API token 
   const own = new URL('../../../fixtures/door43/qa.door43.org/2026-10-06/project-create/tc-admin-qa/', import.meta.url);
   const summary = JSON.parse(read('summary.json', own)) as { input: { owner: string; title: string; abbreviation: string; language: { code: string; title: string; direction: 'ltr' } } };
   const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', own)));
-  const receipt = OPERATIONS['project.create.apply'].output.parse(JSON.parse(read('receipt.json', own)));
+  const receipt = recordedReceipt(read('receipt.json', own));
   const committed = read('metadata.json', own);
 
   test('W1: the metadata.json committed is byte for byte what the writer generates for the recorded inputs and time', () => {
@@ -239,7 +244,7 @@ describe('the recorded QA creation with translation details other than the defau
     input: { owner: string; title: string; abbreviation: string; language: { code: string; title: string; direction: 'ltr' }; testament_scope: 'nt'; flavor: { projectType: 'daughter'; translationType: 'revision'; audience: 'literary' } };
   };
   const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', dir)));
-  const receipt = OPERATIONS['project.create.apply'].output.parse(JSON.parse(read('receipt.json', dir)));
+  const receipt = recordedReceipt(read('receipt.json', dir));
   const committed = read('metadata.json', dir);
 
   test('W1: the metadata.json committed carries the details given and is byte for byte what the writer generates for them', () => {

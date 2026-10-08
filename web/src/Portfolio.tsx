@@ -8,10 +8,12 @@
 // wizard (#28); a project it creates is listed at once, since
 // Door43's catalog lists a new repository a few seconds later (E28, S1).
 // "Refresh" reads the portfolio from Door43 again, and its age is labeled
-// (P3, #26). Filters and sorting are #24.
+// (P3, #26). Filters by organization, language, project type, and health,
+// and the order within each owner group, apply in the browser over the list
+// already read (#24).
 
 import { useEffect, useState } from 'react';
-import type { OperationOutput, ProjectSummary } from '@tc-admin/shared/schema';
+import type { HealthState, OperationOutput, ProjectSummary, ProjectType } from '@tc-admin/shared/schema';
 import { callOperation } from './api/client';
 import { CreateProject } from './CreateProject';
 import { CREATE_HASH, retireCreated, withCreated } from './create-project';
@@ -20,6 +22,9 @@ import { ReleaseStepper } from './ReleaseStepper';
 import { ReleaseView } from './ReleaseView';
 import { freshnessLabel } from './freshness';
 import { useNow } from './use-now';
+import { SORT_LABELS, applyView, filterChoices, filtered, rememberView, rememberedView } from './portfolio-view';
+import type { PortfolioView, SortOrder } from './portfolio-view';
+import { ageLabel } from './freshness';
 import { canOpen, coverageLabel, formatLabel, hashRef, healthLabel, projectHash, typeLabel } from './portfolio-labels';
 
 type PortfolioList = OperationOutput<'portfolio.list'>;
@@ -42,6 +47,14 @@ export function Portfolio({ account, onFailure }: Props) {
   // A refresh asked for and not yet answered: the list stays, labeled with its age, until the new one arrives (P3, #26).
   const [refreshing, setRefreshing] = useState(false);
   const now = useNow();
+  // The filters and the order (#24); the order is remembered by this browser, the filters are not.
+  const [view, setView] = useState<PortfolioView>(rememberedView);
+  const changeView = (patch: Partial<PortfolioView>) =>
+    setView(previous => {
+      const next = { ...previous, ...patch };
+      rememberView(next);
+      return next;
+    });
 
   useEffect(() => {
     let current = true;
@@ -72,6 +85,9 @@ export function Portfolio({ account, onFailure }: Props) {
   const portfolio = result?.show === show ? result.portfolio : null;
   const organizations = withCreated(portfolio?.organizations ?? [], created, account.login);
   const projects = organizations.flatMap(group => group.projects);
+  // The list as filtered and ordered; an address still opens any listed project, filtered out or not.
+  const shown = applyView(organizations, view);
+  const shownCount = shown.reduce((count, group) => count + group.projects.length, 0);
   const wanted = hashRef(hash);
   const open = wanted && projects.find(project => project.ref.owner === wanted.owner && project.ref.repo === wanted.repo && canOpen(project));
   // Keyed by the release's identity: a change of tag mounts a fresh page, so no lookup, alert, or late answer of another release survives it.
@@ -118,13 +134,22 @@ export function Portfolio({ account, onFailure }: Props) {
             : 'You have no Bible or Open Bible Stories projects in Scripture Burrito that you can write to on this Door43 host. Show all projects to see the others.'}
         </p>
       )}
+      {portfolio && projects.length > 0 && <ViewControls groups={organizations} view={view} onChange={changeView} shown={shownCount} total={projects.length} />}
+      {portfolio && projects.length > 0 && shownCount === 0 && (
+        <p>
+          No project matches these filters.{' '}
+          <button type="button" className="secondary" onClick={() => changeView({ organization: null, language: null, project_type: null, health: null })}>
+            Clear the filters
+          </button>
+        </p>
+      )}
       {portfolio &&
-        organizations.map(group => (
+        shown.map(group => (
           <section key={group.name} className="owner">
             <h2>{group.name}</h2>
             <ul className="projects">
               {group.projects.map(project => (
-                <ProjectRow key={project.ref.id} project={project} />
+                <ProjectRow key={project.ref.id} project={project} now={now} />
               ))}
             </ul>
           </section>
@@ -149,14 +174,15 @@ export function Portfolio({ account, onFailure }: Props) {
   );
 }
 
-function ProjectRow({ project }: { project: ProjectSummary }) {
+function ProjectRow({ project, now }: { project: ProjectSummary; now: number }) {
   const coverage = coverageLabel(project);
+  const changed = project.last_activity_at ? `changed ${ageLabel(project.last_activity_at, now)}` : null;
   return (
     <li className={canOpen(project) ? 'project' : 'project unsupported'}>
       <div>
         <strong>{project.title}</strong> <span className="muted">{project.ref.repo}</span>
         <div className="facts">
-          {[typeLabel(project.project_type), formatLabel(project.metadata_format), project.language.title || project.language.code, coverage]
+          {[typeLabel(project.project_type), formatLabel(project.metadata_format), project.language.title || project.language.code, coverage, changed]
             .filter(Boolean)
             .join(' · ')}
         </div>
@@ -174,5 +200,73 @@ function ProjectRow({ project }: { project: ProjectSummary }) {
         </a>
       )}
     </li>
+  );
+}
+
+const ALL = '';
+
+/** The filters and the order: each filter offers only what the list holds, and "All" clears it. */
+function ViewControls({ groups, view, onChange, shown, total }: { groups: readonly { name: string; projects: ProjectSummary[] }[]; view: PortfolioView; onChange: (patch: Partial<PortfolioView>) => void; shown: number; total: number }) {
+  const choices = filterChoices(groups);
+  return (
+    <div className="toolbar filters" role="group" aria-label="Filter and order the projects">
+      <label className="field">
+        Organization
+        <select value={view.organization ?? ALL} onChange={event => onChange({ organization: event.target.value || null })}>
+          <option value={ALL}>All</option>
+          {choices.organizations.map(name => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        Language
+        <select value={view.language ?? ALL} onChange={event => onChange({ language: event.target.value || null })}>
+          <option value={ALL}>All</option>
+          {choices.languages.map(language => (
+            <option key={language.code} value={language.code}>
+              {language.title === language.code ? language.code : `${language.title} (${language.code})`}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        Project type
+        <select value={view.project_type ?? ALL} onChange={event => onChange({ project_type: (event.target.value || null) as ProjectType | null })}>
+          <option value={ALL}>All</option>
+          {choices.project_types.map(type => (
+            <option key={type} value={type}>
+              {typeLabel(type)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        Health
+        <select value={view.health ?? ALL} onChange={event => onChange({ health: (event.target.value || null) as HealthState | null })}>
+          <option value={ALL}>All</option>
+          {choices.health.map(state => (
+            <option key={state} value={state}>
+              {healthLabel(state)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        Order within each owner
+        <select value={view.sort} onChange={event => onChange({ sort: event.target.value as SortOrder })}>
+          {(Object.keys(SORT_LABELS) as SortOrder[]).map(order => (
+            <option key={order} value={order}>
+              {SORT_LABELS[order]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <span className="muted" role="status">
+        {filtered(view) ? `Showing ${shown} of ${total} projects` : `${total} ${total === 1 ? 'project' : 'projects'}`}
+      </span>
+    </div>
   );
 }

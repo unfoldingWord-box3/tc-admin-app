@@ -140,6 +140,8 @@ describe('portfolio.list', () => {
       title: 'Perjanjian Baru Pendau',
       default_branch: 'master',
       language: { code: 'ums', title: 'Pendau' },
+      // Door43's `updated_at` for the repository (E32), which the portfolio orders by (#24).
+      last_activity_at: '2026-07-21T04:42:35Z',
       project_type: 'bible',
       metadata_format: 'sb',
       coverage: { present: 27, target: 27, scope: 'nt', basis: 'catalog' },
@@ -156,6 +158,11 @@ describe('portfolio.list', () => {
     const obs = projects.find(project => project.ref.repo === 'en_obs')!;
     expect(obs.coverage).toMatchObject({ present: null, target: 50, scope: 'obs' });
     expect(obs.health).toMatchObject({ state: 'never_checked', severity_raw: null });
+  });
+
+  test('#24: a repository Door43 gives no update time for has no activity date, never one made up', async () => {
+    const { projects } = await run();
+    expect(projects.find(project => project.ref.repo === 'en_obs')!.last_activity_at).toBeNull();
   });
 
   test('a repository without a title is called by its name', async () => {

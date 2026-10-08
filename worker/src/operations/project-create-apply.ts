@@ -60,6 +60,8 @@ export function createdProjectReport(
     description: project.title,
     default_branch: repository.default_branch,
     language: { code: project.language.code, title: project.language.title },
+    // The repository was just created, and its first commit, when made, is the last change to it.
+    last_activity_at: commit?.committed_at ?? checkedAt,
     project_type: project.project_type,
     metadata_format: 'sb',
     editability: editability('sb', project.project_type),
