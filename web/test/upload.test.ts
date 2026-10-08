@@ -61,13 +61,13 @@ describe('the confirmation gate', () => {
       'notes.txt is held back: choose its story or leave the file out.',
       'Confirm that ingredients/content/04.md is replaced.',
     ]);
-    expect(confirmBlockers(plan, 'obs', new Set([overwriteKey(overwrite)]))).toEqual(['notes.txt is held back: choose its story or leave the file out.']);
-    expect(canConfirm(plan, 'obs', new Set([overwriteKey(overwrite)]))).toBe(false);
+    expect(confirmBlockers(plan, 'obs', new Set([overwriteKey(plan, overwrite)]))).toEqual(['notes.txt is held back: choose its story or leave the file out.']);
+    expect(canConfirm(plan, 'obs', new Set([overwriteKey(plan, overwrite)]))).toBe(false);
   });
 
   test('W6: once every file is identified and every overwrite confirmed, the plan can be confirmed', () => {
     const plan = uploadPlanOf('p2', [story('05.md', '05'), story('04.md', '04', true, ''), story('notes.txt', '06')]);
-    const confirmed = new Set(plan.preview.files.filter(file => file.overwrite).map(overwriteKey));
+    const confirmed = new Set(plan.preview.files.filter(file => file.overwrite).map(file => overwriteKey(plan, file)));
     expect(canConfirm(plan, 'obs', confirmed)).toBe(true);
   });
 
@@ -77,10 +77,19 @@ describe('the confirmation gate', () => {
   });
 
   test('an overwrite confirmed for one plan stays confirmed in the next only when the same bytes replace the same file the same way', () => {
+    const plan = uploadPlanOf('p1', []);
     const first = story('04.md', '04', true, '@@ -1 +1 @@\n-a\n+b\n');
-    expect(overwriteKey(first)).toBe(overwriteKey({ ...first }));
-    expect(overwriteKey(first)).not.toBe(overwriteKey({ ...first, diff: '@@ -1 +1 @@\n-c\n+b\n' }));
-    expect(overwriteKey(first)).not.toBe(overwriteKey({ ...first, md5: 'other' }));
+    expect(overwriteKey(plan, first)).toBe(overwriteKey(plan, { ...first }));
+    expect(overwriteKey(plan, first)).not.toBe(overwriteKey(plan, { ...first, diff: '@@ -1 +1 @@\n-c\n+b\n' }));
+    expect(overwriteKey(plan, first)).not.toBe(overwriteKey(plan, { ...first, md5: 'other' }));
+  });
+
+  test('W6: an overwrite with no text diff confirmed against one branch commit is not confirmed against another', () => {
+    const plan = uploadPlanOf('p1', []);
+    const moved = { ...plan, bound_to: { ...plan.bound_to, default_branch_sha: 'c'.repeat(40) } };
+    const large = story('04.md', '04', true, null);
+    expect(overwriteKey(plan, large)).toBe(overwriteKey(plan, { ...large }));
+    expect(overwriteKey(plan, large)).not.toBe(overwriteKey(moved, large));
   });
 });
 

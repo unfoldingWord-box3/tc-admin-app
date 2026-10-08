@@ -109,8 +109,14 @@ export function UploadScreen({ project, type, onUploaded, onCancel, onFailure }:
   // The plan an apply was sent for and did not succeed: it is not sent again (X1); a new plan is.
   const [spent, setSpent] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
-  // Bumped by every plan and apply: an answer for an earlier one is stale and is not shown.
+  // Bumped by every plan, apply, and accepted choice of files: an answer for an earlier one is stale and is not shown.
   const ticket = useRef(0);
+  // The batch as last set, read by a choice whose files finish reading after another choice changed it.
+  const batch = useRef<{ files: ChosenFile[]; confirmations: Confirmations }>({ files: [], confirmations: {} });
+  // Choices of files still being read: the batch is planned when the last of them is read.
+  const reading = useRef(0);
+  // An apply in flight: no choice of files is accepted until it is answered.
+  const applyingNow = useRef(false);
 
   const show = (failure: unknown, during: UploadProblem['during'], sent: readonly string[]) => {
     if (failure instanceof ApiError && failure.error.code === 'session_expired' && onFailure) return onFailure(failure);
@@ -121,6 +127,7 @@ export function UploadScreen({ project, type, onUploaded, onCancel, onFailure }:
   /** Plans the files with the confirmations; the answer becomes the plan of record, or the failure is shown in its place. */
   const plan = async (files: ChosenFile[], nextConfirmations: Confirmations) => {
     const mine = ++ticket.current;
+    batch.current = { files, confirmations: nextConfirmations };
     setChosen(files);
     setConfirmations(nextConfirmations);
     setProblem(null);
@@ -153,20 +160,38 @@ export function UploadScreen({ project, type, onUploaded, onCancel, onFailure }:
     }
   };
 
-  const add = async (picked: readonly Picked[]) => {
-    if (picked.length === 0) return;
+  /**
+   * Adds the files of one choice or drop to the batch. Accepting it makes any plan still in flight stale and keeps the
+   * confirmation locked until the batch, with every overlapping choice's files merged into it, has a plan of record.
+   */
+  const add = async (source: readonly Picked[] | Promise<readonly Picked[]>) => {
+    if (applyingNow.current || (Array.isArray(source) && source.length === 0)) return;
+    ++ticket.current;
+    reading.current += 1;
     setReadProblem(null);
     setBusy('reading');
     const read: ChosenFile[] = [];
-    for (const { name, file } of picked) {
-      try {
-        read.push({ name, content: new Uint8Array(await file.arrayBuffer()) });
-      } catch {
-        setReadProblem(`This browser could not read ${name}. Choose it again.`);
+    try {
+      for (const { name, file } of await source) {
+        try {
+          read.push({ name, content: new Uint8Array(await file.arrayBuffer()) });
+        } catch {
+          setReadProblem(`This browser could not read ${name}. Choose it again.`);
+        }
       }
+    } catch {
+      setReadProblem('This browser could not read the dropped files. Choose them with the buttons instead.');
     }
-    if (read.length === 0) return setBusy(null);
-    await plan(mergeChosen(chosen, read), confirmations);
+    reading.current -= 1;
+    const files = read.length > 0 ? mergeChosen(batch.current.files, read) : batch.current.files;
+    if (read.length > 0) {
+      batch.current = { files, confirmations: batch.current.confirmations };
+      setChosen(files);
+    }
+    if (reading.current > 0) return;
+    // The last choice read plans the whole batch; a plan an earlier choice made stale is asked again.
+    if (files.length === 0) return setBusy(null);
+    await plan(files, batch.current.confirmations);
   };
 
   const leaveOut = (name: string) => {
@@ -184,11 +209,13 @@ export function UploadScreen({ project, type, onUploaded, onCancel, onFailure }:
     if (!planned || busy || !canConfirm(planned.plan, type, confirmed) || spent === planned.plan.id) return;
     const mine = ++ticket.current;
     const added = `Added ${identifiedFiles(planned.plan).length} ${unitNoun(type, identifiedFiles(planned.plan).length)}`;
+    applyingNow.current = true;
     setBusy('applying');
     setProblem(null);
     try {
       const receipt = await applyUpload({ owner, repo }, planned.plan.id, planned.files, planned.confirmations);
-      if (mine === ticket.current) onUploaded(receipt, added);
+      // A commit that landed always shows its receipt.
+      onUploaded(receipt, added);
     } catch (failure) {
       if (mine !== ticket.current) return;
       setSpent(planned.plan.id);
@@ -198,6 +225,7 @@ export function UploadScreen({ project, type, onUploaded, onCancel, onFailure }:
         planned.files.map(file => file.name),
       );
     } finally {
+      applyingNow.current = false;
       if (mine === ticket.current) setBusy(null);
     }
   };
@@ -206,10 +234,8 @@ export function UploadScreen({ project, type, onUploaded, onCancel, onFailure }:
     event.preventDefault();
     setDragging(false);
     if (busy === 'applying') return;
-    droppedFiles(event.dataTransfer).then(
-      picked => void add(picked),
-      () => setReadProblem('This browser could not read the dropped files. Choose them with the buttons instead.'),
-    );
+    // Accepted now, while the drop is handled, so the confirmation is locked while its folder is walked.
+    void add(droppedFiles(event.dataTransfer));
   };
 
   const applying = busy === 'applying';
@@ -301,8 +327,8 @@ export function UploadScreen({ project, type, onUploaded, onCancel, onFailure }:
           onConfirmOverwrite={(file, on) =>
             setConfirmed(previous => {
               const next = new Set(previous);
-              if (on) next.add(overwriteKey(file));
-              else next.delete(overwriteKey(file));
+              if (on) next.add(overwriteKey(current, file));
+              else next.delete(overwriteKey(current, file));
               return next;
             })
           }
@@ -492,7 +518,7 @@ function PlanReview({ plan, type, confirmations, confirmed, busy, spent, onConfi
                 <Overwrite
                   file={file}
                   entry={entries.find(change => change.path === file.path) ?? null}
-                  checked={confirmed.has(overwriteKey(file))}
+                  checked={confirmed.has(overwriteKey(plan, file))}
                   disabled={locked}
                   onChange={on => onConfirmOverwrite(file, on)}
                 />

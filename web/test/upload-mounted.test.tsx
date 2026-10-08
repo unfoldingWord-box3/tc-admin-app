@@ -4,12 +4,12 @@
 // and only the confirmation sends `upload.apply`, once, with the planned files.
 // A held-back file and an overwrite each block the confirmation until the
 // manager decides; a choice plans again; every refusal is shown in place.
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { forgetCsrfToken } from '../src/api/client';
 import { ProjectView } from '../src/ProjectView';
 import { UploadScreen } from '../src/UploadScreen';
-import { heldWorker, projectOf } from './support/mounted';
+import { heldWorker, projectOf, settle } from './support/mounted';
 import { E64_PLAN, errorOf, story, uploadPlanOf, uploadReceiptOf } from './support/upload';
 
 const project = projectOf('tc-admin-qa-org', 'id_obs1948');
@@ -159,6 +159,72 @@ describe('plan before apply', () => {
     );
     expect(within(screen.getByRole('list', { name: 'Warnings' })).getByText(message)).toBeTruthy();
     expect(confirmButton(/^Add 1 book$/).disabled).toBe(false);
+  });
+});
+
+/** A file whose bytes are read only when the test releases them. */
+function slowFile(name: string, text = name) {
+  const slow = file(name, text);
+  let release: () => void = () => {};
+  const read = new Promise<ArrayBuffer>(resolve => (release = () => resolve(new TextEncoder().encode(text).buffer as ArrayBuffer)));
+  Object.defineProperty(slow, 'arrayBuffer', { value: () => read });
+  return { file: slow, release: async () => act(async () => { release(); await settle(); }) };
+}
+const planNames = (form: FormData | null) => [...(form?.entries() ?? [])].filter(([key]) => key.endsWith('.name')).map(([, value]) => value).sort();
+
+describe('overlapping choices', () => {
+  test('W5: a slow read and then a fast one both stay in the batch, planned once the last is read', async () => {
+    mount();
+    const slow = slowFile('05.md');
+    fireEvent.change(screen.getByLabelText('Choose files'), { target: { files: [slow.file] } });
+    fireEvent.change(screen.getByLabelText('Choose files'), { target: { files: [file('06.md')] } });
+    await settle();
+    expect(plans()).toHaveLength(0);
+    await slow.release();
+    await vi.waitFor(() => expect(plans()).toHaveLength(1));
+    expect(planNames(plans()[0]!.form)).toEqual(['05.md', '06.md']);
+  });
+
+  test('W5: a plan answered while a newer choice is still read is not offered for confirmation', async () => {
+    mount();
+    await choose(file('05.md'));
+    const slow = slowFile('06.md');
+    fireEvent.change(screen.getByLabelText('Choose files'), { target: { files: [slow.file] } });
+    await worker.answer('POST', planUrl, uploadPlanOf('p1', [story('05.md', '05')]));
+    expect(screen.queryByRole('button', { name: /^Add 1 story$/ })).toBeNull();
+    await slow.release();
+    await vi.waitFor(() => expect(plans()).toHaveLength(2));
+    expect(planNames(plans()[1]!.form)).toEqual(['05.md', '06.md']);
+    await worker.answer('POST', planUrl, uploadPlanOf('p2', [story('05.md', '05'), story('06.md', '06')]));
+    expect(confirmButton(/^Add 2 stories$/).disabled).toBe(false);
+  });
+
+  test('X1: files chosen while an apply is sent are not taken, and the apply\'s receipt is still delivered', async () => {
+    const onUploaded = vi.fn();
+    render(<UploadScreen project={project} type="obs" onUploaded={onUploaded} onCancel={() => {}} />);
+    await choose(file('05.md'));
+    await worker.answer('POST', planUrl, uploadPlanOf('p1', [story('05.md', '05')]));
+    fireEvent.click(confirmButton(/^Add 1 story$/));
+    expect(applies()).toHaveLength(1);
+    fireEvent.change(screen.getByLabelText('Choose files'), { target: { files: [file('06.md')] } });
+    await settle();
+    await worker.answer('POST', applyUrl, uploadReceiptOf('p1'));
+    expect(onUploaded).toHaveBeenCalledTimes(1);
+    expect(plans()).toHaveLength(1);
+  });
+
+  test('W6: an overwrite with no text diff, planned again against a moved branch, needs its confirmation again', async () => {
+    mount();
+    await choose(file('04.md'), file('05.md'));
+    await worker.answer('POST', planUrl, uploadPlanOf('p1', [story('04.md', '04', true, null), story('05.md', '05')]));
+    fireEvent.click(screen.getByLabelText(/Replace ingredients\/content\/04\.md with 04\.md/));
+    expect(confirmButton(/^Add 2 stories$/).disabled).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Leave out 05.md' }));
+    await vi.waitFor(() => expect(plans()).toHaveLength(2));
+    const moved = uploadPlanOf('p2', [story('04.md', '04', true, null)]);
+    await worker.answer('POST', planUrl, { ...moved, bound_to: { ...moved.bound_to, default_branch_sha: 'c'.repeat(40) } });
+    expect((screen.getByLabelText(/Replace ingredients\/content\/04\.md with 04\.md/) as HTMLInputElement).checked).toBe(false);
+    expect(confirmButton(/^Add 1 story$/).disabled).toBe(true);
   });
 });
 

@@ -119,11 +119,13 @@ export const confirmationOf = (confirmations: Confirmations, name: string): Unit
   Object.entries(confirmations).find(([key]) => sameFile(key, name))?.[1] ?? null;
 
 /**
- * The key of one overwrite's confirmation: the file, the path it replaces, its bytes, and its diff. A new plan that
- * replaces the same path with the same bytes against the same branch file keeps the manager's confirmation; any
- * change to what is replaced asks for it again.
+ * The key of one overwrite's confirmation: the default branch commit the plan is bound to, the file, the path it
+ * replaces, its bytes, and its diff. A new plan that replaces the same path with the same bytes against the same
+ * branch commit keeps the manager's confirmation; any change to what is replaced, including a branch that moved while
+ * no text diff could show how, asks for it again.
  */
-export const overwriteKey = (file: PlannedFile): string => [file.name, file.path ?? '', file.md5, file.diff ?? '\u0000'].join('\n');
+export const overwriteKey = (plan: Pick<UploadPlan, 'bound_to'>, file: PlannedFile): string =>
+  [plan.bound_to.default_branch_sha, file.name, file.path ?? '', file.md5, file.diff ?? '\u0000'].join('\n');
 
 export const identifiedFiles = (plan: UploadPlan): PlannedFile[] => plan.preview.files.filter(file => file.identified !== null);
 export const heldBackFiles = (plan: UploadPlan): PlannedFile[] => plan.preview.files.filter(file => file.identified === null);
@@ -139,7 +141,7 @@ export function confirmBlockers(plan: UploadPlan, type: UploadType, confirmedOve
         ? `${held[0]!.name} is held back: choose its ${unitNoun(type, 1)} or leave the file out.`
         : `${held.length} files are held back: choose the ${unitNoun(type, 1)} for each or leave it out.`,
     );
-  const unconfirmed = overwrites(plan).filter(file => !confirmedOverwrites.has(overwriteKey(file)));
+  const unconfirmed = overwrites(plan).filter(file => !confirmedOverwrites.has(overwriteKey(plan, file)));
   if (unconfirmed.length > 0)
     blockers.push(unconfirmed.length === 1 ? `Confirm that ${unconfirmed[0]!.path} is replaced.` : `Confirm each of the ${unconfirmed.length} files that are replaced.`);
   if (identifiedFiles(plan).length === 0 || plan.would_write.length === 0) blockers.push(`No file is identified as a ${unitNoun(type, 1)} yet, so nothing would be written.`);
