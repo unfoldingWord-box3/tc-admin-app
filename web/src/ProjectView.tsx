@@ -1,6 +1,8 @@
 // One project's report, from the portfolio's summary (`#/<owner>/<repo>`) or
 // the report the creation receipt carries. Health is text, never color alone
-// (H4), and unknown coverage reads as unknown (H3). The full project report
+// (H4), and unknown coverage reads as unknown (H3). Once the full report is
+// read, the findings of the default branch and of the latest full release are
+// listed (#146, `ProjectHealth`). The full project report
 // (`project.read`) is #25. Opened from the portfolio, it lists the project's
 // release preparations (`preparation.list`, #125): each under way with a link
 // into the stepper at it and the discard, each released with a link to its
@@ -14,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, callOperation, failureMessage } from './api/client';
 import { WRITE_LABELS } from './create-project';
 import { freshnessLabel } from './freshness';
+import { ProjectHealth } from './ProjectHealth';
 import { withKnownClassification } from './known-report';
 import { useNow } from './use-now';
 import { coverageLabel, healthLabel, releaseHash, releaseTagHash, typeLabel } from './portfolio-labels';
@@ -253,6 +256,9 @@ export function ProjectView({ project: given, onFailure }: Props) {
         </button>
       </p>
       {reading === 'read' && <p className="muted" role="status">Reading the project from Door43…</p>}
+      {'freshness' in project && 'latest_full_release' in project && (
+        <ProjectHealth url={project.ref.url} defaultBranch={project.default_branch} health={project.health} release={project.latest_full_release} releaseHealth={project.release_health} />
+      )}
       {catalogPending && (
         <p className="muted" role="status">
           Door43's catalog has not read this project's latest change yet; its type and coverage are shown as tC Admin wrote them. Refresh in a moment for Door43's reading.

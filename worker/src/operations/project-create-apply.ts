@@ -69,6 +69,8 @@ export function createdProjectReport(
     coverage: { ...files, basis: 'archive' },
     health: { state: 'never_checked', severity_raw: null, ref: repository.default_branch, checked_at: null, issue_count: null, issues: null, source: 'door43' },
     latest_full_release: null,
+    // A receipt reports what it wrote; the release's health is not read here (#146).
+    release_health: null,
     default_branch_head: commit ? { sha: commit.sha, committed_at: commit.committed_at ?? checkedAt } : null,
     active_preparation: null,
     setup: commit ? { state: 'complete', failed_step: null } : { state: 'incomplete', failed_step: 'first_commit' },

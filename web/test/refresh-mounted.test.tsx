@@ -55,7 +55,8 @@ describe('the project view reads the full report', () => {
     expect(screen.getByRole('status').textContent).toContain('Reading the project from Door43');
     await answerWhenSent('GET', READ, reportOf());
     expect(screen.getByText('v1.2')).toBeTruthy();
-    expect(screen.getByText(/Warning · 28 findings/)).toBeTruthy();
+    // The report's summary line; the health section heads its list with the same count (#146).
+    expect(screen.getByText(/Warning · 28 findings/, { selector: 'dd' })).toBeTruthy();
     expect(screen.getByText(/· on master/)).toBeTruthy();
     expect(screen.getByText(/Read from Door43 at .+ · 3 minutes ago\./)).toBeTruthy();
   });

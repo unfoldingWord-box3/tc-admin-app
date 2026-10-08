@@ -1,0 +1,124 @@
+{
+  "host": "qa.door43.org",
+  "read_at": "2026-10-08T20:57:26.729Z",
+  "operation": "project.read",
+  "healthcheck_calls": [
+    "GET /api/v1/repos/tc-admin-qa-org/id_obs1948/healthcheck?ref=master 200",
+    "GET /api/v1/repos/tc-admin-qa-org/id_obs1948/healthcheck?ref=v1.0.0 200"
+  ],
+  "report": {
+    "ref": {
+      "owner": "tc-admin-qa-org",
+      "repo": "id_obs1948",
+      "id": 96870,
+      "url": "https://qa.door43.org/tc-admin-qa-org/id_obs1948"
+    },
+    "title": "tC Admin probe OBS 2026-10-05 1948",
+    "description": "tC Admin probe OBS 2026-10-05 1948",
+    "default_branch": "master",
+    "language": {
+      "code": "xdy-x-dayaklau",
+      "title": "Dayak Lau"
+    },
+    "last_activity_at": "2026-10-08T08:43:04Z",
+    "project_type": "obs",
+    "metadata_format": "sb",
+    "editability": {
+      "state": "editable",
+      "reason": "Scripture Burrito project. Release and editing are available."
+    },
+    "coverage": {
+      "present": null,
+      "target": 50,
+      "scope": "obs",
+      "basis": "catalog",
+      "units": []
+    },
+    "health": {
+      "ref": "master",
+      "checked_at": "2026-10-08T20:57:26.729Z",
+      "source": "door43",
+      "state": "failing",
+      "severity_raw": "error",
+      "issue_count": 4,
+      "issues": [
+        {
+          "code": "release_needed",
+          "rule": null,
+          "severity": "info",
+          "title": "An error-free release needs to be published for the resource",
+          "details": "An error-free release needs to be published for the resource.",
+          "suggestion": "Fix all the errors above. Then make a release with <a href=\"https://gateway-admin.netlify.app/\" target=\"_blank\">gatewayAdmin</a>."
+        },
+        {
+          "code": "obs_story_missing",
+          "rule": "COMP-020",
+          "severity": "error",
+          "title": "Not all 50 stories are present",
+          "details": "The following stories are missing: **`05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50`**",
+          "suggestion": "Add and translate the following stories: **`05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50`**."
+        },
+        {
+          "code": "obs_story_missing",
+          "rule": "COMP-020",
+          "severity": "error",
+          "title": "Not all 50 stories are present",
+          "details": "The following stories are not listed in the **`ingredients`** of metadata.json: **`04`**",
+          "suggestion": "Add the following stories to the **`ingredients`** of <a href=\"/tc-admin-qa-org/id_obs1948/src/branch/master/metadata.json\" target=\"_blank\">metadata.json</a> with their sizes: **`04`**."
+        },
+        {
+          "code": "sb_ingredient_mismatch",
+          "rule": "META-015",
+          "severity": "warning",
+          "title": "Ingredient sizes or checksums do not match the files in the repo",
+          "details": "The ingredient **`ingredients/content/02.md`** has a size of 4298 in metadata.json but the file is 4299 bytes.",
+          "suggestion": "Update the <a href=\"/tc-admin-qa-org/id_obs1948/src/branch/master/metadata.json\" target=\"_blank\">metadata.json</a> file so the **`ingredients`** entries match the files in the repository, or update the files themselves."
+        }
+      ]
+    },
+    "permissions": {
+      "push": true,
+      "admin": true,
+      "checked_at": "2026-10-08T20:57:26.729Z"
+    },
+    "latest_full_release": {
+      "tag": "v1.0.0",
+      "version": "v1.0.0",
+      "sha": "c8b45d2a1c6b51fbf0c0850c511db0d6d741e98f",
+      "published_at": "2026-10-07T20:41:13Z",
+      "author": "tc-admin-qa"
+    },
+    "release_health": {
+      "ref": "v1.0.0",
+      "checked_at": "2026-10-08T20:57:26.729Z",
+      "source": "door43",
+      "state": "failing",
+      "severity_raw": "error",
+      "issue_count": 1,
+      "issues": [
+        {
+          "code": "obs_story_missing",
+          "rule": "COMP-020",
+          "severity": "error",
+          "title": "Not all 50 stories are present",
+          "details": "The following stories are missing: **`04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50`**",
+          "suggestion": "Add and translate the following stories: **`04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50`**."
+        }
+      ]
+    },
+    "default_branch_head": {
+      "sha": "928afcf7c9c6022ae11304ca7fce04f39230ecce",
+      "committed_at": "2026-10-07T22:34:23Z"
+    },
+    "active_preparation": null,
+    "setup": {
+      "state": "complete",
+      "failed_step": null
+    },
+    "freshness": {
+      "read_at": "2026-10-08T20:57:26.729Z",
+      "source": "live",
+      "age_seconds": 0
+    }
+  }
+}
