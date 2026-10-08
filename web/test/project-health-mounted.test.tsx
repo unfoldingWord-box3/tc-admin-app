@@ -116,6 +116,6 @@ describe('#146: the project view lists its health findings without a release', (
     cleanup();
 
     const unread = await opened(reportOf({ release_health: null }));
-    expect(within(unread).getByText('The health check of the latest release, v1.2, was not read with this report. Refresh to read it.')).toBeTruthy();
+    expect(within(unread).getByText('This report has no health check of the latest release, v1.2. Refresh to read it.')).toBeTruthy();
   });
 });

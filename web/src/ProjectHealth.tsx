@@ -63,7 +63,8 @@ export function ProjectHealth({ url, defaultBranch, health, release, releaseHeal
       {/* Named by the branch: a receipt's health is of the commit it wrote, whose ref is a commit hash (bench round 1 on #147). */}
       <HealthPart heading={`Default branch, ${defaultBranch}`} health={health} origin={origin} />
       {release && releaseHealth && <HealthPart heading={`Latest release, ${release.tag}`} health={releaseHealth} origin={origin} />}
-      {release && !releaseHealth && <p className="muted">The health check of the latest release, {release.tag}, was not read with this report. Refresh to read it.</p>}
+      {/* True whichever way it came: a receipt, which reads no release health, or a release answer naming another tag than the one checked (bench round 2 on #147). */}
+      {release && !releaseHealth && <p className="muted">This report has no health check of the latest release, {release.tag}. Refresh to read it.</p>}
       {!release && <p className="muted">No full release yet, so there is no release to check.</p>}
     </section>
   );
