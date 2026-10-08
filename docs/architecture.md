@@ -322,7 +322,7 @@ web/
   src/preparations.ts  which preparations are under way and which finished, their words, a preparation's address and links, the preparation a refusal names, as pure functions (#125)
   src/ProjectView.tsx  one project's report, shown from the portfolio and after creation; from the portfolio, its release preparations, each with a link and the discard (#125)
   src/HealthFindings.tsx, src/health-findings.ts, src/door43-text.ts  Door43's health findings: the summary when a release is blocked or a warning needs confirmation, each finding's severity as an icon and a word (H4), errors first; Door43's bold, code, and links rendered from tokens, never inserted as HTML (H1, #124)
-  test/
+  test/              the pure functions and the client in Node; mounted components (`*-mounted.test.tsx`, marked `// @vitest-environment jsdom`) under jsdom with Testing Library, the Worker stubbed so each answer arrives in the order a test sets; support/ (the stub and the shapes it answers with)
 fixtures/
   door43/            recorded responses and archives, each with host, ref, and date (ADR 0012)
 scripts/
