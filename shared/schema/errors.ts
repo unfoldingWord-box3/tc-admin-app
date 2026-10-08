@@ -8,7 +8,7 @@
 import { z } from 'zod';
 
 export interface ErrorEntry {
-  /** HTTP status; `null` for `setup_incomplete`, which is a receipt warning, not an error response. */
+  /** HTTP status; `null` for `setup_incomplete` and `id_line_mismatch`, which are warnings on a receipt or plan, not error responses. */
   http: number | null;
   /** `true` unless the catalog says "no"; how to retry is in `next_action`. */
   retryable: boolean;
@@ -31,6 +31,7 @@ export const ERROR_CATALOG = {
   not_releasable: { http: 409, retryable: false, message: null, next_action: 'import into a new project when the reason offers it', invariants: ['P1'] },
   invalid_selection: { http: 400, retryable: false, message: 'Include or carry forward at least one book.', next_action: 'fix the selection', invariants: ['R4'] },
   unidentified_file: { http: 400, retryable: false, message: '<file name> does not identify a book or story. Choose one or leave the file out.', next_action: 'choose the book or story, or drop the file', invariants: ['W6'] },
+  id_line_mismatch: { http: null, retryable: false, message: '<file name> is confirmed as <unit>, but its \\id line does not name it. The file is committed unchanged.', next_action: 'correct the \\id line and upload the file again, or keep the confirmation', invariants: [] },
   source_unavailable: { http: 502, retryable: true, message: "Door43 could not provide the source repository's archive. Try again later.", next_action: 'retry `import.plan`', invariants: [] },
   invalid_version: {
     http: 400,

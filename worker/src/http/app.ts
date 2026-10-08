@@ -2,12 +2,13 @@
 // one route per operation, generated from `shared/schema`. Each request's
 // input is validated against the operation's schema, the operation runs, its
 // output is validated, and the answer is the output or the error shape (X2).
+// A route that takes file bytes reads a multipart body (multipart.ts, Q33).
 // Sign-in is `/auth/` (session.ts); every `/api/` request carries the session
 // its cookie names, if any, and every `POST` passes the same-origin and CSRF
 // token checks first (csrf.ts, A4). Everything else is the built web app.
 
 import { CSRF_HEADER, CatalogError, OPERATIONS, OPERATION_NAMES } from '@tc-admin/shared/schema';
-import type { OperationDefinition, RoutedOperation } from '@tc-admin/shared/schema';
+import type { OperationDefinition, Route, RoutedOperation } from '@tc-admin/shared/schema';
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import type { z } from 'zod';
@@ -17,6 +18,7 @@ import type { OperationContext } from '../operations';
 import { csrf } from './csrf';
 import { errorResponse, logFailure } from './errors';
 import { checkIdempotencyKey } from './idempotency';
+import { readMultipartInput } from './multipart';
 import { auth, endSession, readSession, signInFailed } from './session';
 import type { ActiveSession } from './session';
 
@@ -36,9 +38,11 @@ function answer(c: Context<App>, status: number, body: unknown): Response {
 /** `{name}` in a catalog route is `:name` in Hono. */
 export const honoPath = (path: string) => path.replace(/\{([a-z_]+)\}/g, ':$1');
 
-async function readInput(c: Context<App>): Promise<Record<string, unknown>> {
+async function readInput(c: Context<App>, route: Route): Promise<Record<string, unknown>> {
   const params = c.req.param() as Record<string, string>;
   if (c.req.method === 'GET') return { ...c.req.query(), ...params };
+  // An operation that takes file bytes reads them from a multipart body (Q33); every other POST from JSON.
+  if (route.body === 'multipart') return { ...(await readMultipartInput(c)), ...params };
   const text = await c.req.text();
   let body: unknown = {};
   if (text) {
@@ -71,7 +75,7 @@ async function runOperation(c: Context<App>, name: RoutedOperation): Promise<Res
   // Until every Milestone 1 operation is built, an unbuilt one answers as no operation (Q26).
   if (!handler) throw new CatalogError('unknown_operation', { details: { reason: 'operation not built yet', operation: name } });
   const definition: OperationDefinition = OPERATIONS[name];
-  const parsed = definition.input!.safeParse(await readInput(c));
+  const parsed = definition.input!.safeParse(await readInput(c, definition.route!));
   if (!parsed.success) throw validationError(parsed.error);
   checkIdempotencyKey(c, parsed.data as Record<string, unknown>);
   const output = definition.output!.safeParse(await handler(parsed.data, context));

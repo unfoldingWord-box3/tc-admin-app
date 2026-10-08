@@ -19,6 +19,7 @@ import { releasePrepare } from './release-prepare';
 import { releasePromote } from './release-promote';
 import { situationRead } from './situation-read';
 import { sourceSearch } from './source-search';
+import { uploadPlan } from './upload-plan';
 
 export type OperationHandler<Name extends RoutedOperation> = (input: ParsedInput<Name>, context: OperationContext) => Promise<OperationOutput<Name>>;
 
@@ -41,7 +42,9 @@ export const HANDLERS: OperationHandlers = {
   'release.create': releaseCreate,
   'release.promote': releasePromote,
   'source.search': sourceSearch,
+  'upload.plan': uploadPlan,
 };
 
 export { operationContext, signedIn } from './context';
+export { UPLOAD_REQUEST_BYTES } from './upload-plan';
 export type { DeploymentConfig, OperationContext } from './context';
