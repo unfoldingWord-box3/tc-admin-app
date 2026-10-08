@@ -52,6 +52,8 @@ interface Repository {
   created_at: string;
   files: { path: string; sha: string }[] | null;
   push: boolean;
+  /** Door43's repository id; the recorded create's when absent. */
+  id?: number;
 }
 
 interface Sent {
@@ -81,6 +83,7 @@ const door43: Fetch = async (url, init) => {
     if (!found) return new Response('', { status: 404 });
     return Response.json({
       ...createdRepo,
+      ...(found.id === undefined ? {} : { id: found.id }),
       name: repo[2],
       full_name: `${found.owner}/${repo[2]}`,
       html_url: `https://qa.door43.org/${found.owner}/${repo[2]}`,
@@ -402,6 +405,40 @@ describe('what a retry refuses before writing', () => {
     repositories.get('tc-admin-qa-org/id_tcap')!.push = false;
     expect((await failure(retry(planned.id)))!.code).toBe('permission_denied');
     expect(writesSent()).toEqual([]);
+  });
+
+  test('W4, X1: a recorded repository replaced under its name by another, empty and newer, is name_taken, never adopted, and nothing is written', async () => {
+    for (const record of ['plan', 'receipt'] as const) {
+      kv = new MemoryKV();
+      repositories = new Map();
+      const planned = await incomplete();
+      if (record === 'receipt') {
+        // Only the apply's receipt lists the repository; the plan's own record is gone.
+        const kept = storedPlan(planned.id);
+        delete kept.payload.created_repository;
+        kv.entries.set(`plan:${planned.id}`, { value: JSON.stringify(kept), ttl: 86_400 });
+      }
+      const replaced = repositories.get('tc-admin-qa-org/id_tcap')!;
+      replaced.id = Number(createdRepo.id) + 1;
+      replaced.created_at = '2026-10-05T16:00:00Z';
+      clock = new Date('2026-10-05T16:30:00.000Z');
+      const error = (await failure(retry(planned.id)))!;
+      expect(error.code).toBe('name_taken');
+      expect(error.details.reason).toBe('not the repository this plan created');
+      expect(writesSent()).toEqual([]);
+      expect(storedPlan(planned.id).payload.created_repository?.id).toBe(record === 'plan' ? createdRepo.id : undefined);
+    }
+  });
+
+  test('a stored retry receipt is answered only for its own project: another path is validation_failed, and nothing is written', async () => {
+    const planned = await incomplete();
+    await retry(planned.id);
+    sent = [];
+    const error = (await failure(retry(planned.id, { repo: 'id_other' })))!;
+    expect(error.code).toBe('validation_failed');
+    expect(error.message).toBe('plan_id: the plan is for another project.');
+    expect(writesSent()).toEqual([]);
+    expect((await retry(planned.id)).result.setup.state).toBe('complete');
   });
 
   test('not_found when the repository is gone; the retry never creates one (W4)', async () => {

@@ -55,6 +55,14 @@ export function adoptable(state: RepositoryState, plannedOwner: string, attempt:
   return state.empty === true && createdSinceAttempt(state.created_at, attempt.attempted_at);
 }
 
+/** A plan, or a retry receipt, that belongs to another project than the one asked for. */
+function anotherProject(owner: string, repo: string): CatalogError {
+  return new CatalogError('validation_failed', {
+    message: 'plan_id: the plan is for another project.',
+    details: { fields: [{ path: 'plan_id', message: 'the plan is for another project' }], plan_owner: owner, plan_repo: repo },
+  });
+}
+
 /** The first commit an earlier apply made, from its receipt, when the receipt lists one. */
 function committedByApply(receipt: ProjectCreateReceipt | null): Commit | null {
   const write = receipt?.wrote.find(entry => entry.kind === 'commit');
@@ -66,9 +74,13 @@ export async function projectCreateRetry(input: ParsedInput<'project.create.retr
   const client = signedIn(context);
   const { account } = await readAccount(client);
 
-  // The same retry again answers the same receipt and writes nothing (§1 rule 6).
+  // The same retry again answers the same receipt and writes nothing (§1 rule 6), for the project it was made for only.
   const done = await context.plans.getRetryReceipt<ProjectCreateRetryReceipt>(input.plan_id);
-  if (done && done.account === account.login) return done.receipt;
+  if (done && done.account === account.login) {
+    const { ref } = done.receipt.result;
+    if (!sameLogin(ref.owner, input.owner) || ref.repo !== input.repo) throw anotherProject(ref.owner, ref.repo);
+    return done.receipt;
+  }
 
   // The plan as the apply left it, or as it stood when the apply began, which the attempt keeps a day (Q29).
   const [kept, attempt, applied] = await Promise.all([
@@ -82,12 +94,7 @@ export async function projectCreateRetry(input: ParsedInput<'project.create.retr
   }
   const payload = storedPayload(stored.payload);
   if (!payload) throw new CatalogError('plan_expired', { details: { plan_id: input.plan_id } });
-  if (!sameLogin(payload.owner.login, input.owner) || payload.repo_name !== input.repo) {
-    throw new CatalogError('validation_failed', {
-      message: 'plan_id: the plan is for another project.',
-      details: { fields: [{ path: 'plan_id', message: 'the plan is for another project' }], plan_owner: payload.owner.login, plan_repo: payload.repo_name },
-    });
-  }
+  if (!sameLogin(payload.owner.login, input.owner) || payload.repo_name !== input.repo) throw anotherProject(payload.owner.login, payload.repo_name);
   const receipt = applied && applied.account === account.login ? applied.receipt : null;
   const owner = payload.owner.login;
   const target = `${owner}/${payload.repo_name}`;
@@ -98,8 +105,14 @@ export async function projectCreateRetry(input: ParsedInput<'project.create.retr
   if (!state.repository.permissions.push) throw new CatalogError('permission_denied', { details: { owner, repo: payload.repo_name } });
 
   // This plan's own repository, or one Q29's rule lets it adopt; anything else is a name someone else took.
-  const recorded = Boolean(payload.created_repository) || Boolean(receipt?.wrote.some(entry => entry.kind === 'repo' && entry.target === target));
-  if (!recorded) {
+  // A recorded repository is this plan's only while Door43 still names it by the same id: one deleted or moved
+  // and replaced under the name is another repository, refused without falling through to adoption.
+  const recordedId = payload.created_repository?.id
+    ?? (receipt?.wrote.some(entry => entry.kind === 'repo' && entry.target === target) ? receipt.result.ref.id : null);
+  if (recordedId !== null && recordedId !== state.repository.id) {
+    throw new CatalogError('name_taken', { values: { repo_name: payload.repo_name, owner }, details: { owner, repo_name: payload.repo_name, reason: 'not the repository this plan created' } });
+  }
+  if (recordedId === null) {
     if (!adoptable(state, owner, attempt)) {
       throw new CatalogError('name_taken', { values: { repo_name: payload.repo_name, owner }, details: { owner, repo_name: payload.repo_name, reason: 'not shown to be this plan\'s repository' } });
     }
