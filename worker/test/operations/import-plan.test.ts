@@ -125,7 +125,8 @@ function door43(options: Door43Options = {}): { fetch: Fetch; calls: string[]; m
     if (p === `${obs}/git/trees/${OBS_SHA}`) return Response.json(obsTree);
     if (p === `${obs}/sb/${OBS_SHA}.zip`) return new Response(obsZip);
     // The sources: id_tb1 at its release or its default branch, en_obs at v9, and a synthetic Bible at its head.
-    if (p === tb1) return Response.json(tb1Repository);
+    // Door43 resolves a repository name in any case (its answer spells the canonical one).
+    if (p.toLowerCase() === tb1) return Response.json(tb1Repository);
     if (p === `${tb1}/releases/tags/1974`) return Response.json(tb1Releases.find(release => release.tag_name === '1974'));
     if (p === `${tb1}/branches/master`) return Response.json(branchAt('master', TB1_SHA));
     if (p === `${tb1}/sb/1974.zip` || p === `${tb1}/sb/${TB1_SHA}.zip`) {
@@ -269,12 +270,23 @@ describe('contract: an import from the recorded id_tb1 archive into the recorded
     expect(stored(plan.id).payload.source).toEqual({ ...TB1, revision: 'master', sha: TB1_SHA, archive_ref: TB1_SHA, relationship_revision: TB1_SHA });
   });
 
+  test('E24: the relationship id, the plan\'s source, and the archive read carry Door43\'s spelling of the source, whatever case the request used', async () => {
+    const { fetch, calls } = door43();
+    const plan = await importPlan({ ...PENDAU, source: { owner: 'BAHTRAKU', repo: 'ID_TB1', revision: '1974' }, units: ['GEN'] }, context(fetch));
+    expect(calls).toContain('/api/v1/repos/BAHTRAKU/ID_TB1');
+    expect(calls).toContain('/api/v1/repos/bahtraku/id_tb1/releases/tags/1974');
+    expect(calls).toContain('/api/v1/repos/bahtraku/id_tb1/sb/1974.zip');
+    expect(plan.preview.source).toEqual({ ...TB1, revision: '1974', sha: TB1_SHA });
+    expect(plan.preview.metadata_diff.relationships).toEqual([{ id: 'dcs::bahtraku/id_tb1', relationType: 'source', flavor: 'textTranslation', revision: '1974' }]);
+    expect(stored(plan.id).payload.source).toMatchObject(TB1);
+  });
+
   test('W1: a source file whose \\id line names another book is planned as the chosen book, its bytes unchanged, with an id_line_mismatch warning', async () => {
     const text = '\\id EXO\n\\c 1\n\\v 1 Pada mulanya\n';
     const { fetch } = door43({ syntheticArchive: storedZip([['src_bible/ingredients/GEN.usfm', text]]) });
     const plan = await importPlan({ ...PENDAU, source: { ...SYNTHETIC, revision: 'main' }, units: ['GEN'] }, context(fetch));
     expect(plan.preview.files[0]).toMatchObject({ identified: { book: 'gen' }, path: 'ingredients/GEN.usfm', md5: reference(encode(text)) });
-    expect(plan.warnings).toEqual([{ code: 'id_line_mismatch', message: 'ingredients/GEN.usfm is confirmed as GEN, but its \\id line does not name it. The file is committed unchanged.' }]);
+    expect(plan.warnings).toEqual([{ code: 'id_line_mismatch', message: 'ingredients/GEN.usfm is imported as GEN, but its \\id line does not name it. The file is committed unchanged.' }]);
   });
 
   test('R5: a project archive that is not the commit its tree describes is no ground for a plan: door43_unavailable, nothing stored', async () => {

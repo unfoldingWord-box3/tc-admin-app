@@ -338,8 +338,8 @@ export function mergeImportMetadata(current: ProjectMetadata, added: readonly Ad
   const { metadata, entries } = mergeUploadMetadata(current, added);
   const relationship = sourceRelationship(type, source);
   const authorities = isRecord(metadata.idAuthorities) ? metadata.idAuthorities : {};
-  if (!isRecord(authorities.dcs)) authorities.dcs = structuredClone(DCS_AUTHORITY);
-  metadata.idAuthorities = authorities;
+  // A new object, as the relationships are a new array: nothing the caller holds is written to.
+  if (!isRecord(authorities.dcs)) metadata.idAuthorities = { ...authorities, dcs: structuredClone(DCS_AUTHORITY) };
   const listed = Array.isArray(metadata.relationships) ? metadata.relationships : [];
   const relationships = listed.some(entry => isRecord(entry) && sameRelationship(entry, relationship)) ? [] : [relationship];
   if (relationships.length > 0) metadata.relationships = [...listed, structuredClone(relationship)];

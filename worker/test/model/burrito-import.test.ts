@@ -75,6 +75,11 @@ describe('E24, W1: an import adds one source relationship and the dcs authority,
     delete without.idAuthorities;
     const added = mergeImportMetadata(parseMetadata(JSON.stringify(without)), [identified('GEN.usfm', encode('\\id GEN\n'))], TB1).metadata;
     expect(added.idAuthorities).toEqual({ dcs: DCS_AUTHORITY });
+    // The writer is pure: the default branch's authorities are not written to when dcs is added beside them.
+    const before = structuredClone(metadata.document.idAuthorities);
+    mergeImportMetadata(metadata, [identified('GEN.usfm', encode('\\id GEN\n'))], TB1);
+    expect(metadata.document.idAuthorities).toEqual(before);
+    expect(Object.keys(metadata.document.idAuthorities as object)).toEqual(['scribe']);
     expect(validateSource(added), JSON.stringify(validateSource.errors)).toBe(true);
 
     const slash = structuredClone(metadata.document) as { idAuthorities: Record<string, unknown> };

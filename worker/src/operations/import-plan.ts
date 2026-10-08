@@ -173,13 +173,20 @@ async function readSource(client: Door43Client, ref: { owner: string; repo: stri
   }
 }
 
+/** The owner and repository as Door43 spells them (`full_name`), so a relationship id matches whatever case the request used; the request's spelling when Door43's answer has none. */
+function canonicalRef(repository: Door43SearchRepository, asked: { owner: string; repo: string }): { owner: string; repo: string } {
+  const [owner, repo, ...rest] = typeof repository.full_name === 'string' ? repository.full_name.split('/') : [];
+  return owner && repo && rest.length === 0 ? { owner, repo } : { owner: asked.owner, repo: asked.repo };
+}
+
 /**
  * The revision resolved against the source: its default branch, read for its head
  * (E63), or one of its releases, read by tag (E21). Anything else, a draft release
  * among it, is `validation_failed` on `source.revision` (built behind, #79).
  */
 async function resolveRevision(client: Door43Client, input: ParsedInput<'import.plan'>, repository: Door43SearchRepository): Promise<ImportPlanPayload['source']> {
-  const { owner, repo, revision } = input.source;
+  const { revision } = input.source;
+  const { owner, repo } = canonicalRef(repository, input.source);
   if (repository.default_branch && revision === repository.default_branch) {
     const head = await readBranchHead(client, owner, repo, revision);
     return { owner, repo, revision, sha: head.sha, archive_ref: head.sha, relationship_revision: head.sha };
@@ -272,7 +279,7 @@ export async function importPlan(input: ParsedInput<'import.plan'>, context: Ope
     const digest = md5(content);
     // The bytes are committed as they are (W1): a book whose \id line names another book, or none, is said, never rewritten.
     if ('book' in unit && headerBook(content) !== unit.book) {
-      warnings.push({ code: 'id_line_mismatch', message: catalogMessage('id_line_mismatch', undefined, { 'file name': path, unit: unitName(unit) }) });
+      warnings.push({ code: 'id_line_mismatch', message: catalogMessage('id_line_mismatch', 'import', { 'file name': path, unit: unitName(unit) }) });
     }
     const replaces = onBranch.get(path) ?? null;
     let diff: string | null = null;
