@@ -95,7 +95,9 @@ describe('#146: the project view lists its health findings without a release', (
 
     const unavailable = await opened(reportOf({ health: healthOf('master', 'door43_unavailable', null) }));
     const branch = within(unavailable).getByRole('region', { name: 'Default branch, master' });
+    expect(within(branch).getByRole('heading', { level: 4 }).textContent).toBe('Default branch, master · Door43 unavailable');
     expect(within(branch).getByText('Door43 could not be asked for its health check on master. Refresh later.')).toBeTruthy();
+    expect(within(branch).queryByText(/Healthy|nothing to report/)).toBeNull();
     expect(within(branch).queryByRole('list')).toBeNull();
   });
 

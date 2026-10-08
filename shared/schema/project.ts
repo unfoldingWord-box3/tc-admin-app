@@ -110,7 +110,8 @@ export const ProjectReport = z.object({
     .nullable(),
   /**
    * Door43's health check of the latest full release's tag (E28), with its issues, as `health` is the default branch's;
-   * `null` when there is no full release, or when the report did not read it (a receipt reports what it wrote, #146).
+   * `null` when there is no full release, when the release cannot be read by its tag, when the release answer names another
+   * tag than the one checked (so no check is shown under another release), and in a receipt, which reports what it wrote (#146).
    */
   release_health: Health.nullable().default(null),
   /** `null` for a repository without a commit: a project whose setup is incomplete, or an empty repository (E10). */
