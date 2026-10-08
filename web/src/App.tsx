@@ -5,10 +5,11 @@
 // link comes back. Signed in, it shows the portfolio (#23); the design system
 // (#8) builds on it.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { OperationOutput } from '@tc-admin/shared/schema';
 import { ApiError, callOperation, failureMessage, signOut } from './api/client';
 import { Portfolio } from './Portfolio';
+import { rememberReturn, takeReturn } from './resume';
 import { signInFailure } from './sign-in';
 
 type Situation = OperationOutput<'situation.read'>;
@@ -39,8 +40,18 @@ export function App() {
   // Pure, so StrictMode's second call agrees with the first; the address is cleaned in the effect below.
   const [notice, setNotice] = useState<string | null>(() => signInFailure(window.location.href)?.message ?? null);
 
+  // The account last signed in, so a sign-in after an expired session can come back to where it was (#15).
+  const lastAccount = useRef<string | null>(null);
+
   const apply = useCallback((result: Reading) => {
     if (result.notice) setNotice(result.notice);
+    const account = result.situation?.account?.login;
+    if (account) {
+      lastAccount.current = account;
+      // Door43's sign-in returns to `/`: the address left for it is restored, before the portfolio reads it (#15).
+      const back = takeReturn(account);
+      if (back && (window.location.hash === '' || window.location.hash === '#')) window.history.replaceState(null, '', back);
+    }
     if (result.situation) setSituation(result.situation);
     setError(result.error ?? null);
   }, []);
@@ -118,7 +129,7 @@ export function App() {
           <>
             <p>Sign in with Door43 {host.name} to see the projects you can manage.</p>
             {situation.configured ? (
-              <a className="button" href="/auth/login">
+              <a className="button" href="/auth/login" onClick={() => rememberReturn(window.location.hash, lastAccount.current)}>
                 Sign in with Door43 {host.name}
               </a>
             ) : (

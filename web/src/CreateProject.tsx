@@ -48,6 +48,7 @@ import {
 } from './create-project';
 import type { CreatableType, Field, FieldErrors, Form, Language, Owner, TestamentScope, TranslationDetails } from './create-project';
 import { projectHash, typeLabel } from './portfolio-labels';
+import { clearDraft, endResume, resumedDraft, saveDraft } from './resume';
 import { ProjectView } from './ProjectView';
 import { addAction, uploadTypeOf } from './upload';
 
@@ -75,7 +76,8 @@ function without(errors: FieldErrors, field: Field): FieldErrors {
 export function CreateProject({ onCreated, onFailure }: Props) {
   const ids = { title: useId(), abbreviation: useId(), language: useId() };
   const [owners, setOwners] = useState<Owner[] | null>(null);
-  const [form, setForm] = useState<Form>(() => newForm(''));
+  // The form a sign-in in the middle left behind, when this opening is the return from it (#15); otherwise a new form.
+  const [form, setForm] = useState<Form>(() => resumedDraft() ?? newForm(''));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [problem, setProblem] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -131,6 +133,13 @@ export function CreateProject({ onCreated, onFailure }: Props) {
       current = false;
     };
   }, [ownersKnown, form.owner, expired, attempt, receipt]);
+
+  // The offer to restore a form is used once; from then on the form is kept as it is filled, and forgotten once created (#15).
+  useEffect(() => endResume(), []);
+  useEffect(() => {
+    if (receipt) clearDraft();
+    else saveDraft(form);
+  }, [form, receipt]);
 
   const update = (patch: Partial<Form>, field?: Field) => {
     setForm(previous => ({ ...previous, ...patch }));
