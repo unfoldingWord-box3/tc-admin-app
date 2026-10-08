@@ -11,7 +11,7 @@
 // the source (W5, W2), and what is stored: what was computed, never the bytes.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { CatalogError, OPERATIONS } from '@tc-admin/shared/schema';
+import { CatalogError, OPERATIONS, catalogNextAction } from '@tc-admin/shared/schema';
 import type { ParsedInput } from '@tc-admin/shared/schema';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { openArchive } from '../../src/door43/archive';
@@ -97,6 +97,8 @@ interface Door43Options {
   sourceArchive?: Uint8Array;
   /** A synthetic source's archive, served for `tc-admin-qa/src_bible` at its head. */
   syntheticArchive?: Uint8Array;
+  /** en_obs's archive at v9, its recording unless given. */
+  enObsArchive?: Uint8Array;
 }
 
 /** A Door43 of recorded answers, every request recorded with its method. */
@@ -134,7 +136,7 @@ function door43(options: Door43Options = {}): { fetch: Fetch; calls: string[]; m
     }
     if (p === enObs) return Response.json(enObsRepository);
     if (p === `${enObs}/releases/tags/v9`) return Response.json(enObsEntry.release);
-    if (p === `${enObs}/sb/v9.zip`) return new Response(enObsZip);
+    if (p === `${enObs}/sb/v9.zip`) return new Response(options.enObsArchive ?? enObsZip);
     if (p === synthetic) return Response.json({ full_name: 'tc-admin-qa/src_bible', default_branch: 'main', flavor: 'textTranslation', metadata_type: 'rc', permissions: { pull: true } });
     if (p === `${synthetic}/branches/main`) return Response.json(branchAt('main', SYNTHETIC_SHA));
     if (p === `${synthetic}/sb/${SYNTHETIC_SHA}.zip` && options.syntheticArchive) return new Response(options.syntheticArchive);
@@ -287,6 +289,8 @@ describe('contract: an import from the recorded id_tb1 archive into the recorded
     const plan = await importPlan({ ...PENDAU, source: { ...SYNTHETIC, revision: 'main' }, units: ['GEN'] }, context(fetch));
     expect(plan.preview.files[0]).toMatchObject({ identified: { book: 'gen' }, path: 'ingredients/GEN.usfm', md5: reference(encode(text)) });
     expect(plan.warnings).toEqual([{ code: 'id_line_mismatch', message: 'ingredients/GEN.usfm is imported as GEN, but its \\id line does not name it. The file is committed unchanged.' }]);
+    expect(catalogNextAction('id_line_mismatch', 'import')).toBe('correct the \\id line in the source, or keep the import');
+    expect(catalogNextAction('id_line_mismatch')).toBe('correct the \\id line and upload the file again, or keep the confirmation');
   });
 
   test('R5: a project archive that is not the commit its tree describes is no ground for a plan: door43_unavailable, nothing stored', async () => {
@@ -331,11 +335,15 @@ describe('contract: stories from the recorded en_obs v9 archive into an Open Bib
   });
 
   test('validation_failed: a story the source lacks, a story number that is none, and a book asked of an Open Bible Stories project are each refused naming the unit', async () => {
-    const { fetch } = door43({ syntheticArchive: storedZip([['src/ingredients/content/01.md', '# 1\n']]) });
+    const { fetch, calls } = door43({ enObsArchive: storedZip([['en_obs/ingredients/content/01.md', '# 1\n']]) });
+    const lacking = await failure(importPlan(fromEnObs(['1', '50']), context(fetch)));
+    expect(lacking).toMatchObject({ code: 'validation_failed', details: { units: [{ id: '50', reason: 'not_in_source' }], fields: [{ path: 'units[1]', message: 'unfoldingWord/en_obs at "v9" has no story 50 (ingredients/content/50.md)' }] } });
+    expect(calls).toContain('/api/v1/repos/unfoldingWord/en_obs/sb/v9.zip');
     const none = await failure(importPlan(fromEnObs(['51']), context(fetch)));
     expect(none).toMatchObject({ code: 'validation_failed', details: { fields: [{ path: 'units[0]', message: '"51" is not a story of an Open Bible Stories project' }] } });
     const book = await failure(importPlan(fromEnObs(['GEN']), context(fetch)));
-    expect(book?.code).toBe('validation_failed');
+    expect(book).toMatchObject({ code: 'validation_failed', details: { fields: [{ path: 'units[0]', message: '"GEN" is not a story of an Open Bible Stories project' }] } });
+    expect([...kv.entries.keys()]).toEqual([]);
   });
 });
 
