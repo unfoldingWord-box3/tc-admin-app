@@ -86,13 +86,13 @@ Moved into Milestone 1 on 1 October 2026 (Q25); #47 re-scoped from conversion to
 | Issue | Spec | ADR | Invariants | Evidence / questions | Operations | Layer | Scenarios |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45) Uploads with book and story identification | §8 | 0004, 0013 | W2, W5, W6, A2, R10 | E36, Q15, Q25 | `upload.plan`, `upload.apply` | operations/upload, model/classify | S2 |
-| [#72](https://github.com/unfoldingWord-box3/tc-admin-app/issues/72) Identify a book or story | §8 | 0008, 0013 | W1, W6 | E36, E37 | `upload.plan`, `upload.apply`, `import.plan` | model/upload, model/books | S2, S5 |
-| [#73](https://github.com/unfoldingWord-box3/tc-admin-app/issues/73) Upload path safety and limits | §8 | 0013 | W6 | E31, Q15 | `upload.plan` | model/upload, operations/upload | S2 |
+| [#72](https://github.com/unfoldingWord-box3/tc-admin-app/issues/72) Identify a book or story | §8 | 0008, 0013 | W1, W6 | E36, E37 | `upload.plan`, `upload.apply`, `import.plan` | model/upload, model/books, model/burrito | S2, S5 |
+| [#73](https://github.com/unfoldingWord-box3/tc-admin-app/issues/73) Upload path safety and limits | §8 | 0013 | W6 | E30, E31, Q15, Q22 | `upload.plan` | model/upload-paths, operations/upload | S2 |
 | [#74](https://github.com/unfoldingWord-box3/tc-admin-app/issues/74) `upload.plan` | §8 | 0004, 0011, 0013 | W2, W6, R5, R10 | E19, E36, E37, Q15 | `upload.plan` | operations/upload, door43/repos | S2, S5 |
 | [#75](https://github.com/unfoldingWord-box3/tc-admin-app/issues/75) `upload.apply` | §8 | 0004, 0011, 0013 | W2, W5, A2, A3, R5, X1 | E21, E27, E31 | `upload.apply` | operations/upload, door43/repos | S2 |
 | [#76](https://github.com/unfoldingWord-box3/tc-admin-app/issues/76) Upload screen | §8 | 0011, 0013 | W6, X2 | E36 | `upload.plan`, `upload.apply` | web | S2, S5 |
 | [#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47) Import from an existing repository | §8 | 0008, 0013 | W1, W2, W5, A2, R10 | E1, E17, E24, E34, E35, E36, Q25 | `owner.search`, `source.search`, `import.plan`, `import.apply` | door43/catalog, door43/archive, operations/import | S9 |
-| [#77](https://github.com/unfoldingWord-box3/tc-admin-app/issues/77) `owner.search` | §8 | 0013 | P3 | E35 | `owner.search` | door43/catalog, operations/import | S9 |
+| [#77](https://github.com/unfoldingWord-box3/tc-admin-app/issues/77) `owner.search` | §8 | 0013 | P3 | E35 | `owner.search` | door43/owners, operations/owner-search | S9 |
 | [#78](https://github.com/unfoldingWord-box3/tc-admin-app/issues/78) `source.search` | §8 | 0013 | H3, P3 | E20, E35, E36, Q23, Q25 | `source.search` | door43/catalog-search, model/project, operations/source-search | S9 |
 | [#79](https://github.com/unfoldingWord-box3/tc-admin-app/issues/79) `import.plan` | §8 | 0008, 0013 | W1, W2, R5, R10 | E1, E17, E18, E24, E30, E34, E36, Q12 | `import.plan` | door43/archive, operations/import | S9 |
 | [#80](https://github.com/unfoldingWord-box3/tc-admin-app/issues/80) `import.apply` | §8 | 0004, 0011, 0013 | W1, W2, W5, A2, A3, R5, X1 | E21, E27, E31 | `import.apply` | operations/import, door43/repos | S9 |

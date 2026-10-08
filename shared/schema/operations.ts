@@ -271,7 +271,8 @@ export const OPERATIONS = {
     milestone: 1,
     route: { method: 'POST', path: '/api/projects/{owner}/{repo}/uploads/plan' },
     input: RepoRef.extend({
-      files: z.array(z.object({ name: z.string().min(1), size: z.number().int().nonnegative(), content_ref: z.string().min(1) })),
+      // `mode`: the POSIX file mode the client read, when it has one; a browser reports none (W6, #73).
+      files: z.array(z.object({ name: z.string().min(1), size: z.number().int().nonnegative(), content_ref: z.string().min(1), mode: z.number().int().min(0).max(0o177777).nullish() })),
     }),
     output: plan(z.object({ files: z.array(PlannedFile), metadata_diff: z.unknown(), unknown: z.array(z.string()) })),
   },
