@@ -8,8 +8,9 @@ import { defineConfig, devices } from '@playwright/test';
 
 try {
   process.loadEnvFile(new URL('../.env', import.meta.url));
-} catch {
-  // No .env: the test skips itself.
+} catch (error) {
+  // No .env: the test skips itself. Any other failure to read it is said, never turned into a skip.
+  if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
 }
 
 export default defineConfig({

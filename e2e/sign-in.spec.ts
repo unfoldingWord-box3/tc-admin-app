@@ -6,6 +6,7 @@
 // is written to Door43.
 
 import { expect, test } from '@playwright/test';
+import { fillSecret } from './secret';
 
 const user = process.env.TEST_USER;
 const password = process.env.TEST_PASSWORD;
@@ -38,11 +39,15 @@ test('A1: a sign-in on QA lands on the portfolio, and no token reaches storage, 
   const username = page.getByRole('textbox', { name: /Username or Email/ });
   const authorize = page.getByRole('button', { name: /authorize application/i });
   const signedIn = page.getByRole('button', { name: 'Sign out' });
-  await expect(username.or(authorize).or(signedIn)).toBeVisible({ timeout: 30_000 });
+  // Door43 QA's bot check (Anubis) answers a browser it refuses with "Oh noes!" (E70): that is said plainly, not left to a timeout.
+  const denied = page.getByRole('heading', { name: /Oh noes/i });
+  await expect(username.or(authorize).or(signedIn).or(denied)).toBeVisible({ timeout: 30_000 });
+  expect(await denied.isVisible(), "Door43 QA's bot check (Anubis) denied this browser; run headed (E70)").toBe(false);
   if (await username.isVisible()) {
     expect(new URL(page.url()).host, 'the sign-in form is on Door43 QA').toBe(DOOR43_QA);
     await username.fill(user!);
-    await page.getByRole('textbox', { name: 'Password' }).fill(password!);
+    // Never `fill` directly: a failed fill's error names the password, and the reporter prints it (bench round 2).
+    await fillSecret(page.getByRole('textbox', { name: 'Password' }), password!, 'the password');
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
     await expect(authorize.or(signedIn)).toBeVisible({ timeout: 30_000 });
   }
