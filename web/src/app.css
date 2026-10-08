@@ -50,6 +50,10 @@ a { color: var(--uw-ocean); }
 /* The creation wizard (#28), until the design system (#8). */
 .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .toolbar > .button { flex-shrink: 0; }
+/* The portfolio's filters and order (#24). */
+.toolbar.filters { justify-content: flex-start; align-items: flex-end; margin: 12px 0; }
+.toolbar.filters .field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; }
+.toolbar.filters select { font: inherit; font-weight: 400; padding: 6px 8px; border: 1px solid #b9c3cb; border-radius: 8px; background: #fff; max-width: 220px; }
 form.create fieldset { border: 1px solid #dde3e8; border-radius: 12px; padding: 12px 16px 16px; margin: 0 0 16px; background: #fff; }
 form.create legend { font-weight: 700; color: var(--uw-ocean); padding: 0 6px; }
 form.create .field { display: block; margin: 10px 0 4px; font-weight: 600; font-size: 14px; }

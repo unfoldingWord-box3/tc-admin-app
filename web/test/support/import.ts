@@ -88,6 +88,7 @@ export const importReceiptOf = (planId: string, owner = 'tc-admin-qa', repo = 'i
     description: '',
     default_branch: 'master',
     language: { code: 'id', title: 'Bahasa Indonesia' },
+    last_activity_at: '2026-10-08T10:01:01.000Z',
     project_type: 'bible',
     metadata_format: 'sb',
     editability: { state: 'editable', reason: 'A Scripture Burrito project.' },

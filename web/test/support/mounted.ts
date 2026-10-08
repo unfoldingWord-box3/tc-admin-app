@@ -65,6 +65,7 @@ export const projectOf = (owner: string, repo: string, project_type: 'bible' | '
     description: '',
     default_branch: 'master',
     language: { code: 'id', title: 'Bahasa Indonesia' },
+    last_activity_at: '2026-10-07T10:00:00.000Z',
     project_type,
     metadata_format: 'sb',
     editability: { state: 'editable', reason: 'A Scripture Burrito project.' },

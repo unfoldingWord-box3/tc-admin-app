@@ -277,6 +277,8 @@ function committedReport(basis: ReportBasis, payload: CommitPayload, head: { sha
   const access = repositoryAccess(basis.repository);
   return {
     ...repositoryIdentity(basis.repository),
+    // The commit this report follows is the last change to the repository.
+    last_activity_at: head.committed_at ?? checkedAt,
     project_type: payload.project_type,
     metadata_format: 'sb',
     editability: editability('sb', payload.project_type),

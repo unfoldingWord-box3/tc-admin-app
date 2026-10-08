@@ -150,7 +150,7 @@ describe('the portfolio refreshes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     await answerWhenSent('GET', '/api/portfolio?show=supported', errorOf('door43_unavailable'), 503);
     expect(screen.getByRole('alert').textContent).toBe('Door43 is unavailable currently. Please refresh later. What is shown was read earlier.');
-    expect(screen.getByText('bahtraku')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'bahtraku' })).toBeTruthy();
     expect(onFailure).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     expect(screen.queryByRole('alert')).toBeNull();

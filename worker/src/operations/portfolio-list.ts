@@ -36,6 +36,7 @@ export function projectSummary(repo: Door43SearchRepository, access: RepositoryA
   const severity = repo.healthcheck_severity || null;
   return {
     ...repositoryIdentity(repo),
+    last_activity_at: typeof repo.updated_at === 'string' && repo.updated_at ? repo.updated_at : null,
     ...classifyProject(projectCatalog(repo)),
     health: { state: healthFromSeverity(severity), severity_raw: severity, ref: null, checked_at: null, issue_count: null, issues: null, source: 'door43' },
     permissions: { push: access.push, admin: access.admin, checked_at: checkedAt },
