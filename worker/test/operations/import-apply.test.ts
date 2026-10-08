@@ -8,7 +8,7 @@
 // that is no longer what the plan showed (`source_changed`), each before any
 // write; and an unknown outcome never sent again (X1).
 import { readFileSync } from 'node:fs';
-import { CatalogError, OPERATIONS } from '@tc-admin/shared/schema';
+import { CatalogError, OPERATIONS, catalogNextAction } from '@tc-admin/shared/schema';
 import type { ParsedInput } from '@tc-admin/shared/schema';
 import { beforeEach, describe, expect, test } from 'vitest';
 import type { Fetch } from '../../src/door43/api';
@@ -226,6 +226,11 @@ describe('refused before any write', () => {
     expect(error).toMatchObject({ code: 'source_unavailable', details: { source: { ...TB1, revision: '1974', ref: '1974' }, door43_status: 404 } });
     expect(sent.map(request => request.path)).toEqual(['/api/v1/user', `${SOURCE}/sb/1974.zip`]);
     expect(writes()).toEqual([]);
+    // A malformed zip is the same refusal: the archive client's door43_unavailable becomes source_unavailable.
+    state.sourceArchive = new TextEncoder().encode('not a zip');
+    const bad = await failure(apply(made.id));
+    expect(bad?.code).toBe('source_unavailable');
+    expect(String(bad?.details.reason)).toContain('malformed archive');
   });
 
   test('source_changed (source): a source file that is no longer what the plan showed, or that is gone, is refused with the import wording, and nothing is written', async () => {
@@ -234,6 +239,8 @@ describe('refused before any write', () => {
     const changed = await failure(apply(made.id));
     expect(changed).toMatchObject({ code: 'source_changed', variant: 'source', details: { path: 'ingredients/GEN.usfm', reason: 'the source file is not the one the plan showed' } });
     expect(changed?.message).toBe('The source repository has changed since the plan. Plan the import again.');
+    // The variant's own next action, not the default's talk of a release preparation (operations.md §6).
+    expect(catalogNextAction('source_changed', changed!.variant)).toBe('plan the import again');
     state.sourceArchive = storedZip([['id_tb1/README.md', '# gone\n']]);
     const gone = await failure(apply(made.id));
     expect(gone).toMatchObject({ code: 'source_changed', variant: 'source', details: { path: 'ingredients/GEN.usfm', reason: 'the source no longer holds the file the plan took' } });

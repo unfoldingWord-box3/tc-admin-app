@@ -85,6 +85,18 @@ function record(name, request, response, extra = {}) {
 }
 const stepName = (method, url) => `${method}-${new URL(url).pathname.replace(/^\/api\/v1\//, '').replace(/[^A-Za-z0-9._-]+/g, '_')}`;
 
+/** Every `email` anywhere in an answer, redacted: an account's contact address is not evidence (AGENTS.md), wherever Door43 nests it (owner, author, committer). */
+function redactEmails(value) {
+  if (Array.isArray(value)) value.forEach(redactEmails);
+  else if (value && typeof value === 'object') {
+    for (const [key, inner] of Object.entries(value)) {
+      if (key === 'email' && typeof inner === 'string' && inner) value[key] = '[redacted]';
+      else redactEmails(inner);
+    }
+  }
+  return value;
+}
+
 /** The Worker's fetch, recorded: every Door43 request the operations make, with the token redacted and archive bodies summarized. */
 const recording = async (url, init = {}) => {
   const started = Date.now();
@@ -101,7 +113,7 @@ const recording = async (url, init = {}) => {
     } catch {
       json = { unparsed: text.slice(0, 2000) };
     }
-    if (json && typeof json === 'object' && typeof json.email === 'string' && json.email) json.email = '[redacted]';
+    redactEmails(json);
     // The contents endpoint answers with every committed file's base64: not evidence, and it crowds the review packet (E31 has the sizes).
     if (json && typeof json === 'object' && Array.isArray(json.files)) {
       for (const file of json.files) if (file && typeof file.content === 'string') file.content = `[${file.content.length} base64 characters omitted: the file as committed; its size and md5 are in metadata-after.json]`;
@@ -125,10 +137,7 @@ const publicCall = async (path) => {
   } catch {
     json = { unparsed: text.slice(0, 2000) };
   }
-  if (json && typeof json === 'object') {
-    for (const key of ['author', 'committer']) if (json[key] && typeof json[key].email === 'string') json[key].email = '[redacted]';
-    if (json.commit) for (const key of ['author', 'committer']) if (json.commit[key] && typeof json.commit[key].email === 'string') json.commit[key].email = '[redacted]';
-  }
+  redactEmails(json);
   return { request: { method: 'GET', url }, response: { status: response.status, ms: Date.now() - started, json } };
 };
 

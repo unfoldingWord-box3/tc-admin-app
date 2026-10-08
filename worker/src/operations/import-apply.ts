@@ -81,9 +81,9 @@ async function plannedFiles(client: Door43Client, payload: ImportPlanPayload): P
   return files;
 }
 
-/** The commit's message: the books or stories imported, the source and its revision, and the writer. */
-function commitMessage(files: readonly PlannedCommitFile[], payload: ImportPlanPayload, type: CreatableProjectType, context: OperationContext): string {
-  const units = files.flatMap(file => (file.unit ? [unitLabel(file.unit)] : []));
+/** The commit's message, from the plan's files (the bytes fetched are for the contents body only): the books or stories imported, the source and its revision, and the writer. */
+function commitMessage(files: readonly { identified: Unit }[], payload: ImportPlanPayload, type: CreatableProjectType, context: OperationContext): string {
+  const units = files.map(file => unitLabel(file.identified));
   const what = units.length <= 6 ? units.join(', ') : `${units.length} ${type === 'bible' ? 'books' : 'stories'}`;
   const from = `${payload.source.owner}/${payload.source.repo}@${payload.source.revision}`;
   return `Import ${what} from ${from}\n\nThe imported files and metadata.json, with the source relationship, written by ${context.application.name} ${context.application.version}.`;
@@ -105,5 +105,5 @@ export async function importApply(input: ParsedInput<'import.apply'>, context: O
   const files = loaded.unknown && loaded.sent ? [] : await plannedFiles(client, payload);
   const metadata = await plannedMetadata(payload, 'import.plan');
 
-  return applyPlannedCommit({ operation: 'import.apply', input, account: account.login, loaded, files, metadata, message: commitMessage(files, payload, payload.project_type, context) }, context);
+  return applyPlannedCommit({ operation: 'import.apply', input, account: account.login, loaded, files, metadata, message: commitMessage(payload.files, payload, payload.project_type, context) }, context);
 }
