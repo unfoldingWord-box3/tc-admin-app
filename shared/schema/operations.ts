@@ -20,6 +20,8 @@ export interface Route {
   method: HttpMethod;
   /** A path under `/api/`; `{name}` is a path segment that fills the input field `name`. */
   path: string;
+  /** How a `POST` sends its input: a JSON body unless this says `multipart`, a `multipart/form-data` body carrying file bytes (`upload.plan`, Q33). */
+  body?: 'multipart';
 }
 
 /**
@@ -78,14 +80,41 @@ const PlanId = z.object({ plan_id: z.string().min(1) });
 const PreparationRef = RepoRef.extend({ preparation_id: z.string().min(1) });
 const TagRef = RepoRef.extend({ tag: z.string().min(1) });
 
-/** A file an upload or import would write (`upload.plan`, `import.plan`). */
+/**
+ * A file of an upload or import (`upload.plan`, `import.plan`). A file held back, `identified: null`, has no
+ * `path`: nothing is written for it until the manager names its book or story. `size` and `md5` are those of
+ * the bytes received, which the apply receives again and matches (Q33). `diff` is a unified text diff against
+ * the default branch's file when the file overwrites one and a diff is practical, `''` when the bytes are the
+ * branch's own, and `null` otherwise.
+ */
 const PlannedFile = z.object({
   name: z.string(),
   identified: Unit.nullable(),
-  path: z.string(),
+  path: z.string().nullable(),
+  size: z.number().int().nonnegative(),
+  md5: z.string(),
   overwrite: z.boolean(),
   diff: z.string().nullable(),
 });
+
+/** One ingredient entry an upload adds or replaces in `metadata.json`: the entry as it stands (`null` when new) and as it will be (R10). */
+const MetadataEntryChange = z.object({
+  path: z.string(),
+  before: z.record(z.string(), z.unknown()).nullable(),
+  after: z.record(z.string(), z.unknown()),
+});
+
+/**
+ * How `upload.plan`'s files travel (operations.md §7, Q33): a `multipart/form-data` body with, for the file at
+ * index `i`, the parts `files.<i>.name`, `files.<i>.mode` (optional, decimal), and `files.<i>.content` (the bytes),
+ * and an optional `confirmations` part holding the confirmations as JSON.
+ */
+export const UPLOAD_FILE_FIELDS = ['name', 'mode', 'content'] as const;
+export type UploadFileField = (typeof UPLOAD_FILE_FIELDS)[number];
+export const uploadPartName = (index: number, field: UploadFileField): string => `files.${index}.${field}`;
+export const UPLOAD_CONFIRMATIONS_PART = 'confirmations';
+/** A file's bytes, as the HTTP projection reads them from a multipart part: any `Uint8Array`. */
+const FileBytes = z.custom<Uint8Array>(value => value instanceof Uint8Array, { message: 'expected the file\'s bytes as a file part' });
 
 const PortfolioList = z.object({
   organizations: z.array(z.object({ name: z.string(), projects: z.array(ProjectSummary) })),
@@ -278,12 +307,15 @@ export const OPERATIONS = {
   'upload.plan': {
     kind: 'plan',
     milestone: 1,
-    route: { method: 'POST', path: '/api/projects/{owner}/{repo}/uploads/plan' },
+    route: { method: 'POST', path: '/api/projects/{owner}/{repo}/uploads/plan', body: 'multipart' },
     input: RepoRef.extend({
-      // `mode`: the POSIX file mode the client read, when it has one; a browser reports none (W6, #73).
-      files: z.array(z.object({ name: z.string().min(1), size: z.number().int().nonnegative(), content_ref: z.string().min(1), mode: z.number().int().min(0).max(0o177777).nullish() })),
+      // `mode`: the POSIX file mode the client read, when it has one; a browser reports none (W6, #73). `content`: the file's bytes,
+      // sent in the request and never stored; a file's size is the length of its bytes (Q33).
+      files: z.array(z.object({ name: z.string().min(1), mode: z.number().int().min(0).max(0o177777).nullish(), content: FileBytes })).min(1),
+      /** The manager's choice of book or story for a file, by its name: the same confirmations `upload.apply` takes, so the plan shows what they write. */
+      confirmations: z.record(z.string(), Unit).optional(),
     }),
-    output: plan(z.object({ files: z.array(PlannedFile), metadata_diff: z.unknown(), unknown: z.array(z.string()) })),
+    output: plan(z.object({ files: z.array(PlannedFile), metadata_diff: z.object({ ingredients: z.array(MetadataEntryChange) }), unknown: z.array(z.string()) })),
   },
   'upload.apply': {
     kind: 'apply',

@@ -270,7 +270,7 @@ worker/
     language.ts      the language tag rule of the Scripture Burrito schema (E44, Q30; #28)
     project.ts       type, editability, coverage (#19); the books or stories a ref offers as an import source (H3; #78)
     health.ts        Door43 severity to health state, and one health-check read to a health value (H1, H3; #25, #36)
-    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10), a book's or story's path and ingredient entry (#72, W1), and the release merge (#35, Q7, Q8)
+    burrito.ts       the Scripture Burrito writer: a new Bible or Open Bible Stories project's metadata and files (#29, #82, W1, R10), a book's or story's path and ingredient entry (#72, W1), the metadata an upload proposes, its entries added or replaced with the new bytes' size and md5 (#74, R10), and the release merge (#35, Q7, Q8)
     burrito-reader.ts  the Scripture Burrito reader: a project's metadata.json as read, every ingredient classified as book, story, or administrative (#17)
     classify.ts      every file of a ref as a book, story, administrative, or unknown file, given its metadata and tree (#20, R1, S5)
     obs-scope.ts     the fixed currentScope of every Open Bible Stories project (E46)
@@ -283,6 +283,7 @@ worker/
     snapshot.ts      what a release snapshot uploads and deletes, by blob SHA against the ref the branch starts from, in commits of at most 32 MB (R1, R2, Q22; #34)
     upload-paths.ts  an upload batch's names as repository-relative paths, and its entries and sizes checked, before anything else reads it (W6, Q15; #73)
     upload.ts        an uploaded or imported file identified as a book (its \id line, checked against its name) or a story (its name), or held back; a manager's confirmation applied (E36, W1; #72)
+    text-diff.ts     the unified line diff an overwrite shows, where practical: text only, bounded in edits, lines, and length (#74)
                      planned: states
   src/operations/    one module per catalog operation, plus shared preconditions
     index.ts         the built operations by name
@@ -305,6 +306,7 @@ worker/
     preparation-discard.ts  preparation.discard: the manager's confirmed abandonment, one branch deletion, the preparation discarded (R7, A2, Q14; #58)
     preparation-list.ts  preparation.list: the push permission first (A2), then the project's stored preparations as stored, newest first, an unparseable record left out (R7; #125)
     preparation-read.ts  preparation.read: the stored preparation, restart_required when the default branch moved (R5), the branch's health and the state it moves to (H1, H2; #36)
+    upload-plan.ts   upload.plan: the batch checked first (W6), the project writable and editable (A2, W2), every file identified or confirmed, two for one unit refused, overwrites and diffs from the default branch's tree and archive at its head, the proposed metadata (R10), one commit announced, bound to the head (R5), stored without the bytes (Q33; #74)
     source-search.ts  source.search: an owner's Bible and Open Bible Stories repositories as import sources, at the last release or the default branch (E35, Q25; #78)
                      planned: one module per remaining operation; preconditions (#14)
   src/http/          the HTTP projection: routes are the catalog's
@@ -312,6 +314,7 @@ worker/
     errors.ts        every failure to the error shape (X2, X3)
     session.ts       /auth/login, /auth/callback, /auth/logout; the token in Workers KV under a hash of the cookie (A1)
     csrf.ts          same-origin and CSRF token checks ahead of every POST (A4)
+    multipart.ts     a multipart body to an operation's plain input: each file's name, mode, and bytes, and the confirmations (upload.plan, Q33); an oversized body refused before it is read (W6)
   test/              model/, door43/, operations/, http/, contract/ (against fixtures); support/ (the recordings reader, a zip builder)
 web/
   src/api/client.ts  typed client: one call per operation, from shared/schema

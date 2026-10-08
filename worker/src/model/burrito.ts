@@ -2,7 +2,8 @@
 // project metadata (W1). The metadata and files of a new project, a Bible
 // (`scripture/textTranslation`, #29) or Open Bible Stories
 // (`gloss/textStories`, #82); the path and ingredient entry of a book or
-// story an upload or import adds (#72); and the merge for a release snapshot (#35,
+// story an upload or import adds (#72), and the metadata an upload proposes with
+// their entries (#74); and the merge for a release snapshot (#35,
 // ADR 0010): ingredient entries from the previous release for carried-forward
 // books and from the default branch for included books and administrative
 // ingredients, every top-level field from the default branch (Q8), the scope
@@ -212,14 +213,76 @@ export function newProjectMetadata(project: NewProject, generator: Generator, no
   };
 }
 
+/** `metadata.json` as tC Admin writes it: the document as JSON, indented by two spaces, with a final line feed, and its size and md5. */
+export function metadataFile(metadata: Readonly<Record<string, unknown>>): ProjectFile {
+  return projectFile(METADATA_PATH, `${JSON.stringify(metadata, null, 2)}\n`);
+}
+
 /** The files of a new project's first commit, in the order they are listed: the metadata, the license ingredient, the README (W5). */
 export function newProjectFiles(project: NewProject, generator: Generator, now: Date): { metadata: Record<string, unknown>; files: ProjectFile[] } {
   const license = projectFile(LICENSE_PATH, LICENSE_TEXTS[project.license]);
   const metadata = newProjectMetadata(project, generator, now, license);
   return {
     metadata,
-    files: [projectFile(METADATA_PATH, `${JSON.stringify(metadata, null, 2)}\n`), license, projectFile(README_PATH, readme(project))],
+    files: [metadataFile(metadata), license, projectFile(README_PATH, readme(project))],
   };
+}
+
+/** A book or story an upload or import adds, as identified (`model/upload.ts`): its unit, its Scripture Burrito path, and the entry of its bytes (R10). */
+export interface AddedUnit {
+  identified: Unit;
+  path: string;
+  ingredient: UnitIngredient;
+}
+
+/** One ingredient entry an upload adds or replaces: as it stands, `null` when new, and as it will be. */
+export interface EntryChange {
+  path: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown>;
+}
+
+export interface MergedUpload {
+  metadata: Record<string, unknown>;
+  entries: EntryChange[];
+}
+
+/**
+ * The default branch's `metadata.json` with the ingredient entries an upload or
+ * import adds (#74, product spec §8 "Metadata inference"): a unit the metadata does
+ * not list gets the writer's entry for its bytes; a unit it lists keeps every field
+ * of its entry, with the size and the md5 replaced by those of the new bytes, as the
+ * release merge does (R10). Nothing else changes: not the scope, not the names, not
+ * the generator (built behind, #74). A unit the metadata lists under another path,
+ * or a path it lists for something else, is a `MetadataError`: one book or story is
+ * never listed twice, as the reader refuses (`unitIngredients`).
+ */
+export function mergeUploadMetadata(current: ProjectMetadata, added: readonly AddedUnit[]): MergedUpload {
+  const type = current.project_type;
+  if (type === 'other') throw new MetadataError('not a Bible or Open Bible Stories project');
+  const listed = unitIngredients(current);
+  const byPath = new Map(current.ingredients.map(ingredient => [ingredient.path, ingredient]));
+  const document = structuredClone(current.document) as Record<string, unknown>;
+  const ingredients = document.ingredients as Record<string, unknown>;
+  const entries: EntryChange[] = [];
+  const seen = new Set<string>();
+  for (const unit of added) {
+    const id = 'book' in unit.identified ? unit.identified.book : unit.identified.story;
+    if (('book' in unit.identified) !== (type === 'bible')) throw new MetadataError(`${id} is not a ${type === 'bible' ? 'book' : 'story'} of this project`);
+    if (seen.has(id)) throw new MetadataError(`${id} is added twice`);
+    seen.add(id);
+    const existing = listed.get(id);
+    if (existing && existing.path !== unit.path) throw new MetadataError(`${id} is listed at ${existing.path}, not ${unit.path}`);
+    const atPath = byPath.get(unit.path);
+    if (atPath && atPath.unit !== id) throw new MetadataError(`${unit.path} is listed as ${atPath.unit ?? `an ingredient of kind ${atPath.kind}`}, not ${id}`);
+    const written = ingredients[unit.path];
+    const before = existing && typeof written === 'object' && written !== null ? structuredClone(written as Record<string, unknown>) : null;
+    // Only the md5 of the new bytes: any other digest the entry declares would be stale (E5, R10).
+    const after: Record<string, unknown> = before ? { ...structuredClone(before), checksum: { md5: unit.ingredient.checksum.md5 }, size: unit.ingredient.size } : structuredClone(unit.ingredient) as unknown as Record<string, unknown>;
+    ingredients[unit.path] = after;
+    entries.push({ path: unit.path, before, after });
+  }
+  return { metadata: document, entries };
 }
 
 /** A file under `ingredients/` in a release snapshot, with the size and md5 computed from its bytes (R10). */
