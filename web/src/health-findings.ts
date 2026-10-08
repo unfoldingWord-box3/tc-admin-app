@@ -5,7 +5,7 @@
 // the words (H1): an issue is never moved to another severity, and a
 // severity outside Door43's vocabulary is shown as Door43 wrote it.
 
-import type { HealthIssue, Preparation } from '@tc-admin/shared/schema';
+import type { HealthIssue, OperationErrorShape, Preparation } from '@tc-admin/shared/schema';
 import { releaseGate } from './release-stepper';
 
 /** Door43's issue severities (`severity_level`, E15, E60), in the order the page lists them. */
@@ -44,7 +44,7 @@ const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : 
 export type FindingsGate = 'blocked' | 'acknowledge' | 'none';
 
 /** The findings' gate for a preparation: blocked by health, waiting for the confirmation of its warnings, or neither (H2). */
-export function findingsGate(preparation: Pick<Preparation, 'state' | 'health' | 'requires_acknowledgement'>): FindingsGate {
+export function findingsGate(preparation: Pick<Preparation, 'state' | 'health' | 'requires_acknowledgement'> & { last_error?: Pick<OperationErrorShape, 'code'> | null }): FindingsGate {
   if (preparation.state === 'health_blocked') return 'blocked';
   return releaseGate(preparation) === 'acknowledge' ? 'acknowledge' : 'none';
 }

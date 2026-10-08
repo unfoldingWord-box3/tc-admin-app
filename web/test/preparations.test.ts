@@ -99,7 +99,7 @@ describe('the preparation_active refusal (#125)', () => {
 });
 
 describe('continuing a preparation this page did not make (#125)', () => {
-  test('R7, H3: the stepper finds a stored preparation from the list and lands on the step its live read is at', async () => {
+  test('R7, H3: the list offers a stored preparation this page did not make, and its live read names the step it is at (the mounted stepper tests land on it)', async () => {
     const requests: string[] = [];
     const door: Parameters<typeof callOperation>[2] = async url => {
       requests.push(url);
@@ -128,6 +128,10 @@ describe('continuing a preparation this page did not make (#125)', () => {
     const failed = (code: OperationErrorShape['code']) => ({ state: 'retryable_failure' as const, health, requires_acknowledgement: false, last_error: { code } });
     expect(releaseGate(failed('release_failed'))).toBe('ready');
     expect(releaseGate(failed('release_outcome_unknown'))).toBe('ready');
+    // A retryable failure with no error recorded is not taken for a release failure: only the discard is offered.
+    const unrecorded = { state: 'retryable_failure' as const, health, requires_acknowledgement: false, last_error: null };
+    expect(discardOnly(unrecorded)).toBe(true);
+    expect(releaseGate(unrecorded)).toBe('blocked');
     for (const code of ['commit_failed', 'preparation_active', 'door43_unavailable'] as const) {
       expect(releaseGate(failed(code)), code).toBe('blocked');
       expect(discardOnly(failed(code)), code).toBe(true);
