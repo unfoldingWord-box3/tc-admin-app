@@ -10,9 +10,9 @@
 // "Refresh" reads the portfolio from Door43 again, and its age is labeled
 // (P3, #26). Filters and sorting are #24.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { OperationOutput, ProjectSummary } from '@tc-admin/shared/schema';
-import { callOperation } from './api/client';
+import { ApiError, callOperation, failureMessage } from './api/client';
 import { CreateProject } from './CreateProject';
 import { CREATE_HASH, retireCreated, withCreated } from './create-project';
 import { ProjectView } from './ProjectView';
@@ -41,6 +41,10 @@ export function Portfolio({ account, onFailure }: Props) {
   const [reads, setReads] = useState(0);
   // A refresh asked for and not yet answered: the list stays, labeled with its age, until the new one arrives (P3, #26).
   const [refreshing, setRefreshing] = useState(false);
+  // A read again that failed while a list was shown: the list stays, and this says it was read earlier (P3, #26).
+  const [readProblem, setReadProblem] = useState<string | null>(null);
+  // The `show` whose list is on screen, if any.
+  const listed = useRef<Show | null>(null);
   const now = useNow();
 
   useEffect(() => {
@@ -48,14 +52,18 @@ export function Portfolio({ account, onFailure }: Props) {
     callOperation('portfolio.list', { show }).then(
       portfolio => {
         if (!current) return;
+        listed.current = show;
         setRefreshing(false);
+        setReadProblem(null);
         setResult({ show, portfolio });
         setCreated(previous => retireCreated(portfolio.organizations, previous));
       },
       failure => {
         if (!current) return;
         setRefreshing(false);
-        onFailure(failure);
+        const expired = failure instanceof ApiError && failure.error.code === 'session_expired';
+        if (listed.current === show && !expired) setReadProblem(`${failureMessage(failure)} What is shown was read earlier.`);
+        else onFailure(failure);
       },
     );
     return () => {
@@ -138,11 +146,17 @@ export function Portfolio({ account, onFailure }: Props) {
             disabled={refreshing}
             onClick={() => {
               setRefreshing(true);
+              setReadProblem(null);
               setReads(count => count + 1);
             }}
           >
             {refreshing ? 'Refreshing…' : 'Refresh'}
           </button>
+        </p>
+      )}
+      {portfolio && readProblem && (
+        <p className="field-error" role="alert">
+          {readProblem}
         </p>
       )}
     </>

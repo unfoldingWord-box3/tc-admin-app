@@ -137,11 +137,14 @@ export function ProjectView({ project: given, onFailure }: Props) {
   const [readProblem, setReadProblem] = useState<string | null>(null);
   // The project this view's state belongs to: another project given to the same view starts afresh, in this render, so nothing of the last one is shown under its name.
   const givenKey = `${owner.toLowerCase()}/${repo}`;
-  const [shownFor, setShownFor] = useState(givenKey);
-  if (shownFor !== givenKey) {
-    setShownFor(givenKey);
+  const [shownFor, setShownFor] = useState({ key: givenKey, given });
+  // Bumped when another project, or a newer report of the same one (a retried creation's receipt, #31), is given: it is read again, and an earlier read's answer is not shown.
+  const [opened, setOpened] = useState(0);
+  if (shownFor.given !== given) {
+    if (shownFor.key !== givenKey) setUploaded(null);
+    setShownFor({ key: givenKey, given });
+    setOpened(count => count + 1);
     setCurrent(given);
-    setUploaded(null);
     setReading('read');
     setReadProblem(null);
   }
@@ -175,7 +178,7 @@ export function ProjectView({ project: given, onFailure }: Props) {
   useEffect(() => {
     const handlers = settle(++ticket.current);
     callOperation('project.read', { owner, repo }).then(handlers.report, handlers.failure);
-  }, [owner, repo, settle]);
+  }, [owner, repo, settle, opened]);
   const refresh = () => {
     const handlers = settle(++ticket.current);
     setReading('refresh');
@@ -186,6 +189,8 @@ export function ProjectView({ project: given, onFailure }: Props) {
   const done = (receipt: UploadReceipt, added: string) => {
     ++ticket.current;
     setReading(null);
+    // The receipt's report is newer than any read that failed before it.
+    setReadProblem(null);
     setUploaded({ receipt, added });
     setCurrent(receipt.result);
     setAdding(null);
