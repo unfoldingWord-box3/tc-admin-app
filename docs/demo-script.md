@@ -1,6 +1,6 @@
 # Milestone 1 demo script
 
-The Milestone 1 demo (#42, #44), some time after 16 October 2026, its day not yet fixed (Rich, 8 October 2026): a manager releases a real Bahtraku Bible from production Door43 with tC Admin, then creates a project. Every step names the operation the interface calls and the report or receipt to expect, so a rehearsal (#43) can be checked line by line against this page. Nothing here is improvised on the day: the pre-release the demo promotes is left by the production rehearsal, and the repository has been agreed with the Bahtraku team beforehand.
+The Milestone 1 demo of Wednesday 21 October 2026 (#42, #44; moved from 16 October by Rich on 8 October 2026): a manager releases a real Bahtraku Bible from production Door43 with tC Admin, then creates a project. Every step names the operation the interface calls and the report or receipt to expect, so a rehearsal (#43) can be checked line by line against this page. Nothing here is improvised on the day: the pre-release the demo promotes is left by the production rehearsal, and the repository has been agreed with the Bahtraku team beforehand.
 
 ## The repository
 
@@ -75,7 +75,7 @@ Each step: what the presenter does, the operation the interface calls, what Door
 ### 9. Create a project (S1, W1)
 
 - "All projects" · "Create a project". Operation: `owner.list`, `language.list`, then `project.create.plan` and `project.create.apply`.
-- The owner is `tc-admin-qa-org`, unfoldingWord's own organization on production (E23), never the partner's; the title, abbreviation, and language are fixed here before the day: title "Demo 16 October 2026", abbreviation `demo1016`, language `id` (Bahasa Indonesia), New Testament scope, so the repository is `tc-admin-qa-org/id_demo1016`. Its name is checked free on the morning (the plan refuses a taken name as `name_taken`). The repository stays after the demo as a record; Rich removes it from Door43 by hand if the team prefers (tC Admin never deletes a repository, W4).
+- The owner is `tc-admin-qa-org`, unfoldingWord's own organization on production (E23), never the partner's; the title, abbreviation, and language are fixed here before the day: title "Demo 21 October 2026", abbreviation `demo1021`, language `id` (Bahasa Indonesia), New Testament scope, so the repository is `tc-admin-qa-org/id_demo1021`. Its name is checked free on the morning (the plan refuses a taken name as `name_taken`). The repository stays after the demo as a record; Rich removes it from Door43 by hand if the team prefers (tC Admin never deletes a repository, W4).
 - Expect the plan's preview: repository name `<language>_<abbreviation>`, the three files, the metadata; then the receipt: "Written: Repository … · Commit …" and the project's page, "0 of 27 books", health "Never checked". Back in the portfolio a few seconds later the project reads "Coverage unknown" (Door43 lists no ingredients for a project with no books, E45) and health "Information", the one note that no release exists yet (E28, Q21, E58).
 
 ### 10. Close
@@ -92,7 +92,7 @@ Each step: what the presenter does, the operation the interface calls, what Door
 | "Release creation failed: …" | The branch is kept (R7). "Try the release again". |
 | "Door43 did not confirm the release." | Nothing is retried on its own (X1). Press "Try the release again": `release.create` looks the tag up before sending anything. If Door43 made the release, the preparation records it, "This release already exists on Door43." is shown, and nothing is created twice (R6). If not, it is created once. |
 | "This release already exists on Door43." | The tag is there already; open it on Door43. |
-| The creation plan refuses the name as taken | `tc-admin-qa-org/id_demo1016` already exists (a rehearsal left it): use the abbreviation `demo1016b`, decided here, and say so. |
+| The creation plan refuses the name as taken | `tc-admin-qa-org/id_demo1021` already exists (a rehearsal left it): use the abbreviation `demo1021b`, decided here, and say so. |
 | `tc-admin-qa-org` is not in the owner list, or the plan refuses it (`permission_denied`) | The account may not create there (before the day, 5). Stop step 9; do not choose another owner. |
 
 ## The rehearsals (#43)
