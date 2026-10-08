@@ -4,7 +4,7 @@
 // with no date last; the owner grouping is the Worker's and is kept.
 import { describe, expect, test } from 'vitest';
 import type { ProjectSummary } from '@tc-admin/shared/schema';
-import { DEFAULT_VIEW, applyView, filterChoices, filtered } from '../src/portfolio-view';
+import { DEFAULT_VIEW, applyView, filterChoices, filtered, goneChoice, goneLabel } from '../src/portfolio-view';
 import { projectOf } from './support/mounted';
 
 const with_ = (project: ProjectSummary, patch: Partial<ProjectSummary>): ProjectSummary => ({ ...project, ...patch });
@@ -56,5 +56,14 @@ describe('ordering within a group', () => {
 
   test('the groups themselves keep the Worker\'s order whatever the order within them', () => {
     expect(applyView(groups, { ...DEFAULT_VIEW, sort: 'activity' }).map(group => group.name)).toEqual(['bahtraku', 'tc-admin-qa']);
+  });
+});
+
+describe('a filter whose value the list no longer holds', () => {
+  test('#24: the active value the list lacks is named, so its selector can keep showing it; a value still offered, or none, is not', () => {
+    expect(goneChoice(['id', 'ums'], 'ums')).toBeNull();
+    expect(goneChoice(['id'], 'ums')).toBe('ums');
+    expect(goneChoice(['id'], null)).toBeNull();
+    expect(goneLabel('Pendau')).toBe('Pendau · none in the list now');
   });
 });

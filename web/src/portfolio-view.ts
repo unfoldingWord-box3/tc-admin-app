@@ -75,6 +75,17 @@ export function applyView<G extends Group>(groups: readonly G[], view: Portfolio
     .filter(group => group.projects.length > 0);
 }
 
+/**
+ * A filter's active value that the list no longer holds, after a refresh (bench round 2 on #142): `null` when there is
+ * none. The selector keeps showing it, marked as gone, so the selector and the list never disagree; the manager clears it.
+ */
+export function goneChoice<T>(offered: readonly T[], active: T | null): T | null {
+  return active !== null && !offered.includes(active) ? active : null;
+}
+
+/** The words for an active value the list no longer holds. */
+export const goneLabel = (label: string): string => `${label} · none in the list now`;
+
 /** Whether any filter narrows the list. */
 export const filtered = (view: PortfolioView): boolean => view.organization !== null || view.language !== null || view.project_type !== null || view.health !== null;
 

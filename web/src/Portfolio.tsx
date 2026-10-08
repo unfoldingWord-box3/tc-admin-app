@@ -22,7 +22,7 @@ import { ReleaseStepper } from './ReleaseStepper';
 import { ReleaseView } from './ReleaseView';
 import { freshnessLabel } from './freshness';
 import { useNow } from './use-now';
-import { SORT_LABELS, applyView, filterChoices, filtered, rememberView, rememberedView } from './portfolio-view';
+import { SORT_LABELS, applyView, filterChoices, filtered, goneChoice, goneLabel, rememberView, rememberedView } from './portfolio-view';
 import type { PortfolioView, SortOrder } from './portfolio-view';
 import { ageLabel } from './freshness';
 import { canOpen, coverageLabel, formatLabel, hashRef, healthLabel, projectHash, typeLabel } from './portfolio-labels';
@@ -208,6 +208,16 @@ const ALL = '';
 /** The filters and the order: each filter offers only what the list holds, and "All" clears it. */
 function ViewControls({ groups, view, onChange, shown, total }: { groups: readonly { name: string; projects: ProjectSummary[] }[]; view: PortfolioView; onChange: (patch: Partial<PortfolioView>) => void; shown: number; total: number }) {
   const choices = filterChoices(groups);
+  // A filter whose value a refresh took out of the list keeps showing it, marked, so the selector says what the list is filtered by.
+  const gone = {
+    organization: goneChoice(choices.organizations, view.organization),
+    language: goneChoice(
+      choices.languages.map(language => language.code),
+      view.language,
+    ),
+    project_type: goneChoice(choices.project_types, view.project_type),
+    health: goneChoice(choices.health, view.health),
+  };
   return (
     <div className="toolbar filters" role="group" aria-label="Filter and order the projects">
       <label className="field">
@@ -219,6 +229,7 @@ function ViewControls({ groups, view, onChange, shown, total }: { groups: readon
               {name}
             </option>
           ))}
+          {gone.organization && <option value={gone.organization}>{goneLabel(gone.organization)}</option>}
         </select>
       </label>
       <label className="field">
@@ -230,6 +241,7 @@ function ViewControls({ groups, view, onChange, shown, total }: { groups: readon
               {language.title === language.code ? language.code : `${language.title} (${language.code})`}
             </option>
           ))}
+          {gone.language && <option value={gone.language}>{goneLabel(gone.language)}</option>}
         </select>
       </label>
       <label className="field">
@@ -241,6 +253,7 @@ function ViewControls({ groups, view, onChange, shown, total }: { groups: readon
               {typeLabel(type)}
             </option>
           ))}
+          {gone.project_type && <option value={gone.project_type}>{goneLabel(typeLabel(gone.project_type))}</option>}
         </select>
       </label>
       <label className="field">
@@ -252,6 +265,7 @@ function ViewControls({ groups, view, onChange, shown, total }: { groups: readon
               {healthLabel(state)}
             </option>
           ))}
+          {gone.health && <option value={gone.health}>{goneLabel(healthLabel(gone.health))}</option>}
         </select>
       </label>
       <label className="field">

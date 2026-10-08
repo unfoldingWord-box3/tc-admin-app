@@ -71,6 +71,25 @@ describe('#24: filters and order in the portfolio', () => {
     expect(titles()).toHaveLength(2);
   });
 
+  test('#24: after a refresh takes a filtered language out of the list, the selector still shows it, marked, and the list and count agree (bench round 2)', async () => {
+    await mount();
+    fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'ums' } });
+    expect(titles()).toEqual(['Perjanjian Baru Pendau']);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await vi.waitFor(() => expect(worker.waiting()).toContain('GET /api/portfolio?show=supported'));
+    // The refreshed portfolio no longer holds the Pendau project.
+    await worker.answer('GET', '/api/portfolio?show=supported', { organizations: [{ name: 'bahtraku', projects: [tb1] }], freshness, analysis: { complete: 1, pending: 0 } });
+    const language = screen.getByLabelText('Language') as HTMLSelectElement;
+    expect(language.value).toBe('ums');
+    expect(language.selectedOptions[0]!.textContent).toBe('ums · none in the list now');
+    expect(screen.queryAllByRole('listitem')).toEqual([]);
+    expect(screen.getByText('No project matches these filters.')).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toBe('Showing 0 of 1 projects');
+    fireEvent.click(screen.getByRole('button', { name: 'Clear the filters' }));
+    expect(titles()).toEqual(['Alkitab TB']);
+    expect(language.value).toBe('');
+  });
+
   test('#24: ordered by name, the projects follow their repository names', async () => {
     await mount();
     fireEvent.change(screen.getByLabelText('Order within each owner'), { target: { value: 'name' } });
