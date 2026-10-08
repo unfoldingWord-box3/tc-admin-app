@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { openArchive } from '../../src/door43/archive';
-import { MAX_DIFF_BYTES, MAX_DIFF_EDITS, MAX_DIFF_LINES, textDiff, textOf } from '../../src/model/text-diff';
+import { MAX_DIFF_BYTES, MAX_DIFF_EDITS, MAX_DIFF_FILE_LINES, MAX_DIFF_LINES, textDiff, textOf } from '../../src/model/text-diff';
 
 const encode = (text: string) => new TextEncoder().encode(text);
 const diff = (before: string, after: string) => textDiff('ingredients/RUT.usfm', encode(before), encode(after));
@@ -117,4 +117,13 @@ describe('W6: a diff is bounded in the memory it takes, whatever the upload', ()
     expect(diff).toContain('-\\v 30000 line\n+\\v 30000 changed\n');
     expect(diff.split('\n').filter(line => line.startsWith(' '))).toHaveLength(6);
   });
+});
+
+test(`W6: a side of more than ${MAX_DIFF_FILE_LINES} lines within ${MAX_DIFF_BYTES} bytes is no diff, counted before the text is split`, () => {
+  const lineFeeds = new Uint8Array(MAX_DIFF_FILE_LINES + 1).fill(0x0a);
+  expect(lineFeeds.length).toBeLessThanOrEqual(MAX_DIFF_BYTES);
+  const changed = new Uint8Array([...lineFeeds, 0x61]);
+  expect(textDiff('ingredients/PSA.usfm', lineFeeds, changed)).toBeNull();
+  const atCap = new Uint8Array(MAX_DIFF_FILE_LINES).fill(0x0a);
+  expect(textDiff('ingredients/PSA.usfm', atCap, new Uint8Array([...atCap, 0x61]))).toContain('+a\n\\ No newline at end of file\n');
 });

@@ -3,7 +3,7 @@
 // where practical"). Myers' algorithm on the lines between the common prefix
 // and suffix, written here because the application adds no dependency for one
 // function. "Practical" is bounded: bytes that are not UTF-8 or hold a NUL are
-// not text; a side over `MAX_DIFF_BYTES`, a changed region over `MAX_DIFF_LINES` lines, more than
+// not text; a side over `MAX_DIFF_BYTES` or `MAX_DIFF_FILE_LINES`, a changed region over `MAX_DIFF_LINES` lines, more than
 // `MAX_DIFF_EDITS` line edits, or a diff longer than `MAX_DIFF_CHARS` is no
 // diff, and the caller says so (`diff: null`). Pure.
 
@@ -13,6 +13,12 @@
  * Larger files, such as aligned books, get no diff.
  */
 export const MAX_DIFF_BYTES = 4 * 1024 * 1024;
+/**
+ * The most lines either version may have for a diff to be made, counted by a scan of the bytes before the text is
+ * split, so a file of short lines within `MAX_DIFF_BYTES` cannot become millions of line strings. Room for any real
+ * book: the Psalms run to about 2,500 verses.
+ */
+export const MAX_DIFF_FILE_LINES = 200_000;
 /** The most lines, old and new together, of the region between the common prefix and suffix that is compared. */
 export const MAX_DIFF_LINES = 20_000;
 /** The most line insertions and deletions a diff may hold: the work and the memory of the comparison grow with their square. */
@@ -103,6 +109,13 @@ function editScript(a: readonly string[], b: readonly string[], maxEdits: number
   return ops.reverse();
 }
 
+/** The line feeds in the bytes, counted without decoding or copying them. */
+function lineFeeds(bytes: Uint8Array): number {
+  let count = 0;
+  for (let i = 0; i < bytes.length; i++) if (bytes[i] === 0x0a) count++;
+  return count;
+}
+
 /** Whether two byte arrays hold the same bytes, compared without decoding or copying either. */
 function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
@@ -130,6 +143,7 @@ export function textDiff(path: string, before: Uint8Array, after: Uint8Array): s
   // The same bytes are no change, whatever they are, and nothing is decoded to say so.
   if (sameBytes(before, after)) return '';
   if (before.length > MAX_DIFF_BYTES || after.length > MAX_DIFF_BYTES) return null;
+  if (lineFeeds(before) > MAX_DIFF_FILE_LINES || lineFeeds(after) > MAX_DIFF_FILE_LINES) return null;
   const oldText = textOf(before);
   const newText = textOf(after);
   if (oldText === null || newText === null) return null;
