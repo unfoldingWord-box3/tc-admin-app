@@ -66,9 +66,13 @@ interface ReturnRecord {
   at: number;
 }
 
-/** Remembers the address being left for the sign-in, with the account that was signed in, if any. An address that is not one of the app's views is not remembered. */
+/**
+ * Remembers the address being left for the sign-in, with the account that was signed in, if any. An address that is not
+ * one of the app's views is not remembered, and leaves one already remembered in place: a sign-in that failed returns to
+ * `/?sign_in=…`, and trying again from there still comes back to where the first attempt left.
+ */
 export function rememberReturn(hash: string, account: string | null, now = Date.now(), store: Store | null = tabStore()): void {
-  if (!resumable(hash)) return remove(store, RETURN_KEY);
+  if (!resumable(hash)) return;
   write(store, RETURN_KEY, { hash, account, at: now } satisfies ReturnRecord);
 }
 
@@ -78,11 +82,14 @@ export function rememberReturn(hash: string, account: string | null, now = Date.
  * also offers the wizard its remembered form, once.
  */
 export function takeReturn(account: string, now = Date.now(), store: Store | null = tabStore()): string | null {
+  // A form offered back to another account is withdrawn: another account's sign-in never opens it (#15).
+  const pending = read<{ account?: unknown }>(store, RESUME_DRAFT_KEY);
+  if (pending && pending.account !== account.toLowerCase()) remove(store, RESUME_DRAFT_KEY);
   const record = read<ReturnRecord>(store, RETURN_KEY);
   remove(store, RETURN_KEY);
   if (!record || typeof record.hash !== 'string' || typeof record.at !== 'number' || !resumable(record.hash)) return null;
   if (now - record.at > RESUME_MS || now < record.at) return null;
-  const sameAccount = record.account !== null && record.account.toLowerCase() === account.toLowerCase();
+  const sameAccount = typeof record.account === 'string' && record.account.toLowerCase() === account.toLowerCase();
   if (record.account !== null && !sameAccount) return null;
   if (sameAccount && record.hash === '#/new') write(store, RESUME_DRAFT_KEY, { account: account.toLowerCase(), at: now });
   return record.hash;

@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { OperationOutput } from '@tc-admin/shared/schema';
 import { ApiError, callOperation, failureMessage, signOut } from './api/client';
 import { Portfolio } from './Portfolio';
-import { rememberReturn, takeReturn } from './resume';
+import { endResume, rememberReturn, takeReturn } from './resume';
 import { signInFailure } from './sign-in';
 
 type Situation = OperationOutput<'situation.read'>;
@@ -51,6 +51,8 @@ export function App() {
       // Door43's sign-in returns to `/`: the address left for it is restored, before the portfolio reads it (#15).
       const back = takeReturn(account);
       if (back && (window.location.hash === '' || window.location.hash === '#')) window.history.replaceState(null, '', back);
+      // The address already in the bar is kept, so the wizard's form is not offered to a later opening either.
+      else if (back) endResume();
     }
     if (result.situation) setSituation(result.situation);
     setError(result.error ?? null);

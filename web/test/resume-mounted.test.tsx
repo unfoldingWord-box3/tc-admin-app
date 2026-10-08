@@ -66,6 +66,18 @@ describe('#15: the address survives a sign-in', () => {
     await answerWhenSent('GET', '/api/situation', situation({ login: 'tc-admin-qa', name: 'tC Admin QA' }));
     expect(window.location.hash).toBe('#/bahtraku/id_tb1');
   });
+
+  test('#15: a return to the wizard not applied over an address in the bar does not offer its form to a later opening', async () => {
+    saveDraft({ ...newForm('tc-admin-qa-org'), title: 'Alkitab Pendau' });
+    rememberReturn('#/new', 'tc-admin-qa');
+    window.history.replaceState(null, '', '/#/bahtraku/id_tb1');
+    render(<App />);
+    await answerWhenSent('GET', '/api/situation', situation({ login: 'tc-admin-qa', name: 'tC Admin QA' }));
+    expect(window.location.hash).toBe('#/bahtraku/id_tb1');
+    cleanup();
+    render(<CreateProject onCreated={() => {}} onFailure={() => {}} />);
+    expect((screen.getByLabelText('Project title') as HTMLInputElement).value).toBe('');
+  });
 });
 
 describe('#15: the wizard\'s form survives a sign-in', () => {
@@ -76,6 +88,7 @@ describe('#15: the wizard\'s form survives a sign-in', () => {
     render(<CreateProject onCreated={() => {}} onFailure={() => {}} />);
     expect((screen.getByLabelText('Project title') as HTMLInputElement).value).toBe('Alkitab Pendau');
     expect((screen.getByLabelText('Abbreviation') as HTMLInputElement).value).toBe('APD');
+    expect(document.querySelector<HTMLInputElement>('input[name="testament_scope"][value="nt"]')?.checked).toBe(true);
     cleanup();
 
     render(<CreateProject onCreated={() => {}} onFailure={() => {}} />);

@@ -74,6 +74,15 @@ describe('the address', () => {
     const store = memory();
     store.entries.set(RETURN_KEY, '{not json');
     expect(takeReturn('tc-admin-qa', T, store)).toBeNull();
+    store.entries.set(RETURN_KEY, JSON.stringify({ hash: PREPARATION, account: 5, at: T }));
+    expect(takeReturn('tc-admin-qa', T, store)).toBeNull();
+  });
+
+  test('#15: a sign-in that failed and is tried again from `/?sign_in=…` still comes back to the address the first attempt left', () => {
+    const store = memory();
+    rememberReturn(PREPARATION, 'tc-admin-qa', T, store);
+    rememberReturn('', null, T + 1000, store);
+    expect(takeReturn('tc-admin-qa', T + 2000, store)).toBe(PREPARATION);
   });
 });
 
@@ -102,6 +111,15 @@ describe('the wizard\'s form', () => {
     rememberReturn('#/new', 'tc-admin-qa', T, store);
     takeReturn('tc-admin-qa', T + RESUME_MS + 1, store);
     expect(resumedDraft(T + RESUME_MS + 1, store)).toBeNull();
+  });
+
+  test('#15: a form offered back to one account and not yet opened is withdrawn when another account signs in', () => {
+    const store = memory();
+    saveDraft(form, T, store);
+    rememberReturn('#/new', 'tc-admin-qa', T, store);
+    takeReturn('tc-admin-qa', T, store);
+    expect(takeReturn('birch', T + 1000, store)).toBeNull();
+    expect(resumedDraft(T + 2000, store)).toBeNull();
   });
 
   test('a created project forgets the form', () => {
