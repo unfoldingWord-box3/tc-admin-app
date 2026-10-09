@@ -257,7 +257,9 @@ export function ProjectView({ project: given, onFailure }: Props) {
       </p>
       {reading === 'read' && <p className="muted" role="status">Reading the project from Door43…</p>}
       {'freshness' in project && 'latest_full_release' in project && (
-        <ProjectHealth url={project.ref.url} defaultBranch={project.default_branch} health={project.health} release={project.latest_full_release} releaseHealth={project.release_health} />
+        // Keyed by the project, so another project's view opens with its health check closed (#149). The key is unlike the
+        // release preparations' beside it: two siblings with one key made React add a health section at every render.
+        <ProjectHealth key={`health:${project.ref.owner}/${project.ref.repo}`} url={project.ref.url} defaultBranch={project.default_branch} health={project.health} release={project.latest_full_release} releaseHealth={project.release_health} />
       )}
       {catalogPending && (
         <p className="muted" role="status">
