@@ -38,6 +38,8 @@ afterEach(() => {
 const plans = () => worker.sent.filter(request => request.url === planUrl);
 const applies = () => worker.sent.filter(request => request.url === applyUrl);
 const button = (name: RegExp | string) => screen.getByRole('button', { name }) as HTMLButtonElement;
+/** Chooses a source: each listed repository is one radio choice, its whole row the label (#151). */
+const pick = (name: RegExp) => fireEvent.click(screen.getByRole('radio', { name }));
 const mount = () => render(<ImportScreen project={project} type="bible" onImported={() => {}} onCancel={() => {}} />);
 /** Waits for a request to be sent, then answers it. */
 async function answerWhenSent(method: string, url: string, body: unknown, status = 200) {
@@ -54,7 +56,7 @@ const TB1_RELEASE = sourceOf('bahtraku', 'id_tb1', { title: 'Alkitab Terjemahan 
 async function toSources(sources = [TB1]) {
   mount();
   await answerWhenSent('GET', ownersUrl, ownersOf(OWN));
-  fireEvent.change(screen.getByLabelText('Search owners by name'), { target: { value: 'bah' } });
+  fireEvent.change(screen.getByLabelText(/Search owners by name/), { target: { value: 'bah' } });
   await answerWhenSent('GET', `${ownersUrl}?q=bah`, ownersOf(OWN, [{ login: 'bahtraku', name: 'Yayasan BahtraKu' }]));
   fireEvent.click(button('Yayasan BahtraKu (bahtraku)'));
   await worker.answer('GET', sourcesUrl('bahtraku', 'latest'), sourcesOf(sources));
@@ -66,8 +68,12 @@ describe('finding the source', () => {
     expect(worker.sent.map(request => request.url)).toEqual([ownersUrl, `${ownersUrl}?q=bah`, sourcesUrl('bahtraku', 'latest')]);
     expect(screen.getByText('Yayasan BahtraKu (bahtraku)')).toBeTruthy();
     const list = screen.getByRole('list', { name: 'Repositories' });
-    expect(within(list).getByRole('button', { name: /Alkitab Terjemahan Baru/ })).toBeTruthy();
-    expect(list.textContent).toContain('Bible · Resource Container · Released · branch master');
+    // Read aloud as two phrases: the title with its language code, then the repository and its facts.
+    expect(within(list).getByRole('radio', { name: /^Alkitab Terjemahan Baru \(id\),\s?bahtraku\/id_tb1 · Resource Container · Released · branch master$/ })).toBeTruthy();
+    // #151: the title with its language code, then `owner/repo` as code and the facts but the type, which every listed source shares.
+    expect(within(list).getByText('bahtraku/id_tb1').tagName).toBe('CODE');
+    expect(list.textContent).toContain('bahtraku/id_tb1 · Resource Container · Released · branch master');
+    expect(screen.getByRole('group', { name: 'Bible projects' })).toBeTruthy();
   });
 
   test('before typing, the organizations are offered under their own heading', async () => {
@@ -79,7 +85,7 @@ describe('finding the source', () => {
 
   test('"Last release" retires the list, the source, and a plan in flight at once, and reads the sources again at that stage; the other stage\'s list is never shown or planned', async () => {
     await toSources();
-    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    pick(/Alkitab Terjemahan Baru/);
     fireEvent.click(button('Plan the import of 3 books'));
     expect(plans()).toHaveLength(1);
     expect(plans()[0]!.body).toMatchObject({ source: { revision: 'master' } });
@@ -91,25 +97,51 @@ describe('finding the source', () => {
     expect(screen.queryByText('Review before importing')).toBeNull();
     await answerWhenSent('GET', sourcesUrl('bahtraku', 'prod'), sourcesOf([TB1_RELEASE]));
     expect(screen.getByRole('list', { name: 'Repositories' }).textContent).toContain('release 1974');
-    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    pick(/Alkitab Terjemahan Baru/);
     fireEvent.click(button('Plan the import of 3 books'));
     expect(plans()).toHaveLength(2);
     expect(plans()[1]!.body).toMatchObject({ source: { revision: '1974' } });
   });
 
-  test('a source of the other project type is shown with why it cannot be picked, and no plan is sent for it', async () => {
+  test('#151: a source of the other project type is not listed, and nothing is said of it while a source of this type is', async () => {
     await toSources([TB1, sourceOf('bahtraku', 'id_obs', { title: 'Cerita', type: 'obs', books: null })]);
     const list = screen.getByRole('list', { name: 'Repositories' });
-    const refused = within(list).getByText('Cerita').closest('li')!;
-    expect(refused.getAttribute('aria-disabled')).toBe('true');
-    expect(refused.textContent).toContain('An Open Bible Stories repository cannot be imported into a Bible project.');
-    expect(within(refused).queryByRole('button')).toBeNull();
+    expect(within(list).getAllByRole('radio')).toHaveLength(1);
+    expect(screen.queryByText(/Cerita/)).toBeNull();
+    expect(screen.queryByText(/cannot be imported/)).toBeNull();
+    expect(screen.getByText('1 repository')).toBeTruthy();
     expect(plans()).toEqual([]);
+  });
+
+  test('#151: an owner with no source of this type says so, and how many of the other type are not listed', async () => {
+    await toSources([sourceOf('bahtraku', 'id_obs', { title: 'Cerita', type: 'obs', books: null }), sourceOf('bahtraku', 'id_obs2', { title: 'Cerita 2', type: 'obs', books: null })]);
+    expect(screen.queryByRole('list', { name: 'Repositories' })).toBeNull();
+    expect(screen.getByText('bahtraku has no Bible repository at its latest content. 2 Open Bible Stories repositories are not listed, since it cannot be imported here.')).toBeTruthy();
+  });
+
+  test('#151: the filter narrows the list by title, language code, or repository name, and keeps the chosen source', async () => {
+    const english = { ...sourceOf('bahtraku', 'en_ult', { title: 'Literal Text' }), language: { code: 'en', title: 'English' } };
+    await toSources([TB1, sourceOf('bahtraku', 'id_tb2', { title: 'Kitab Kedua' }), english]);
+    pick(/Kitab Kedua/);
+    const filter = screen.getByLabelText(/Filter repositories/);
+    const listed = () => within(screen.getByRole('list', { name: 'Repositories' })).getAllByRole('radio').map(radio => (radio as HTMLInputElement).value);
+    fireEvent.change(filter, { target: { value: 'ALKITAB' } });
+    expect(listed()).toEqual(['bahtraku/id_tb1']);
+    expect(screen.getByText('1 of 3 repositories')).toBeTruthy();
+    fireEvent.change(filter, { target: { value: 'en' } });
+    expect(listed()).toEqual(['bahtraku/en_ult']);
+    fireEvent.change(filter, { target: { value: 'tb2' } });
+    expect(listed()).toEqual(['bahtraku/id_tb2']);
+    expect((screen.getByRole('radio', { name: /Kitab Kedua/ }) as HTMLInputElement).checked).toBe(true);
+    fireEvent.change(filter, { target: { value: 'nothing like it' } });
+    expect(screen.getByText('No Bible repository of bahtraku matches "nothing like it".')).toBeTruthy();
+    // The source chosen before filtering stays chosen: its books are still offered.
+    expect(screen.getByRole('group', { name: /Books of bahtraku\/id_tb2/ })).toBeTruthy();
   });
 
   test('E35: a source Door43 does not itemize still imports: the plan is asked for all', async () => {
     await toSources([sourceOf('bahtraku', 'id_tb1', { title: 'Alkitab', books: null })]);
-    fireEvent.click(button(/Alkitab/));
+    pick(/Alkitab/);
     expect(screen.getByText(/Door43 does not list this repository's books/)).toBeTruthy();
     fireEvent.click(button('Plan the import of all books'));
     expect(plans()[0]!.body).toEqual({ source: { owner: 'bahtraku', repo: 'id_tb1', revision: 'master' }, units: 'all' });
@@ -123,7 +155,7 @@ describe('plan before apply', () => {
     await answerWhenSent('GET', ownersUrl, ownersOf(OWN, [{ login: 'bahtraku', name: 'Yayasan BahtraKu' }]));
     fireEvent.click(button('tC Admin QA (tc-admin-qa-org)'));
     await worker.answer('GET', sourcesUrl('tc-admin-qa-org', 'latest'), sourcesOf([TB1]));
-    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    pick(/Alkitab Terjemahan Baru/);
     // Every offered book is chosen to begin with; Matthew is left out.
     fireEvent.click(screen.getByLabelText('MAT · Matius'));
     fireEvent.click(button('Plan the import of 2 books'));
@@ -155,7 +187,7 @@ describe('plan before apply', () => {
 
   test('a plan\'s id_line_mismatch warning is shown with the plan', async () => {
     await toSources();
-    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    pick(/Alkitab Terjemahan Baru/);
     fireEvent.click(button('Plan the import of 3 books'));
     const plan = importPlanOf('p2', [book('gen')]);
     await worker.answer('POST', planUrl, { ...plan, warnings: [{ code: 'id_line_mismatch', message: 'ingredients/GEN.usfm is imported as GEN, but its \\id line does not name it. The file is committed unchanged.' }] });
@@ -164,7 +196,7 @@ describe('plan before apply', () => {
 
   test('W5, X1: changing the chosen books after planning retires the plan; nothing can be confirmed until import.plan runs again with the new choice', async () => {
     await toSources();
-    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    pick(/Alkitab Terjemahan Baru/);
     fireEvent.click(button('Plan the import of 3 books'));
     await worker.answer('POST', planUrl, importPlanOf('p4', [book('gen'), book('exo'), book('mat')]));
     expect(screen.getByText('Review before importing')).toBeTruthy();
@@ -183,9 +215,9 @@ describe('plan before apply', () => {
 
   test('W5: a plan answered after the source or its books changed is dropped, not offered for confirmation', async () => {
     await toSources([TB1, sourceOf('bahtraku', 'id_tb2', { title: 'Kitab Kedua' })]);
-    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    pick(/Alkitab Terjemahan Baru/);
     fireEvent.click(button('Plan the import of 3 books'));
-    fireEvent.click(button(/Kitab Kedua/));
+    pick(/Kitab Kedua/);
     await worker.answer('POST', planUrl, importPlanOf('p6', [book('gen')]));
     expect(screen.queryByText('Review before importing')).toBeNull();
 
@@ -201,7 +233,7 @@ describe('plan before apply', () => {
 describe('refusals shown in place', () => {
   test('X2: not_editable from import.plan shows the project\'s reason and the way back, and plans nothing more', async () => {
     await toSources();
-    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    pick(/Alkitab Terjemahan Baru/);
     fireEvent.click(button('Plan the import of 3 books'));
     await worker.answer('POST', planUrl, errorOf('not_editable', {}, 'Resource Container project. Import it into a new project to manage it here.'), 409);
     const alert = screen.getByRole('alert');
@@ -213,7 +245,7 @@ describe('refusals shown in place', () => {
 
   test('X1, X2: an apply the source refused (source_changed in its source wording) is shown with the way forward, and the same plan is not sent again; "Plan again" plans anew', async () => {
     await toSources();
-    fireEvent.click(button(/Alkitab Terjemahan Baru/));
+    pick(/Alkitab Terjemahan Baru/);
     fireEvent.click(button('Plan the import of 3 books'));
     await worker.answer('POST', planUrl, importPlanOf('p3', [book('gen')]));
     fireEvent.click(button(/^Import 1 book$/));
@@ -251,6 +283,6 @@ describe('refusals shown in place', () => {
     await answerWhenSent('GET', sourcesUrl('tc-admin-qa-org', 'latest'), sourcesOf([TB1]));
     expect(worker.sent.filter(request => request.url === sourcesUrl('tc-admin-qa-org', 'latest'))).toHaveLength(2);
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(within(screen.getByRole('list', { name: 'Repositories' })).getByRole('button', { name: /Alkitab Terjemahan Baru/ })).toBeTruthy();
+    expect(within(screen.getByRole('list', { name: 'Repositories' })).getByRole('radio', { name: /Alkitab Terjemahan Baru/ })).toBeTruthy();
   });
 });
