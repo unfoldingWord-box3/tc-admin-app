@@ -50,6 +50,19 @@ async function answerWhenSent(method: string, url: string, body: unknown, status
 }
 
 describe('the project view reads the full report', () => {
+  test('#156: the latest full release opens on its own page from the project page; a project with none says so, with no link', async () => {
+    const view = render(<ProjectView project={PENDAU} />);
+    await worker.answer('GET', READ, reportOf());
+    const link = screen.getByRole('link', { name: 'Open the release' });
+    expect(link.getAttribute('href')).toBe('#/bahtraku/Perjanjian-Baru-Pendau/releases/v1.2');
+    expect(link.closest('dd')?.textContent).toBe('v1.2 · Open the release');
+    view.unmount();
+    render(<ProjectView project={PENDAU} />);
+    await worker.answer('GET', READ, reportOf({ latest_full_release: null }));
+    expect(screen.queryByRole('link', { name: 'Open the release' })).toBeNull();
+    expect(screen.getByText('None yet')).toBeTruthy();
+  });
+
   test('P3, H1: on opening, project.read; its latest release, its findings on the branch, and its age are shown', async () => {
     render(<ProjectView project={PENDAU} />);
     expect(screen.getByRole('status').textContent).toContain('Reading the project from Door43');
