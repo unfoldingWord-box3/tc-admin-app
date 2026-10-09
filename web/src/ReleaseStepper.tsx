@@ -501,7 +501,7 @@ function Stepper({ project, preparationId = null, onFailure }: Props) {
             </>
           )}
           <label className="inline-field" htmlFor="release-version">
-            Version:
+            <span className="field-label">Version:</span>
             <input id="release-version" value={version} onChange={event => changeVersion(event.target.value)} />
           </label>
           <p className="derived">
@@ -590,11 +590,11 @@ function Stepper({ project, preparationId = null, onFailure }: Props) {
             >
               {/* The words on their own line above the notes, not at the box's lower corner (Rich, #161). */}
               <label className="stacked-field" htmlFor="release-notes">
-                Release notes:
+                <span className="field-label">Release notes:</span>
                 <textarea id="release-notes" rows={8} value={notes} onChange={event => setNotes(event.target.value)} required />
               </label>
               <label className="inline-field" htmlFor="release-version-final">
-                Version:
+                <span className="field-label">Version:</span>
                 <input id="release-version-final" value={version} onChange={event => changeVersion(event.target.value)} required />
               </label>
               <label className="choice">
