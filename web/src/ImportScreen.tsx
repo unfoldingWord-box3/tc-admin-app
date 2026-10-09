@@ -254,9 +254,9 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
           Back to the project
         </button>
       </p>
-      <h2>
+      <h1>
         {importAction(type)} · {project.title}
-      </h2>
+      </h1>
       <p>
         {type === 'bible' ? 'Books' : 'Stories'} from any Door43 repository of this project's type, in any metadata format, through its Scripture Burrito archive. Nothing is written to Door43 until you
         confirm the plan below, and nothing is ever written to the repository imported from.
@@ -521,7 +521,7 @@ function ImportReview({ plan, type, confirmed, busy, spent, onConfirmOverwrite, 
   const entries = plan.preview.metadata_diff.ingredients;
   return (
     <div className="upload-review">
-      <h3>Review before importing</h3>
+      <h2>Review before importing</h2>
       <p className="muted">Nothing has been written to Door43 yet. This is exactly what confirming will write. The plan is valid until {time(plan.expires_at)}.</p>
 
       {plan.warnings.length > 0 && (
@@ -537,7 +537,7 @@ function ImportReview({ plan, type, confirmed, busy, spent, onConfirmOverwrite, 
         </ul>
       )}
 
-      <h4>{files.length === 1 ? `1 ${unitNoun(type, 1)}` : `${files.length} ${unitNoun(type, files.length)}`}</h4>
+      <h3>{files.length === 1 ? `1 ${unitNoun(type, 1)}` : `${files.length} ${unitNoun(type, files.length)}`}</h3>
       <ul className="upload-files" aria-label="Imported files">
         {files.map(file => (
           <li key={file.name} className="upload-file">
@@ -562,7 +562,7 @@ function ImportReview({ plan, type, confirmed, busy, spent, onConfirmOverwrite, 
         ))}
       </ul>
 
-      <h4>Ingredient entries in metadata.json</h4>
+      <h3>Ingredient entries in metadata.json</h3>
       {entries.length === 0 ? (
         <p className="muted">No ingredient entry changes.</p>
       ) : (
@@ -595,7 +595,7 @@ function ImportReview({ plan, type, confirmed, busy, spent, onConfirmOverwrite, 
         </table>
       )}
 
-      <h4>Source relationship</h4>
+      <h3>Source relationship</h3>
       <p>{relationshipText(plan)}</p>
       {plan.preview.metadata_diff.relationships.map(relationship => (
         <p key={relationship.id} className="muted">
@@ -604,7 +604,7 @@ function ImportReview({ plan, type, confirmed, busy, spent, onConfirmOverwrite, 
       ))}
 
       <div className="upload-summary">
-        <h4>Summary</h4>
+        <h3>Summary</h3>
         <p>{importSummary(plan, type)}</p>
         {blockers.length > 0 && (
           <ul aria-label="Before you can confirm">

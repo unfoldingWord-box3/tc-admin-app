@@ -100,8 +100,8 @@ export function App() {
           </span>
         )}
         {situation?.account && (
-          <span>
-            {situation.account.name} ·{' '}
+          <span className="account">
+            {situation.account.name}
             <button type="button" onClick={() => void endSession()}>
               Sign out
             </button>
@@ -109,7 +109,8 @@ export function App() {
         )}
       </header>
       <main>
-        <h1>Your projects</h1>
+        {/* Signed in, each page names itself; the portfolio is "Your projects" (#154). */}
+        {!situation?.account && <h1>Your projects</h1>}
         {notice && <p role="alert">{notice}</p>}
         {error && (
           <>

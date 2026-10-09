@@ -247,9 +247,9 @@ export function UploadScreen({ project, type, onUploaded, onCancel, onFailure }:
           Back to the project
         </button>
       </p>
-      <h2>
+      <h1>
         {addAction(type)} · {project.title}
-      </h2>
+      </h1>
       <p>{chooseHint(type)} Nothing is written to Door43 until you confirm the plan below.</p>
       <div
         className={dragging ? 'dropzone dragging' : 'dropzone'}
@@ -416,7 +416,7 @@ function ChosenList({
 }) {
   return (
     <>
-      <h3>Files chosen</h3>
+      <h2>Files chosen</h2>
       <ul className="upload-files" aria-label="Files chosen">
         {files.map(file => {
           const unit = confirmationOf(confirmations, file.name);
@@ -474,7 +474,7 @@ function PlanReview({ plan, type, confirmations, confirmed, busy, spent, onConfi
   const entries = plan.preview.metadata_diff.ingredients;
   return (
     <div className="upload-review">
-      <h3>Review before adding</h3>
+      <h2>Review before adding</h2>
       <p className="muted">Nothing has been written to Door43 yet. This is exactly what confirming will write. The plan is valid until {time(plan.expires_at)}.</p>
 
       {plan.warnings.length > 0 && (
@@ -490,7 +490,7 @@ function PlanReview({ plan, type, confirmations, confirmed, busy, spent, onConfi
         </ul>
       )}
 
-      <h4>{identified.length === 1 ? `1 ${unitNoun(type, 1)}` : `${identified.length} ${unitNoun(type, identified.length)}`}</h4>
+      <h3>{identified.length === 1 ? `1 ${unitNoun(type, 1)}` : `${identified.length} ${unitNoun(type, identified.length)}`}</h3>
       {identified.length === 0 && <p className="muted">No file is identified as a {unitNoun(type, 1)} yet.</p>}
       <ul className="upload-files" aria-label="Identified files">
         {identified.map(file => {
@@ -530,7 +530,7 @@ function PlanReview({ plan, type, confirmations, confirmed, busy, spent, onConfi
 
       {held.length > 0 && (
         <section aria-label="Unknown files">
-          <h4>Unknown files</h4>
+          <h3>Unknown files</h3>
           <p>
             Held back: nothing is written for {held.length === 1 ? 'this file' : 'these files'} until you choose a {unitNoun(type, 1)} for each, or leave it out.
           </p>
@@ -573,7 +573,7 @@ function PlanReview({ plan, type, confirmations, confirmed, busy, spent, onConfi
         </section>
       )}
 
-      <h4>Ingredient entries in metadata.json</h4>
+      <h3>Ingredient entries in metadata.json</h3>
       {entries.length === 0 ? (
         <p className="muted">No ingredient entry changes.</p>
       ) : (
@@ -607,7 +607,7 @@ function PlanReview({ plan, type, confirmations, confirmed, busy, spent, onConfi
       )}
 
       <div className="upload-summary">
-        <h4>Summary</h4>
+        <h3>Summary</h3>
         <p>{uploadSummary(plan, type)}</p>
         {blockers.length > 0 && (
           <ul aria-label="Before you can confirm">

@@ -66,9 +66,9 @@ export function ReleaseView({ project, tag, onFailure }: Props) {
       <p>
         <a href={projectHash(project)}>{project.title}</a> · <a href={releaseHash(project)}>Prepare a release</a> · <a href="#">All projects</a>
       </p>
-      <h2>
+      <h1>
         Release {tag} of {project.title}
-      </h2>
+      </h1>
       {problem && (
         <p className="field-error" role="alert">
           {problem}

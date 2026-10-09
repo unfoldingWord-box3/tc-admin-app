@@ -364,7 +364,7 @@ export function CreateProject({ account, onCreated, onFailure }: Props) {
       <p>
         <a href="#">All projects</a>
       </p>
-      <h2>Create a project</h2>
+      <h1>Create a project</h1>
       <p>A new Scripture Burrito project on Door43. Nothing is written until you have reviewed what will be written.</p>
       {problem && (
         <p role="alert">
