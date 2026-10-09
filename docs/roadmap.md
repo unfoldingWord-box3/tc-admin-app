@@ -61,7 +61,7 @@ The metadata editor, Setup-incomplete recovery beyond a retry link, accessibilit
 **EPIC: Environments and Door43 setup** ([#6](https://github.com/unfoldingWord-box3/tc-admin-app/issues/6)) (week one)
 - The `tc-admin-qa-org` organization and the `tc-admin-qa` user exist on production so they survive QA resets (22 September 2026, E23); the user also exists on QA. Seed repositories may hold files there but never releases.
 - Register one confidential OAuth application per host at site-admin or unfoldingWord org level, with production, QA, and local redirect URIs.
-- Write a seed script that copies one RC Bible (`bahtraku/id_tb1`) and one SB Bible (`bahtraku/Perjanjian-Baru-Pendau`) into `tc-admin-qa` on QA after each reset.
+- A seed script that rebuilds the standard QA test projects in `tc-admin-qa` and `tc-admin-qa-org` after each reset, through the Worker's own operations: a Bible with a full release and a pre-release, an Open Bible Stories project with a release, and a Bible with health findings (`scripts/seed-qa.mjs`, [#3](https://github.com/unfoldingWord/tc-admin-app/issues/3); rescoped by Rich on 9 October 2026, since the reset already brings the Bahtraku repositories the first text asked to copy).
 - Confirm the OAuth secret copied to QA by a reset still works, or document the manual step.
 - Measure health-check latency on QA after a branch push and record the number.
 

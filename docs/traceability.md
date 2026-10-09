@@ -15,7 +15,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [#1](https://github.com/unfoldingWord-box3/tc-admin-app/issues/1) tc-admin-qa organization | roadmap M1 | — | — | E9 | — | environment | — |
 | [#2](https://github.com/unfoldingWord-box3/tc-admin-app/issues/2) OAuth applications | §2 | 0001 | A1 | Q9, Q10 | `situation.read` | door43/auth | — |
-| [#3](https://github.com/unfoldingWord-box3/tc-admin-app/issues/3) QA seed script | roadmap M1 | 0012 | — | E1, E9 | — | scripts | — |
+| [#3](https://github.com/unfoldingWord-box3/tc-admin-app/issues/3) Rebuild the standard QA test projects after each reset | roadmap M1 | 0012 | W1, W5, X1 | E9, E23, E26, E49, E58, E69, E74, Q9 | `project.create.plan`, `project.create.apply`, `source.search`, `import.plan`, `import.apply`, `release.plan`, `release.prepare`, `preparation.read`, `release.create` | scripts/seed-qa | — |
 | [#4](https://github.com/unfoldingWord-box3/tc-admin-app/issues/4) OAuth survives reset | §2 | 0001 | A1 | Q9 | — | runbook | — |
 | [#5](https://github.com/unfoldingWord-box3/tc-admin-app/issues/5) Health latency | §9 | 0007 | H2 | Q2 | `preparation.read` | door43/health | — |
 
