@@ -114,6 +114,11 @@ export const ProjectReport = z.object({
    * tag than the one checked (so no check is shown under another release), and in a receipt, which reports what it wrote (#146).
    */
   release_health: Health.nullable().default(null),
+  /**
+   * The latest pre-release, when it is newer than the latest full release (the catalog's `preprod` stage, E14, E75): its
+   * tag and commit, for the project's page to open (#162); `null` when there is none, and in a receipt stored before #162.
+   */
+  latest_prerelease: z.object({ tag: z.string(), sha: z.string() }).nullable().default(null),
   /** `null` for a repository without a commit: a project whose setup is incomplete, or an empty repository (E10). */
   default_branch_head: z.object({ sha: z.string(), committed_at: z.string() }).nullable(),
   active_preparation: z.object({ id: z.string(), state: PreparationState, version: z.string() }).nullable(),

@@ -54,6 +54,8 @@ interface State {
   release: boolean;
   /** The tag Door43's release answer names, when it is not the one asked for. */
   releaseTag?: string;
+  /** The catalog's `preprod` stage, when the repository has a pre-release (#162). */
+  preprod?: Record<string, unknown> | null;
 }
 
 const NOW = new Date('2026-10-08T12:00:00.000Z');
@@ -67,7 +69,8 @@ const fetch: Fetch = async url => {
   if (pathname === REPO) {
     const { permissions: _recorded, ...recorded } = repository;
     const catalog = recorded.catalog as Record<string, unknown> | undefined;
-    const bare = state.release ? recorded : { ...recorded, catalog: { ...catalog, prod: null } };
+    const staged = state.preprod === undefined ? catalog : { ...catalog, preprod: state.preprod };
+    const bare = state.release ? { ...recorded, catalog: staged } : { ...recorded, catalog: { ...staged, prod: null } };
     return Response.json(state.permissions === null ? bare : { ...bare, permissions: state.permissions });
   }
   if (pathname === `${REPO}/healthcheck`) {
@@ -171,6 +174,24 @@ describe('project.read over the recorded Pendau project', () => {
     const report = await read();
     expect(report.latest_full_release?.tag).toBe('v1.3');
     expect(report.release_health).toBeNull();
+  });
+
+  test('#162, E75: an outstanding pre-release is reported from the catalog with no other read; one older than the full release is not', async () => {
+    state.preprod = { branch_or_tag_name: 'v1.2.1', commit_sha: 'f'.repeat(40), released: '2099-01-01T00:00:00Z' };
+    const before = calls.length;
+    const report = await read();
+    expect(report.latest_prerelease).toEqual({ tag: 'v1.2.1', sha: 'f'.repeat(40) });
+    expect(calls.slice(before).some(call => call.includes('v1.2.1'))).toBe(false);
+    state.preprod = { branch_or_tag_name: 'v1.1.9', commit_sha: 'f'.repeat(40), released: '2000-01-01T00:00:00Z' };
+    expect((await read()).latest_prerelease).toBeNull();
+  });
+
+  test('#162, E75: a pre-release on a project with no full release is reported, as E75 saw it on QA', async () => {
+    state.release = false;
+    state.preprod = { branch_or_tag_name: 'v1.0.0', commit_sha: 'b'.repeat(40), released: '2026-10-09T18:02:20Z' };
+    const report = await read();
+    expect(report.latest_full_release).toBeNull();
+    expect(report.latest_prerelease).toEqual({ tag: 'v1.0.0', sha: 'b'.repeat(40) });
   });
 
   test('#146: a project without a full release has no release health, and no tag\'s health check is read', async () => {
