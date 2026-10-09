@@ -93,7 +93,7 @@ export function noSourceText(owner: string, stage: Stage, type: UploadType, left
   const what = `${owner} has no ${typeLabel(type)} repository at its ${STAGE_LABELS[stage].toLowerCase()}.`;
   if (leftOut === 0) return what;
   const other = typeLabel(type === 'bible' ? 'obs' : 'bible');
-  return `${what} ${leftOut === 1 ? `One ${other} repository is` : `${leftOut} ${other} repositories are`} not listed, since it cannot be imported here.`;
+  return leftOut === 1 ? `${what} One ${other} repository is not listed, since it cannot be imported here.` : `${what} ${leftOut} ${other} repositories are not listed, since they cannot be imported here.`;
 }
 
 /** A book or story the source itemizes, as offered for choosing. */
