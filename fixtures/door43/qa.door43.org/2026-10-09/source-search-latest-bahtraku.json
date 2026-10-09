@@ -1,0 +1,22 @@
+{
+  "host": "qa.door43.org",
+  "read_at": "2026-10-09T19:55:06.798Z",
+  "sources": 43,
+  "with_books": 40,
+  "without_books": [
+    "id_obs",
+    "ors-x-oranglau_obs",
+    "tdt_obs"
+  ],
+  "pendau": {
+    "revision": {
+      "branch": "master",
+      "sha": "6f9dfea34134e0bb69b6b00bdcfd6bcd2541cf8f"
+    },
+    "books": 27
+  },
+  "entry_reads": 4,
+  "entry_read_statuses": [
+    "200"
+  ]
+}

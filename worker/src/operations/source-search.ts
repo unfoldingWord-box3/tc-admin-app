@@ -12,9 +12,17 @@
 // entry that describes the last release while the default branch has moved on
 // since. `import.plan` then reads the archive. The project type is the
 // flavor's (Q23); anything outside the two flavors is never returned.
+//
+// The search at `latest` can answer an entry other than the default branch's,
+// such as a release newer than the branch's last commit (#163). For such a
+// source the branch's own catalog entry is read (E20); when it describes the
+// head, its books are offered. A few such reads run at a time; a branch with no
+// entry, one for another commit, or a read that fails offers none, as before,
+// and only an expired session stops the search.
 
 import { CatalogError } from '@tc-admin/shared/schema';
 import type { OperationOutput, ParsedInput } from '@tc-admin/shared/schema';
+import { readCatalogEntry } from '../door43/catalog';
 import { searchCatalog } from '../door43/catalog-search';
 import type { CatalogSearchEntry } from '../door43/catalog-search';
 import { offeredUnits, projectTypeFromFlavor } from '../model/project';
@@ -35,12 +43,14 @@ function revisionOf(entry: CatalogSearchEntry, stage: ParsedInput<'source.search
   return { revision: { branch: head.name, sha: head.sha }, itemized: entry.revision?.sha === head.sha };
 }
 
-function source(entry: CatalogSearchEntry, stage: ParsedInput<'source.search'>['stage']): Source | null {
+/** A source, and, when its books are not itemized because the entry describes another commit than the branch head, that head to read (#163). */
+function source(entry: CatalogSearchEntry, stage: ParsedInput<'source.search'>['stage']): { found: Source; stale: { branch: string; sha: string } | null } | null {
   const project_type = projectTypeFromFlavor(entry.catalog.flavor);
   if (project_type === 'other') return null;
   const offered = revisionOf(entry, stage);
   if (!offered) return null;
-  return {
+  const stale = stage === 'latest' && !offered.itemized && 'branch' in offered.revision ? { branch: offered.revision.branch, sha: offered.revision.sha } : null;
+  const found: Source = {
     ref: entry.ref,
     title: entry.title,
     language: entry.language,
@@ -51,6 +61,21 @@ function source(entry: CatalogSearchEntry, stage: ParsedInput<'source.search'>['
     released: entry.stage === 'prod' || entry.refs.latest_full_release !== null,
     books: offered.itemized ? offeredUnits(entry.catalog, project_type) : null,
   };
+  return { found, stale };
+}
+
+/** How many branch entries are read at once for sources whose search entry is another commit's (#163). */
+const ENTRY_READS = 4;
+
+/** The books of a branch's own catalog entry, when it describes the head; `null` otherwise, or when it cannot be read (H3). */
+async function headBooks(context: OperationContext, found: Source, head: { branch: string; sha: string }): Promise<Source['books']> {
+  try {
+    const entry = await readCatalogEntry(signedIn(context), found.ref.owner, found.ref.repo, head.branch);
+    return entry.sha === head.sha ? offeredUnits(entry.catalog, found.project_type) : null;
+  } catch (error) {
+    if (error instanceof CatalogError && error.code === 'session_expired') throw error;
+    return null;
+  }
 }
 
 export async function sourceSearch(input: ParsedInput<'source.search'>, context: OperationContext): Promise<SourceSearch> {
@@ -60,10 +85,24 @@ export async function sourceSearch(input: ParsedInput<'source.search'>, context:
   const entries = await searchCatalog(client, owner, input.stage);
   // One source per repository, in Door43's order (E35 never listed one twice; the first entry is kept if it ever does).
   const sources = new Map<string, Source>();
+  const stale: { key: string; head: { branch: string; sha: string } }[] = [];
   for (const entry of entries) {
-    const found = source(entry, input.stage);
-    const key = found && `${found.ref.owner}/${found.ref.repo}`.toLowerCase();
-    if (found && key && !sources.has(key)) sources.set(key, found);
+    const result = source(entry, input.stage);
+    if (!result) continue;
+    const key = `${result.found.ref.owner}/${result.found.ref.repo}`.toLowerCase();
+    if (sources.has(key)) continue;
+    sources.set(key, result.found);
+    if (result.stale) stale.push({ key, head: result.stale });
+  }
+  // The branch's own entry for each source whose search entry is another commit's, a few at a time (#163).
+  for (let start = 0; start < stale.length; start += ENTRY_READS) {
+    await Promise.all(
+      stale.slice(start, start + ENTRY_READS).map(async ({ key, head }) => {
+        const found = sources.get(key)!;
+        const books = await headBooks(context, found, head);
+        if (books) sources.set(key, { ...found, books });
+      }),
+    );
   }
   return {
     sources: [...sources.values()],
