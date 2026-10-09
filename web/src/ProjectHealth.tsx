@@ -55,9 +55,9 @@ function HealthPart({ heading, health, origin }: { heading: string; health: Heal
   const statement = healthStatement(health);
   return (
     <section aria-label={heading}>
-      <h4>
+      <h3>
         {heading} · {healthLine(health)}
-      </h4>
+      </h3>
       {statement && <p className="muted">{statement}</p>}
       <GroupedFindings issues={health.issues} origin={origin} />
     </section>
@@ -85,10 +85,10 @@ export function ProjectHealth({ url, defaultBranch, health, release, releaseHeal
       <details>
         <summary data-severity={tone ?? undefined}>
           {/* The heading comes first in the summary, as HTML allows, and carries the icon (bench round 1 on #150). */}
-          <h3>
+          <h2>
             {tone && <SeverityIcon tone={tone} />}
             Health check
-          </h3>
+          </h2>
           <span className="health-overview">
             <span>
               {branchHeading} · {healthLine(health)}

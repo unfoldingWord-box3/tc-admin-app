@@ -324,6 +324,9 @@ worker/
 web/
   src/api/client.ts  typed client: one call per operation, from shared/schema; a route that says body: 'multipart' is sent as multipart/form-data, the files' bytes as file parts (upload.plan, Q33)
   src/               the application shell; portfolio, wizard, stepper, design system (#8)
+  src/app.css        the styles, on the translationCore 4 design system's tokens copied under their own names (colors, type, radius, spacing, shadows, motion, controls, borders); a rule names a token, never a raw color (#154)
+  public/fonts/      Mulish, the design system's interface face, one variable font with its OFL licence, as the design system ships it (#154)
+  src/App.tsx, src/Portfolio.tsx  the Ocean title bar and the routes; each page's own title is its one top heading, "Your projects" the portfolio's (#154)
   src/CreateProject.tsx, src/create-project.ts  the creation wizard, and its form logic, owners, language search, field errors, and the retry of an incomplete setup as pure functions (#28, #31)
   src/ReleaseView.tsx  one release by its tag: the lookup and the promotion of a pre-release from its own page, whether or not the stepper that made it is open (S7, R8)
   src/ReleaseStepper.tsx, src/release-stepper.ts  the release stepper: one operation per step, the selection from the plan's defaults, the health poll, the warnings acknowledged, the release and its promotion, the discard; its logic as pure functions (#41); on opening, the preparations under way to continue or discard, a preparation's own address, and the preparation a preparation_active refusal names (#125)

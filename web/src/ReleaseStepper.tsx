@@ -364,7 +364,7 @@ function Stepper({ project, preparationId = null, onFailure }: Props) {
       <p>
         <a href={projectHash(project)}>{project.title}</a> · <a href="#">All projects</a>
       </p>
-      <h2>Release {project.title}</h2>
+      <h1>Release {project.title}</h1>
       <ol className="steps" aria-label="Release steps">
         {STEPS.map((name, index) => (
           <li key={name} className={index === stepIndex ? 'current' : index < stepIndex ? 'done' : ''} aria-current={index === stepIndex ? 'step' : undefined}>

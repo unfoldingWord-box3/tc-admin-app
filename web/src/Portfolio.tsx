@@ -143,6 +143,7 @@ export function Portfolio({ account, onFailure }: Props) {
 
   return (
     <>
+      <h1>Your projects</h1>
       <div className="toolbar">
         <label className="show-all">
           <input type="checkbox" checked={show === 'all'} onChange={event => setShow(event.target.checked ? 'all' : 'supported')} /> Show all projects,

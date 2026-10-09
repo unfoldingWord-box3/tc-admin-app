@@ -89,7 +89,7 @@ describe('#149: the closed card takes the color of Door43\'s worst verdict', () 
     const section = await opened(reportOf());
     const summary = section.querySelector('summary')!;
     expect(summary.dataset.severity).toBe('error');
-    expect(summary.querySelector('h3 > svg.severity-icon')).not.toBeNull();
+    expect(summary.querySelector('h2 > svg.severity-icon')).not.toBeNull();
     cleanup();
     const healthy = await opened(reportOf({ health: healthOf('master', 'healthy', []), release_health: healthOf('v1.2', 'healthy', []) }));
     expect(healthy.querySelector('summary')!.dataset.severity).toBeUndefined();
@@ -105,16 +105,16 @@ describe('#146: the project view lists its health findings without a release', (
     expect(card.open).toBe(false);
     // Read aloud as two sentences, with the heading first (bench round 1 on #150).
     expect(card.querySelector('summary')?.textContent).toBe('Health checkDefault branch, master · Failing · 2 findings. Latest release, v1.2 · Warning · 1 finding');
-    expect(card.querySelector('summary')?.firstElementChild?.tagName).toBe('H3');
+    expect(card.querySelector('summary')?.firstElementChild?.tagName).toBe('H2');
     expect([...section.querySelectorAll('.finding-group > details')].some(row => (row as HTMLDetailsElement).open)).toBe(false);
     const branch = within(section).getByRole('region', { name: 'Default branch, master' });
-    expect(within(branch).getByRole('heading', { level: 4 }).textContent).toBe('Default branch, master · Failing · 2 findings');
+    expect(within(branch).getByRole('heading', { level: 3 }).textContent).toBe('Default branch, master · Failing · 2 findings');
     const rows = [...branch.querySelectorAll<HTMLElement>('.finding-group')];
     expect(rows.map(row => row.querySelector('summary')?.textContent)).toEqual(['ErrorA book in the scope is missing · 1 finding', 'WarningIngredient size does not match · 1 finding']);
     expect(within(rows[0]!).getByText('Details of missing_book')).toBeTruthy();
 
     const release = within(section).getByRole('region', { name: 'Latest release, v1.2' });
-    expect(within(release).getByRole('heading', { level: 4 }).textContent).toBe('Latest release, v1.2 · Warning · 1 finding');
+    expect(within(release).getByRole('heading', { level: 3 }).textContent).toBe('Latest release, v1.2 · Warning · 1 finding');
     expect(within(release).getByText('Ingredient title is in English')).toBeTruthy();
 
     // The project's state, not a release's gate: the stepper's summaries are not shown here.
@@ -129,14 +129,14 @@ describe('#146: the project view lists its health findings without a release', (
   test('#146, H3: a release check still running, or one Door43 could not answer, says that and lists nothing; never healthy', async () => {
     const section = await opened(reportOf({ release_health: healthOf('v1.2', 'checking', null) }));
     const release = within(section).getByRole('region', { name: 'Latest release, v1.2' });
-    expect(within(release).getByRole('heading', { level: 4 }).textContent).toBe('Latest release, v1.2 · Health check running');
+    expect(within(release).getByRole('heading', { level: 3 }).textContent).toBe('Latest release, v1.2 · Health check running');
     expect(within(release).getByText('Door43 is still checking on v1.2. Refresh in a moment.')).toBeTruthy();
     expect(within(release).queryByText(/Healthy|nothing to report/)).toBeNull();
     cleanup();
 
     const unavailable = await opened(reportOf({ health: healthOf('master', 'door43_unavailable', null) }));
     const branch = within(unavailable).getByRole('region', { name: 'Default branch, master' });
-    expect(within(branch).getByRole('heading', { level: 4 }).textContent).toBe('Default branch, master · Door43 unavailable');
+    expect(within(branch).getByRole('heading', { level: 3 }).textContent).toBe('Default branch, master · Door43 unavailable');
     expect(within(branch).getByText('Door43 could not be asked for its health check on master. Refresh later.')).toBeTruthy();
     expect(within(branch).queryByText(/Healthy|nothing to report/)).toBeNull();
     expect(within(branch).queryByRole('list')).toBeNull();
@@ -150,7 +150,7 @@ describe('#146: the project view lists its health findings without a release', (
     cleanup();
 
     const counted = await opened(reportOf({ health: { ...healthOf('master', 'warning', [issueOf('ingredient_title_is_en', 'warning', 'Ingredient title is in English')]), issue_count: 3 } }));
-    expect(within(within(counted).getByRole('region', { name: 'Default branch, master' })).getByRole('heading', { level: 4 }).textContent).toBe('Default branch, master · Warning · 3 findings');
+    expect(within(within(counted).getByRole('region', { name: 'Default branch, master' })).getByRole('heading', { level: 3 }).textContent).toBe('Default branch, master · Warning · 3 findings');
   });
 
   test('#146: a project without a full release says there is no release to check; a report that did not read the release\'s health says so', async () => {

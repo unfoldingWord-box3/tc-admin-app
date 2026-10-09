@@ -78,7 +78,7 @@ function Preparations({ project, onFailure }: { project: ProjectSummary; onFailu
   const underWay = preparations?.some(isActive) ?? false;
   return (
     <section aria-label="Release preparations">
-      <h3>Release preparations</h3>
+      <h2>Release preparations</h2>
       {problem && (
         <p className="field-error" role="alert">
           {problem}
@@ -222,7 +222,7 @@ export function ProjectView({ project: given, onFailure }: Props) {
       <p>
         <a href="#">All projects</a>
       </p>
-      <h2>{project.title}</h2>
+      <h1>{project.title}</h1>
       <p className="muted">
         {project.ref.owner}/{project.ref.repo} ·{' '}
         <a href={project.ref.url} target="_blank" rel="noreferrer">

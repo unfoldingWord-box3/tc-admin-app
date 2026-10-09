@@ -26,6 +26,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | [#7](https://github.com/unfoldingWord-box3/tc-admin-app/issues/7) Scaffold web/ worker/ shared/ | arch §1, §10; deployment | 0011, 0012 | — (creates the enforcement points; carries over the prototype's tests for H1, H3, P1, P2, A1, A3; X2, X3 at `http/errors`) | Q26, Q27 | all (schemas); `situation.read` without a session | every layer | — |
 | [#8](https://github.com/unfoldingWord-box3/tc-admin-app/issues/8) Design system | §5 | — | H4 | — | — | web | — |
 | [#9](https://github.com/unfoldingWord-box3/tc-admin-app/issues/9) Deploy to workers.dev | arch §9 | 0001 | A1 | — | — | worker/http, wrangler | — |
+| [#154](https://github.com/unfoldingWord/tc-admin-app/issues/154) The design system's tokens and font, and a title for each page | §5 | — | H4 | — | — | web (app.css, public/fonts, App, Portfolio, the views' headings) | — |
 | [#10](https://github.com/unfoldingWord-box3/tc-admin-app/issues/10) Test harness and fixtures | arch §10 | 0012 | all (test naming), A1 | E1–E5, E7, E70 | — | test, fixtures, e2e | — |
 
 ### EPIC: Sign-in and session ([#16](https://github.com/unfoldingWord-box3/tc-admin-app/issues/16))
