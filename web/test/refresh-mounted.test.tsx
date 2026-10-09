@@ -56,6 +56,8 @@ describe('the project view reads the full report', () => {
     const link = screen.getByRole('link', { name: 'Open the release' });
     expect(link.getAttribute('href')).toBe('#/bahtraku/Perjanjian-Baru-Pendau/releases/v1.2');
     expect(link.closest('dd')?.textContent).toBe('v1.2 · Open the release');
+    // #161: the browser offers no remembered tags, which belonged to other projects.
+    expect(screen.getByLabelText(/A release by its tag/).getAttribute('autocomplete')).toBe('off');
     view.unmount();
     render(<ProjectView project={PENDAU} />);
     await worker.answer('GET', READ, reportOf({ latest_full_release: null }));
