@@ -20,7 +20,7 @@
 // Usage:  node --env-file=.env scripts/seed-qa.mjs [--plan] [--only <repo>]
 // Env:    DOOR43_ORIGIN (default https://qa.door43.org; any other host is refused), TEST_TOKEN (required,
 //         issued by QA, with write:organization and write:user, E49).
-// Output: the steps on the console, and fixtures/door43/<host>/<date>/seed/summary-<HHMM>.json (no token, no email).
+// Output: the steps on the console, and fixtures/door43/<host>/<date>/seed/summary-<HHMMSS>.json (no token, no email).
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -42,7 +42,7 @@ const TOKEN = process.env.TEST_TOKEN;
 const HOST = new URL(ORIGIN).host;
 const root = resolve(new URL('..', import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
-const stamp = new Date().toISOString().slice(11, 16).replace(':', '');
+const stamp = new Date().toISOString().slice(11, 19).replaceAll(':', '');
 
 const ID = { code: 'id', title: 'Bahasa Indonesia', direction: 'ltr' };
 const EN = { code: 'en', title: 'English', direction: 'ltr' };
@@ -69,6 +69,14 @@ const PROJECTS = [
   },
 ];
 const repoOf = project => `${project.create.language.code}_${project.create.abbreviation}`;
+// `--only` names one project, as `<repo>` or `<owner>/<repo>`; a name that matches none is refused, not a run that does nothing.
+if (argv.includes('--only')) {
+  const named = flag('--only');
+  if (!PROJECTS.some(project => named === repoOf(project) || named === `${project.owner}/${repoOf(project)}`)) {
+    console.error(`--only ${named ?? ''} matches no project; one of: ${PROJECTS.map(project => `${project.owner}/${repoOf(project)}`).join(', ')}`);
+    process.exit(2);
+  }
+}
 
 if (argv.includes('--plan')) {
   for (const project of PROJECTS) {
@@ -153,7 +161,7 @@ let failed = false;
 
 for (const project of PROJECTS) {
   const repo = repoOf(project);
-  if (only && only !== repo) continue;
+  if (only && only !== repo && only !== `${project.owner}/${repo}`) continue;
   const ref = { owner: project.owner, repo };
   const row = { project: `${ref.owner}/${repo}`, outcome: null, steps: [] };
   summary.projects.push(row);
@@ -209,6 +217,6 @@ for (const project of PROJECTS) {
 const outDir = resolve(root, 'fixtures/door43', HOST, today, 'seed');
 mkdirSync(outDir, { recursive: true });
 // One file per run, by its time, so a second run the same day keeps the first one's record.
-writeFileSync(join(outDir, `summary-${stamp}.json`), `${JSON.stringify(summary, null, 2)}\n`);
+writeFileSync(join(outDir, `summary-${stamp}.json`), `${JSON.stringify(summary, null, 2)}\n`, { flag: 'wx' });
 console.log(`Summary: ${join(outDir, `summary-${stamp}.json`)}`);
 process.exit(failed ? 1 : 0);
