@@ -1,0 +1,89 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-10-09T17:27:59.624Z",
+  "projects": [
+    {
+      "project": "tc-admin-qa-org/id_seedtb",
+      "outcome": "built",
+      "steps": [
+        {
+          "step": "create",
+          "setup": "complete",
+          "commit": "f795e7b216618b86ecdd858a39dde43d1ccc60c3"
+        },
+        {
+          "step": "import",
+          "source": "bahtraku/id_tb1@1974",
+          "files": 2,
+          "commit": "47cbbf5e3030e181aa7caa7191cf7b565f5f1c0d"
+        },
+        {
+          "step": "full release",
+          "tag": "v1.0.0",
+          "health": "healthy",
+          "acknowledged_warnings": false
+        },
+        {
+          "step": "import",
+          "source": "bahtraku/id_tb1@1974",
+          "files": 1,
+          "commit": "87ce94e6de1ee1df5d4ebcf5f547cbc12d4346e7"
+        },
+        {
+          "step": "pre-release",
+          "tag": "v1.1.0",
+          "health": "healthy",
+          "acknowledged_warnings": false
+        }
+      ],
+      "health_on_master": "success"
+    },
+    {
+      "project": "tc-admin-qa-org/en_seedobs",
+      "outcome": "stopped",
+      "steps": [
+        {
+          "step": "create",
+          "setup": "complete",
+          "commit": "4702f03b818ce1417b4bb3d8781d180f5c492b79"
+        },
+        {
+          "step": "import",
+          "source": "unfoldingWord/en_obs@v9",
+          "files": 50,
+          "commit": "a077ef9fb2fd1e7cd2857c8f020f9e920ce52f81"
+        }
+      ],
+      "error": {
+        "code": "validation_failed",
+        "message": "selection: An Open Bible Stories release takes the whole default branch; send no selection.",
+        "details": {
+          "fields": [
+            {
+              "path": "selection",
+              "message": "An Open Bible Stories release takes the whole default branch; send no selection."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "project": "tc-admin-qa/id_seedhf",
+      "outcome": "built",
+      "steps": [
+        {
+          "step": "create",
+          "setup": "complete",
+          "commit": "64f648c8719340c3eac48a07689717bcc3dd69d8"
+        },
+        {
+          "step": "import",
+          "source": "bahtraku/id_tb1@1974",
+          "files": 1,
+          "commit": "1bed40d6ef7c83eb56e1d16a34cf24b3fd4427fd"
+        }
+      ],
+      "health_on_master": "info"
+    }
+  ]
+}
