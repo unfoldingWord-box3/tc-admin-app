@@ -81,6 +81,7 @@ The metadata editor, Setup-incomplete recovery beyond a retry link, accessibilit
 - Door43 Scripture Burrito archive client: download and unpack `/sb/{ref}.zip` for any ref.
 - Project type and metadata format detection, coverage by testament scope, unknown-file detection.
 - Unsupported projects (other formats, no metadata, other types) surfaced with a reason; a Bible or Open Bible Stories repository in another format offered for import.
+- On a project's page, its books or stories are a section of their own, "Books in this project" or "Stories in this project", and coverage Door43 does not itemize says so there ([#158](https://github.com/unfoldingWord/tc-admin-app/issues/158), added 9 October 2026 by Rich, since the list read as part of the release preparations above it).
 
 **EPIC: Portfolio and health** ([#27](https://github.com/unfoldingWord-box3/tc-admin-app/issues/27))
 - Writable-repository discovery with pagination and de-duplication (carry over from the prototype).
