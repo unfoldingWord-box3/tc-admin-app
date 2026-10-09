@@ -287,6 +287,8 @@ function committedReport(basis: ReportBasis, payload: CommitPayload, head: { sha
     latest_full_release: basis.release,
     // A receipt reports what it wrote; the release's health is not read here (#146).
     release_health: null,
+    // The pre-release, like the release's health, is read by `project.read`, not by a receipt (#162).
+    latest_prerelease: null,
     default_branch_head: { sha: head.sha, committed_at: head.committed_at ?? checkedAt },
     active_preparation: null,
     setup: { state: 'complete', failed_step: null },

@@ -115,6 +115,7 @@ The metadata editor, Setup-incomplete recovery beyond a retry link, accessibilit
 - A preparation outlives its page: after a reload, a closed tab, or a new sign-in the manager finds it again, to continue or discard it ([#125](https://github.com/unfoldingWord-box3/tc-admin-app/issues/125), added 8 October 2026).
 - The project page opens its latest full release on the release's own page ([#156](https://github.com/unfoldingWord/tc-admin-app/issues/156), added 9 October 2026 by Rich, since a release made elsewhere had no link from the project page). Downloads on that page, and a list of every release Door43 has, are later.
 - Polish from the walkthrough of the demo script on QA ([#161](https://github.com/unfoldingWord/tc-admin-app/issues/161), added 9 October 2026 by Rich): the stepper's version label and refusal, the creation wizard's headings, an import's overwrite naming its source, a commit named by its hash, release notes headed by the version alone, and the stepper's findings grouped by check.
+- An outstanding pre-release has its own row on the project page, opening its release page, where it is promoted ([#162](https://github.com/unfoldingWord/tc-admin-app/issues/162), added 9 October 2026 by Rich, from the demo walkthrough: the presenter had to know the pre-release's tag).
 
 **EPIC: Demo readiness** ([#44](https://github.com/unfoldingWord-box3/tc-admin-app/issues/44))
 - Written demo script against a Bahtraku repository on production.

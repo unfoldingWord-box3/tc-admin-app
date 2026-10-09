@@ -71,7 +71,10 @@ export async function projectRead(input: ParsedInput<'project.read'>, context: O
   const summary = projectSummary(repository, access, checkedAt);
   const branch = summary.default_branch;
   // The latest full release's tag, as the catalog names it (E14): Door43 checks every tag (E28), so its health is read beside the branch's (#146).
-  const releaseTag = repositoryRefs(repository).latest_full_release?.tag ?? null;
+  const refs = repositoryRefs(repository);
+  const releaseTag = refs.latest_full_release?.tag ?? null;
+  // The outstanding pre-release, from the catalog the repository answer carries; no other read (#162).
+  const prerelease = refs.latest_prerelease ? { tag: refs.latest_prerelease.tag, sha: refs.latest_prerelease.sha } : null;
   const [health, releaseHealth, head, release, preparation] = await Promise.all([
     readHealth(client, repository.owner.login, repository.name, branch).then(read => healthOfRead(read, branch, checkedAt)),
     releaseTag ? readHealth(client, repository.owner.login, repository.name, releaseTag).then(read => healthOfRead(read, releaseTag, checkedAt)) : Promise.resolve(null),
@@ -85,6 +88,7 @@ export async function projectRead(input: ParsedInput<'project.read'>, context: O
     latest_full_release: release,
     // The health shown is the shown release's: both are read by the catalog's tag, and a release by another tag gets none (bench round 1 on #147).
     release_health: release && release.tag === releaseTag ? releaseHealth : null,
+    latest_prerelease: prerelease,
     default_branch_head: head,
     active_preparation: preparation,
     // A repository with no commit on its default branch is a setup that did not finish its first commit (W4), or an empty repository (E10).

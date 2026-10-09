@@ -56,6 +56,11 @@ export interface RepositoryRefs {
   /** `null` for a repository without a commit (E10). */
   default_branch: { name: string; sha: string } | null;
   latest_full_release: { tag: string; sha: string; released_at: string | null } | null;
+  /**
+   * The latest pre-release (`catalog.preprod`, E14, seen filled for an outstanding pre-release, E75) when it is newer than
+   * the latest full release, or there is none; `null` otherwise, so a pre-release since promoted or overtaken is not one (#162).
+   */
+  latest_prerelease: { tag: string; sha: string; released_at: string | null } | null;
 }
 
 function stage(value: Door43CatalogStage | null | undefined): { name: string; sha: string; released_at: string | null } | null {
@@ -66,9 +71,13 @@ function stage(value: Door43CatalogStage | null | undefined): { name: string; sh
 export function repositoryRefs(repo: Door43Repository): RepositoryRefs {
   const latest = stage(repo.catalog?.latest);
   const prod = stage(repo.catalog?.prod);
+  const preprod = stage(repo.catalog?.preprod);
+  // Outstanding only when made after the latest full release; without both times it cannot be told newer, so it is not shown.
+  const outstanding = preprod && preprod.name !== prod?.name && (!prod || (preprod.released_at !== null && prod.released_at !== null && Date.parse(preprod.released_at) > Date.parse(prod.released_at)));
   return {
     default_branch: latest ? { name: latest.name, sha: latest.sha } : null,
     latest_full_release: prod ? { tag: prod.name, sha: prod.sha, released_at: prod.released_at } : null,
+    latest_prerelease: outstanding ? { tag: preprod.name, sha: preprod.sha, released_at: preprod.released_at } : null,
   };
 }
 

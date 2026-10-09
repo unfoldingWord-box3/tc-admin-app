@@ -71,7 +71,7 @@ function entry(raw: Door43CatalogEntry): CatalogSearchEntry | null {
     catalog: projectCatalog(raw),
     stage,
     revision: name && sha ? { name, sha } : null,
-    refs: raw.repo ? repositoryRefs(raw.repo) : { default_branch: null, latest_full_release: null },
+    refs: raw.repo ? repositoryRefs(raw.repo) : { default_branch: null, latest_full_release: null, latest_prerelease: null },
   };
 }
 
