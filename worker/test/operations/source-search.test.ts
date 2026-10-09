@@ -36,10 +36,15 @@ const noPlans: KVNamespace = { get: async () => null, put: async () => {}, delet
 const NOW = new Date('2026-10-07T16:00:00.000Z');
 
 /** Door43 stubbed by owner and stage: page 1 is the answer, every later page the recorded empty one; an owner without an answer has no entries (E62). */
-function door43(answers: Record<string, Search | Response>, calls: string[] = [], empty: unknown = PAST_LAST_PAGE): Fetch {
+function door43(answers: Record<string, Search | Response>, calls: string[] = [], empty: unknown = PAST_LAST_PAGE, entries: Record<string, unknown> = {}): Fetch {
   return async url => {
     const { pathname, searchParams } = new URL(url);
     calls.push(`${pathname}?${searchParams}`);
+    // A branch's own catalog entry, read for a source whose search entry is another commit's (#163); none unless given.
+    if (pathname.startsWith('/api/v1/catalog/entry/')) {
+      const entry = entries[pathname.slice('/api/v1/catalog/entry/'.length)];
+      return entry instanceof Response ? entry : entry ? Response.json(entry) : new Response('', { status: 404 });
+    }
     if (pathname !== '/api/v1/catalog/search') return new Response('', { status: 404 });
     const answer = answers[`${searchParams.get('owner')}:${searchParams.get('stage')}`];
     if (answer instanceof Response) return answer;
@@ -210,6 +215,45 @@ describe('source.search at the default branch (latest)', () => {
       books: null,
     });
     expect(sources.find(s => s.ref.repo === 'id_obs')).toMatchObject({ project_type: 'obs', books: null });
+  });
+});
+
+describe('a search entry for another commit than the branch head (#163)', () => {
+  const answers = { 'bahtraku:latest': BAHTRAKU };
+  const GST_MASTER = JSON.parse(readFileSync(new URL('entry__bahtraku__id_gst__gst_master.json', probes), 'utf8')) as Record<string, unknown> & { commit_sha: string };
+  const entryCalls = (calls: string[]) => calls.filter(call => call.startsWith('/api/v1/catalog/entry/'));
+
+  test('H3, E20, #163: the branch\'s own entry is read, and its books offered when it describes the head', async () => {
+    const calls: string[] = [];
+    const { sources } = await run({ owner: 'bahtraku', stage: 'latest' }, door43(answers, calls, PAST_LAST_PAGE, { 'bahtraku/id_gst/master': GST_MASTER }));
+    const gst = sources.find(s => s.ref.repo === 'id_gst')!;
+    expect(gst.revision).toEqual({ branch: 'master', sha: GST_MASTER.commit_sha });
+    expect(gst.books?.length).toBeGreaterThan(0);
+    expect(entryCalls(calls)).toContain('/api/v1/catalog/entry/bahtraku/id_gst/master?');
+  });
+
+  test('#163: only sources whose search entry is another commit\'s are read, never one already itemized for its head', async () => {
+    const calls: string[] = [];
+    const { sources } = await run({ owner: 'bahtraku', stage: 'latest' }, door43(answers, calls));
+    const read = entryCalls(calls).map(call => call.split('/')[6]);
+    expect(read).toContain('id_gst');
+    expect(read).not.toContain('PB-Adang-Edisi-Percobaan');
+    expect(read).not.toContain('PB-Loli-Edisi-Percobaan');
+    expect(new Set(read).size).toBe(read.length);
+    expect(sources).toHaveLength(41);
+  });
+
+  test('H3, #163: a branch entry for another commit, none at all, or a read that fails offers no books, and the search still answers', async () => {
+    for (const entry of [{ ...GST_MASTER, commit_sha: 'f'.repeat(40) }, undefined, new Response('', { status: 503 })]) {
+      const { sources } = await run({ owner: 'bahtraku', stage: 'latest' }, door43(answers, [], PAST_LAST_PAGE, entry === undefined ? {} : { 'bahtraku/id_gst/master': entry }));
+      expect(sources.find(s => s.ref.repo === 'id_gst')?.books).toBeNull();
+      expect(sources).toHaveLength(41);
+    }
+  });
+
+  test('#163: an expired session on a branch entry read stops the search', async () => {
+    const error = await failure(run({ owner: 'bahtraku', stage: 'latest' }, door43(answers, [], PAST_LAST_PAGE, { 'bahtraku/id_gst/master': new Response('', { status: 401 }) })));
+    expect(error?.code).toBe('session_expired');
   });
 });
 
