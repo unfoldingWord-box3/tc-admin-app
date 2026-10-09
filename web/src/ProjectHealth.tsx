@@ -4,9 +4,13 @@
 // written, H1), framed as the project's state rather than a release's gate.
 // A check that found nothing says so; one still running, one Door43 could not
 // answer, or one tC Admin could not read says that, never healthy (H3).
+// The section is closed when the view opens, so the page's actions stay near
+// the top (#149); its closed line states each ref's health and count. Open,
+// each ref's findings are grouped by check, one closed row per check, as
+// Door43's own health check page shows them.
 
 import type { Health } from '@tc-admin/shared/schema';
-import { HealthFindings, door43Origin } from './HealthFindings';
+import { GroupedFindings, SeverityIcon, door43Origin } from './HealthFindings';
 import { healthLabel } from './portfolio-labels';
 
 /** What a health with no findings listed says, by its state. */
@@ -30,19 +34,32 @@ export function healthStatement(health: Pick<Health, 'state' | 'ref' | 'issues' 
   }
 }
 
+/** Door43's verdicts as tones, worst first (#149). A healthy result has none, and a state that is no verdict of Door43's (still checking, unavailable, unreadable, never checked) has none either, so an unknown never takes a verdict's color (H3). */
+const TONE_BY_STATE: Partial<Record<Health['state'], 'error' | 'warning' | 'info'>> = { failing: 'error', warning: 'warning', info: 'info' };
+const TONE_RANK = ['error', 'warning', 'info'] as const;
+
+/** The closed card's tone: the worst of the default branch's and the latest release's verdicts, or none (#149). */
+export function overallTone(healths: readonly (Health | null)[]): 'error' | 'warning' | 'info' | null {
+  const tones = healths.flatMap(health => (health && TONE_BY_STATE[health.state] ? [TONE_BY_STATE[health.state]!] : []));
+  return TONE_RANK.find(tone => tones.includes(tone)) ?? null;
+}
+
+/** A ref's health in words: its state, and Door43's count of findings when there are any (H4). */
+export function healthLine(health: Pick<Health, 'state' | 'issues' | 'issue_count'>): string {
+  // Door43's own count, so a list shorter than the count never under-reports (bench round 1 on #147).
+  const count = health.issue_count ?? health.issues?.length ?? 0;
+  return `${healthLabel(health.state)}${count > 0 ? ` · ${count} ${count === 1 ? 'finding' : 'findings'}` : ''}`;
+}
+
 function HealthPart({ heading, health, origin }: { heading: string; health: Health; origin: string | null }) {
   const statement = healthStatement(health);
-  const findings = health.issues ?? [];
-  // Door43's own count heads the list, so a list shorter than the count never under-reports (bench round 1 on #147).
-  const count = health.issue_count ?? findings.length;
   return (
     <section aria-label={heading}>
       <h4>
-        {heading} · {healthLabel(health.state)}
-        {count > 0 && ` · ${count} ${count === 1 ? 'finding' : 'findings'}`}
+        {heading} · {healthLine(health)}
       </h4>
       {statement && <p className="muted">{statement}</p>}
-      {findings.length > 0 && <HealthFindings issues={findings} gate="none" origin={origin} />}
+      <GroupedFindings issues={health.issues} origin={origin} />
     </section>
   );
 }
@@ -57,15 +74,37 @@ interface Props {
 
 export function ProjectHealth({ url, defaultBranch, health, release, releaseHealth }: Props) {
   const origin = door43Origin(url);
+  // Named by the branch: a receipt's health is of the commit it wrote, whose ref is a commit hash (bench round 1 on #147).
+  const branchHeading = `Default branch, ${defaultBranch}`;
+  const releaseHeading = release ? `Latest release, ${release.tag}` : null;
+  // #149: the closed card takes the color of Door43's worst verdict, with its icon; the words beside it say the same (H4).
+  const tone = overallTone([health, release ? releaseHealth : null]);
   return (
     <section className="project-health" aria-label="Health check">
-      <h3>Health check</h3>
-      {/* Named by the branch: a receipt's health is of the commit it wrote, whose ref is a commit hash (bench round 1 on #147). */}
-      <HealthPart heading={`Default branch, ${defaultBranch}`} health={health} origin={origin} />
-      {release && releaseHealth && <HealthPart heading={`Latest release, ${release.tag}`} health={releaseHealth} origin={origin} />}
-      {/* True whichever way it came: a receipt, which reads no release health, or a release answer naming another tag than the one checked (bench round 2 on #147). */}
-      {release && !releaseHealth && <p className="muted">This report has no health check of the latest release, {release.tag}. Refresh to read it.</p>}
-      {!release && <p className="muted">No full release yet, so there is no release to check.</p>}
+      {/* Closed when the view opens (#149): the closed line says enough to decide whether to open it. */}
+      <details>
+        <summary data-severity={tone ?? undefined}>
+          {/* The heading comes first in the summary, as HTML allows, and carries the icon (bench round 1 on #150). */}
+          <h3>
+            {tone && <SeverityIcon tone={tone} />}
+            Health check
+          </h3>
+          <span className="health-overview">
+            <span>
+              {branchHeading} · {healthLine(health)}
+            </span>
+            {/* Read aloud, the two lines are two sentences, not one run-on (bench round 1 on #150). */}
+            <span className="visually-hidden">. </span>
+            {releaseHeading && <span>{releaseHealth ? `${releaseHeading} · ${healthLine(releaseHealth)}` : `${releaseHeading} · not in this report`}</span>}
+            {!release && <span>No full release yet</span>}
+          </span>
+        </summary>
+        <HealthPart heading={branchHeading} health={health} origin={origin} />
+        {releaseHeading && releaseHealth && <HealthPart heading={releaseHeading} health={releaseHealth} origin={origin} />}
+        {/* True whichever way it came: a receipt, which reads no release health, or a release answer naming another tag than the one checked (bench round 2 on #147). */}
+        {release && !releaseHealth && <p className="muted">This report has no health check of the latest release, {release.tag}. Refresh to read it.</p>}
+        {!release && <p className="muted">No full release yet, so there is no release to check.</p>}
+      </details>
     </section>
   );
 }

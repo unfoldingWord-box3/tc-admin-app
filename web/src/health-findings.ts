@@ -69,3 +69,30 @@ export function findingsSummary(issues: readonly HealthIssue[], gate: FindingsGa
   }
   return null;
 }
+
+/** One check's findings, as one row (#149): Door43's check (`code`), its severity, its title, and each finding it reported. */
+export interface FindingGroup {
+  code: string;
+  severity: string;
+  /** Door43's title of the check's first finding; a finding whose own title differs shows it beside its details. */
+  title: string;
+  issues: HealthIssue[];
+}
+
+/**
+ * The findings grouped by check, as Door43's health check page groups them: one group per `code` and severity, so no
+ * finding is moved to another severity (H1); errors first, then warnings, then information, then anything else. Within a
+ * severity the groups go by title: Door43 answers its checks as a map whose order is not the same from one answer to the
+ * next (observed on QA, 8 October 2026), so a page read twice keeps its rows in place. Findings keep Door43's order.
+ */
+export function groupedIssues(issues: readonly HealthIssue[]): FindingGroup[] {
+  const groups = new Map<string, FindingGroup>();
+  for (const issue of orderedIssues(issues)) {
+    const key = `${issue.severity}\u0000${issue.code}`;
+    const group = groups.get(key);
+    if (group) group.issues.push(issue);
+    else groups.set(key, { code: issue.code, severity: issue.severity, title: issue.title, issues: [issue] });
+  }
+  const rank = (severity: string) => (known(severity) ? SEVERITIES.indexOf(severity) : SEVERITIES.length);
+  return [...groups.values()].sort((a, b) => rank(a.severity) - rank(b.severity) || a.title.localeCompare(b.title) || a.code.localeCompare(b.code));
+}

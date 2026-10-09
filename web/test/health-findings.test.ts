@@ -6,8 +6,8 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import { door43Href, door43Tokens, plainText } from '../src/door43-text';
-import { HealthFindings } from '../src/HealthFindings';
-import { findingsGate, findingsSummary, orderedIssues, severityBadge } from '../src/health-findings';
+import { GroupedFindings, HealthFindings } from '../src/HealthFindings';
+import { findingsGate, findingsSummary, groupedIssues, orderedIssues, severityBadge } from '../src/health-findings';
 
 const QA = 'https://qa.door43.org';
 
@@ -144,5 +144,64 @@ describe('the findings (H2, H4)', () => {
 
   test('H4: nothing is rendered when there is no finding and nothing to say', () => {
     expect(renderToStaticMarkup(createElement(HealthFindings, { issues: null, gate: 'none', origin: QA }))).toBe('');
+  });
+});
+
+describe('the findings grouped by check (#149)', () => {
+  const MISMATCH = 'Ingredient sizes or checksums do not match the files in the repo';
+  const findings = [
+    issue('warning', 'sb_ingredient_mismatch', MISMATCH, 'The ingredient **`ingredients/1CO.usfm`** has a size of 4383'),
+    issue('error', 'obs_story_missing', 'Not all 50 stories are present', STORIES_MISSING),
+    issue('warning', 'sb_ingredient_mismatch', MISMATCH, 'The ingredient **`ingredients/1JN.usfm`** has a size of 1067'),
+    issue('info', 'release_needed', 'An error-free release needs to be published for the resource', '', RELEASE_SUGGESTION),
+    issue('error', 'obs_story_missing', 'Not all 50 stories are present', NOT_LISTED),
+  ];
+
+  test("#149, H1: one group per check, errors first, Door43's order within each; no finding is dropped or moved to another severity", () => {
+    const groups = groupedIssues(findings);
+    expect(groups.map(group => [group.severity, group.code, group.issues.length])).toEqual([
+      ['error', 'obs_story_missing', 2],
+      ['warning', 'sb_ingredient_mismatch', 2],
+      ['info', 'release_needed', 1],
+    ]);
+    expect(groups[1]!.title).toBe(MISMATCH);
+    expect(groups[0]!.issues.map(finding => finding.details)).toEqual([STORIES_MISSING, NOT_LISTED]);
+    expect(groups.flatMap(group => group.issues)).toHaveLength(findings.length);
+  });
+
+  test('#149: within a severity, groups go by title, so the rows stay in place however Door43 orders its checks', () => {
+    const one = groupedIssues([issue('warning', 'sb_ingredient_mismatch', 'Ingredient sizes'), issue('warning', 'ingredient_title_is_en', 'Project title')]);
+    const other = groupedIssues([issue('warning', 'ingredient_title_is_en', 'Project title'), issue('warning', 'sb_ingredient_mismatch', 'Ingredient sizes')]);
+    expect(one.map(group => group.code)).toEqual(['sb_ingredient_mismatch', 'ingredient_title_is_en']);
+    expect(other.map(group => group.code)).toEqual(one.map(group => group.code));
+  });
+
+  test('#149, H1: groups whose severity and code join alike stay two rows (bench round 1 on #150)', () => {
+    const html = renderToStaticMarkup(createElement(GroupedFindings, { issues: [issue('error-x', 'y', 'First'), issue('error', 'x-y', 'Second')], origin: QA }));
+    expect(html.match(/class="finding-group"/g)).toHaveLength(2);
+    expect(groupedIssues([issue('error-x', 'y'), issue('error', 'x-y')])).toHaveLength(2);
+  });
+
+  test('#149, H1: one check reported at two severities is two groups, each at the severity Door43 gave it', () => {
+    const groups = groupedIssues([issue('warning', 'x', 'X'), issue('error', 'x', 'X')]);
+    expect(groups.map(group => group.severity)).toEqual(['error', 'warning']);
+  });
+
+  test('#149, H1, H4: each group is one closed row with its badge word, title, and count; each finding keeps its details and suggestion', () => {
+    const html = renderToStaticMarkup(createElement(GroupedFindings, { issues: findings, origin: QA }));
+    expect(html.match(/<details>/g)).toHaveLength(3);
+    expect(html).not.toContain('<details open');
+    expect(html).toContain(`Warning</span><strong>${MISMATCH}</strong><span class="finding-count"> · 2 findings</span>`);
+    expect(html).toContain('Information</span><strong>An error-free release needs to be published for the resource</strong><span class="finding-count"> · 1 finding</span>');
+    expect(html).toContain('<code>ingredients/1JN.usfm</code>');
+    expect(html).toContain('<a href="https://gateway-admin.netlify.app/" target="_blank" rel="noopener noreferrer">gatewayAdmin</a>');
+  });
+
+  test("#149, H1: a finding whose title differs from its group's shows its own title; nothing is rendered for no findings", () => {
+    const html = renderToStaticMarkup(createElement(GroupedFindings, { issues: [issue('warning', 'x', 'First title'), issue('warning', 'x', 'Second title')], origin: QA }));
+    expect(html).toContain('<li class="finding" data-severity="warning"><p><strong>Second title</strong></p></li>');
+    expect(html).not.toContain('<li class="finding" data-severity="warning"><p><strong>First title</strong></p></li>');
+    expect(renderToStaticMarkup(createElement(GroupedFindings, { issues: [], origin: QA }))).toBe('');
+    expect(renderToStaticMarkup(createElement(GroupedFindings, { issues: null, origin: QA }))).toBe('');
   });
 });
