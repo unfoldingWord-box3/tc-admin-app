@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { ProjectReport } from '@tc-admin/shared/schema';
 import type { Health, HealthIssue } from '@tc-admin/shared/schema';
 import { forgetCsrfToken } from '../src/api/client';
+import { overallTone } from '../src/ProjectHealth';
 import { ProjectView } from '../src/ProjectView';
 import { heldWorker, projectOf } from './support/mounted';
 
@@ -63,14 +64,52 @@ const opened = async (report: ProjectReport) => {
   return screen.getByRole('region', { name: 'Health check' });
 };
 
-describe('#146: the project view lists its health findings without a release', () => {
-  test('#146, H1, H4: the default branch\'s findings and the latest release\'s are listed, each severity as a word, errors first; no release gate is stated', async () => {
+describe('#149: the health check section is one section, however often the view renders', () => {
+  test('#149: re-rendering the view, as its clock does, never adds a second health check section beside the release preparations', async () => {
+    const view = render(<ProjectView project={PENDAU} onFailure={() => {}} />);
+    await worker.answer('GET', READ, reportOf());
+    await worker.answer('GET', `${READ}/preparations`, { preparations: [], freshness: { read_at: AT, source: 'live', age_seconds: 0 } });
+    for (let tick = 0; tick < 3; tick += 1) view.rerender(<ProjectView project={PENDAU} onFailure={() => {}} />);
+    expect(screen.getAllByRole('region', { name: 'Health check' })).toHaveLength(1);
+    expect(screen.getAllByRole('region', { name: 'Release preparations' })).toHaveLength(1);
+  });
+});
+
+describe('#149: the closed card takes the color of Door43\'s worst verdict', () => {
+  test('#149, H3, H4: failing is error, then warning, then information; healthy and every unknown state have no color', () => {
+    const of = (state: Health['state']) => healthOf('master', state, []);
+    expect(overallTone([of('warning'), of('failing')])).toBe('error');
+    expect(overallTone([of('info'), of('warning')])).toBe('warning');
+    expect(overallTone([of('healthy'), of('info')])).toBe('info');
+    expect(overallTone([of('healthy'), null])).toBeNull();
+    for (const state of ['checking', 'door43_unavailable', 'health_error', 'never_checked', 'unsupported'] as const) expect(overallTone([of(state)])).toBeNull();
+  });
+
+  test('#149, H4: the closed card carries the tone and its icon beside the words', async () => {
     const section = await opened(reportOf());
+    const summary = section.querySelector('summary')!;
+    expect(summary.dataset.severity).toBe('error');
+    expect(summary.querySelector('svg.severity-icon')).not.toBeNull();
+    cleanup();
+    const healthy = await opened(reportOf({ health: healthOf('master', 'healthy', []), release_health: healthOf('v1.2', 'healthy', []) }));
+    expect(healthy.querySelector('summary')!.dataset.severity).toBeUndefined();
+    expect(healthy.querySelector('summary svg')).toBeNull();
+  });
+});
+
+describe('#146: the project view lists its health findings without a release', () => {
+  test('#146, #149, H1, H4: the default branch\'s findings and the latest release\'s are listed, grouped by check, each severity as a word, errors first; no release gate is stated', async () => {
+    const section = await opened(reportOf());
+    // #149: closed when the view opens; its closed line states each ref's health and count.
+    const card = section.querySelector('details')!;
+    expect(card.open).toBe(false);
+    expect(card.querySelector('summary')?.textContent).toBe('Health checkDefault branch, master · Failing · 2 findingsLatest release, v1.2 · Warning · 1 finding');
+    expect([...section.querySelectorAll('.finding-group > details')].some(row => (row as HTMLDetailsElement).open)).toBe(false);
     const branch = within(section).getByRole('region', { name: 'Default branch, master' });
     expect(within(branch).getByRole('heading', { level: 4 }).textContent).toBe('Default branch, master · Failing · 2 findings');
-    const rows = within(branch).getAllByRole('listitem');
-    expect(rows.map(row => row.querySelector('.severity-badge')?.textContent)).toEqual(['Error', 'Warning']);
-    expect(within(rows[0]!).getByText('A book in the scope is missing')).toBeTruthy();
+    const rows = [...branch.querySelectorAll<HTMLElement>('.finding-group')];
+    expect(rows.map(row => row.querySelector('summary')?.textContent)).toEqual(['ErrorA book in the scope is missing · 1 finding', 'WarningIngredient size does not match · 1 finding']);
+    expect(within(rows[0]!).getByText('Details of missing_book')).toBeTruthy();
 
     const release = within(section).getByRole('region', { name: 'Latest release, v1.2' });
     expect(within(release).getByRole('heading', { level: 4 }).textContent).toBe('Latest release, v1.2 · Warning · 1 finding');
