@@ -133,6 +133,12 @@ async function waitForCatalog(owner, repo, { latest, prod } = {}) {
   throw new Error(`Door43's catalog did not index ${owner}/${repo} ${latest ?? ''} ${prod ?? ''} within 3 minutes`);
 }
 
+/** The commit a receipt says it wrote; a receipt that names none stops the project, never a wait that is skipped (bench round 1 on #160). */
+function committed(sha, what) {
+  if (!sha) throw new Error(`${what} named no commit, so the catalog cannot be waited on`);
+  return sha;
+}
+
 /** preparation.read every 5 s until the health check is in, up to 3 minutes (HEALTH_POLL). */
 async function readUntilHealth(context, ref, id) {
   const started = Date.now();
@@ -176,7 +182,7 @@ for (const project of PROJECTS) {
     const created = await HANDLERS['project.create.apply']({ plan_id: plan.id }, context);
     row.steps.push({ step: 'create', setup: created.result.setup.state, commit: created.wrote.find(write => write.kind === 'commit')?.sha ?? null });
     console.log(`${row.project}: created (setup ${created.result.setup.state})`);
-    await waitForCatalog(ref.owner, repo, { latest: created.result.default_branch_head?.sha });
+    await waitForCatalog(ref.owner, repo, { latest: committed(created.result.default_branch_head?.sha, 'the creation') });
     for (const step of project.steps) {
       if (step.import) {
         const source = step.import.source;
@@ -186,7 +192,7 @@ for (const project of PROJECTS) {
         const sha = applied.wrote.find(write => write.kind === 'commit')?.sha ?? null;
         row.steps.push({ step: 'import', source: `${source.owner}/${source.repo}@${revision}`, files: planned.preview.files.length, commit: sha });
         console.log(`  imported ${planned.preview.files.length} file(s) from ${source.owner}/${source.repo}@${revision}`);
-        await waitForCatalog(ref.owner, repo, { latest: sha });
+        await waitForCatalog(ref.owner, repo, { latest: committed(sha, 'the import') });
       }
       if (step.release) {
         const planned = await HANDLERS['release.plan'](ref, context);
@@ -209,7 +215,8 @@ for (const project of PROJECTS) {
   } catch (error) {
     failed = true;
     row.outcome = 'stopped';
-    row.error = { code: error.code ?? null, message: error.message, details: error.details ?? null };
+    // The code and the message only: a committed fixture never carries an error's details, which may echo a request (bench round 1 on #160).
+    row.error = { code: error.code ?? null, message: error.message };
     console.error(`  stopped: ${error.code ?? ''} ${error.message}`);
   }
 }
