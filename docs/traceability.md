@@ -84,6 +84,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | [#58](https://github.com/unfoldingWord-box3/tc-admin-app/issues/58) Discard a preparation | §10 | 0003 | R7, A2 | E21, E27, Q14, E54, E56 | `preparation.discard` | operations/preparation-discard, door43/branches, web/ReleaseStepper | — |
 | [#125](https://github.com/unfoldingWord-box3/tc-admin-app/issues/125) Reopen a release preparation after the page is closed or reloaded | §10, §11 | 0011 | R7, X2, A2 | E56, E57, E59, E66 | `preparation.list`, `preparation.read`, `preparation.discard` | operations/preparation-list, operations/plans, operations/release-prepare, web/ReleaseStepper, web/preparations, web/ProjectView | S6, S7 |
 | [#156](https://github.com/unfoldingWord/tc-admin-app/issues/156) Open the latest release from the project page | §10 | — | R8 | E57 | `project.read` (display), `release.lookup` | web/ProjectView | S7 |
+| [#161](https://github.com/unfoldingWord/tc-admin-app/issues/161) Polish what the demo walkthrough found | §6, §8, §10 | — | R9, H4 | — | `release.create`, `release.promote`, `project.create.plan`, `project.create.apply`, `import.plan` (display) | model/notes, web (ReleaseStepper, CreateProject, ImportScreen, UploadScreen, HealthFindings) | S4, S7 |
 
 ### EPIC: Add books: upload and import ([#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45), [#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47))
 
