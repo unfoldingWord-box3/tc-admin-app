@@ -47,6 +47,7 @@ Keep this file current: an issue's Traceability section and its row here say the
 | [#19](https://github.com/unfoldingWord-box3/tc-admin-app/issues/19) Type and coverage | §5; domain §3 | 0013 | H3, H5 | E7, E12, E14, E32, E33, E42, Q11, Q16, Q17, Q23 | `project.read` | model/project, model/books, door43/catalog, shared/schema | — |
 | [#20](https://github.com/unfoldingWord-box3/tc-admin-app/issues/20) Unknown and administrative files | §8; domain §4 | — | R1 | E17, E36, Q22 | `release.plan`, `release.prepare` (the unknown and administrative files they list and carry; wired by #34) | model/classify | S5 |
 | [#21](https://github.com/unfoldingWord-box3/tc-admin-app/issues/21) Unsupported projects with a reason | §2; domain §3 | 0013, 0014 | P1, W2 | E10, E42, Q11, Q25 | `portfolio.list`, `project.read` | model/project | — |
+| [#158](https://github.com/unfoldingWord/tc-admin-app/issues/158) The project page's books or stories, a section of their own | §5 | — | H5 | — | `project.read` (display only) | web/ProjectView | — |
 
 ### EPIC: Portfolio and health ([#27](https://github.com/unfoldingWord-box3/tc-admin-app/issues/27))
 

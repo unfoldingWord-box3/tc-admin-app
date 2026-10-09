@@ -129,6 +129,9 @@ function uploadable(project: ProjectSummary | ProjectReport): boolean {
   return !('setup' in project) || project.setup.state === 'complete';
 }
 
+/** The heading of the project's books or stories (#158). */
+export const unitsHeading = (type: 'bible' | 'obs'): string => (type === 'bible' ? 'Books in this project' : 'Stories in this project');
+
 export function ProjectView({ project: given, onFailure }: Props) {
   const { owner, repo } = given.ref;
   const [tag, setTag] = useState('');
@@ -333,14 +336,22 @@ export function ProjectView({ project: given, onFailure }: Props) {
       </form>
       {/* Keyed by the project: another project mounts a fresh list in the same render, so none of the last project's rows, confirmation, or discard is offered under this one's name before its own list has arrived (#125). */}
       {onFailure && <Preparations key={`${project.ref.owner}/${project.ref.repo}`} project={project} onFailure={onFailure} />}
-      {coverage.units.length > 0 && (
-        <ul className="units" aria-label="Books and stories in scope">
-          {coverage.units.map(unit => (
-            <li key={unit.id} className={unit.present ? 'present' : 'absent'}>
-              {unit.id.toUpperCase()} <span className="muted">{unit.present ? 'present' : 'not present'}</span>
-            </li>
-          ))}
-        </ul>
+      {/* The project's books or stories, a section of their own after the preparations (#158); coverage Door43 does not itemize reads as unknown, never as none (H5). */}
+      {type && (
+        <section aria-label={unitsHeading(type)}>
+          <h2>{unitsHeading(type)}</h2>
+          {coverage.units.length > 0 ? (
+            <ul className="units" aria-label={`${type === 'bible' ? 'Books' : 'Stories'} in scope`}>
+              {coverage.units.map(unit => (
+                <li key={unit.id} className={unit.present ? 'present' : 'absent'}>
+                  {unit.id.toUpperCase()} <span className="muted">{unit.present ? 'present' : 'not present'}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">Door43's catalog does not list this project's {type === 'bible' ? 'books' : 'stories'}, so which are present is not known.</p>
+          )}
+        </section>
       )}
     </section>
   );
