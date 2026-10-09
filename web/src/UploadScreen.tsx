@@ -640,11 +640,14 @@ export const md5Of = (entry: Readonly<Record<string, unknown>>): string | null =
 export function Overwrite({
   file,
   entry,
+  replacement,
   checked,
   disabled,
   onChange,
 }: {
   file: PlannedFile;
+  /** What replaces the file, in words; an upload's own file name when not given. An import names the book and its source (#161). */
+  replacement?: string;
   entry: { before: Readonly<Record<string, unknown>> | null; after: Readonly<Record<string, unknown>> } | null;
   checked: boolean;
   disabled: boolean;
@@ -656,7 +659,7 @@ export function Overwrite({
       <p className="finding-head">
         <span className="severity-badge">Replaces</span>
         <strong>
-          {file.path} on the default branch is replaced by {file.name}.
+          {file.path} on the default branch is replaced by {replacement ?? file.name}.
         </strong>
       </p>
       {file.diff === '' && <p>Its content is the same as the file on the default branch: nothing in it changes.</p>}
@@ -691,7 +694,7 @@ export function Overwrite({
         </>
       )}
       <label className="choice">
-        <input type="checkbox" checked={checked} disabled={disabled} onChange={event => onChange(event.target.checked)} /> Replace {file.path} with {file.name}
+        <input type="checkbox" checked={checked} disabled={disabled} onChange={event => onChange(event.target.checked)} /> Replace {file.path} with {replacement ?? file.name}
       </label>
     </div>
   );

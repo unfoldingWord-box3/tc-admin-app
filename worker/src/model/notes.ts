@@ -31,7 +31,7 @@ export function releaseNotesDraft(input: NotesInput): string {
   const carried = input.carried_forward.length ? `${input.carried_forward.length} ${input.units} unchanged from ${input.baseline_tag ?? 'the previous release'}: ${input.carried_forward.map(unit => unit.id.toUpperCase()).join(', ')}` : 'None';
   const unknown = input.unknown_included.length ? input.unknown_included.map(path => `- ${path}`).join('\n') : '- None';
   return [
-    `## ${input.repo} ${input.version}`,
+    `## ${input.version}`,
     '',
     `Source: ${input.owner}/${input.repo} at ${input.source.sha.slice(0, 10)} on ${input.source.branch}.`,
     input.baseline_tag ? `Previous release: ${input.baseline_tag}.` : 'First release.',

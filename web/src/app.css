@@ -202,6 +202,8 @@ pre.metadata { background: var(--surface-card); border: 1px solid var(--uw-mist)
 .actions { display: flex; gap: 16px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
 /* A label and its field in a row of actions: the field sits beside its words, with room between them. */
 .actions > .field { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+/* The creation receipt's status line (#161), above the new project's own title. */
+.receipt-status { font-size: var(--fs-title); color: var(--text-heading); margin: 0 0 8px; }
 code { font-size: 0.95em; }
 /* The release stepper (#41), until the design system (#8). */
 .steps { display: flex; flex-wrap: wrap; gap: 8px 24px; list-style: none; padding: 0; margin: 8px 0 16px; counter-reset: step; font-size: 14px; }

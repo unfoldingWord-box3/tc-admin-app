@@ -59,6 +59,10 @@ const codeOf = (failure: unknown) => (failure instanceof ApiError ? failure.erro
  * Keyed by the project and the preparation the address named, so another one mounts a fresh stepper in the same render: no plan,
  * offer, confirmation, or discard of the last project is offered under this one's name, and no late answer for it is shown (#125).
  */
+/** A write in the receipt line: a commit by its hash, every other write by its target (#161). */
+export const writtenLabel = (write: { kind: keyof typeof WRITE_LABELS; target: string; sha?: string | null | undefined }): string =>
+  `${WRITE_LABELS[write.kind]} ${write.kind === 'commit' && write.sha ? write.sha.slice(0, 8) : write.target}`;
+
 export function ReleaseStepper(props: Props) {
   const { owner, repo } = props.project.ref;
   return <Stepper key={`${owner}/${repo}/${props.preparationId ?? ''}`} {...props} />;
@@ -87,6 +91,16 @@ function Stepper({ project, preparationId = null, onFailure }: Props) {
   const initialId = useRef(preparationId);
   // Bumped by every discard, re-plan, and write: a `preparation.read` that answers after one is stale and is not shown.
   const generation = useRef(0);
+
+  // Door43's refusal of the version (`invalid_version`), as shown: a new version takes it away while it is still the problem
+  // shown, and never another problem that has replaced it since (#161).
+  const versionRefusal = useRef<string | null>(null);
+  const changeVersion = (next: string) => {
+    setVersion(next);
+    const refusal = versionRefusal.current;
+    versionRefusal.current = null;
+    if (refusal) setProblem(shown => (shown === refusal ? null : shown));
+  };
 
   const fail = useCallback(
     (failure: unknown) => {
@@ -278,7 +292,7 @@ function Stepper({ project, preparationId = null, onFailure }: Props) {
     generation.current += 1;
     try {
       const receipt = await callOperation('release.prepare', { owner, repo, plan_id: plan.id, selection: selectionToSend(project.project_type, selection), unknown_included: [], version: versionToSend(version, plan.preview.version.proposed) });
-      setWritten(receipt.wrote.map(write => `${WRITE_LABELS[write.kind]} ${write.target}`));
+      setWritten(receipt.wrote.map(writtenLabel));
       setPreparation(receipt.result);
       setAcknowledged(false);
       setNotes(receipt.result.notes.draft);
@@ -306,11 +320,12 @@ function Stepper({ project, preparationId = null, onFailure }: Props) {
     generation.current += 1;
     try {
       const receipt = await callOperation('release.create', { owner, repo, preparation_id: preparation.id, version: spellVersion(version), notes, prerelease, acknowledge_warnings: acknowledged });
-      setWritten(current => [...current, ...receipt.wrote.map(write => `${WRITE_LABELS[write.kind]} ${write.target}`), ...receipt.warnings.map(warning => warning.message)]);
+      setWritten(current => [...current, ...receipt.wrote.map(writtenLabel), ...receipt.warnings.map(warning => warning.message)]);
       setPreparation(receipt.result);
     } catch (failure) {
       if (codeOf(failure) === 'release_outcome_unknown' || codeOf(failure) === 'release_failed' || codeOf(failure) === 'release_exists') void read(preparation.id);
       fail(failure);
+      versionRefusal.current = codeOf(failure) === 'invalid_version' ? failureMessage(failure) : null;
     } finally {
       setBusy(null);
     }
@@ -322,11 +337,14 @@ function Stepper({ project, preparationId = null, onFailure }: Props) {
     setBusy('Promoting the pre-release…');
     setProblem(null);
     generation.current += 1;
+    const mine = generation.current;
     const id = preparation.id;
     const tag = preparation.release.tag;
     try {
       const receipt = await callOperation('release.promote', { owner, repo, tag });
       setPreparation(current => (current?.id === id && current.release?.tag === tag ?{ ...current, state: 'full_release', release: receipt.result } : current));
+      // The promotion is a write of its own, listed as the release page lists it (#161).
+      if (generation.current === mine) setWritten(current => [...current, ...receipt.wrote.map(write => `${writtenLabel(write)}, promoted to a full release`)]);
     } catch (failure) {
       fail(failure);
     } finally {
@@ -482,9 +500,9 @@ function Stepper({ project, preparationId = null, onFailure }: Props) {
               {plan.preview.administrative.length > 0 && <p className="muted">Taken from the default branch with every release: {plan.preview.administrative.join(', ')}.</p>}
             </>
           )}
-          <label className="field" htmlFor="release-version">
+          <label className="inline-field" htmlFor="release-version">
             Version
-            <input id="release-version" value={version} onChange={event => setVersion(event.target.value)} />
+            <input id="release-version" value={version} onChange={event => changeVersion(event.target.value)} />
           </label>
           <p className="derived">
             Calculated: {plan.preview.version.proposed}, {VERSION_RULE_LABELS[plan.preview.version.rule_applied]}. The version must be after {plan.preview.version.baseline_tag ?? 'none'} and can be edited.
@@ -574,9 +592,9 @@ function Stepper({ project, preparationId = null, onFailure }: Props) {
                 Release notes
                 <textarea id="release-notes" rows={8} value={notes} onChange={event => setNotes(event.target.value)} required />
               </label>
-              <label className="field" htmlFor="release-version-final">
+              <label className="inline-field" htmlFor="release-version-final">
                 Version
-                <input id="release-version-final" value={version} onChange={event => setVersion(event.target.value)} required />
+                <input id="release-version-final" value={version} onChange={event => changeVersion(event.target.value)} required />
               </label>
               <label className="choice">
                 <input type="checkbox" checked={prerelease} onChange={event => setPrerelease(event.target.checked)} /> Create as a pre-release, to promote later

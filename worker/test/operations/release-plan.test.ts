@@ -86,7 +86,7 @@ describe('a later release of a Bible (Pendau, baseline v1.2)', () => {
     expect(plan.preview.removals).toEqual([]);
     expect(plan.preview.administrative).toEqual(['LICENSE.md', 'README.md']);
     expect(plan.preview.version).toEqual({ baseline_tag: 'v1.2', proposed: 'v1.2.1', rule_applied: 'revisions' });
-    expect(plan.preview.notes_draft).toContain('## Perjanjian-Baru-Pendau v1.2.1');
+    expect(plan.preview.notes_draft.split('\n')[0]).toBe('## v1.2.1');
     expect(plan.preview.notes_draft).toContain('27 books unchanged from v1.2: MAT, MRK, LUK');
     expect(plan.preview.notes_draft).toContain('### Added\n- None');
     // The books and the other files fit one commit; the merged metadata, of a size the plan cannot know, is announced as one more (W5).

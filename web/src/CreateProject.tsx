@@ -238,7 +238,10 @@ export function CreateProject({ account, onCreated, onFailure }: Props) {
     const addition = uploadType ? addAction(uploadType) : null;
     return (
       <section>
-        <h2>{summary.heading}</h2>
+        {/* A status, not a heading: the project's own title below is the page's first heading (#161). */}
+        <p className="receipt-status" role="status">
+          <strong>{summary.heading}</strong>
+        </p>
         {receipt.warnings.map(warning => (
           <p role="alert" key={warning.code}>
             {warning.message}
@@ -270,6 +273,8 @@ export function CreateProject({ account, onCreated, onFailure }: Props) {
         <p>
           <a href="#">All projects</a>
         </p>
+        {/* The page keeps its title while the plan is reviewed (#161). */}
+        <h1>Create a project</h1>
         <h2>Review before creating</h2>
         <p>Nothing has been written to Door43 yet. This is exactly what creating the project will write.</p>
         {problem && <p role="alert">{problem}</p>}

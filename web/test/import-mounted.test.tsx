@@ -171,7 +171,8 @@ describe('plan before apply', () => {
     fireEvent.click(confirm);
     expect(applies()).toEqual([]);
 
-    fireEvent.click(screen.getByLabelText(/Replace ingredients\/EXO\.usfm with ingredients\/EXO\.usfm/));
+    // The replacement is named by its book and its source, not its path in the archive (#161).
+    fireEvent.click(screen.getByLabelText(/Replace ingredients\/EXO\.usfm with EXO from bahtraku\/id_tb1 at /));
     expect(confirm.disabled).toBe(false);
     fireEvent.click(confirm);
     fireEvent.click(confirm);
