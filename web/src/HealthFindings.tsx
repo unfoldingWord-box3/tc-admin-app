@@ -90,7 +90,7 @@ export function GroupedFindings({ issues, origin }: { issues: readonly HealthIss
         const badge = severityBadge(group.severity);
         const n = group.issues.length;
         return (
-          <li key={`${group.severity}-${group.code}`} className="finding-group" data-severity={badge.tone}>
+          <li key={`${group.severity}\u0000${group.code}`} className="finding-group" data-severity={badge.tone}>
             <details>
               <summary>
                 <span className="severity-badge">

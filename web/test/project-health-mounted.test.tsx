@@ -89,7 +89,7 @@ describe('#149: the closed card takes the color of Door43\'s worst verdict', () 
     const section = await opened(reportOf());
     const summary = section.querySelector('summary')!;
     expect(summary.dataset.severity).toBe('error');
-    expect(summary.querySelector('svg.severity-icon')).not.toBeNull();
+    expect(summary.querySelector('h3 > svg.severity-icon')).not.toBeNull();
     cleanup();
     const healthy = await opened(reportOf({ health: healthOf('master', 'healthy', []), release_health: healthOf('v1.2', 'healthy', []) }));
     expect(healthy.querySelector('summary')!.dataset.severity).toBeUndefined();
@@ -103,7 +103,9 @@ describe('#146: the project view lists its health findings without a release', (
     // #149: closed when the view opens; its closed line states each ref's health and count.
     const card = section.querySelector('details')!;
     expect(card.open).toBe(false);
-    expect(card.querySelector('summary')?.textContent).toBe('Health checkDefault branch, master · Failing · 2 findingsLatest release, v1.2 · Warning · 1 finding');
+    // Read aloud as two sentences, with the heading first (bench round 1 on #150).
+    expect(card.querySelector('summary')?.textContent).toBe('Health checkDefault branch, master · Failing · 2 findings. Latest release, v1.2 · Warning · 1 finding');
+    expect(card.querySelector('summary')?.firstElementChild?.tagName).toBe('H3');
     expect([...section.querySelectorAll('.finding-group > details')].some(row => (row as HTMLDetailsElement).open)).toBe(false);
     const branch = within(section).getByRole('region', { name: 'Default branch, master' });
     expect(within(branch).getByRole('heading', { level: 4 }).textContent).toBe('Default branch, master · Failing · 2 findings');

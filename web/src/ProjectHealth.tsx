@@ -84,12 +84,17 @@ export function ProjectHealth({ url, defaultBranch, health, release, releaseHeal
       {/* Closed when the view opens (#149): the closed line says enough to decide whether to open it. */}
       <details>
         <summary data-severity={tone ?? undefined}>
-          {tone && <SeverityIcon tone={tone} />}
-          <h3>Health check</h3>
+          {/* The heading comes first in the summary, as HTML allows, and carries the icon (bench round 1 on #150). */}
+          <h3>
+            {tone && <SeverityIcon tone={tone} />}
+            Health check
+          </h3>
           <span className="health-overview">
             <span>
               {branchHeading} · {healthLine(health)}
             </span>
+            {/* Read aloud, the two lines are two sentences, not one run-on (bench round 1 on #150). */}
+            <span className="visually-hidden">. </span>
             {releaseHeading && <span>{releaseHealth ? `${releaseHeading} · ${healthLine(releaseHealth)}` : `${releaseHeading} · not in this report`}</span>}
             {!release && <span>No full release yet</span>}
           </span>

@@ -176,6 +176,12 @@ describe('the findings grouped by check (#149)', () => {
     expect(other.map(group => group.code)).toEqual(one.map(group => group.code));
   });
 
+  test('#149, H1: groups whose severity and code join alike stay two rows (bench round 1 on #150)', () => {
+    const html = renderToStaticMarkup(createElement(GroupedFindings, { issues: [issue('error-x', 'y', 'First'), issue('error', 'x-y', 'Second')], origin: QA }));
+    expect(html.match(/class="finding-group"/g)).toHaveLength(2);
+    expect(groupedIssues([issue('error-x', 'y'), issue('error', 'x-y')])).toHaveLength(2);
+  });
+
   test('#149, H1: one check reported at two severities is two groups, each at the severity Door43 gave it', () => {
     const groups = groupedIssues([issue('warning', 'x', 'X'), issue('error', 'x', 'X')]);
     expect(groups.map(group => group.severity)).toEqual(['error', 'warning']);
