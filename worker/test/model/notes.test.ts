@@ -20,7 +20,8 @@ const base = {
 describe('the draft', () => {
   test('names what the release adds, revises, removes, and carries forward, with the version and the source commit', () => {
     const draft = releaseNotesDraft(base);
-    expect(draft).toContain('## Perjanjian-Baru-Pendau v1.3.0');
+    // Headed by the version alone, the release's own name on Door43 (Rich, 9 October 2026, #161).
+    expect(draft.split('\n')[0]).toBe('## v1.3.0');
     expect(draft).toContain('Source: bahtraku/Perjanjian-Baru-Pendau at 2d9dbd1ee0 on master.');
     expect(draft).toContain('Previous release: v1.2.');
     expect(draft).toContain('### Added\n- Yunus (JON)');

@@ -552,6 +552,7 @@ function ImportReview({ plan, type, confirmed, busy, spent, onConfirmOverwrite, 
             {file.overwrite && (
               <Overwrite
                 file={file}
+                replacement={`${file.identified ? unitLabel(file.identified) : file.name} from ${plan.preview.source.owner}/${plan.preview.source.repo} at ${plan.preview.source.revision}`}
                 entry={entries.find(change => change.path === file.path) ?? null}
                 checked={confirmed.has(overwriteKey(plan, file))}
                 disabled={locked}

@@ -4,10 +4,12 @@
 // stepper, a release by its tag, importing, adding books) has its own title as
 // its one top heading, not "Your projects" above it. Signed out, the page still says "Your
 // projects" (the sign-in test waits on it, e2e/sign-in.spec.ts).
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { forgetCsrfToken } from '../src/api/client';
+import { OPERATIONS } from '@tc-admin/shared/schema';
 import { App } from '../src/App';
+import { CreateProject } from '../src/CreateProject';
 import { ImportScreen } from '../src/ImportScreen';
 import { UploadScreen } from '../src/UploadScreen';
 import { freshness, heldWorker, projectOf } from './support/mounted';
@@ -77,5 +79,49 @@ describe('#154: each page names itself', () => {
     cleanup();
     render(<UploadScreen project={PENDAU} type="bible" onUploaded={() => {}} onCancel={() => {}} onFailure={() => {}} />);
     expect(topHeadings()).toEqual([`Add books · ${PENDAU.title}`]);
+  });
+
+  test('#161: the creation review keeps "Create a project" as its top heading; the receipt\'s "Project created" is a status, and the project\'s title the first heading', async () => {
+    render(<CreateProject account="tc-admin-qa" onCreated={() => {}} onFailure={() => {}} />);
+    await answerWhenSent('GET', '/api/owners/writable', { owners: [{ login: 'tc-admin-qa-org', name: 'tC Admin QA', kind: 'organization' }], freshness });
+    const languages = await vi.waitFor(() => {
+      const waiting = worker.waiting().find(request => request.startsWith('GET /api/languages'));
+      expect(waiting).toBeTruthy();
+      return waiting!.slice('GET '.length);
+    });
+    await worker.answer('GET', languages, { languages: [{ code: 'id', title: 'Bahasa Indonesia', english: 'Indonesian', direction: 'ltr', alternates: [], tag_accepted: true }], owner_languages: null, freshness });
+    fireEvent.click(document.querySelector('input[name=owner][value="tc-admin-qa-org"]')!);
+    fireEvent.click(document.querySelector('input[name=project_type][value=bible]')!);
+    fireEvent.change(screen.getByLabelText('Project title'), { target: { value: 'Alkitab Percobaan' } });
+    fireEvent.change(screen.getByLabelText('Abbreviation'), { target: { value: 'tcap' } });
+    fireEvent.change(screen.getByLabelText(/Search by name or tag/), { target: { value: 'Bahasa' } });
+    fireEvent.click(await screen.findByRole('button', { name: /Bahasa Indonesia/ }));
+    fireEvent.click(document.querySelector('input[name=testament_scope][value=nt]')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Review before creating' }));
+    const plan = OPERATIONS['project.create.plan'].output.parse({
+      id: 'plan-1', operation: 'project.create.plan', created_at: '2026-10-09T12:00:00.000Z', expires_at: '2026-10-09T12:30:00.000Z',
+      bound_to: { default_branch_sha: null, release_tag: null, release_tag_sha: null },
+      preview: { repo_name: 'id_tcap', metadata_json: {}, files: [{ path: 'metadata.json', size: 2, md5: '0'.repeat(32) }] },
+      would_write: [{ kind: 'repo', target: 'tc-admin-qa-org/id_tcap' }], warnings: [],
+    });
+    await answerWhenSent('POST', '/api/projects/plan', plan);
+    expect(topHeadings()).toEqual(['Create a project']);
+    expect(screen.getByRole('heading', { level: 2, name: 'Review before creating' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create the project' }));
+    await answerWhenSent('POST', '/api/projects', {
+      operation: 'project.create.apply', request_id: 'r1', plan_id: 'plan-1', started_at: '2026-10-09T12:00:00.000Z', finished_at: '2026-10-09T12:00:01.000Z',
+      wrote: [{ kind: 'repo', target: 'tc-admin-qa-org/id_tcap', url: 'https://qa.door43.org/tc-admin-qa-org/id_tcap' }],
+      result: {
+        ...projectOf('tc-admin-qa-org', 'id_tcap', 'bible'), title: 'Alkitab Percobaan',
+        coverage: { present: 0, target: 27, scope: 'nt', basis: 'archive', units: [] },
+        health: { state: 'never_checked', severity_raw: null, ref: 'master', checked_at: null, issue_count: null, issues: null, source: 'door43' },
+        latest_full_release: null, default_branch_head: null, active_preparation: null, setup: { state: 'complete', failed_step: null }, freshness,
+      },
+      warnings: [],
+    });
+    expect(screen.queryByRole('heading', { name: 'Project created' })).toBeNull();
+    expect(screen.getAllByRole('status').some(status => status.textContent === 'Project created')).toBe(true);
+    expect(screen.getAllByRole('heading')[0]!.textContent).toBe('Alkitab Percobaan');
   });
 });

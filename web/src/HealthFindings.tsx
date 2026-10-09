@@ -1,7 +1,8 @@
 // Door43's health-check issues for one preparation (#124): a summary when the
-// release is blocked or waits for the manager's confirmation (H2), then each
-// issue as a row with its severity badge, Door43's title, details, and
-// suggestion, errors first. Every severity is an icon and a word as well as a
+// release is blocked or waits for the manager's confirmation (H2), then the
+// issues grouped by check (#161), as the project page shows them: one closed
+// row per check with its severity badge, Door43's title, and its count,
+// opening to each issue's details and suggestion, errors first. Every severity is an icon and a word as well as a
 // color (H4). Door43's text is shown as Door43 wrote it, with its bold, code,
 // and links rendered (H1); it is never inserted as HTML.
 
@@ -43,35 +44,8 @@ export function HealthFindings({ issues, gate, origin, children }: Props) {
           {children}
         </div>
       )}
-      {listed.length > 0 && (
-        <ul className="findings" aria-label="Health check findings">
-          {listed.map((issue, index) => {
-            const badge = severityBadge(issue.severity);
-            return (
-              <li key={`${issue.code}-${index}`} className="finding" data-severity={badge.tone}>
-                <p className="finding-head">
-                  <span className="severity-badge">
-                    <SeverityIcon tone={badge.tone} />
-                    {badge.word}
-                  </span>
-                  <strong>{issue.title}</strong>
-                </p>
-                {issue.details && (
-                  <p className="finding-details">
-                    <Door43Text text={issue.details} origin={origin} />
-                  </p>
-                )}
-                {issue.suggestion && (
-                  <p className="finding-suggestion">
-                    <span className="finding-label">Suggestion · </span>
-                    <Door43Text text={issue.suggestion} origin={origin} />
-                  </p>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {/* Grouped by check, as the project page shows them (#161): one closed row per check, opening to each finding. */}
+      <GroupedFindings issues={listed} origin={origin} />
     </div>
   );
 }

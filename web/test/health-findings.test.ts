@@ -142,6 +142,15 @@ describe('the findings (H2, H4)', () => {
     expect(html).not.toMatch(/\*\*|`/);
   });
 
+  test('#161: the stepper\'s findings are grouped by check under the summary, each a closed row, as the project page shows them', () => {
+    const issues = [issue('warning', 'usfm_alignment', 'USFM files have no alignment data', 'MRK'), issue('warning', 'usfm_alignment', 'USFM files have no alignment data', 'JHN')];
+    const html = renderToStaticMarkup(createElement(HealthFindings, { issues, gate: 'acknowledge', origin: QA }));
+    expect(html).toContain("2 warnings from Door43&#x27;s health check: confirm below before releasing");
+    expect(html.match(/class="finding-group"/g)).toHaveLength(1);
+    expect(html).toContain('<strong>USFM files have no alignment data</strong><span class="finding-count"> · 2 findings</span>');
+    expect(html).not.toContain('<details open');
+  });
+
   test('H4: nothing is rendered when there is no finding and nothing to say', () => {
     expect(renderToStaticMarkup(createElement(HealthFindings, { issues: null, gate: 'none', origin: QA }))).toBe('');
   });

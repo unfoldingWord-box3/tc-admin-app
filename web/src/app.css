@@ -202,6 +202,8 @@ pre.metadata { background: var(--surface-card); border: 1px solid var(--uw-mist)
 .actions { display: flex; gap: 16px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
 /* A label and its field in a row of actions: the field sits beside its words, with room between them. */
 .actions > .field { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+/* The creation receipt's status line (#161), above the new project's own title. */
+.receipt-status { font-size: var(--fs-title); color: var(--text-heading); margin: 0 0 8px; }
 code { font-size: 0.95em; }
 /* The release stepper (#41), until the design system (#8). */
 .steps { display: flex; flex-wrap: wrap; gap: 8px 24px; list-style: none; padding: 0; margin: 8px 0 16px; counter-reset: step; font-size: 14px; }
@@ -254,6 +256,11 @@ code { font-size: 0.95em; }
 .finding-group > details > .findings { margin: 0; padding: 0 12px 12px; }
 .finding-group .finding { background: var(--tone-soft); border-color: var(--tone-border); }
 .stepper textarea { width: 100%; max-width: 640px; font: inherit; }
+/* A label above its field, for a field too tall to sit beside its words (#161). */
+.stacked-field { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 8px 0; }
+.stacked-field textarea { width: 100%; max-width: 640px; }
+/* A field's words in bold, the field's own text in its normal weight (Rich, #161). */
+.field-label { font-weight: var(--fw-bold); }
 /* The upload screen (#76), until the design system (#8). A diff line's kind is its sign and a spoken word as well as its tint. */
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 label.button { position: relative; }
