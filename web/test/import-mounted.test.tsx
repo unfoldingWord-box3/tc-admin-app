@@ -116,7 +116,7 @@ describe('finding the source', () => {
   test('#151: an owner with no source of this type says so, and how many of the other type are not listed', async () => {
     await toSources([sourceOf('bahtraku', 'id_obs', { title: 'Cerita', type: 'obs', books: null }), sourceOf('bahtraku', 'id_obs2', { title: 'Cerita 2', type: 'obs', books: null })]);
     expect(screen.queryByRole('list', { name: 'Repositories' })).toBeNull();
-    expect(screen.getByText('bahtraku has no Bible repository at its latest content. 2 Open Bible Stories repositories are not listed, since it cannot be imported here.')).toBeTruthy();
+    expect(screen.getByText('bahtraku has no Bible repository at its latest content. 2 Open Bible Stories repositories are not listed, since they cannot be imported here.')).toBeTruthy();
   });
 
   test('#151: the filter narrows the list by title, language code, or repository name, and keeps the chosen source', async () => {

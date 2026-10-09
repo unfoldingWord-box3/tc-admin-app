@@ -71,6 +71,7 @@ describe('sources', () => {
   test('#151: with nothing of this type, the screen says so, and how many of the other type are not listed', () => {
     expect(noSourceText('bahtraku', 'latest', 'bible', 0)).toBe('bahtraku has no Bible repository at its latest content.');
     expect(noSourceText('bahtraku', 'prod', 'obs', 1)).toBe('bahtraku has no Open Bible Stories repository at its last release. One Bible repository is not listed, since it cannot be imported here.');
+    expect(noSourceText('bahtraku', 'latest', 'bible', 2)).toBe('bahtraku has no Bible repository at its latest content. 2 Open Bible Stories repositories are not listed, since they cannot be imported here.');
   });
 
   test('E35: the units sent are the chosen ids, `all` only when Door43 itemizes none, and none when nothing is chosen', () => {

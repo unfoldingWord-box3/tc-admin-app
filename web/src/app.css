@@ -169,7 +169,8 @@ pre.diff { margin: 8px 0; padding: 8px 0; background: #fff; border: 1px solid va
 .source-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; overflow-wrap: anywhere; }
 .source-meta { color: #5b6770; font-size: 13px; }
 .source-language { color: #5b6770; }
-/* The books or stories to import (#151): a column is never narrower than the longest book's label ("2TH · 2 Thessalonians",
-   185px at 14px, measured 9 October 2026), so no label wraps; the grid fits as many such columns as the width allows. */
+/* The books or stories to import (#151): a column is never narrower than the longest book's label with its checkbox
+   ("2TH · 2 Thessalonians", 169px at 14px, measured 9 October 2026), so no label wraps, even with every column at the
+   12rem floor; the grid fits as many such columns as the width allows. */
 .units.unit-choices { grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 6px 16px; }
 .unit-choices .choice { display: flex; align-items: flex-start; gap: 6px; }
