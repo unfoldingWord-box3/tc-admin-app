@@ -116,8 +116,8 @@ describe('a refused version (#161, found in the demo walkthrough)', () => {
     ] as const) {
       if (worker.waiting().includes(`${method} ${url}`)) await worker.answer(method, url, body);
     }
-    await vi.waitFor(() => expect(screen.getByLabelText('Version')).toBeTruthy());
-    return screen.getByLabelText('Version') as HTMLInputElement;
+    await vi.waitFor(() => expect(screen.getByLabelText('Version:')).toBeTruthy());
+    return screen.getByLabelText('Version:') as HTMLInputElement;
   }
   const createUrl = `${base}/preparations/v1.1.0/release`;
   const create = () => fireEvent.click(screen.getByRole('button', { name: /^Create the (pre-)?release$/ }));
