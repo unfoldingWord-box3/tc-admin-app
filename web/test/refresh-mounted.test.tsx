@@ -54,6 +54,8 @@ describe('the project view reads the full report', () => {
     const view = render(<ProjectView project={PENDAU} />);
     await worker.answer('GET', READ, reportOf({ latest_prerelease: { tag: 'v1.2.1', sha: 'f'.repeat(40) } }));
     const link = screen.getByRole('link', { name: 'Open the pre-release v1.2.1' });
+    // The visible words are inside the accessible name, and differ from the full release's link (WCAG 2.5.3).
+    expect(link.textContent?.trim()).toBe('Open the pre-release');
     expect(link.getAttribute('href')).toBe('#/bahtraku/Perjanjian-Baru-Pendau/releases/v1.2.1');
     expect(link.closest('dd')?.previousElementSibling?.textContent).toBe('Pre-release');
     view.unmount();

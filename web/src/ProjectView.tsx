@@ -261,14 +261,15 @@ export function ProjectView({ project: given, onFailure }: Props) {
                 'None yet'
               )}
             </dd>
-            {/* An outstanding pre-release opens on its page too, where it is promoted (R8, #162). */}
+            {/* An outstanding pre-release opens on its page too, where it is promoted (R8, #162). Its link says so in words, and its
+                accessible name holds those words (WCAG 2.5.3, bench round 1 on #166). */}
             {'latest_prerelease' in project && project.latest_prerelease && (
               <>
                 <dt>Pre-release</dt>
                 <dd>
                   <span>{project.latest_prerelease.tag}</span> ·{' '}
                   <a href={releaseTagHash(project, project.latest_prerelease.tag)} aria-label={`Open the pre-release ${project.latest_prerelease.tag}`}>
-                    Open the release
+                    Open the pre-release
                   </a>
                 </dd>
               </>

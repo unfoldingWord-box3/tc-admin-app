@@ -186,6 +186,14 @@ describe('project.read over the recorded Pendau project', () => {
     expect((await read()).latest_prerelease).toBeNull();
   });
 
+  test('#162, E75: a pre-release on a project with no full release is reported, as E75 saw it on QA', async () => {
+    state.release = false;
+    state.preprod = { branch_or_tag_name: 'v1.0.0', commit_sha: 'b'.repeat(40), released: '2026-10-09T18:02:20Z' };
+    const report = await read();
+    expect(report.latest_full_release).toBeNull();
+    expect(report.latest_prerelease).toEqual({ tag: 'v1.0.0', sha: 'b'.repeat(40) });
+  });
+
   test('#146: a project without a full release has no release health, and no tag\'s health check is read', async () => {
     state.release = false;
     const report = await read();

@@ -72,7 +72,8 @@ export function repositoryRefs(repo: Door43Repository): RepositoryRefs {
   const latest = stage(repo.catalog?.latest);
   const prod = stage(repo.catalog?.prod);
   const preprod = stage(repo.catalog?.preprod);
-  // Outstanding only when made after the latest full release; without both times it cannot be told newer, so it is not shown.
+  // Outstanding when there is no full release, or when it is another tag than the full release and was released after it;
+  // with a full release but either time missing it cannot be told newer, so it is not shown (bench round 1 on #166).
   const outstanding = preprod && preprod.name !== prod?.name && (!prod || (preprod.released_at !== null && prod.released_at !== null && Date.parse(preprod.released_at) > Date.parse(prod.released_at)));
   return {
     default_branch: latest ? { name: latest.name, sha: latest.sha } : null,
