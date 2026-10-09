@@ -43,7 +43,7 @@ async function opened(summary: ReturnType<typeof projectOf>, coverage: ProjectRe
 }
 
 describe('#158: the project\'s books or stories have a section of their own', () => {
-  test('#158, H5: a Bible lists its books under "Books in this project", after the release preparations, each present or not', async () => {
+  test('#158: a Bible lists its books under "Books in this project", after the release preparations and outside them, each present or not', async () => {
     const pendau = projectOf('bahtraku', 'Perjanjian-Baru-Pendau', 'bible');
     await opened(pendau, { present: 1, target: 2, scope: 'nt', basis: 'catalog', units: [{ id: 'mat', present: true }, { id: 'mrk', present: false }] });
     const section = screen.getByRole('region', { name: 'Books in this project' });
@@ -51,6 +51,9 @@ describe('#158: the project\'s books or stories have a section of their own', ()
     expect(within(section).getAllByRole('listitem').map(item => item.textContent)).toEqual(['MAT present', 'MRK not present']);
     const preparations = screen.getByRole('region', { name: 'Release preparations' });
     expect(preparations.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // A sibling, not inside the preparations (bench round 1 on #159).
+    expect(preparations.contains(section)).toBe(false);
+    expect(section.parentElement).toBe(preparations.parentElement);
   });
 
   test('#158, H5: Open Bible Stories whose stories Door43 does not itemize says so under "Stories in this project", never none', async () => {
@@ -59,5 +62,18 @@ describe('#158: the project\'s books or stories have a section of their own', ()
     const section = screen.getByRole('region', { name: 'Stories in this project' });
     expect(within(section).queryByRole('list')).toBeNull();
     expect(section.textContent).toContain("Door43's catalog does not list this project's stories, so which are present is not known.");
+  });
+
+  test('#158, H5: a Bible whose books Door43 does not list says so in its own words; one that counts none says it has none yet', async () => {
+    const unknown = projectOf('bahtraku', 'id_unknown', 'bible');
+    await opened(unknown, { present: null, target: 27, scope: 'nt', basis: 'catalog', units: [] });
+    expect(screen.getByRole('region', { name: 'Books in this project' }).textContent).toContain("Door43's catalog does not list this project's books, so which are present is not known.");
+    cleanup();
+    // Door43 lists ingredients but no book: the count is a known 0, never "not known" (bench round 1 on #159).
+    const empty = projectOf('bahtraku', 'id_empty', 'bible');
+    await opened(empty, { present: 0, target: null, scope: 'unknown', basis: 'catalog', units: [] });
+    const section = screen.getByRole('region', { name: 'Books in this project' });
+    expect(section.textContent).toContain('No books are in this project yet.');
+    expect(section.textContent).not.toContain('not known');
   });
 });

@@ -348,8 +348,11 @@ export function ProjectView({ project: given, onFailure }: Props) {
                 </li>
               ))}
             </ul>
-          ) : (
+          ) : coverage.present === null ? (
+            // Unknown only when Door43 gives no count: a catalog that lists ingredients but no book counts 0, which is known (bench round 1 on #159).
             <p className="muted">Door43's catalog does not list this project's {type === 'bible' ? 'books' : 'stories'}, so which are present is not known.</p>
+          ) : (
+            <p className="muted">No {type === 'bible' ? 'books' : 'stories'} are in this project yet.</p>
           )}
         </section>
       )}
