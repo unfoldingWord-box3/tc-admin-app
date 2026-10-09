@@ -343,7 +343,8 @@ export function ProjectView({ project: given, onFailure }: Props) {
       >
         <label className="field" htmlFor="release-tag">
           A release by its tag, to see it or promote a pre-release
-          <input id="release-tag" value={tag} onChange={event => setTag(event.target.value)} placeholder="v1.3.0" />
+          {/* No remembered entries: a browser offered tags typed for other projects, none of them this one's (Rich, #161). */}
+          <input id="release-tag" value={tag} onChange={event => setTag(event.target.value)} placeholder="v1.3.0" autoComplete="off" />
         </label>
         <button type="submit" className="secondary" disabled={!tag.trim()}>
           Open the release
