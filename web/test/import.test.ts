@@ -11,13 +11,16 @@ import {
   importSummary,
   importWayForward,
   importWayForwardText,
-  mismatchText,
   ownerChoices,
   ownerLabel,
   relationshipText,
   revisionOf,
   sourceFacts,
   sourceMatches,
+  importableSources,
+  filteredSources,
+  listedFacts,
+  noSourceText,
   unitsInput,
 } from '../src/import';
 import { overwriteKey } from '../src/upload';
@@ -46,11 +49,28 @@ describe('sources', () => {
     expect(revisionOf(sourceOf('bahtraku', 'id_tb1'))).toBe('master');
   });
 
-  test('a source of the other project type is told before any plan: a Bible project imports from a Bible repository', () => {
+  test('#151: only sources of the project\'s type are listed, in any format; the rest are counted, not shown', () => {
     expect(sourceMatches(sourceOf('unfoldingWord', 'en_obs', { type: 'obs' }), 'bible')).toBe(false);
-    expect(mismatchText(sourceOf('unfoldingWord', 'en_obs', { type: 'obs' }), 'bible')).toBe('An Open Bible Stories repository cannot be imported into a Bible project.');
-    expect(mismatchText(sourceOf('bahtraku', 'id_tb1'), 'obs')).toBe('A Bible repository cannot be imported into an Open Bible Stories project.');
     expect(sourceMatches(sourceOf('bahtraku', 'id_tb1'), 'bible')).toBe(true);
+    const list = [sourceOf('unfoldingWord', 'en_ult', { format: 'rc' }), sourceOf('unfoldingWord', 'en_obs', { type: 'obs' }), sourceOf('bahtraku', 'id_tb1', { format: 'sb' })];
+    expect(importableSources(list, 'bible')).toEqual({ listed: [list[0], list[2]], leftOut: 1 });
+    expect(importableSources(list, 'obs')).toEqual({ listed: [list[1]], leftOut: 2 });
+  });
+
+  test('#151: the filter matches the title, the language code, or the repository name, in any case; an empty filter keeps all', () => {
+    const french = { ...sourceOf('unfoldingWord', 'fr_ulb', { title: 'French ULB' }), language: { code: 'fr', title: 'Français' } };
+    const list = [sourceOf('bahtraku', 'id_tb1', { title: 'Alkitab Terjemahan Baru' }), french];
+    expect(filteredSources(list, '  ')).toEqual(list);
+    expect(filteredSources(list, 'alkitab')).toEqual([list[0]]);
+    expect(filteredSources(list, 'FR')).toEqual([french]);
+    expect(filteredSources(list, 'unfoldingword/fr_')).toEqual([french]);
+    expect(filteredSources(list, 'none')).toEqual([]);
+    expect(listedFacts(french)).toEqual(['Resource Container', 'Released', 'branch master']);
+  });
+
+  test('#151: with nothing of this type, the screen says so, and how many of the other type are not listed', () => {
+    expect(noSourceText('bahtraku', 'latest', 'bible', 0)).toBe('bahtraku has no Bible repository at its latest content.');
+    expect(noSourceText('bahtraku', 'prod', 'obs', 1)).toBe('bahtraku has no Open Bible Stories repository at its last release. One Bible repository is not listed, since it cannot be imported here.');
   });
 
   test('E35: the units sent are the chosen ids, `all` only when Door43 itemizes none, and none when nothing is chosen', () => {

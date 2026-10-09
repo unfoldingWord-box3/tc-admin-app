@@ -90,7 +90,7 @@ describe('the project view reads the full report', () => {
     await answerWhenSent('GET', '/api/owners', ownersOf([{ login: 'tc-admin-qa-org', name: 'tC Admin QA' }]));
     fireEvent.click(screen.getByRole('button', { name: 'tC Admin QA (tc-admin-qa-org)' }));
     await answerWhenSent('GET', '/api/sources?owner=tc-admin-qa-org&stage=latest', sourcesOf([sourceOf('bahtraku', 'id_tb1', { title: 'Alkitab Terjemahan Baru', stage: 'latest', format: 'rc' })]));
-    fireEvent.click(screen.getByRole('button', { name: /Alkitab Terjemahan Baru/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /Alkitab Terjemahan Baru/ }));
     fireEvent.click(screen.getByLabelText('MAT · Matius'));
     fireEvent.click(screen.getByRole('button', { name: 'Plan the import of 2 books' }));
     await answerWhenSent('POST', `${base}/imports/plan`, importPlanOf('p1', [book('gen'), book('exo')]));

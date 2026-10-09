@@ -21,25 +21,27 @@ import {
   STAGE_HINTS,
   STAGE_LABELS,
   canConfirmImport,
+  filteredSources,
   importAction,
   importBlockers,
+  importableSources,
   importConfirmLabel,
   importSummary,
   importWayForward,
   importWayForwardText,
-  mismatchText,
+  listedFacts,
+  noSourceText,
   notItemizedText,
   offeredLabel,
   ownerChoices,
   ownerLabel,
   relationshipText,
   revisionOf,
-  sourceFacts,
-  sourceMatches,
   unitsInput,
 } from './import';
 import type { Account, ImportPlan, ImportProblem, ImportReceipt, ImportedFile, Source, Stage } from './import';
 import { Overwrite, bytes, md5Of, sizeOf, time } from './UploadScreen';
+import { typeLabel } from './portfolio-labels';
 import { overwriteKey, unitLabel, unitNoun } from './upload';
 import type { UploadType } from './upload';
 
@@ -157,6 +159,12 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
     setPlanned(null);
     if (busy === 'planning') setBusy(null);
   };
+  // #151: the list shows only sources of this project's type, narrowed by a filter that belongs to one owner and stage.
+  const listKey = sources ? `${sources.owner}/${sources.stage}` : '';
+  const [filter, setFilter] = useState({ for: '', text: '' });
+  const filterText = filter.for === listKey ? filter.text : '';
+  const listing = sources && sources.stage === stage ? importableSources(sources.list, type) : null;
+  const shownSources = listing ? filteredSources(listing.listed, filterText) : [];
   const chooseUnits = (next: (previous: ReadonlySet<string>) => ReadonlySet<string>) => {
     retirePlan();
     setChosenUnits(next);
@@ -267,10 +275,10 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
           </p>
         ) : (
           <>
-            <label className="field" htmlFor="import-owner">
-              Search owners by name
+            <label className="inline-field" htmlFor="import-owner">
+              {'Search owners by name: '}
+              <input id="import-owner" className="owner-search" type="text" value={query} onChange={event => setQuery(event.target.value)} autoComplete="off" placeholder="unfoldingWord, Door43-Catalog…" />
             </label>
-            <input id="import-owner" type="text" value={query} onChange={event => setQuery(event.target.value)} autoComplete="off" placeholder="unfoldingWord, bahtraku…" />
             {busy === 'owners' && <p className="muted" role="status">Searching owners…</p>}
             {owners && (
               <>
@@ -312,7 +320,7 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
 
       {chosenOwner && (
         <fieldset disabled={applying}>
-          <legend>Repository and content</legend>
+          <legend>{typeLabel(type)} projects</legend>
           <div className="selection" role="radiogroup" aria-label="Which content">
             {(['latest', 'prod'] as const).map(option => (
               <label key={option} className="choice">
@@ -322,30 +330,52 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
             ))}
           </div>
           {busy === 'sources' && <p className="muted" role="status">Reading the repositories of {chosenOwner.login}…</p>}
-          {sources && sources.stage === stage && sources.list.length === 0 && <p className="derived">{chosenOwner.login} has no Bible or Open Bible Stories repository at its {STAGE_LABELS[stage].toLowerCase()}.</p>}
-          {sources && sources.stage === stage && sources.list.length > 0 && (
-            <ul className="languages" aria-label="Repositories">
-              {sources.list.map(candidate => {
-                const key = `${candidate.ref.owner}/${candidate.ref.repo}`;
-                const matches = sourceMatches(candidate, type);
-                const picked = source !== null && `${source.ref.owner}/${source.ref.repo}` === key;
-                return (
-                  <li key={key} className={matches ? undefined : 'refused'} aria-disabled={matches ? undefined : 'true'}>
-                    {matches ? (
-                      <button type="button" aria-pressed={picked} onClick={() => chooseSource(candidate)}>
-                        {candidate.title} <code>{key}</code>
-                      </button>
-                    ) : (
-                      <span>
-                        {candidate.title} <code>{key}</code>
+          {listing && listing.listed.length === 0 && <p className="derived">{noSourceText(chosenOwner.login, stage, type, listing.leftOut)}</p>}
+          {listing && listing.listed.length > 0 && (
+            <>
+              <label className="inline-field" htmlFor="import-filter">
+                {'Filter repositories: '}
+                <input id="import-filter" className="owner-search" type="search" value={filterText} onChange={event => setFilter({ for: listKey, text: event.target.value })} autoComplete="off" placeholder="Title, language code, or repository" />
+              </label>
+              {shownSources.length === 0 && <p className="derived">No {typeLabel(type)} repository of {chosenOwner.login} matches "{filterText.trim()}".</p>}
+              {shownSources.length > 0 && (
+                <ul className="source-list" aria-label="Repositories">
+                  {shownSources.map(candidate => {
+                    const key = `${candidate.ref.owner}/${candidate.ref.repo}`;
+                    const picked = source !== null && `${source.ref.owner}/${source.ref.repo}` === key;
+                    const body = (
+                      <span className="source-text">
+                        <span>
+                          <strong>{candidate.title}</strong>
+                          {candidate.language.code && (
+                            <>
+                              {' '}
+                              <span className="source-language">({candidate.language.code})</span>
+                            </>
+                          )}
+                        </span>
+                        {/* Read aloud, the title and the repository are two phrases, not one run-on. */}
+                        <span className="visually-hidden">, </span>
+                        <span className="source-meta">
+                          <code>{key}</code> · {listedFacts(candidate).join(' · ')}
+                        </span>
                       </span>
-                    )}
-                    <span className="muted"> · {sourceFacts(candidate).join(' · ')}</span>
-                    {!matches && <span className="muted"> · {mismatchText(candidate, type)}</span>}
-                  </li>
-                );
-              })}
-            </ul>
+                    );
+                    return (
+                      <li key={key} className={picked ? 'source-row picked' : 'source-row'}>
+                        <label>
+                          <input type="radio" name="import-source" value={key} checked={picked} onChange={() => chooseSource(candidate)} />
+                          {body}
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <p className="muted">
+                {shownSources.length === listing.listed.length ? `${listing.listed.length} ${listing.listed.length === 1 ? 'repository' : 'repositories'}` : `${shownSources.length} of ${listing.listed.length} repositories`}
+              </p>
+            </>
           )}
           {sources && sources.stage === stage && <p className="freshness">Read from Door43's catalog.</p>}
         </fieldset>
@@ -370,7 +400,7 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
                   Choose none
                 </button>
               </p>
-              <ul className="units" aria-label={`${type === 'bible' ? 'Books' : 'Stories'} to import`}>
+              <ul className="units unit-choices" aria-label={`${type === 'bible' ? 'Books' : 'Stories'} to import`}>
                 {itemized.map(unit => (
                   <li key={unit.id}>
                     <label className="choice">

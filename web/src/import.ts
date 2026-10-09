@@ -68,8 +68,33 @@ export function sourceFacts(source: Source): string[] {
 /** Whether the source is of the project's type: a Bible project imports from a Bible repository, an Open Bible Stories project from an Open Bible Stories one; the plan refuses a mismatch, so the screen says so before any plan. */
 export const sourceMatches = (source: Pick<Source, 'project_type'>, type: UploadType): boolean => source.project_type === type;
 
-export const mismatchText = (source: Pick<Source, 'project_type'>, type: UploadType): string =>
-  `${typeLabel(source.project_type) === 'Open Bible Stories' ? 'An' : 'A'} ${typeLabel(source.project_type)} repository cannot be imported into ${type === 'obs' ? 'an' : 'a'} ${typeLabel(type)} project.`;
+
+/**
+ * The sources the screen lists (#151): only those of the project's type, in any format (#47), since only those can be
+ * imported; how many of the other type were left out, for the screen to say when nothing is left to list.
+ */
+export function importableSources(list: readonly Source[], type: UploadType): { listed: Source[]; leftOut: number } {
+  const listed = list.filter(source => sourceMatches(source, type));
+  return { listed, leftOut: list.length - listed.length };
+}
+
+/** The listed sources whose title, language code, or repository name holds the filter's text, in any case (#151); all of them for an empty filter. */
+export function filteredSources(list: readonly Source[], text: string): Source[] {
+  const needle = text.trim().toLowerCase();
+  if (!needle) return [...list];
+  return list.filter(source => [source.title, source.language.code, source.ref.repo, `${source.ref.owner}/${source.ref.repo}`].some(value => value.toLowerCase().includes(needle)));
+}
+
+/** A listed source's facts, without its type, which every listed source shares (#151). */
+export const listedFacts = (source: Source): string[] => sourceFacts(source).slice(1);
+
+/** What the screen says when the owner has no source of the project's type at this stage (#151). */
+export function noSourceText(owner: string, stage: Stage, type: UploadType, leftOut: number): string {
+  const what = `${owner} has no ${typeLabel(type)} repository at its ${STAGE_LABELS[stage].toLowerCase()}.`;
+  if (leftOut === 0) return what;
+  const other = typeLabel(type === 'bible' ? 'obs' : 'bible');
+  return `${what} ${leftOut === 1 ? `One ${other} repository is` : `${leftOut} ${other} repositories are`} not listed, since it cannot be imported here.`;
+}
 
 /** A book or story the source itemizes, as offered for choosing. */
 export type Offered = NonNullable<Source['books']>[number];
