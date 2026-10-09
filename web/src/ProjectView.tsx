@@ -245,7 +245,16 @@ export function ProjectView({ project: given, onFailure }: Props) {
         {'latest_full_release' in project && (
           <>
             <dt>Latest release</dt>
-            <dd>{project.latest_full_release ? project.latest_full_release.tag : 'None yet'}</dd>
+            <dd>
+              {/* The latest full release opens on its own page, as a release opened by its tag does (#156). */}
+              {project.latest_full_release ? (
+                <>
+                  <span>{project.latest_full_release.tag}</span> · <a href={releaseTagHash(project, project.latest_full_release.tag)}>Open the release</a>
+                </>
+              ) : (
+                'None yet'
+              )}
+            </dd>
           </>
         )}
       </dl>

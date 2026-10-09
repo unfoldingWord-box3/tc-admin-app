@@ -113,6 +113,7 @@ The metadata editor, Setup-incomplete recovery beyond a retry link, accessibilit
 - Version calculation and edit, required release notes, pre-release option, create, promote.
 - Stale-source protection, lost-response lookup by tag, retained branch on failure, branch deletion after success.
 - A preparation outlives its page: after a reload, a closed tab, or a new sign-in the manager finds it again, to continue or discard it ([#125](https://github.com/unfoldingWord-box3/tc-admin-app/issues/125), added 8 October 2026).
+- The project page opens its latest full release on the release's own page ([#156](https://github.com/unfoldingWord/tc-admin-app/issues/156), added 9 October 2026 by Rich, since a release made elsewhere had no link from the project page). Downloads on that page, and a list of every release Door43 has, are later.
 
 **EPIC: Demo readiness** ([#44](https://github.com/unfoldingWord-box3/tc-admin-app/issues/44))
 - Written demo script against a Bahtraku repository on production.
