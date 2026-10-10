@@ -69,6 +69,13 @@ interface NewProjectBase {
 export type NewProject = NewProjectBase &
   ({ project_type: 'bible'; testament_scope: TestamentScope; flavor?: TextTranslationFlavor | null | undefined } | { project_type: 'obs'; testament_scope: null });
 
+/**
+ * The default branch of every project tC Admin creates (#167): `main`, the name
+ * unfoldingWord's Scripture Burrito repositories are moving to. Door43 names a new
+ * repository's branch `master` unless asked otherwise, so the create asks (E79).
+ */
+export const NEW_PROJECT_BRANCH = 'main';
+
 /** The USFM version every new Bible project declares: Scribe's, without its patch level (E17, Q4). */
 export const USFM_VERSION = '3.0';
 
@@ -201,7 +208,7 @@ export function newProjectMetadata(project: NewProject, generator: Generator, no
     identification: {
       name: { en: project.title },
       abbreviation: { en: project.abbreviation },
-      primary: { dcs: { [`${project.owner}/${project.repo_name}`]: { revision: 'master', timestamp } } },
+      primary: { dcs: { [`${project.owner}/${project.repo_name}`]: { revision: NEW_PROJECT_BRANCH, timestamp } } },
     },
     confidential: false,
     languages: [language],

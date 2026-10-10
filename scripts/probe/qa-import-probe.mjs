@@ -247,9 +247,13 @@ const memoryKV = () => {
     const branches = await publicCall(`/repos/${projectOwner}/${projectRepo}/branches`);
     record('GET-branches', branches.request, branches.response);
     summary.branches = (branches.response.json || []).map(b => b.name);
-    summary.health_master = await pollHealth(projectOwner, projectRepo, 'master');
-    const entry = await publicCall(`/catalog/entry/${projectOwner}/${projectRepo}/master`);
-    record('GET-catalog_entry_master', entry.request, entry.response);
+    // The project's own default branch: main for a project created since #167, master for one named by --project from before.
+    const branch = (await publicCall(`/repos/${projectOwner}/${projectRepo}`)).response.json?.default_branch;
+    if (typeof branch !== 'string' || !branch) throw new Error(`Door43 names no default branch for ${project}`);
+    summary.default_branch = branch;
+    summary.health_default_branch = await pollHealth(projectOwner, projectRepo, branch);
+    const entry = await publicCall(`/catalog/entry/${projectOwner}/${projectRepo}/${encodeURIComponent(branch)}`);
+    record(`GET-catalog_entry_${branch}`, entry.request, entry.response);
     summary.catalog_entry = entry.response.json && { is_valid: entry.response.json.is_valid, healthcheck_severity: entry.response.json.healthcheck_severity, ingredients: (entry.response.json.ingredients || []).map(i => i.identifier), books: entry.response.json.books };
   }
   writeFileSync(join(outDir, 'summary.json'), JSON.stringify(summary, null, 2));

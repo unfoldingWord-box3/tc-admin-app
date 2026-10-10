@@ -110,7 +110,7 @@ describe('a Bible plan', () => {
     expect(plan.bound_to).toEqual({ default_branch_sha: null, release_tag: null, release_tag_sha: null });
     expect(plan.would_write).toEqual([
       { kind: 'repo', target: 'tc-admin-qa-org/id_tcap' },
-      { kind: 'commit', target: 'tc-admin-qa-org/id_tcap@master' },
+      { kind: 'commit', target: 'tc-admin-qa-org/id_tcap@main' },
     ]);
     expect(plan.warnings).toEqual([]);
     expect(plan.preview.repo_name).toBe('id_tcap');
@@ -118,7 +118,7 @@ describe('a Bible plan', () => {
     expect(plan.preview.metadata_json).toMatchObject({
       format: 'scripture burrito',
       meta: { generator: { softwareName: 'tC Admin', userName: 'tc-admin-qa' } },
-      identification: { name: { en: 'Alkitab Percobaan' }, abbreviation: { en: 'TCAP' }, primary: { dcs: { 'tc-admin-qa-org/id_tcap': { revision: 'master' } } } },
+      identification: { name: { en: 'Alkitab Percobaan' }, abbreviation: { en: 'TCAP' }, primary: { dcs: { 'tc-admin-qa-org/id_tcap': { revision: 'main' } } } },
       type: { flavorType: { name: 'scripture', flavor: { name: 'textTranslation' } } },
     });
     expect(Object.keys((plan.preview.metadata_json.type as { flavorType: { currentScope: object } }).flavorType.currentScope)).toHaveLength(27);
@@ -166,7 +166,7 @@ describe('a Bible plan', () => {
     expect(plan.preview.repo_name).toBe('id_obs');
     expect(plan.would_write).toEqual([
       { kind: 'repo', target: 'tc-admin-qa-org/id_obs' },
-      { kind: 'commit', target: 'tc-admin-qa-org/id_obs@master' },
+      { kind: 'commit', target: 'tc-admin-qa-org/id_obs@main' },
     ]);
     const type = plan.preview.metadata_json.type as { flavorType: { name: string; flavor: object; currentScope: Record<string, string[]> } };
     expect(type.flavorType.name).toBe('gloss');

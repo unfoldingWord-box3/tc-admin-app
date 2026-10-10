@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcap0118/branches"
+  },
+  "response": {
+    "status": 200,
+    "json": [
+      {
+        "name": "main",
+        "commit": {
+          "id": "d0ece3e6649613aaf19e14f1b87fbaf52e0ab5c8"
+        }
+      }
+    ]
+  },
+  "note": "Read after the run; each branch kept to its name and commit id."
+}

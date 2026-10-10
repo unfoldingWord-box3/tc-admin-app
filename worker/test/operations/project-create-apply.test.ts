@@ -53,6 +53,8 @@ let teamsAnswer: unknown;
 /** What the contents endpoint answers: the recorded commit, a status, or a thrown network failure. */
 let commitAnswer: 'created' | number | 'network' | 'broken-body';
 let createAnswer: 'created' | number | 'broken-body';
+/** The default branch Door43 answers for a created repository: the one asked for, unless set. */
+let answeredBranch: string | null;
 
 const door43: Fetch = async (url, init) => {
   const { pathname } = new URL(url);
@@ -68,11 +70,11 @@ const door43: Fetch = async (url, init) => {
   }
   if (method === 'POST' && (pathname === '/api/v1/orgs/tc-admin-qa-org/repos' || pathname === '/api/v1/user/repos')) {
     if (typeof createAnswer === 'number') return Response.json({ message: 'refused' }, { status: createAnswer });
-    const name = (sent.at(-1)!.body as { name: string }).name;
+    const { name, default_branch } = sent.at(-1)!.body as { name: string; default_branch: string };
     const owner = pathname.startsWith('/api/v1/orgs/') ? 'tc-admin-qa-org' : 'tc-admin-qa';
     existing.add(`${owner}/${name}`);
     if (createAnswer === 'broken-body') return new Response(new ReadableStream({ start: controller => controller.error(new TypeError('terminated')) }), { status: 201 });
-    return Response.json({ ...createdRepo, name, full_name: `${owner}/${name}`, html_url: `https://qa.door43.org/${owner}/${name}` }, { status: 201 });
+    return Response.json({ ...createdRepo, name, default_branch: answeredBranch ?? default_branch, full_name: `${owner}/${name}`, html_url: `https://qa.door43.org/${owner}/${name}` }, { status: 201 });
   }
   if (method === 'POST' && /^\/api\/v1\/repos\/[^/]+\/[^/]+\/contents$/.test(pathname)) {
     if (commitAnswer === 'network') throw new TypeError('fetch failed');
@@ -110,21 +112,24 @@ beforeEach(() => {
   teamsAnswer = teams;
   commitAnswer = 'created';
   createAnswer = 'created';
+  answeredBranch = null;
   clock = new Date('2026-10-05T15:00:00.000Z');
 });
 
 describe('a successful apply', () => {
-  test('W5: creates the repository and makes exactly one contents call with the plan\'s three files, and the receipt\'s wrote equals the plan\'s would_write', async () => {
+  test('W5: creates the repository with the default branch main (#167) and makes exactly one contents call with the plan\'s three files and no branch, so it starts main, and the receipt\'s wrote equals the plan\'s would_write', async () => {
     const planned = await plan();
     sent = [];
     const receipt = OPERATIONS['project.create.apply'].output.parse(await apply(planned.id));
     expect(writesSent()).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'POST /api/v1/repos/tc-admin-qa-org/id_tcap/contents']);
+    expect(sent.find(request => request.path.endsWith('/repos'))!.body).toMatchObject({ name: 'id_tcap', auto_init: false, default_branch: 'main' });
     const commit = sent.find(request => request.path.endsWith('/contents'))!.body as { message: string; files: { operation: string; path: string; content: string }[] };
     expect(commit.files.map(file => [file.operation, file.path])).toEqual([
       ['create', 'metadata.json'],
       ['create', 'ingredients/license.md'],
       ['create', 'README.md'],
     ]);
+    expect(Object.keys(commit)).not.toContain('branch');
     const stored = JSON.parse(kv.entries.get(`plan:${planned.id}`)!.value) as StoredPlan<{ files: { path: string; content: string }[] }>;
     for (const [index, file] of stored.payload.files.entries()) expect(Buffer.from(commit.files[index]!.content, 'base64').toString('utf8')).toBe(file.content);
     expect(JSON.parse(stored.payload.files[0]!.content)).toEqual(planned.preview.metadata_json);
@@ -154,13 +159,13 @@ describe('a successful apply', () => {
     expect(result).toMatchObject({
       ref: { owner: 'tc-admin-qa-org', repo: 'id_tcap', id: 96475, url: 'https://qa.door43.org/tc-admin-qa-org/id_tcap' },
       title: 'Alkitab Percobaan',
-      default_branch: 'master',
+      default_branch: 'main',
       language: { code: 'id', title: 'Bahasa Indonesia' },
       project_type: 'bible',
       metadata_format: 'sb',
       editability: { state: 'editable' },
       coverage: { present: 0, target: 27, scope: 'nt', basis: 'archive' },
-      health: { state: 'never_checked', severity_raw: null, ref: 'master', checked_at: null, issue_count: null, issues: null, source: 'door43' },
+      health: { state: 'never_checked', severity_raw: null, ref: 'main', checked_at: null, issue_count: null, issues: null, source: 'door43' },
       latest_full_release: null,
       default_branch_head: { sha: firstCommit.commit.sha, committed_at: '2026-09-22T19:49:22Z' },
       active_preparation: null,
@@ -170,6 +175,15 @@ describe('a successful apply', () => {
     });
     expect(result.coverage.units).toHaveLength(27);
     expect(result.coverage.units.every(unit => !unit.present)).toBe(true);
+  });
+
+  test('W5: the receipt names the commit on the branch Door43 answered, so a repository Door43 put on another branch is never reported as main', async () => {
+    answeredBranch = 'master';
+    const planned = await plan();
+    const receipt = await apply(planned.id);
+    expect(planned.would_write[1]).toEqual({ kind: 'commit', target: 'tc-admin-qa-org/id_tcap@main' });
+    expect(receipt.wrote[1]).toMatchObject({ kind: 'commit', target: 'tc-admin-qa-org/id_tcap@master' });
+    expect(receipt.result.default_branch).toBe('master');
   });
 
   test('H5: an Open Bible Stories project\'s report counts 0 of 50 stories, type obs, editable (#82)', async () => {
@@ -266,6 +280,20 @@ describe('what an apply refuses before writing', () => {
     sent = [];
     expect((await failure(apply(planned.id)))!.code).toBe('plan_expired');
     expect(writesSent()).toEqual([]);
+  });
+
+  test('W5: plan_expired for an unexpired plan stored before #167, which commits to master and names master in its metadata, and nothing is written', async () => {
+    const planned = await plan();
+    const key = `plan:${planned.id}`;
+    const stored = JSON.parse(kv.entries.get(key)!.value) as StoredPlan<{ files: { path: string; content: string }[] }> & { plan: { would_write: { kind: string; target: string }[] } };
+    stored.plan.would_write = stored.plan.would_write.map(write => (write.kind === 'commit' ? { ...write, target: write.target.replace(/@main$/, '@master') } : write));
+    stored.payload.files[0]!.content = stored.payload.files[0]!.content.replace('"revision": "main"', '"revision": "master"');
+    expect(stored.payload.files[0]!.content).toContain('"revision": "master"');
+    kv.entries.set(key, { ...kv.entries.get(key)!, value: JSON.stringify(stored) });
+    sent = [];
+    expect((await failure(apply(planned.id)))!.code).toBe('plan_expired');
+    expect(writesSent()).toEqual([]);
+    expect(kv.entries.has(`receipt:${planned.id}`)).toBe(false);
   });
 
   test('Door43 refusing the repository is answered as the catalog code, and no commit follows', async () => {

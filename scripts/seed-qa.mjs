@@ -14,8 +14,14 @@
 //   tc-admin-qa/id_seedhf       a Bible in the user's own namespace (E26, E49): Matthew imported, never
 //                               released, so Door43's health check reports findings on its default branch
 //
+// Each is created on the default branch main, as tC Admin creates every project (#167, E79); its imports are
+// committed to main, and each release is bound to main's head and takes its books from there (a later release
+// starts from the previous release tag, ADR 0010). A project where Door43 answers otherwise is stopped, not
+// built on another branch.
+//
 // Safe to run twice: a project whose repository already exists is reported and left alone, never written
 // again (W5). A project that stopped half way is left as it is; delete its repository on QA to rebuild it.
+// A project built before #167 is on master and stays so until it is deleted and rebuilt.
 //
 // Usage:  node --env-file=.env scripts/seed-qa.mjs [--plan] [--only <repo>]
 // Env:    DOOR43_ORIGIN (default https://qa.door43.org; any other host is refused), TEST_TOKEN (required,
@@ -44,6 +50,8 @@ const root = resolve(new URL('..', import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
 const stamp = new Date().toISOString().slice(11, 19).replaceAll(':', '');
 
+/** The default branch every standard project is built on, as tC Admin creates it (#167, E79). */
+const BRANCH = 'main';
 const ID = { code: 'id', title: 'Bahasa Indonesia', direction: 'ltr' };
 const EN = { code: 'en', title: 'English', direction: 'ltr' };
 const PROJECTS = [
@@ -80,10 +88,10 @@ if (argv.includes('--only')) {
 
 if (argv.includes('--plan')) {
   for (const project of PROJECTS) {
-    console.log(`${project.owner}/${repoOf(project)}: project.create.plan and .apply, then`);
+    console.log(`${project.owner}/${repoOf(project)}: project.create.plan and .apply on ${BRANCH}, then`);
     for (const step of project.steps) {
-      if (step.import) console.log(`  import.plan and .apply from ${step.import.source.owner}/${step.import.source.repo} at ${step.import.source.revision}: ${step.import.units === 'all' ? 'all' : step.import.units.join(', ')}`);
-      if (step.release) console.log(`  release.plan, .prepare${step.release.include ? ` (including ${step.release.include.join(', ')})` : ''}, preparation.read until health, release.create (${step.release.prerelease ? 'pre-release' : 'full release'})`);
+      if (step.import) console.log(`  import.plan and .apply to ${BRANCH} from ${step.import.source.owner}/${step.import.source.repo} at ${step.import.source.revision}: ${step.import.units === 'all' ? 'all' : step.import.units.join(', ')}`);
+      if (step.release) console.log(`  release.plan bound to ${BRANCH}'s head, .prepare${step.release.include ? ` (including ${step.release.include.join(', ')})` : ''}, preparation.read until health, release.create (${step.release.prerelease ? 'pre-release' : 'full release'})`);
     }
   }
   process.exit(0);
@@ -133,6 +141,13 @@ async function waitForCatalog(owner, repo, { latest, prod } = {}) {
   throw new Error(`Door43's catalog did not index ${owner}/${repo} ${latest ?? ''} ${prod ?? ''} within 3 minutes`);
 }
 
+/** The head commit of a branch as Door43 has it now. */
+async function branchHead(owner, repo, branch) {
+  const { status, json } = await tokenCall(`/repos/${owner}/${repo}/branches/${encodeURIComponent(branch)}`);
+  if (status !== 200 || typeof json?.commit?.id !== 'string') throw new Error(`${owner}/${repo} has no branch ${branch} Door43 can read (${status})`);
+  return json.commit.id;
+}
+
 /** The commit a receipt says it wrote; a receipt that names none stops the project, never a wait that is skipped (bench round 1 on #160). */
 function committed(sha, what) {
   if (!sha) throw new Error(`${what} named no commit, so the catalog cannot be waited on`);
@@ -180,8 +195,11 @@ for (const project of PROJECTS) {
   try {
     const plan = await HANDLERS['project.create.plan']({ owner: ref.owner, ...project.create }, context);
     const created = await HANDLERS['project.create.apply']({ plan_id: plan.id }, context);
+    const branch = created.result.default_branch;
+    row.default_branch = branch;
     row.steps.push({ step: 'create', setup: created.result.setup.state, commit: created.wrote.find(write => write.kind === 'commit')?.sha ?? null });
-    console.log(`${row.project}: created (setup ${created.result.setup.state})`);
+    console.log(`${row.project}: created on ${branch} (setup ${created.result.setup.state})`);
+    if (branch !== BRANCH) throw new Error(`Door43 created ${row.project} on ${branch}, not ${BRANCH}`);
     await waitForCatalog(ref.owner, repo, { latest: committed(created.result.default_branch_head?.sha, 'the creation') });
     for (const step of project.steps) {
       if (step.import) {
@@ -189,13 +207,18 @@ for (const project of PROJECTS) {
         const revision = source.revision === 'last-release' ? await lastRelease(context, source.owner, source.repo) : source.revision;
         const planned = await HANDLERS['import.plan']({ ...ref, source: { owner: source.owner, repo: source.repo, revision }, units: step.import.units }, context);
         const applied = await HANDLERS['import.apply']({ ...ref, plan_id: planned.id }, context);
-        const sha = applied.wrote.find(write => write.kind === 'commit')?.sha ?? null;
-        row.steps.push({ step: 'import', source: `${source.owner}/${source.repo}@${revision}`, files: planned.preview.files.length, commit: sha });
-        console.log(`  imported ${planned.preview.files.length} file(s) from ${source.owner}/${source.repo}@${revision}`);
+        const commit = applied.wrote.find(write => write.kind === 'commit');
+        const sha = commit?.sha ?? null;
+        row.steps.push({ step: 'import', source: `${source.owner}/${source.repo}@${revision}`, files: planned.preview.files.length, target: commit?.target ?? null, commit: sha });
+        console.log(`  imported ${planned.preview.files.length} file(s) from ${source.owner}/${source.repo}@${revision} to ${commit?.target ?? 'no commit'}`);
+        if (commit?.target !== `${ref.owner}/${repo}@${BRANCH}`) throw new Error(`the import committed to ${commit?.target ?? 'nothing'}, not ${BRANCH}`);
         await waitForCatalog(ref.owner, repo, { latest: committed(sha, 'the import') });
       }
       if (step.release) {
         const planned = await HANDLERS['release.plan'](ref, context);
+        // The release takes its books from main: the plan is bound to main's head as Door43 has it now (R5).
+        const head = await branchHead(ref.owner, repo, BRANCH);
+        if (planned.bound_to.default_branch_sha !== head) throw new Error(`the release plan is bound to ${planned.bound_to.default_branch_sha}, not ${BRANCH}'s head ${head}`);
         // An Open Bible Stories release takes the whole default branch, so it sends no selection (release.prepare refuses one).
         const selection = project.create.project_type === 'obs' ? {} : Object.fromEntries(planned.preview.books.map(book => [book.id, step.release.include?.includes(book.id) ? 'include' : book.selection]));
         const prepared = await HANDLERS['release.prepare']({ ...ref, plan_id: planned.id, selection, unknown_included: [], version: null }, context);
@@ -203,15 +226,15 @@ for (const project of PROJECTS) {
         if (read.state !== 'ready_for_release') throw new Error(`the preparation of ${read.version.proposed} is ${read.state}, health ${read.health.state}; nothing was released`);
         const released = await HANDLERS['release.create']({ ...ref, preparation_id: read.id, version: read.version.confirmed ?? read.version.proposed, notes: read.notes.draft, prerelease: step.release.prerelease, acknowledge_warnings: read.requires_acknowledgement }, context);
         const tag = released.result.release.tag;
-        row.steps.push({ step: step.release.prerelease ? 'pre-release' : 'full release', tag, health: read.health.state, acknowledged_warnings: released.acknowledged_warnings });
-        console.log(`  released ${tag} as ${step.release.prerelease ? 'a pre-release' : 'a full release'} (health ${read.health.state})`);
+        row.steps.push({ step: step.release.prerelease ? 'pre-release' : 'full release', tag, from: `${BRANCH}@${head}`, baseline: planned.bound_to.release_tag, health: read.health.state, acknowledged_warnings: released.acknowledged_warnings });
+        console.log(`  released ${tag} as ${step.release.prerelease ? 'a pre-release' : 'a full release'} from ${BRANCH} at ${head.slice(0, 10)}${planned.bound_to.release_tag ? ` on ${planned.bound_to.release_tag}` : ''} (health ${read.health.state})`);
         if (!step.release.prerelease) await waitForCatalog(ref.owner, repo, { prod: tag });
       }
     }
-    const health = await tokenCall(`/repos/${ref.owner}/${repo}/healthcheck?ref=master`);
-    row.health_on_master = health.json?.data?.overall_severity_level ?? null;
+    const health = await tokenCall(`/repos/${ref.owner}/${repo}/healthcheck?ref=${encodeURIComponent(branch)}`);
+    row.health_on_default_branch = health.json?.data?.overall_severity_level ?? null;
     row.outcome = 'built';
-    console.log(`  done; Door43's health on master: ${row.health_on_master ?? 'not yet checked'}`);
+    console.log(`  done; Door43's health on ${branch}: ${row.health_on_default_branch ?? 'not yet checked'}`);
   } catch (error) {
     failed = true;
     row.outcome = 'stopped';

@@ -1,0 +1,150 @@
+{
+  "id": "df44f4a3-758a-49c8-91be-019d2de9f4e8",
+  "operation": "project.create.plan",
+  "created_at": "2026-10-10T01:18:42.566Z",
+  "expires_at": "2026-10-10T01:48:42.566Z",
+  "bound_to": {
+    "default_branch_sha": null,
+    "release_tag": null,
+    "release_tag_sha": null
+  },
+  "preview": {
+    "repo_name": "id_tcap0118",
+    "metadata_json": {
+      "format": "scripture burrito",
+      "meta": {
+        "version": "1.0.0",
+        "category": "source",
+        "generator": {
+          "softwareName": "tC Admin",
+          "softwareVersion": "0.1.0",
+          "userId": "dcs::tc-admin-qa",
+          "userName": "tc-admin-qa"
+        },
+        "defaultLocale": "en",
+        "dateCreated": "2026-10-10T01:18:42.566Z",
+        "normalization": "NFC"
+      },
+      "idAuthorities": {
+        "dcs": {
+          "id": "https://git.door43.org",
+          "name": {
+            "en": "Door43 Content Service"
+          }
+        }
+      },
+      "identification": {
+        "name": {
+          "en": "tC Admin probe 2026-10-10 0118"
+        },
+        "abbreviation": {
+          "en": "tcap0118"
+        },
+        "primary": {
+          "dcs": {
+            "tc-admin-qa-org/id_tcap0118": {
+              "revision": "main",
+              "timestamp": "2026-10-10T01:18:42.566Z"
+            }
+          }
+        }
+      },
+      "confidential": false,
+      "languages": [
+        {
+          "tag": "id",
+          "name": {
+            "en": "Bahasa Indonesia"
+          },
+          "scriptDirection": "ltr"
+        }
+      ],
+      "type": {
+        "flavorType": {
+          "name": "scripture",
+          "flavor": {
+            "name": "textTranslation",
+            "projectType": "standard",
+            "translationType": "firstTranslation",
+            "audience": "common",
+            "usfmVersion": "3.0"
+          },
+          "currentScope": {
+            "MAT": [],
+            "MRK": [],
+            "LUK": [],
+            "JHN": [],
+            "ACT": [],
+            "ROM": [],
+            "1CO": [],
+            "2CO": [],
+            "GAL": [],
+            "EPH": [],
+            "PHP": [],
+            "COL": [],
+            "1TH": [],
+            "2TH": [],
+            "1TI": [],
+            "2TI": [],
+            "TIT": [],
+            "PHM": [],
+            "HEB": [],
+            "JAS": [],
+            "1PE": [],
+            "2PE": [],
+            "1JN": [],
+            "2JN": [],
+            "3JN": [],
+            "JUD": [],
+            "REV": []
+          }
+        }
+      },
+      "copyright": {
+        "licenses": [
+          {
+            "ingredient": "ingredients/license.md"
+          }
+        ]
+      },
+      "ingredients": {
+        "ingredients/license.md": {
+          "checksum": {
+            "md5": "0bf7ef1533f6486c8362dcb8bc19bdd1"
+          },
+          "mimeType": "text/markdown",
+          "size": 18535,
+          "role": "x-license"
+        }
+      }
+    },
+    "files": [
+      {
+        "path": "metadata.json",
+        "size": 2150,
+        "md5": "d9e22619935d22a65d24b3ad9f0b9f1f"
+      },
+      {
+        "path": "ingredients/license.md",
+        "size": 18535,
+        "md5": "0bf7ef1533f6486c8362dcb8bc19bdd1"
+      },
+      {
+        "path": "README.md",
+        "size": 239,
+        "md5": "71c643da75321a358f42c47b2814c900"
+      }
+    ]
+  },
+  "would_write": [
+    {
+      "kind": "repo",
+      "target": "tc-admin-qa-org/id_tcap0118"
+    },
+    {
+      "kind": "commit",
+      "target": "tc-admin-qa-org/id_tcap0118@main"
+    }
+  ],
+  "warnings": []
+}

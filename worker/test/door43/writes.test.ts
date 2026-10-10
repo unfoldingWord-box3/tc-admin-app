@@ -108,7 +108,7 @@ describe('a created repository whose answer broke off', () => {
 });
 
 describe('createRepository', () => {
-  test('A3: sends CreateRepoOption to the organization route, public and not initialized, and maps the recorded 201 (E27)', async () => {
+  test('A3: sends CreateRepoOption to the organization route, public, not initialized, and on the default branch main (#167), and maps the recorded 201 (E27)', async () => {
     const seen: { url: string; body: unknown }[] = [];
     const fetch: Fetch = async (url, init) => {
       seen.push({ url, body: JSON.parse(String(init?.body)) });
@@ -118,7 +118,7 @@ describe('createRepository', () => {
     expect(seen).toEqual([
       {
         url: 'https://qa.door43.org/api/v1/orgs/tc-admin-qa-org/repos',
-        body: { name: 'tca-probe-20260922194921', description: 'tC Admin write probe', private: false, auto_init: false, default_branch: 'master' },
+        body: { name: 'tca-probe-20260922194921', description: 'tC Admin write probe', private: false, auto_init: false, default_branch: 'main' },
       },
     ]);
     expect(repository).toEqual({

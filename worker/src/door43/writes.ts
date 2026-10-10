@@ -8,11 +8,9 @@
 // tags, and releases join with #34 and #39.
 
 import { CatalogError } from '@tc-admin/shared/schema';
+import { NEW_PROJECT_BRANCH } from '../model/burrito';
 import { bytesToBase64, door43Message, readDoor43, writeDoor43 } from './api';
 import type { Door43Client, WriteOutcome } from './api';
-
-/** Every project tC Admin creates has this default branch, as every Door43 repository seen so far (E14, E27). */
-export const DEFAULT_BRANCH = 'master';
 
 /** Who a repository is created under: an organization (`POST /orgs/{org}/repos`) or the account itself (`POST /user/repos`, E26). */
 export interface RepositoryOwner {
@@ -29,7 +27,7 @@ export interface CreatedRepository {
   permissions: { push: boolean; admin: boolean };
 }
 
-/** `CreateRepoOption` (E21): public, not initialized, so the first commit is the project's (E27). */
+/** `CreateRepoOption` (E21): public, not initialized, so the first commit is the project's (E27), with the default branch `main` (#167). */
 export async function createRepository(client: Door43Client, owner: RepositoryOwner, options: { name: string; description: string }): Promise<CreatedRepository> {
   const path = owner.kind === 'organization' ? `/orgs/${encodeURIComponent(owner.login)}/repos` : '/user/repos';
   const readBack = () => readDoor43<unknown>(client, `/repos/${encodeURIComponent(owner.login)}/${encodeURIComponent(options.name)}`);
@@ -40,7 +38,7 @@ export async function createRepository(client: Door43Client, owner: RepositoryOw
       description: options.description,
       private: false,
       auto_init: false,
-      default_branch: DEFAULT_BRANCH,
+      default_branch: NEW_PROJECT_BRANCH,
     });
   } catch (error) {
     // Door43 said 201 and the answer broke off: the repository exists (W4: it is never deleted), so it is read back rather than lost.
@@ -74,7 +72,7 @@ function repositoryShape(body: unknown): CreatedRepository | null {
     id: repo.id,
     full_name: repo.full_name,
     url: repo.html_url,
-    default_branch: typeof repo.default_branch === 'string' && repo.default_branch ? repo.default_branch : DEFAULT_BRANCH,
+    default_branch: typeof repo.default_branch === 'string' && repo.default_branch ? repo.default_branch : NEW_PROJECT_BRANCH,
     permissions: { push: repo.permissions?.push === true, admin: repo.permissions?.admin === true },
   };
 }

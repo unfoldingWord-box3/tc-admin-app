@@ -113,12 +113,12 @@ describe('the metadata of a new Bible project', () => {
     expect(Object.keys((metadata.type as { flavorType: { currentScope: object } }).flavorType.currentScope)).toEqual(upper(OLD_TESTAMENT));
   });
 
-  test('E24: the dcs authority is declared without a trailing slash, and the primary identification names the repository under it', () => {
+  test('E24: the dcs authority is declared without a trailing slash, and the primary identification names the repository under it at its default branch, main (#167)', () => {
     expect(DCS_AUTHORITY.id).toBe('https://git.door43.org');
     const { metadata } = newProjectFiles(project(), generator, now);
     expect(metadata).toMatchObject({
       idAuthorities: { dcs: { id: 'https://git.door43.org', name: { en: 'Door43 Content Service' } } },
-      identification: { primary: { dcs: { 'tc-admin-qa-org/id_tcap': { revision: 'master', timestamp: '2026-10-05T15:00:00.000Z' } } } },
+      identification: { primary: { dcs: { 'tc-admin-qa-org/id_tcap': { revision: 'main', timestamp: '2026-10-05T15:00:00.000Z' } } } },
     });
   });
 
@@ -181,7 +181,7 @@ describe('the metadata of a new Open Bible Stories project (#82)', () => {
     expect(metadata).toMatchObject({
       meta: { generator: { softwareName: 'tC Admin' } },
       idAuthorities: { dcs: DCS_AUTHORITY },
-      identification: { name: { en: 'Cerita Alkitab Terbuka' }, abbreviation: { en: 'OBS' }, primary: { dcs: { 'tc-admin-qa-org/id_obs': { revision: 'master' } } } },
+      identification: { name: { en: 'Cerita Alkitab Terbuka' }, abbreviation: { en: 'OBS' }, primary: { dcs: { 'tc-admin-qa-org/id_obs': { revision: 'main' } } } },
       copyright: { licenses: [{ ingredient: LICENSE_PATH }] },
     });
     expect(Object.keys(metadata.ingredients as object)).toEqual([LICENSE_PATH]);

@@ -1,0 +1,190 @@
+{
+  "operation": "project.create.apply",
+  "request_id": "probe-1791595122059",
+  "plan_id": "df44f4a3-758a-49c8-91be-019d2de9f4e8",
+  "started_at": "2026-10-10T01:18:43.077Z",
+  "finished_at": "2026-10-10T01:18:44.725Z",
+  "wrote": [
+    {
+      "kind": "repo",
+      "target": "tc-admin-qa-org/id_tcap0118",
+      "url": "https://qa.door43.org/tc-admin-qa-org/id_tcap0118"
+    },
+    {
+      "kind": "commit",
+      "target": "tc-admin-qa-org/id_tcap0118@main",
+      "sha": "d0ece3e6649613aaf19e14f1b87fbaf52e0ab5c8",
+      "url": "https://qa.door43.org/tc-admin-qa-org/id_tcap0118/commit/d0ece3e6649613aaf19e14f1b87fbaf52e0ab5c8"
+    }
+  ],
+  "result": {
+    "ref": {
+      "owner": "tc-admin-qa-org",
+      "repo": "id_tcap0118",
+      "id": 96988,
+      "url": "https://qa.door43.org/tc-admin-qa-org/id_tcap0118"
+    },
+    "title": "tC Admin probe 2026-10-10 0118",
+    "description": "tC Admin probe 2026-10-10 0118",
+    "default_branch": "main",
+    "language": {
+      "code": "id",
+      "title": "Bahasa Indonesia"
+    },
+    "last_activity_at": "2026-10-10T01:18:44Z",
+    "project_type": "bible",
+    "metadata_format": "sb",
+    "editability": {
+      "state": "editable",
+      "reason": "Scripture Burrito project. Release and editing are available."
+    },
+    "coverage": {
+      "present": 0,
+      "target": 27,
+      "scope": "nt",
+      "basis": "archive",
+      "units": [
+        {
+          "id": "mat",
+          "present": false
+        },
+        {
+          "id": "mrk",
+          "present": false
+        },
+        {
+          "id": "luk",
+          "present": false
+        },
+        {
+          "id": "jhn",
+          "present": false
+        },
+        {
+          "id": "act",
+          "present": false
+        },
+        {
+          "id": "rom",
+          "present": false
+        },
+        {
+          "id": "1co",
+          "present": false
+        },
+        {
+          "id": "2co",
+          "present": false
+        },
+        {
+          "id": "gal",
+          "present": false
+        },
+        {
+          "id": "eph",
+          "present": false
+        },
+        {
+          "id": "php",
+          "present": false
+        },
+        {
+          "id": "col",
+          "present": false
+        },
+        {
+          "id": "1th",
+          "present": false
+        },
+        {
+          "id": "2th",
+          "present": false
+        },
+        {
+          "id": "1ti",
+          "present": false
+        },
+        {
+          "id": "2ti",
+          "present": false
+        },
+        {
+          "id": "tit",
+          "present": false
+        },
+        {
+          "id": "phm",
+          "present": false
+        },
+        {
+          "id": "heb",
+          "present": false
+        },
+        {
+          "id": "jas",
+          "present": false
+        },
+        {
+          "id": "1pe",
+          "present": false
+        },
+        {
+          "id": "2pe",
+          "present": false
+        },
+        {
+          "id": "1jn",
+          "present": false
+        },
+        {
+          "id": "2jn",
+          "present": false
+        },
+        {
+          "id": "3jn",
+          "present": false
+        },
+        {
+          "id": "jud",
+          "present": false
+        },
+        {
+          "id": "rev",
+          "present": false
+        }
+      ]
+    },
+    "health": {
+      "state": "never_checked",
+      "severity_raw": null,
+      "ref": "main",
+      "checked_at": null,
+      "issue_count": null,
+      "issues": null,
+      "source": "door43"
+    },
+    "latest_full_release": null,
+    "release_health": null,
+    "latest_prerelease": null,
+    "default_branch_head": {
+      "sha": "d0ece3e6649613aaf19e14f1b87fbaf52e0ab5c8",
+      "committed_at": "2026-10-10T01:18:44Z"
+    },
+    "active_preparation": null,
+    "setup": {
+      "state": "complete",
+      "failed_step": null
+    },
+    "permissions": {
+      "push": true,
+      "admin": true,
+      "checked_at": "2026-10-10T01:18:44.725Z"
+    },
+    "freshness": {
+      "read_at": "2026-10-10T01:18:44.725Z",
+      "source": "live",
+      "age_seconds": 0
+    }
+  },
+  "warnings": []
+}

@@ -23,9 +23,9 @@ import { CatalogError, catalogMessage } from '@tc-admin/shared/schema';
 import type { OperationOutput, ParsedInput, ProjectReport } from '@tc-admin/shared/schema';
 import { readAccount } from '../door43/auth';
 import { repositoryExists } from '../door43/repos';
-import { DEFAULT_BRANCH, commitFiles, createRepository } from '../door43/writes';
+import { commitFiles, createRepository } from '../door43/writes';
 import type { Commit, CreatedRepository } from '../door43/writes';
-import { FLAVOR_BY_TYPE, LICENSE_PATH, projectScope } from '../model/burrito';
+import { FLAVOR_BY_TYPE, LICENSE_PATH, NEW_PROJECT_BRANCH, projectScope } from '../model/burrito';
 import { coverage, editability } from '../model/project';
 import type { OperationContext } from './context';
 import { signedIn } from './context';
@@ -87,6 +87,12 @@ export const firstCommitMessage = (payload: ProjectCreatePayload, context: Opera
 
 const expired = (stored: StoredPlan, now: Date) => new Date(stored.plan.expires_at).getTime() <= now.getTime();
 
+/** Whether the stored plan's first commit targets the branch a new repository is now created with (#167). */
+const plannedOnNewProjectBranch = (stored: StoredPlan) => {
+  const { would_write } = stored.plan as StoredPlan['plan'] & { would_write?: readonly { kind: string; target: string }[] };
+  return would_write?.some(write => write.kind === 'commit' && write.target.endsWith(`@${NEW_PROJECT_BRANCH}`)) ?? false;
+};
+
 /** What became of a first commit that did not return one: `unknown` when Door43 may have made it anyway (X1). */
 function commitOutcome(error: CatalogError): NonNullable<ProjectCreatePayload['first_commit']> {
   const status = typeof error.details.door43_status === 'number' ? error.details.door43_status : null;
@@ -129,6 +135,10 @@ export async function projectCreateApply(input: ParsedInput<'project.create.appl
     return receiptFor(input.plan_id, context, payload, payload.created_repository, null, context.now());
   }
   if (expired(stored, context.now())) throw new CatalogError('plan_expired', { details: { plan_id: input.plan_id } });
+  // A plan made before #167 commits to another branch (`@master`) and its metadata names that branch, while the create now
+  // asks for `NEW_PROJECT_BRANCH`: applying it would leave metadata naming a branch the repository does not have. It is
+  // refused before anything is written, and the manager plans again.
+  if (!plannedOnNewProjectBranch(stored)) throw new CatalogError('plan_expired', { details: { plan_id: input.plan_id } });
 
   // The permission at the boundary, read again (A2), and the name, still free.
   const owner = await ownerForCreation(client, account.login, payload.owner.login);
@@ -187,7 +197,11 @@ async function recordCommitOutcome(context: OperationContext, stored: StoredPlan
   }
 }
 
-/** The receipt of an apply: the repository, the commit when there is one, else the `setup_incomplete` warning. */
+/**
+ * The receipt of an apply: the repository, the commit when there is one, else the `setup_incomplete` warning.
+ * The commit is named on the branch Door43 answered for the repository, which the first commit starts: `main`
+ * since #167 (E79), and `master` for a repository created before, whose receipt is answered again.
+ */
 function receiptFor(
   planId: string,
   context: OperationContext,
@@ -198,7 +212,7 @@ function receiptFor(
 ): ProjectCreateReceipt {
   const target = `${payload.owner.login}/${payload.repo_name}`;
   const wrote: ProjectCreateReceipt['wrote'] = [{ kind: 'repo', target, url: repository.url }];
-  if (commit) wrote.push({ kind: 'commit', target: `${target}@${DEFAULT_BRANCH}`, sha: commit.sha, url: commit.url });
+  if (commit) wrote.push({ kind: 'commit', target: `${target}@${repository.default_branch}`, sha: commit.sha, url: commit.url });
   const finished = context.now();
   return {
     operation: 'project.create.apply',

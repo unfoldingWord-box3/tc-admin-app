@@ -97,6 +97,7 @@ The metadata editor, Setup-incomplete recovery beyond a retry link, accessibilit
 - Generated `metadata.json` with tC Admin as generator, `scripture/textTranslation` or `gloss/textStories` flavor, license ingredient (E37).
 - Setup-incomplete state with a retry link when repository creation succeeds but the first commit fails.
 - Last step: add books by upload or import.
+- A new project's default branch is `main`, not `master` ([#167](https://github.com/unfoldingWord/tc-admin-app/issues/167), added 9 October 2026 by Rich: unfoldingWord's Scripture Burrito repositories are moving to `main`, and a project he created on QA had `master`).
 
 **EPIC: Add books: upload and import** ([#45](https://github.com/unfoldingWord-box3/tc-admin-app/issues/45), [#47](https://github.com/unfoldingWord-box3/tc-admin-app/issues/47) re-scoped from conversion)
 - Uploads: files, folders, drag and drop; path safety; each file identified as a book from its `\id` header and name, or as a story from its name, confirmed by the manager; overwrite warnings with text diffs; one-commit batches; ingredient entries with size and md5.

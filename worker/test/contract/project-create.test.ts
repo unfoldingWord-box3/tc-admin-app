@@ -1,6 +1,6 @@
 // Contract tests over the recorded QA runs of project creation (E45 a Bible,
 // E47 Open Bible Stories, E50 a Bible with translation details other than the
-// defaults; ADR 0012): the file committed is the one the writer
+// defaults, E79 a Bible on the default branch main; ADR 0012): the file committed is the one the writer
 // generates for the same inputs and time (W1, R10); the plan and the receipt
 // recorded are the catalog's shapes; Door43 read each new repository as a
 // Scripture Burrito project of its type.
@@ -16,6 +16,16 @@ import { classifyProject } from '../../src/model/project';
 const runs = new URL('../../../fixtures/door43/qa.door43.org/2026-10-05/project-create/', import.meta.url);
 const run = new URL('tc-admin-qa-org/', runs);
 const read = (name: string, dir = run) => readFileSync(new URL(name, dir), 'utf8');
+/**
+ * These runs were recorded before #167, when a new project's default branch was
+ * `master`. The writer now names `main` as the primary revision and differs in
+ * nothing else, so a recorded file is compared with that one value moved.
+ */
+const onMain = (text: string) => {
+  const moved = text.replace(/("revision": )"master"/, '$1"main"');
+  if (moved === text) throw new Error('the recording names no primary revision master');
+  return moved;
+};
 const recorded = <T>(name: string, dir = run): T => (JSON.parse(read(name, dir)) as { response: { json: T } }).response.json;
 /** A recorded creation receipt, parsed as the client parses one. The recordings predate the report's `last_activity_at` (#24): the schema reads each as stating none, never edited. */
 const recordedReceipt = (text: string) => OPERATIONS['project.create.apply'].output.parse(JSON.parse(text));
@@ -23,9 +33,9 @@ const GENERATOR = { name: 'tC Admin', version: '0.1.0', user: { login: 'tc-admin
 
 describe('the recorded QA creation (E45)', () => {
   const summary = JSON.parse(read('summary.json')) as { input: { owner: string; title: string; abbreviation: string; language: { code: string; title: string; direction: 'ltr' }; testament_scope: 'nt' } };
-  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json')));
+  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(onMain(read('plan.json'))));
   const receipt = recordedReceipt(read('receipt.json'));
-  const committed = read('metadata.json');
+  const committed = onMain(read('metadata.json'));
 
   test('W1: the metadata.json committed is byte for byte what the writer generates for the recorded inputs and time', () => {
     const generated = newProjectFiles(
@@ -95,9 +105,9 @@ describe('the recorded QA creation (E45)', () => {
 describe('the recorded QA creation of an Open Bible Stories project (E47)', () => {
   const obs = new URL('tc-admin-qa-org-obs/', runs);
   const summary = JSON.parse(read('summary.json', obs)) as { input: { owner: string; title: string; abbreviation: string; language: { code: string; title: string; direction: 'ltr' } } };
-  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', obs)));
+  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(onMain(read('plan.json', obs))));
   const receipt = recordedReceipt(read('receipt.json', obs));
-  const committed = read('metadata.json', obs);
+  const committed = onMain(read('metadata.json', obs));
 
   test('W1: the metadata.json committed is byte for byte what the writer generates, with tC Admin as generator and the fixed scope (E46)', () => {
     const generated = newProjectFiles(
@@ -146,9 +156,9 @@ describe('the recorded QA creation of an Open Bible Stories project (E47)', () =
 
 describe('the recorded creation under the signed-in account (E48, Q28)', () => {
   const own = new URL('tc-admin-qa-oauth/', runs);
-  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', own)));
+  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(onMain(read('plan.json', own))));
   const receipt = recordedReceipt(read('receipt.json', own));
-  const committed = read('metadata.json', own);
+  const committed = onMain(read('metadata.json', own));
 
   test('W1: the metadata.json committed under the account is byte for byte what the writer generates', () => {
     const written = JSON.parse(committed) as { meta: { dateCreated: string }; identification: { name: { en: string }; abbreviation: { en: string } } };
@@ -195,9 +205,9 @@ describe('the recorded creation under the signed-in account (E48, Q28)', () => {
 describe('the recorded creation in the user\'s own namespace with the API token (E49)', () => {
   const own = new URL('../../../fixtures/door43/qa.door43.org/2026-10-06/project-create/tc-admin-qa/', import.meta.url);
   const summary = JSON.parse(read('summary.json', own)) as { input: { owner: string; title: string; abbreviation: string; language: { code: string; title: string; direction: 'ltr' } } };
-  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', own)));
+  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(onMain(read('plan.json', own))));
   const receipt = recordedReceipt(read('receipt.json', own));
-  const committed = read('metadata.json', own);
+  const committed = onMain(read('metadata.json', own));
 
   test('W1: the metadata.json committed is byte for byte what the writer generates for the recorded inputs and time', () => {
     const generated = newProjectFiles(
@@ -240,9 +250,9 @@ describe('the recorded QA creation with translation details other than the defau
   const summary = JSON.parse(read('summary.json', dir)) as {
     input: { owner: string; title: string; abbreviation: string; language: { code: string; title: string; direction: 'ltr' }; testament_scope: 'nt'; flavor: { projectType: 'daughter'; translationType: 'revision'; audience: 'literary' } };
   };
-  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', dir)));
+  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(onMain(read('plan.json', dir))));
   const receipt = recordedReceipt(read('receipt.json', dir));
-  const committed = read('metadata.json', dir);
+  const committed = onMain(read('metadata.json', dir));
 
   test('W1: the metadata.json committed carries the details given and is byte for byte what the writer generates for them', () => {
     expect(summary.input.flavor).toEqual({ projectType: 'daughter', translationType: 'revision', audience: 'literary' });
@@ -291,7 +301,7 @@ describe('the recorded QA creation with translation details other than the defau
 
 describe('the Bible the creation wizard created from the browser (E51, S1)', () => {
   const dir = new URL('../../2026-10-06/wizard-create/', runs);
-  const committed = read('metadata.json', dir);
+  const committed = onMain(read('metadata.json', dir));
 
   test('W1: the committed metadata.json is byte for byte what the writer generates for what the wizard sent', () => {
     const generated = newProjectFiles(
@@ -310,7 +320,8 @@ describe('the Bible the creation wizard created from the browser (E51, S1)', () 
       new Date((JSON.parse(committed) as { meta: { dateCreated: string } }).meta.dateCreated),
     );
     expect(generated.files.find(file => file.path === METADATA_PATH)!.content).toBe(committed);
-    expect(generated.files.map(file => [file.path, file.size])).toEqual([[METADATA_PATH, 2888], ['ingredients/license.md', 18535], ['README.md', 226]]);
+    // 2,888 bytes as recorded on master; two fewer naming main (#167).
+    expect(generated.files.map(file => [file.path, file.size])).toEqual([[METADATA_PATH, 2886], ['ingredients/license.md', 18535], ['README.md', 226]]);
   });
 
   test('A3, H1: Door43 recorded the one commit as the signed-in manager\'s and read the project as a valid Scripture Burrito Bible in Pendau, health info', () => {
@@ -325,5 +336,59 @@ describe('the Bible the creation wizard created from the browser (E51, S1)', () 
     expect(health.data.overall_severity_level).toBe('info');
     expect(Object.entries(health.data.issues).filter(([, issues]) => issues.length).map(([rule]) => rule)).toEqual(['release_needed']);
     expect(recorded<{ is_valid: boolean }>('02-GET-catalog_entry_master.json', dir).is_valid).toBe(true);
+  });
+});
+
+describe('the recorded QA creation on the default branch main (E79, #167)', () => {
+  const dir = new URL('../../2026-10-10/project-create/tc-admin-qa-org-main/', runs);
+  const summary = JSON.parse(read('summary.json', dir)) as { input: { owner: string; title: string; abbreviation: string; language: { code: string; title: string; direction: 'ltr' }; testament_scope: 'nt' } };
+  const plan = OPERATIONS['project.create.plan'].output.parse(JSON.parse(read('plan.json', dir)));
+  const receipt = recordedReceipt(read('receipt.json', dir));
+  const committed = read('metadata.json', dir);
+
+  test('W1: the metadata.json committed is byte for byte what the writer generates, naming main as the primary revision', () => {
+    const generated = newProjectFiles(
+      {
+        owner: summary.input.owner,
+        repo_name: plan.preview.repo_name,
+        project_type: 'bible',
+        title: summary.input.title,
+        abbreviation: summary.input.abbreviation,
+        language: summary.input.language,
+        testament_scope: summary.input.testament_scope,
+        license: 'cc-by-sa-4.0',
+      },
+      GENERATOR,
+      new Date((JSON.parse(committed) as { meta: { dateCreated: string } }).meta.dateCreated),
+    );
+    expect(generated.files.find(file => file.path === METADATA_PATH)!.content).toBe(committed);
+    expect(generated.metadata).toEqual(plan.preview.metadata_json);
+    expect((JSON.parse(committed) as { identification: { primary: { dcs: Record<string, { revision: string }> } } }).identification.primary.dcs['tc-admin-qa-org/id_tcap0118']!.revision).toBe('main');
+  });
+
+  test('W5: the create asked for main and Door43 answered main; the receipt lists the repository and one commit on main, equal to the plan', () => {
+    const created = JSON.parse(read('09-POST-orgs_tc-admin-qa-org_repos.json', dir)) as { request: { body: string }; response: { status: number; json: { default_branch: string; empty: boolean } } };
+    expect(JSON.parse(created.request.body)).toEqual({ name: 'id_tcap0118', description: summary.input.title, private: false, auto_init: false, default_branch: 'main' });
+    expect(created.response).toMatchObject({ status: 201, json: { default_branch: 'main', empty: true } });
+    expect(plan.would_write).toEqual([
+      { kind: 'repo', target: 'tc-admin-qa-org/id_tcap0118' },
+      { kind: 'commit', target: 'tc-admin-qa-org/id_tcap0118@main' },
+    ]);
+    expect(receipt.wrote.map(({ kind, target }) => ({ kind, target }))).toEqual(plan.would_write);
+    expect(receipt.warnings).toEqual([]);
+    expect(receipt.result).toMatchObject({ default_branch: 'main', setup: { state: 'complete', failed_step: null } });
+  });
+
+  test('H1: Door43 reads main as the default branch: the repository view, main the only branch, the catalog entry for main, and health info with only release_needed (E28)', () => {
+    const view = recorded<Door43Repository & { default_branch: string; catalog: { latest: { branch_or_tag_name: string; commit_sha: string } } }>('12-GET-repos_catalog-view.json', dir);
+    expect(view.default_branch).toBe('main');
+    expect(recorded<{ name: string; commit: { id: string } }[]>('14-GET-repos_branches.json', dir)).toEqual([{ name: 'main', commit: { id: receipt.wrote[1]!.sha } }]);
+    expect(view.catalog.latest).toMatchObject({ branch_or_tag_name: 'main', commit_sha: receipt.wrote[1]!.sha });
+    expect(classifyProject(projectCatalog(view))).toMatchObject({ project_type: 'bible', metadata_format: 'sb', editability: { state: 'editable' } });
+    const entry = recorded<{ branch_or_tag_name: string; is_valid: boolean; metadata_type: string }>('13-GET-catalog_entry_main.json', dir);
+    expect(entry).toMatchObject({ branch_or_tag_name: 'main', is_valid: true, metadata_type: 'sb' });
+    const health = recorded<{ data: { overall_severity_level: string; issues: Record<string, unknown[]> } }>('11-health-main.json', dir);
+    expect(health.data.overall_severity_level).toBe('info');
+    expect(Object.entries(health.data.issues).filter(([, issues]) => issues.length).map(([rule]) => rule)).toEqual(['release_needed']);
   });
 });
