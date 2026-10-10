@@ -1,0 +1,122 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/contents",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]",
+      "content-type": "application/json"
+    },
+    "body": "[28263 bytes omitted: file contents as base64]"
+  },
+  "response": {
+    "status": 201,
+    "ms": 801,
+    "json": {
+      "files": [
+        {
+          "name": "metadata.json",
+          "path": "metadata.json",
+          "sha": "a208193876c5aadd5809ca050038d78112a859cf",
+          "last_commit_sha": "9d3647ecbf2702e48214ef6930676248c397b31d",
+          "last_committer_date": "2026-10-10T02:28:56Z",
+          "last_author_date": "2026-10-10T02:28:56Z",
+          "type": "file",
+          "mode": "100644",
+          "size": 2158,
+          "encoding": "base64",
+          "content": "ewogICJmb3JtYXQiOiAic2NyaXB0dXJlIGJ1cnJpdG8iLAogICJtZXRhIjogewogICAgInZlcnNpb24iOiAiMS4wLjAiLAogICAgImNhdGVnb3J5IjogInNvdXJjZSIsCiAgICAiZ2VuZXJhdG9yIjogewogICAgICAic29mdHdhcmVOYW1lIjogInRDIEFkbWluIiwKICAgICAgInNvZnR3YXJlVmVyc2lvbiI6ICIwLjEuMCIsCiAgICAgICJ1c2VySWQiOiAiZGNzOjp0Yy1hZG1pbi1xYSIsCiAgICAgICJ1c2VyTmFtZSI6ICJ0Yy1hZG1pbi1xYSIKICAgIH0sCiAgICAiZGVmYXVsdExvY2FsZSI6ICJlbiIsCiAgICAiZGF0ZUNyZWF0ZWQiOiAiMjAyNi0xMC0xMFQwMjoyODo1NC45MDhaIiwKICAgICJub3JtYWxpemF0aW9uIjogIk5GQyIKICB9LAogICJpZEF1dGhvcml0aWVzIjogewogICAgImRjcyI6IHsKICAgICAgImlkIjogImh0dHBzOi8vZ2l0LmRvb3I0My5vcmciLAogICAgICAibmFtZSI6IHsKICAgICAgICAiZW4iOiAiRG9vcjQzIENvbnRlbnQgU2VydmljZSIKICAgICAgfQogICAgfQogIH0sCiAgImlkZW50aWZpY2F0aW9uIjogewogICAgIm5hbWUiOiB7CiAgICAgICJlbiI6ICJ0QyBBZG1pbiByZWxlYXNlIHByb2JlIDIwMjYtMTAtMTAgMDIyOCIKICAgIH0sCiAgICAiYWJicmV2aWF0aW9uIjogewogICAgICAiZW4iOiAidGNhcjAyMjgiCiAgICB9LAogICAgInByaW1hcnkiOiB7CiAgICAgICJkY3MiOiB7CiAgICAgICAgInRjLWFkbWluLXFhLW9yZy9pZF90Y2FyMDIyOCI6IHsKICAgICAgICAgICJyZXZpc2lvbiI6ICJtYWluIiwKICAgICAgICAgICJ0aW1lc3RhbXAiOiAiMjAyNi0xMC0xMFQwMjoyODo1NC45MDhaIgogICAgICAgIH0KICAgICAgfQogICAgfQogIH0sCiAgImNvbmZpZGVudGlhbCI6IGZhbHNlLAogICJsYW5ndWFnZXMiOiBbCiAgICB7CiAgICAgICJ0YWciOiAiaWQiLAogICAgICAibmFtZSI6IHsKICAgICAgICAiZW4iOiAiQmFoYXNhIEluZG9uZXNpYSIKICAgICAgfSwKICAgICAgInNjcmlwdERpcmVjdGlvbiI6ICJsdHIiCiAgICB9CiAgXSwKICAidHlwZSI6IHsKICAgICJmbGF2b3JUeXBlIjogewogICAgICAibmFtZSI6ICJzY3JpcHR1cmUiLAogICAgICAiZmxhdm9yIjogewogICAgICAgICJuYW1lIjogInRleHRUcmFuc2xhdGlvbiIsCiAgICAgICAgInByb2plY3RUeXBlIjogInN0YW5kYXJkIiwKICAgICAgICAidHJhbnNsYXRpb25UeXBlIjogImZpcnN0VHJhbnNsYXRpb24iLAogICAgICAgICJhdWRpZW5jZSI6ICJjb21tb24iLAogICAgICAgICJ1c2ZtVmVyc2lvbiI6ICIzLjAiCiAgICAgIH0sCiAgICAgICJjdXJyZW50U2NvcGUiOiB7CiAgICAgICAgIk1BVCI6IFtdLAogICAgICAgICJNUksiOiBbXSwKICAgICAgICAiTFVLIjogW10sCiAgICAgICAgIkpITiI6IFtdLAogICAgICAgICJBQ1QiOiBbXSwKICAgICAgICAiUk9NIjogW10sCiAgICAgICAgIjFDTyI6IFtdLAogICAgICAgICIyQ08iOiBbXSwKICAgICAgICAiR0FMIjogW10sCiAgICAgICAgIkVQSCI6IFtdLAogICAgICAgICJQSFAiOiBbXSwKICAgICAgICAiQ09MIjogW10sCiAgICAgICAgIjFUSCI6IFtdLAogICAgICAgICIyVEgiOiBbXSwKICAgICAgICAiMVRJIjogW10sCiAgICAgICAgIjJUSSI6IFtdLAogICAgICAgICJUSVQiOiBbXSwKICAgICAgICAiUEhNIjogW10sCiAgICAgICAgIkhFQiI6IFtdLAogICAgICAgICJKQVMiOiBbXSwKICAgICAgICAiMVBFIjogW10sCiAgICAgICAgIjJQRSI6IFtdLAogICAgICAgICIxSk4iOiBbXSwKICAgICAgICAiMkpOIjogW10sCiAgICAgICAgIjNKTiI6IFtdLAogICAgICAgICJKVUQiOiBbXSwKICAgICAgICAiUkVWIjogW10KICAgICAgfQogICAgfQogIH0sCiAgImNvcHlyaWdodCI6IHsKICAgICJsaWNlbnNlcyI6IFsKICAgICAgewogICAgICAgICJpbmdyZWRpZW50IjogImluZ3JlZGllbnRzL2xpY2Vuc2UubWQiCiAgICAgIH0KICAgIF0KICB9LAogICJpbmdyZWRpZW50cyI6IHsKICAgICJpbmdyZWRpZW50cy9saWNlbnNlLm1kIjogewogICAgICAiY2hlY2tzdW0iOiB7CiAgICAgICAgIm1kNSI6ICIwYmY3ZWYxNTMzZjY0ODZjODM2MmRjYjhiYzE5YmRkMSIKICAgICAgfSwKICAgICAgIm1pbWVUeXBlIjogInRleHQvbWFya2Rvd24iLAogICAgICAic2l6ZSI6IDE4NTM1LAogICAgICAicm9sZSI6ICJ4LWxpY2Vuc2UiCiAgICB9CiAgfQp9Cg==",
+          "target": null,
+          "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/contents/metadata.json?ref=main",
+          "html_url": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/src/branch/main/metadata.json",
+          "git_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/git/blobs/a208193876c5aadd5809ca050038d78112a859cf",
+          "download_url": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/raw/branch/main/metadata.json",
+          "submodule_git_url": null,
+          "_links": {
+            "self": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/contents/metadata.json?ref=main",
+            "git": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/git/blobs/a208193876c5aadd5809ca050038d78112a859cf",
+            "html": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/src/branch/main/metadata.json"
+          }
+        },
+        {
+          "name": "license.md",
+          "path": "ingredients/license.md",
+          "sha": "31775bb8f62fc9841951a6237f60a4f6f4da7547",
+          "last_commit_sha": "9d3647ecbf2702e48214ef6930676248c397b31d",
+          "last_committer_date": "2026-10-10T02:28:56Z",
+          "last_author_date": "2026-10-10T02:28:56Z",
+          "type": "file",
+          "mode": "100644",
+          "size": 18535,
+          "encoding": "base64",
+          "content": "[24716 bytes of base64 omitted]",
+          "target": null,
+          "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/contents/ingredients/license.md?ref=main",
+          "html_url": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/src/branch/main/ingredients/license.md",
+          "git_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/git/blobs/31775bb8f62fc9841951a6237f60a4f6f4da7547",
+          "download_url": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/raw/branch/main/ingredients/license.md",
+          "submodule_git_url": null,
+          "_links": {
+            "self": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/contents/ingredients/license.md?ref=main",
+            "git": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/git/blobs/31775bb8f62fc9841951a6237f60a4f6f4da7547",
+            "html": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/src/branch/main/ingredients/license.md"
+          }
+        },
+        {
+          "name": "README.md",
+          "path": "README.md",
+          "sha": "36a44de3364614ad1c5a69b16db752e6ec14a668",
+          "last_commit_sha": "9d3647ecbf2702e48214ef6930676248c397b31d",
+          "last_committer_date": "2026-10-10T02:28:56Z",
+          "last_author_date": "2026-10-10T02:28:56Z",
+          "type": "file",
+          "mode": "100644",
+          "size": 247,
+          "encoding": "base64",
+          "content": "IyB0QyBBZG1pbiByZWxlYXNlIHByb2JlIDIwMjYtMTAtMTAgMDIyOAoKdGNhcjAyMjggwrcgQmFoYXNhIEluZG9uZXNpYSAoaWQpIMK3IEJpYmxlCgpBIFNjcmlwdHVyZSBCdXJyaXRvIHByb2plY3QgY3JlYXRlZCB3aXRoIHRDIEFkbWluLiBgbWV0YWRhdGEuanNvbmAgZGVzY3JpYmVzIGl0IGFuZCBsaXN0cyBpdHMgZmlsZXM7IGl0cyBib29rcyB3aWxsIGxpdmUgdW5kZXIgYGluZ3JlZGllbnRzL2AgYXMgdGhleSBhcmUgYWRkZWQuCg==",
+          "target": null,
+          "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/contents/README.md?ref=main",
+          "html_url": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/src/branch/main/README.md",
+          "git_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/git/blobs/36a44de3364614ad1c5a69b16db752e6ec14a668",
+          "download_url": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/raw/branch/main/README.md",
+          "submodule_git_url": null,
+          "_links": {
+            "self": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/contents/README.md?ref=main",
+            "git": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/git/blobs/36a44de3364614ad1c5a69b16db752e6ec14a668",
+            "html": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/src/branch/main/README.md"
+          }
+        }
+      ],
+      "commit": {
+        "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/git/commits/9d3647ecbf2702e48214ef6930676248c397b31d",
+        "sha": "9d3647ecbf2702e48214ef6930676248c397b31d",
+        "created": "0001-01-01T00:00:00Z",
+        "html_url": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/commit/9d3647ecbf2702e48214ef6930676248c397b31d",
+        "author": {
+          "name": "tc-admin-qa",
+          "email": "[redacted]",
+          "date": "2026-10-10T02:28:56Z"
+        },
+        "committer": {
+          "name": "tc-admin-qa",
+          "email": "[redacted]",
+          "date": "2026-10-10T02:28:56Z"
+        },
+        "parents": [],
+        "message": "Create tC Admin release probe 2026-10-10 0228\n\nmetadata.json, ingredients/license.md, and README.md, written by tC Admin 0.1.0.\n",
+        "tree": {
+          "url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcar0228/git/trees/7c2617ba45f35b2cfe8c8ba59df5f77c8bcc31c7",
+          "sha": "7c2617ba45f35b2cfe8c8ba59df5f77c8bcc31c7",
+          "created": "0001-01-01T00:00:00Z"
+        }
+      },
+      "verification": {
+        "verified": false,
+        "reason": "gpg.error.not_signed_commit",
+        "signature": "",
+        "signer": null,
+        "payload": ""
+      }
+    }
+  }
+}
