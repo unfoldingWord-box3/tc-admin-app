@@ -108,6 +108,7 @@ Moved into Milestone 1 on 1 October 2026 (Q25); #47 re-scoped from conversion to
 | [#80](https://github.com/unfoldingWord-box3/tc-admin-app/issues/80) `import.apply` | §8 | 0004, 0011, 0013 | W1, W2, W5, A2, A3, R5, X1 | E21, E24, E27, E31, E63, Q33 | `import.apply` | operations/import-apply, operations/planned-commit, door43/writes | S9 |
 | [#151](https://github.com/unfoldingWord/tc-admin-app/issues/151) Import screen: only importable repositories, a filter, clear rows | §8 | 0011 | W2 | E35, E69, E73 | `owner.search`, `source.search` (display only) | web (ImportScreen, import) | — |
 | [#163](https://github.com/unfoldingWord/tc-admin-app/issues/163) Offer a repository's books at its latest content when the search answers an older entry | §8 | 0013 | H3, W2 | E20, E35, E77 | `source.search` | door43/catalog, operations/source-search | — |
+| [#172](https://github.com/unfoldingWord/tc-admin-app/issues/172) Filter the manager's organizations by the owner search on import | §8 | — | — | E35, E61 | `owner.search` (display only) | web (ImportScreen, import) | S9 |
 | [#81](https://github.com/unfoldingWord-box3/tc-admin-app/issues/81) Import screen | §8 | 0013 | X1, X2 | E35, E36, E69 | `owner.search`, `source.search`, `import.plan`, `import.apply` | web (ImportScreen, import) | S9 |
 
 ### EPIC: Open Bible Stories ([#48](https://github.com/unfoldingWord-box3/tc-admin-app/issues/48))

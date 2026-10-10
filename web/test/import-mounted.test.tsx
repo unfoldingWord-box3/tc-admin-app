@@ -83,6 +83,36 @@ describe('finding the source', () => {
     expect(screen.queryByRole('list', { name: 'Matching owners' })).toBeNull();
   });
 
+  test('#172: a search narrows the organizations to those it matches and lists every other owner after them; an organization the manager belongs to is found among them', async () => {
+    const own = [{ login: 'Door43-Catalog', name: 'Door43 Catalog' }, { login: 'qa-testing', name: 'QA Testing' }, { login: 'tc-admin-qa-org', name: 'tC Admin QA' }, { login: 'uw-team', name: 'Test Translation Team' }];
+    mount();
+    await answerWhenSent('GET', ownersUrl, ownersOf(own));
+    expect(within(screen.getByRole('list', { name: 'Your organizations' })).getAllByRole('button')).toHaveLength(4);
+    const search = (q: string) => fireEvent.change(screen.getByLabelText(/Search owners by name/), { target: { value: q } });
+    const labels = (name: string) => within(screen.getByRole('list', { name })).getAllByRole('button').map(choice => choice.textContent);
+
+    // A member of Door43-Catalog searching for it finds it among their organizations, and is told no other owner matches.
+    search('Door43-Catalog');
+    await answerWhenSent('GET', `${ownersUrl}?q=Door43-Catalog`, ownersOf(own, [{ login: 'Door43-Catalog', name: 'Door43 Catalog' }]));
+    expect(screen.getByText('Your organizations matching "Door43-Catalog":')).toBeTruthy();
+    expect(labels('Your organizations')).toEqual(['Door43 Catalog (Door43-Catalog)']);
+    expect(screen.queryByRole('list', { name: 'Matching owners' })).toBeNull();
+    expect(screen.getByText('No other owner matches "Door43-Catalog".')).toBeTruthy();
+
+    // Organizations matched by login or by name, then the other owners, users and organizations alike.
+    search('test');
+    await answerWhenSent('GET', `${ownersUrl}?q=test`, ownersOf(own, [{ login: 'qa-testing', name: 'QA Testing' }, { login: 'Test-Org', name: 'Test Org' }, { login: 'testuser', name: '' }]));
+    expect(labels('Your organizations')).toEqual(['QA Testing (qa-testing)', 'Test Translation Team (uw-team)']);
+    expect(screen.getByText('Other owners matching "test":')).toBeTruthy();
+    expect(labels('Matching owners')).toEqual(['Test Org (Test-Org)', 'testuser']);
+
+    // Nothing matched anywhere.
+    search('zzz');
+    await answerWhenSent('GET', `${ownersUrl}?q=zzz`, ownersOf(own));
+    expect(screen.queryByRole('list', { name: 'Your organizations' })).toBeNull();
+    expect(screen.getByText('No owner matches "zzz".')).toBeTruthy();
+  });
+
   test('"Last release" retires the list, the source, and a plan in flight at once, and reads the sources again at that stage; the other stage\'s list is never shown or planned', async () => {
     await toSources();
     pick(/Alkitab Terjemahan Baru/);
