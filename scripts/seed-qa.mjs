@@ -14,10 +14,10 @@
 //   tc-admin-qa/id_seedhf       a Bible in the user's own namespace (E26, E49): Matthew imported, never
 //                               released, so Door43's health check reports findings on its default branch
 //
-// Each is created on the default branch main, as tC Admin creates every project (#167, E79); its imports are
-// committed to main, and each release is bound to main's head and takes its books from there (a later release
-// starts from the previous release tag, ADR 0010). A project where Door43 answers otherwise is stopped, not
-// built on another branch.
+// Each is created on the default branch main, as tC Admin creates every project (#167, E79), and the script
+// stops one Door43 answers otherwise. After that the branch is the one Door43 answered (#170): its imports are
+// committed to it, and each release is bound to its head and takes its books from there (a later release
+// starts from the previous release tag, ADR 0010).
 //
 // Safe to run twice: a project whose repository already exists is reported and left alone, never written
 // again (W5). A project that stopped half way is left as it is; delete its repository on QA to rebuild it.
@@ -211,14 +211,14 @@ for (const project of PROJECTS) {
         const sha = commit?.sha ?? null;
         row.steps.push({ step: 'import', source: `${source.owner}/${source.repo}@${revision}`, files: planned.preview.files.length, target: commit?.target ?? null, commit: sha });
         console.log(`  imported ${planned.preview.files.length} file(s) from ${source.owner}/${source.repo}@${revision} to ${commit?.target ?? 'no commit'}`);
-        if (commit?.target !== `${ref.owner}/${repo}@${BRANCH}`) throw new Error(`the import committed to ${commit?.target ?? 'nothing'}, not ${BRANCH}`);
+        if (commit?.target !== `${ref.owner}/${repo}@${branch}`) throw new Error(`the import committed to ${commit?.target ?? 'nothing'}, not ${branch}`);
         await waitForCatalog(ref.owner, repo, { latest: committed(sha, 'the import') });
       }
       if (step.release) {
         const planned = await HANDLERS['release.plan'](ref, context);
         // The release takes its books from main: the plan is bound to main's head as Door43 has it now (R5).
-        const head = await branchHead(ref.owner, repo, BRANCH);
-        if (planned.bound_to.default_branch_sha !== head) throw new Error(`the release plan is bound to ${planned.bound_to.default_branch_sha}, not ${BRANCH}'s head ${head}`);
+        const head = await branchHead(ref.owner, repo, branch);
+        if (planned.bound_to.default_branch_sha !== head) throw new Error(`the release plan is bound to ${planned.bound_to.default_branch_sha}, not ${branch}'s head ${head}`);
         // An Open Bible Stories release takes the whole default branch, so it sends no selection (release.prepare refuses one).
         const selection = project.create.project_type === 'obs' ? {} : Object.fromEntries(planned.preview.books.map(book => [book.id, step.release.include?.includes(book.id) ? 'include' : book.selection]));
         const prepared = await HANDLERS['release.prepare']({ ...ref, plan_id: planned.id, selection, unknown_included: [], version: null }, context);
@@ -226,8 +226,8 @@ for (const project of PROJECTS) {
         if (read.state !== 'ready_for_release') throw new Error(`the preparation of ${read.version.proposed} is ${read.state}, health ${read.health.state}; nothing was released`);
         const released = await HANDLERS['release.create']({ ...ref, preparation_id: read.id, version: read.version.confirmed ?? read.version.proposed, notes: read.notes.draft, prerelease: step.release.prerelease, acknowledge_warnings: read.requires_acknowledgement }, context);
         const tag = released.result.release.tag;
-        row.steps.push({ step: step.release.prerelease ? 'pre-release' : 'full release', tag, from: `${BRANCH}@${head}`, baseline: planned.bound_to.release_tag, health: read.health.state, acknowledged_warnings: released.acknowledged_warnings });
-        console.log(`  released ${tag} as ${step.release.prerelease ? 'a pre-release' : 'a full release'} from ${BRANCH} at ${head.slice(0, 10)}${planned.bound_to.release_tag ? ` on ${planned.bound_to.release_tag}` : ''} (health ${read.health.state})`);
+        row.steps.push({ step: step.release.prerelease ? 'pre-release' : 'full release', tag, from: `${branch}@${head}`, baseline: planned.bound_to.release_tag, health: read.health.state, acknowledged_warnings: released.acknowledged_warnings });
+        console.log(`  released ${tag} as ${step.release.prerelease ? 'a pre-release' : 'a full release'} from ${branch} at ${head.slice(0, 10)}${planned.bound_to.release_tag ? ` on ${planned.bound_to.release_tag}` : ''} (health ${read.health.state})`);
         if (!step.release.prerelease) await waitForCatalog(ref.owner, repo, { prod: tag });
       }
     }

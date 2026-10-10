@@ -64,15 +64,16 @@ export async function createRepository(client: Door43Client, owner: RepositoryOw
   return again;
 }
 
-/** The created repository from Door43's answer, or `null` when the answer is not a repository. */
+/** The repository from Door43's answer, or `null` when the answer is not a repository or names no default branch, which is never assumed (#170). */
 function repositoryShape(body: unknown): CreatedRepository | null {
   const repo = body as { id?: unknown; full_name?: unknown; html_url?: unknown; default_branch?: unknown; permissions?: { push?: unknown; admin?: unknown } | null } | null;
   if (typeof repo?.id !== 'number' || typeof repo.full_name !== 'string' || typeof repo.html_url !== 'string') return null;
+  if (typeof repo.default_branch !== 'string' || !repo.default_branch) return null;
   return {
     id: repo.id,
     full_name: repo.full_name,
     url: repo.html_url,
-    default_branch: typeof repo.default_branch === 'string' && repo.default_branch ? repo.default_branch : NEW_PROJECT_BRANCH,
+    default_branch: repo.default_branch,
     permissions: { push: repo.permissions?.push === true, admin: repo.permissions?.admin === true },
   };
 }

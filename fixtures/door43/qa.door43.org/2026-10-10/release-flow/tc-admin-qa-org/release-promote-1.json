@@ -1,0 +1,20 @@
+{
+  "operation": "release.promote",
+  "request_id": "probe-1791599334276",
+  "plan_id": null,
+  "started_at": "2026-10-10T02:29:06.218Z",
+  "finished_at": "2026-10-10T02:29:06.855Z",
+  "wrote": [
+    {
+      "kind": "release",
+      "target": "v1.0.0",
+      "url": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/releases/tag/v1.0.0"
+    }
+  ],
+  "result": {
+    "tag": "v1.0.0",
+    "url": "https://qa.door43.org/tc-admin-qa-org/id_tcar0228/releases/tag/v1.0.0",
+    "prerelease": false
+  },
+  "warnings": []
+}

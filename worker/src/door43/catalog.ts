@@ -53,7 +53,11 @@ export interface Door43CatalogStage {
 
 /** The refs a release plan starts from, in glossary terms: the default-branch head and the latest full release (E14). */
 export interface RepositoryRefs {
-  /** `null` for a repository without a commit (E10). */
+  /**
+   * Named by the repository's own `default_branch`, whatever it is (#170), with the commit the catalog's `latest` stage
+   * names for that branch. `null` for a repository without a commit (E10), one that names no default branch, or one whose
+   * `latest` stage names another branch: then the head is unknown (H3), never another branch's commit.
+   */
   default_branch: { name: string; sha: string } | null;
   latest_full_release: { tag: string; sha: string; released_at: string | null } | null;
   /**
@@ -69,6 +73,7 @@ function stage(value: Door43CatalogStage | null | undefined): { name: string; sh
 }
 
 export function repositoryRefs(repo: Door43Repository): RepositoryRefs {
+  const branch = typeof repo.default_branch === 'string' && repo.default_branch ? repo.default_branch : null;
   const latest = stage(repo.catalog?.latest);
   const prod = stage(repo.catalog?.prod);
   const preprod = stage(repo.catalog?.preprod);
@@ -76,7 +81,7 @@ export function repositoryRefs(repo: Door43Repository): RepositoryRefs {
   // with a full release but either time missing it cannot be told newer, so it is not shown (bench round 1 on #166).
   const outstanding = preprod && preprod.name !== prod?.name && (!prod || (preprod.released_at !== null && prod.released_at !== null && Date.parse(preprod.released_at) > Date.parse(prod.released_at)));
   return {
-    default_branch: latest ? { name: latest.name, sha: latest.sha } : null,
+    default_branch: branch && latest?.name === branch ? { name: branch, sha: latest.sha } : null,
     latest_full_release: prod ? { tag: prod.name, sha: prod.sha, released_at: prod.released_at } : null,
     latest_prerelease: outstanding ? { tag: preprod.name, sha: preprod.sha, released_at: preprod.released_at } : null,
   };
