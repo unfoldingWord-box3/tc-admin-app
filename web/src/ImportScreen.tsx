@@ -104,7 +104,7 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
       try {
         const answer = await callOperation('owner.search', { q: q || null });
         if (mine !== ticket.current) return;
-        setOwners({ ...ownerChoices(answer), query: q });
+        setOwners({ ...ownerChoices(answer, q), query: q });
         setProblem(null);
       } catch (failure) {
         if (mine !== ticket.current) return;
@@ -284,7 +284,7 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
               <>
                 {owners.own.length > 0 && (
                   <>
-                    <p className="derived">Your organizations:</p>
+                    <p className="derived">{owners.query ? `Your organizations matching "${owners.query}":` : 'Your organizations:'}</p>
                     <ul className="languages" aria-label="Your organizations">
                       {owners.own.map(account => (
                         <li key={account.login}>
@@ -298,7 +298,9 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
                 )}
                 {owners.query && owners.matches.length > 0 && (
                   <>
-                    <p className="derived">Owners matching "{owners.query}":</p>
+                    <p className="derived">
+                      {owners.own.length > 0 ? 'Other owners' : 'Owners'} matching "{owners.query}":
+                    </p>
                     <ul className="languages" aria-label="Matching owners">
                       {owners.matches.map(account => (
                         <li key={account.login}>
@@ -310,7 +312,9 @@ export function ImportScreen({ project, type, onImported, onCancel, onFailure }:
                     </ul>
                   </>
                 )}
-                {owners.query && owners.matches.length === 0 && busy !== 'owners' && <p className="derived">No other owner matches "{owners.query}".</p>}
+                {owners.query && busy !== 'owners' && owners.matches.length === 0 && (
+                  <p className="derived">{owners.own.length > 0 ? `No other owner matches "${owners.query}".` : `No owner matches "${owners.query}".`}</p>
+                )}
                 {!owners.query && owners.own.length === 0 && <p className="derived">You belong to no organization. Type an owner's name to find one.</p>}
               </>
             )}

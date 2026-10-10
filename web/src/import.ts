@@ -37,18 +37,22 @@ export const STAGE_HINTS: Readonly<Record<Stage, string>> = {
 };
 
 /**
- * The owners to offer: the account's own organizations first and always, then every other owner the catalog matched,
- * once each by login (an organization of the account that the search also matched is listed once, among the own).
+ * The owners to offer (#172): the account's own organizations first, then every other owner the catalog matched, once
+ * each by login. With a search, the own are only those whose login or display name contains it, ignoring case, so an
+ * organization of the account is found by name like any other owner; an organization of the account that the search
+ * matched is listed once, among the own. A catalog match the own filter did not keep is still offered, never hidden.
  */
-export function ownerChoices(answer: OwnerSearch): { own: Account[]; matches: Account[] } {
-  const seen = new Set(answer.own.map(account => account.login.toLowerCase()));
+export function ownerChoices(answer: OwnerSearch, q = ''): { own: Account[]; matches: Account[] } {
+  const needle = q.trim().toLowerCase();
+  const own = needle ? answer.own.filter(account => account.login.toLowerCase().includes(needle) || account.name.toLowerCase().includes(needle)) : answer.own;
+  const seen = new Set(own.map(account => account.login.toLowerCase()));
   const matches = answer.matches.filter(account => {
     const key = account.login.toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
-  return { own: answer.own, matches };
+  return { own, matches };
 }
 
 /** An owner in the interface: its display name, with its login when the two differ. */

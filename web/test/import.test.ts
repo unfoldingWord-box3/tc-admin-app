@@ -34,6 +34,23 @@ describe('owners', () => {
     expect(matches.map(account => account.login)).toEqual(['bahasa-org']);
   });
 
+  test('#172: a search keeps the organizations whose login or display name contains it, ignoring case, and offers every other match after them', () => {
+    const own = [{ login: 'bahtraku', name: 'Yayasan BahtraKu' }, { login: 'tc-admin-qa-org', name: 'tC Admin QA' }, { login: 'Door43-Catalog', name: 'Door43 Catalog' }];
+    const byName = ownerChoices(ownersOf(own, [{ login: 'yayasan-lain', name: '' }]), ' YAYASAN ');
+    expect(byName.own.map(account => account.login)).toEqual(['bahtraku']);
+    expect(byName.matches.map(account => account.login)).toEqual(['yayasan-lain']);
+    const member = ownerChoices(ownersOf(own, [{ login: 'Door43-Catalog', name: 'Door43 Catalog' }]), 'door43-catalog');
+    expect(member.own.map(account => account.login)).toEqual(['Door43-Catalog']);
+    expect(member.matches).toEqual([]);
+    expect(ownerChoices(ownersOf(own), '').own).toHaveLength(3);
+  });
+
+  test('#172: an organization of the account that the catalog matched but the search did not keep is still offered, never hidden', () => {
+    const { own, matches } = ownerChoices(ownersOf([{ login: 'abc', name: 'An Org' }], [{ login: 'ABC', name: 'An Org' }]), 'xyz');
+    expect(own).toEqual([]);
+    expect(matches.map(account => account.login)).toEqual(['ABC']);
+  });
+
   test('an owner reads by its display name with its login, or by its login alone', () => {
     expect(ownerLabel({ login: 'bahtraku', name: 'Yayasan BahtraKu' })).toBe('Yayasan BahtraKu (bahtraku)');
     expect(ownerLabel({ login: 'bahasa-org', name: 'bahasa-org' })).toBe('bahasa-org');
