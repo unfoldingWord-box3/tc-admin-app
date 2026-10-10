@@ -48,8 +48,8 @@ const plan = [
   '00 bundle worker/src/operations/index.ts with esbuild; GET /version (public)',
   '01 project.create.plan: GET /user, GET /user/teams (for an organization owner), GET /repos/{owner}/{repo} (404 means the name is free)',
   '02 project.create.apply: GET /user, GET /user/teams, GET /repos/{owner}/{repo}; POST /orgs/{org}/repos or POST /user/repos; POST /repos/{owner}/{repo}/contents with metadata.json, ingredients/license.md, README.md (a Bible, or with --type obs an Open Bible Stories project)',
-  '03 poll GET /repos/{owner}/{repo}/healthcheck?ref=master every 5 s for up to 3 min (public): the health result Door43 gives the generated metadata (Q4)',
-  '04 GET /repos/{owner}/{repo} and GET /catalog/entry/{owner}/{repo}/master (public): the catalog view of the new project',
+  '03 poll GET /repos/{owner}/{repo}/healthcheck?ref={default branch} every 5 s for up to 3 min (public): the health result Door43 gives the generated metadata (Q4); the default branch is the receipt\'s, main since #167',
+  '04 GET /repos/{owner}/{repo} and GET /catalog/entry/{owner}/{repo}/{default branch} (public): the catalog view of the new project',
 ];
 if (argv.includes('--plan')) {
   console.log(plan.join('\n'));
@@ -201,10 +201,13 @@ const memoryKV = () => {
   console.log(`receipt: wrote ${receipt.wrote.map(write => `${write.kind} ${write.target}`).join(', ')}; setup ${receipt.result.setup.state}; warnings ${receipt.warnings.map(w => w.code).join(', ') || 'none'}`);
 
   if (receipt.result.setup.state === 'complete') {
-    summary.health_master = await pollHealth(input.owner, planned.preview.repo_name, 'master');
+    const branch = receipt.result.default_branch;
+    summary.default_branch = branch;
+    summary.health_default_branch = await pollHealth(input.owner, planned.preview.repo_name, branch);
     const repository = await publicCall(`/repos/${input.owner}/${planned.preview.repo_name}`);
     record('GET-repos_catalog-view', repository.request, repository.response);
     summary.catalog_view = repository.response.json && {
+      default_branch: repository.response.json.default_branch,
       metadata_type: repository.response.json.metadata_type,
       flavor_type: repository.response.json.flavor_type,
       flavor: repository.response.json.flavor,
@@ -216,8 +219,8 @@ const memoryKV = () => {
       healthcheck_severity: repository.response.json.healthcheck_severity,
       catalog: repository.response.json.catalog,
     };
-    const entry = await publicCall(`/catalog/entry/${input.owner}/${planned.preview.repo_name}/master`);
-    record('GET-catalog_entry_master', entry.request, entry.response);
+    const entry = await publicCall(`/catalog/entry/${input.owner}/${planned.preview.repo_name}/${encodeURIComponent(branch)}`);
+    record(`GET-catalog_entry_${branch}`, entry.request, entry.response);
   }
   writeFileSync(join(outDir, 'summary.json'), JSON.stringify(summary, null, 2));
   console.log(`\nDone. Repository ${summary.repository}. Recordings in ${outDir}. Now record the facts in docs/evidence.md (Q4, Q28) and add the fixtures README.`);

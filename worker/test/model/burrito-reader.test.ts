@@ -116,7 +116,7 @@ describe('what tC Admin writes', () => {
     expect(bible).toMatchObject({ project_type: 'bible', flavor_type: 'scripture', flavor: 'textTranslation', generator: { name: 'tC Admin', version: '0.1.0' } });
     expect(bible.ingredients).toEqual([{ path: 'ingredients/license.md', size: 18535, md5: '0bf7ef1533f6486c8362dcb8bc19bdd1', mime_type: 'text/markdown', role: 'x-license', scope: null, kind: 'administrative', unit: null }]);
     expect(Object.keys(bible.current_scope)).toHaveLength(27);
-    expect(bible.identification.primary).toEqual({ authority: 'dcs', ids: [{ id: 'tc-admin-qa-org/id_tcap', revision: 'master', timestamp: '2026-10-05T15:00:00.000Z' }] });
+    expect(bible.identification.primary).toEqual({ authority: 'dcs', ids: [{ id: 'tc-admin-qa-org/id_tcap', revision: 'main', timestamp: '2026-10-05T15:00:00.000Z' }] });
     const stories = parseMetadata(newProjectFiles({ ...base, project_type: 'obs', testament_scope: null, abbreviation: 'OBS', repo_name: 'id_obs' }, generator, new Date()).files[0]!.content);
     expect(stories).toMatchObject({ project_type: 'obs', flavor: 'textStories' });
     expect(unitIngredients(stories).size).toBe(0);

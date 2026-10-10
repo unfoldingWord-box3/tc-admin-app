@@ -180,6 +180,8 @@ for (const project of PROJECTS) {
   try {
     const plan = await HANDLERS['project.create.plan']({ owner: ref.owner, ...project.create }, context);
     const created = await HANDLERS['project.create.apply']({ plan_id: plan.id }, context);
+    const branch = created.result.default_branch;
+    row.default_branch = branch;
     row.steps.push({ step: 'create', setup: created.result.setup.state, commit: created.wrote.find(write => write.kind === 'commit')?.sha ?? null });
     console.log(`${row.project}: created (setup ${created.result.setup.state})`);
     await waitForCatalog(ref.owner, repo, { latest: committed(created.result.default_branch_head?.sha, 'the creation') });
@@ -208,10 +210,10 @@ for (const project of PROJECTS) {
         if (!step.release.prerelease) await waitForCatalog(ref.owner, repo, { prod: tag });
       }
     }
-    const health = await tokenCall(`/repos/${ref.owner}/${repo}/healthcheck?ref=master`);
-    row.health_on_master = health.json?.data?.overall_severity_level ?? null;
+    const health = await tokenCall(`/repos/${ref.owner}/${repo}/healthcheck?ref=${encodeURIComponent(branch)}`);
+    row.health_on_default_branch = health.json?.data?.overall_severity_level ?? null;
     row.outcome = 'built';
-    console.log(`  done; Door43's health on master: ${row.health_on_master ?? 'not yet checked'}`);
+    console.log(`  done; Door43's health on ${branch}: ${row.health_on_default_branch ?? 'not yet checked'}`);
   } catch (error) {
     failed = true;
     row.outcome = 'stopped';

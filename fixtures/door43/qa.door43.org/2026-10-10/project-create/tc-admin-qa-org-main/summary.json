@@ -1,0 +1,207 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-10-10T01:18:41.626Z",
+  "input": {
+    "owner": "tc-admin-qa-org",
+    "project_type": "bible",
+    "title": "tC Admin probe 2026-10-10 0118",
+    "abbreviation": "tcap0118",
+    "language": {
+      "code": "id",
+      "title": "Bahasa Indonesia",
+      "direction": "ltr"
+    },
+    "testament_scope": "nt",
+    "license": "cc-by-sa-4.0"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 149
+    },
+    {
+      "step": 2,
+      "name": "GET-user_teams",
+      "status": 200,
+      "ms": 121
+    },
+    {
+      "step": 3,
+      "name": "GET-user_teams",
+      "status": 200,
+      "ms": 112
+    },
+    {
+      "step": 4,
+      "name": "GET-repos_tc-admin-qa-org_id_tcap0118",
+      "status": 404,
+      "ms": 111
+    },
+    {
+      "step": 5,
+      "name": "GET-user",
+      "status": 200,
+      "ms": 162
+    },
+    {
+      "step": 6,
+      "name": "GET-user_teams",
+      "status": 200,
+      "ms": 113
+    },
+    {
+      "step": 7,
+      "name": "GET-user_teams",
+      "status": 200,
+      "ms": 108
+    },
+    {
+      "step": 8,
+      "name": "GET-repos_tc-admin-qa-org_id_tcap0118",
+      "status": 404,
+      "ms": 113
+    },
+    {
+      "step": 9,
+      "name": "POST-orgs_tc-admin-qa-org_repos",
+      "status": 201,
+      "ms": 711
+    },
+    {
+      "step": 10,
+      "name": "POST-repos_tc-admin-qa-org_id_tcap0118_contents",
+      "status": 201,
+      "ms": 827
+    },
+    {
+      "step": 11,
+      "name": "health-main",
+      "status": 200,
+      "ms": 5460,
+      "sequence": [
+        {
+          "t_ms": 111,
+          "status": 422,
+          "level": null,
+          "error": "no metadata found for repo [tc-admin-qa-org/id_tcap0118] and ref [main]",
+          "issues": null
+        },
+        {
+          "t_ms": 5460,
+          "status": 200,
+          "level": "info",
+          "error": null,
+          "issues": {
+            "release_needed": 1
+          }
+        }
+      ],
+      "latency_ms": 5460
+    },
+    {
+      "step": 12,
+      "name": "GET-repos_catalog-view",
+      "status": 200,
+      "ms": 111
+    },
+    {
+      "step": 13,
+      "name": "GET-catalog_entry_main",
+      "status": 200,
+      "ms": 118
+    }
+  ],
+  "dcs_version": "28.1.0+dcs.19-g41cde8ce33",
+  "plan": {
+    "id": "df44f4a3-758a-49c8-91be-019d2de9f4e8",
+    "repo_name": "id_tcap0118",
+    "would_write": [
+      {
+        "kind": "repo",
+        "target": "tc-admin-qa-org/id_tcap0118"
+      },
+      {
+        "kind": "commit",
+        "target": "tc-admin-qa-org/id_tcap0118@main"
+      }
+    ],
+    "files": [
+      {
+        "path": "metadata.json",
+        "size": 2150,
+        "md5": "d9e22619935d22a65d24b3ad9f0b9f1f"
+      },
+      {
+        "path": "ingredients/license.md",
+        "size": 18535,
+        "md5": "0bf7ef1533f6486c8362dcb8bc19bdd1"
+      },
+      {
+        "path": "README.md",
+        "size": 239,
+        "md5": "71c643da75321a358f42c47b2814c900"
+      }
+    ]
+  },
+  "receipt": {
+    "wrote": [
+      {
+        "kind": "repo",
+        "target": "tc-admin-qa-org/id_tcap0118",
+        "url": "https://qa.door43.org/tc-admin-qa-org/id_tcap0118"
+      },
+      {
+        "kind": "commit",
+        "target": "tc-admin-qa-org/id_tcap0118@main",
+        "sha": "d0ece3e6649613aaf19e14f1b87fbaf52e0ab5c8",
+        "url": "https://qa.door43.org/tc-admin-qa-org/id_tcap0118/commit/d0ece3e6649613aaf19e14f1b87fbaf52e0ab5c8"
+      }
+    ],
+    "warnings": [],
+    "setup": {
+      "state": "complete",
+      "failed_step": null
+    },
+    "started_at": "2026-10-10T01:18:43.077Z",
+    "finished_at": "2026-10-10T01:18:44.725Z"
+  },
+  "repository": "tc-admin-qa-org/id_tcap0118",
+  "default_branch": "main",
+  "health_default_branch": {
+    "level": "info",
+    "issues": {
+      "release_needed": 1
+    },
+    "latency_ms": 5461
+  },
+  "catalog_view": {
+    "default_branch": "main",
+    "metadata_type": "sb",
+    "flavor_type": "scripture",
+    "flavor": "textTranslation",
+    "subject": "Bible",
+    "language": "id",
+    "title": "tC Admin probe 2026-10-10 0118",
+    "abbreviation": "tcap0118",
+    "ingredients": [],
+    "healthcheck_severity": "info",
+    "catalog": {
+      "prod": null,
+      "preprod": null,
+      "latest": {
+        "branch_or_tag_name": "main",
+        "release_url": null,
+        "commit_sha": "d0ece3e6649613aaf19e14f1b87fbaf52e0ab5c8",
+        "released": "2026-10-10T01:18:44Z",
+        "zipball_url": "https://qa.door43.org/tc-admin-qa-org/id_tcap0118/archive/d0ece3e664.zip",
+        "tarball_url": "https://qa.door43.org/tc-admin-qa-org/id_tcap0118/archive/d0ece3e664.tar.gz",
+        "sb_zipball_url": "https://qa.door43.org/tc-admin-qa-org/id_tcap0118/sb/d0ece3e664.zip",
+        "sb_tarball_url": "https://qa.door43.org/tc-admin-qa-org/id_tcap0118/sb/d0ece3e664.tar.gz",
+        "git_trees_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcap0118/git/trees/d0ece3e664?recursive=1&per_page=99999",
+        "contents_url": "https://qa.door43.org/api/v1/repos/tc-admin-qa-org/id_tcap0118/contents?ref=d0ece3e664"
+      }
+    }
+  }
+}

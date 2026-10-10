@@ -178,12 +178,15 @@ const fail = (phase, error) => {
 
   // 01 seed
   const phase1 = (summary.phases.seed = {});
+  // The new project's default branch, as created (main since #167); the source's stays master.
+  let branch;
   try {
     const created = await HANDLERS['project.create.plan']({ owner, project_type: 'bible', title: `tC Admin release probe ${today} ${stamp}`, abbreviation, language: { code: 'id', title: 'Bahasa Indonesia', direction: 'ltr' }, testament_scope: 'nt', license: 'cc-by-sa-4.0' }, context);
     const applied = await HANDLERS['project.create.apply']({ plan_id: created.id }, context);
     save('seed-receipt', applied);
-    phase1.created = { repo: created.preview.repo_name, setup: applied.result.setup.state };
-    const metadata = JSON.parse((await raw(owner, repo, 'metadata.json')).toString('utf8'));
+    branch = applied.result.default_branch;
+    phase1.created = { repo: created.preview.repo_name, setup: applied.result.setup.state, default_branch: branch };
+    const metadata = JSON.parse((await raw(owner, repo, 'metadata.json', branch)).toString('utf8'));
     const mat = await raw(SOURCE.owner, SOURCE.repo, 'ingredients/MAT.usfm');
     const jhn = await raw(SOURCE.owner, SOURCE.repo, 'ingredients/JHN.usfm');
     metadata.ingredients['ingredients/MAT.usfm'] = ingredient(mat, 'MAT');
@@ -192,7 +195,7 @@ const fail = (phase, error) => {
     metadata.localizedNames = { MAT: { short: { id: 'Matius' }, long: { id: 'Injil Matius' }, abbr: { id: 'Mat' } }, JHN: { short: { id: 'Yohanes' }, long: { id: 'Injil Yohanes' }, abbr: { id: 'Yoh' } } };
     const seed = await tokenCall(`/repos/${owner}/${repo}/contents`, {
       method: 'POST',
-      body: JSON.stringify({ branch: 'master', message: 'Add Matthew and John from Perjanjian-Baru-Pendau (probe seed)', files: [
+      body: JSON.stringify({ branch, message: 'Add Matthew and John from Perjanjian-Baru-Pendau (probe seed)', files: [
         { operation: 'upload', path: 'ingredients/MAT.usfm', content: b64(mat) },
         { operation: 'upload', path: 'ingredients/JHN.usfm', content: b64(jhn) },
         { operation: 'upload', path: 'metadata.json', content: b64(Buffer.from(`${JSON.stringify(metadata, null, 2)}\n`)) },
@@ -237,8 +240,8 @@ const fail = (phase, error) => {
   // 03 second release
   const phase3 = (summary.phases.second_release = {});
   try {
-    const current = JSON.parse((await raw(owner, repo, 'metadata.json')).toString('utf8'));
-    const mat = Buffer.concat([await raw(owner, repo, 'ingredients/MAT.usfm'), Buffer.from('\n\\rem Revised for the tC Admin release probe.\n')]);
+    const current = JSON.parse((await raw(owner, repo, 'metadata.json', branch)).toString('utf8'));
+    const mat = Buffer.concat([await raw(owner, repo, 'ingredients/MAT.usfm', branch), Buffer.from('\n\\rem Revised for the tC Admin release probe.\n')]);
     const mrk = await raw(SOURCE.owner, SOURCE.repo, 'ingredients/MRK.usfm');
     current.ingredients['ingredients/MAT.usfm'] = ingredient(mat, 'MAT');
     current.ingredients['ingredients/MRK.usfm'] = ingredient(mrk, 'MRK');
@@ -246,7 +249,7 @@ const fail = (phase, error) => {
     current.localizedNames.MRK = { short: { id: 'Markus' }, long: { id: 'Injil Markus' }, abbr: { id: 'Mrk' } };
     const change = await tokenCall(`/repos/${owner}/${repo}/contents`, {
       method: 'POST',
-      body: JSON.stringify({ branch: 'master', message: 'Revise Matthew, add Mark (probe)', files: [
+      body: JSON.stringify({ branch, message: 'Revise Matthew, add Mark (probe)', files: [
         { operation: 'upload', path: 'ingredients/MAT.usfm', content: b64(mat) },
         { operation: 'upload', path: 'ingredients/MRK.usfm', content: b64(mrk) },
         { operation: 'upload', path: 'metadata.json', content: b64(Buffer.from(`${JSON.stringify(current, null, 2)}\n`)) },

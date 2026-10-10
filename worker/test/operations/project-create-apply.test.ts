@@ -68,11 +68,11 @@ const door43: Fetch = async (url, init) => {
   }
   if (method === 'POST' && (pathname === '/api/v1/orgs/tc-admin-qa-org/repos' || pathname === '/api/v1/user/repos')) {
     if (typeof createAnswer === 'number') return Response.json({ message: 'refused' }, { status: createAnswer });
-    const name = (sent.at(-1)!.body as { name: string }).name;
+    const { name, default_branch } = sent.at(-1)!.body as { name: string; default_branch: string };
     const owner = pathname.startsWith('/api/v1/orgs/') ? 'tc-admin-qa-org' : 'tc-admin-qa';
     existing.add(`${owner}/${name}`);
     if (createAnswer === 'broken-body') return new Response(new ReadableStream({ start: controller => controller.error(new TypeError('terminated')) }), { status: 201 });
-    return Response.json({ ...createdRepo, name, full_name: `${owner}/${name}`, html_url: `https://qa.door43.org/${owner}/${name}` }, { status: 201 });
+    return Response.json({ ...createdRepo, name, default_branch, full_name: `${owner}/${name}`, html_url: `https://qa.door43.org/${owner}/${name}` }, { status: 201 });
   }
   if (method === 'POST' && /^\/api\/v1\/repos\/[^/]+\/[^/]+\/contents$/.test(pathname)) {
     if (commitAnswer === 'network') throw new TypeError('fetch failed');
@@ -114,17 +114,19 @@ beforeEach(() => {
 });
 
 describe('a successful apply', () => {
-  test('W5: creates the repository and makes exactly one contents call with the plan\'s three files, and the receipt\'s wrote equals the plan\'s would_write', async () => {
+  test('W5: creates the repository with the default branch main (#167) and makes exactly one contents call with the plan\'s three files and no branch, so it starts main, and the receipt\'s wrote equals the plan\'s would_write', async () => {
     const planned = await plan();
     sent = [];
     const receipt = OPERATIONS['project.create.apply'].output.parse(await apply(planned.id));
     expect(writesSent()).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'POST /api/v1/repos/tc-admin-qa-org/id_tcap/contents']);
+    expect(sent.find(request => request.path.endsWith('/repos'))!.body).toMatchObject({ name: 'id_tcap', auto_init: false, default_branch: 'main' });
     const commit = sent.find(request => request.path.endsWith('/contents'))!.body as { message: string; files: { operation: string; path: string; content: string }[] };
     expect(commit.files.map(file => [file.operation, file.path])).toEqual([
       ['create', 'metadata.json'],
       ['create', 'ingredients/license.md'],
       ['create', 'README.md'],
     ]);
+    expect(Object.keys(commit)).not.toContain('branch');
     const stored = JSON.parse(kv.entries.get(`plan:${planned.id}`)!.value) as StoredPlan<{ files: { path: string; content: string }[] }>;
     for (const [index, file] of stored.payload.files.entries()) expect(Buffer.from(commit.files[index]!.content, 'base64').toString('utf8')).toBe(file.content);
     expect(JSON.parse(stored.payload.files[0]!.content)).toEqual(planned.preview.metadata_json);
@@ -154,13 +156,13 @@ describe('a successful apply', () => {
     expect(result).toMatchObject({
       ref: { owner: 'tc-admin-qa-org', repo: 'id_tcap', id: 96475, url: 'https://qa.door43.org/tc-admin-qa-org/id_tcap' },
       title: 'Alkitab Percobaan',
-      default_branch: 'master',
+      default_branch: 'main',
       language: { code: 'id', title: 'Bahasa Indonesia' },
       project_type: 'bible',
       metadata_format: 'sb',
       editability: { state: 'editable' },
       coverage: { present: 0, target: 27, scope: 'nt', basis: 'archive' },
-      health: { state: 'never_checked', severity_raw: null, ref: 'master', checked_at: null, issue_count: null, issues: null, source: 'door43' },
+      health: { state: 'never_checked', severity_raw: null, ref: 'main', checked_at: null, issue_count: null, issues: null, source: 'door43' },
       latest_full_release: null,
       default_branch_head: { sha: firstCommit.commit.sha, committed_at: '2026-09-22T19:49:22Z' },
       active_preparation: null,

@@ -18,7 +18,7 @@ import type { Door43Client } from '../door43/api';
 import { readAccount } from '../door43/auth';
 import { creationRights, repositoryExists } from '../door43/repos';
 import type { CreatedRepository } from '../door43/writes';
-import { newProjectFiles, repositoryName, validRepositoryName } from '../model/burrito';
+import { NEW_PROJECT_BRANCH, newProjectFiles, repositoryName, validRepositoryName } from '../model/burrito';
 import type { NewProject, ProjectFile } from '../model/burrito';
 import { validLanguageTag } from '../model/language';
 import type { OperationContext } from './context';
@@ -116,7 +116,7 @@ export async function projectCreatePlan(input: ParsedInput<'project.create.plan'
     preview: { repo_name, metadata_json: metadata, files: files.map(({ path, size, md5 }: ProjectFile) => ({ path, size, md5 })) },
     would_write: [
       { kind: 'repo', target },
-      { kind: 'commit', target: `${target}@master` },
+      { kind: 'commit', target: `${target}@${NEW_PROJECT_BRANCH}` },
     ],
     warnings: [],
   };

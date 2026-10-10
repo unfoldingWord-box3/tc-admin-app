@@ -1,0 +1,186 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://qa.door43.org/api/v1/user/teams?page=1&limit=50",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "token [redacted]"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ms": 113,
+    "json": [
+      {
+        "id": 451,
+        "name": "Owners",
+        "description": "",
+        "organization": {
+          "id": 53536,
+          "name": "tc-admin-qa-org",
+          "full_name": "",
+          "email": "",
+          "avatar_url": "https://qa.door43.org/avatars/88aa03889f005577f41f98bd8e2e04ed",
+          "description": "",
+          "website": "",
+          "location": "",
+          "visibility": "public",
+          "repo_admin_change_team_access": true,
+          "username": "tc-admin-qa-org",
+          "repo_languages": [
+            "en",
+            "fr",
+            "id",
+            "ums",
+            "xdy-x-dayaklau"
+          ],
+          "repo_subjects": [
+            "Aligned Bible",
+            "Bible",
+            "Open Bible Stories"
+          ],
+          "repo_metadata_types": [
+            "sb"
+          ]
+        },
+        "includes_all_repositories": true,
+        "permission": "owner",
+        "units": [
+          "repo.ext_wiki",
+          "repo.packages",
+          "repo.pulls",
+          "repo.releases",
+          "repo.wiki",
+          "repo.ext_issues",
+          "repo.projects",
+          "repo.actions",
+          "repo.code",
+          "repo.issues"
+        ],
+        "units_map": {
+          "repo.issues": "owner",
+          "repo.pulls": "owner",
+          "repo.releases": "owner",
+          "repo.wiki": "owner",
+          "repo.projects": "owner",
+          "repo.actions": "owner",
+          "repo.code": "owner",
+          "repo.ext_wiki": "read",
+          "repo.ext_issues": "read",
+          "repo.packages": "owner"
+        },
+        "can_create_org_repo": true,
+        "visibility": "limited"
+      },
+      {
+        "id": 340,
+        "name": "Translators",
+        "description": "",
+        "organization": {
+          "id": 52799,
+          "name": "bahtraku",
+          "full_name": "Yayasan BahtraKu",
+          "email": "",
+          "avatar_url": "https://qa.door43.org/avatars/521e3eefbce89f0f66e62793e1badcc0",
+          "description": "",
+          "website": "https://bahtraku.org/",
+          "location": "",
+          "visibility": "public",
+          "repo_admin_change_team_access": true,
+          "username": "bahtraku",
+          "repo_languages": [
+            "adn",
+            "aqm",
+            "bjn",
+            "bkr-x-kalahien",
+            "bkr-x-pajuepat",
+            "btm",
+            "dun",
+            "iba-x-salako",
+            "id",
+            "kdy",
+            "knx-x-bajare",
+            "kod",
+            "kps-x-kaigar",
+            "kvb",
+            "lbx",
+            "lio",
+            "lmy",
+            "lra",
+            "lur",
+            "mhy-x-benualima",
+            "mvd",
+            "ors-x-oranglau",
+            "orz-x-rarankwa",
+            "pku",
+            "ret",
+            "saw",
+            "set-x-csentani",
+            "skv",
+            "sob",
+            "swr",
+            "tdt",
+            "tnm",
+            "tnm-x-yokari",
+            "tpf",
+            "ums",
+            "wew-x-loli",
+            "wnk",
+            "xdy-x-tamuan",
+            "xem-x-hibun",
+            "zlm-x-akit"
+          ],
+          "repo_subjects": [
+            "Aligned Bible",
+            "Bible",
+            "Open Bible Stories",
+            "TSV OBS Study Notes",
+            "TSV OBS Study Questions",
+            "TSV OBS Translation Notes",
+            "TSV OBS Translation Questions",
+            "TSV OBS Translation Words Links",
+            "TSV Study Notes",
+            "TSV Study Questions",
+            "TSV Translation Notes",
+            "TSV Translation Questions",
+            "TSV Translation Words Links",
+            "Translation Academy",
+            "Translation Words"
+          ],
+          "repo_metadata_types": [
+            "rc",
+            "sb"
+          ]
+        },
+        "includes_all_repositories": true,
+        "permission": "admin",
+        "units": [
+          "repo.code",
+          "repo.pulls",
+          "repo.wiki",
+          "repo.ext_wiki",
+          "repo.packages",
+          "repo.actions",
+          "repo.issues",
+          "repo.releases",
+          "repo.ext_issues",
+          "repo.projects"
+        ],
+        "units_map": {
+          "repo.code": "admin",
+          "repo.pulls": "admin",
+          "repo.wiki": "admin",
+          "repo.ext_wiki": "read",
+          "repo.ext_issues": "read",
+          "repo.packages": "none",
+          "repo.actions": "none",
+          "repo.issues": "admin",
+          "repo.releases": "admin",
+          "repo.projects": "admin"
+        },
+        "can_create_org_repo": false,
+        "visibility": "private"
+      }
+    ]
+  }
+}

@@ -23,9 +23,9 @@ import { CatalogError, catalogMessage } from '@tc-admin/shared/schema';
 import type { OperationOutput, ParsedInput, ProjectReport } from '@tc-admin/shared/schema';
 import { readAccount } from '../door43/auth';
 import { repositoryExists } from '../door43/repos';
-import { DEFAULT_BRANCH, commitFiles, createRepository } from '../door43/writes';
+import { commitFiles, createRepository } from '../door43/writes';
 import type { Commit, CreatedRepository } from '../door43/writes';
-import { FLAVOR_BY_TYPE, LICENSE_PATH, projectScope } from '../model/burrito';
+import { FLAVOR_BY_TYPE, LICENSE_PATH, NEW_PROJECT_BRANCH, projectScope } from '../model/burrito';
 import { coverage, editability } from '../model/project';
 import type { OperationContext } from './context';
 import { signedIn } from './context';
@@ -198,7 +198,7 @@ function receiptFor(
 ): ProjectCreateReceipt {
   const target = `${payload.owner.login}/${payload.repo_name}`;
   const wrote: ProjectCreateReceipt['wrote'] = [{ kind: 'repo', target, url: repository.url }];
-  if (commit) wrote.push({ kind: 'commit', target: `${target}@${DEFAULT_BRANCH}`, sha: commit.sha, url: commit.url });
+  if (commit) wrote.push({ kind: 'commit', target: `${target}@${NEW_PROJECT_BRANCH}`, sha: commit.sha, url: commit.url });
   const finished = context.now();
   return {
     operation: 'project.create.apply',
