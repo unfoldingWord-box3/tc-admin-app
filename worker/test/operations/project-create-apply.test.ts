@@ -270,6 +270,20 @@ describe('what an apply refuses before writing', () => {
     expect(writesSent()).toEqual([]);
   });
 
+  test('W5: plan_expired for an unexpired plan stored before #167, which commits to master and names master in its metadata, and nothing is written', async () => {
+    const planned = await plan();
+    const key = `plan:${planned.id}`;
+    const stored = JSON.parse(kv.entries.get(key)!.value) as StoredPlan<{ files: { path: string; content: string }[] }> & { plan: { would_write: { kind: string; target: string }[] } };
+    stored.plan.would_write = stored.plan.would_write.map(write => (write.kind === 'commit' ? { ...write, target: write.target.replace(/@main$/, '@master') } : write));
+    stored.payload.files[0]!.content = stored.payload.files[0]!.content.replace('"revision": "main"', '"revision": "master"');
+    expect(stored.payload.files[0]!.content).toContain('"revision": "master"');
+    kv.entries.set(key, { ...kv.entries.get(key)!, value: JSON.stringify(stored) });
+    sent = [];
+    expect((await failure(apply(planned.id)))!.code).toBe('plan_expired');
+    expect(writesSent()).toEqual([]);
+    expect(kv.entries.has(`receipt:${planned.id}`)).toBe(false);
+  });
+
   test('Door43 refusing the repository is answered as the catalog code, and no commit follows', async () => {
     for (const [status, code] of [[409, 'name_taken'], [403, 'permission_denied'], [422, 'validation_failed'], [500, 'door43_unavailable']] as const) {
       const planned = await plan();
