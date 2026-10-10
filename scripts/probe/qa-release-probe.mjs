@@ -297,9 +297,13 @@ const fail = (phase, error) => {
     save('release-create-2', created);
     phase3.create = { wrote: created.wrote, warnings: created.warnings, state: created.result.state, release: created.result.release };
     phase3.lookup = await HANDLERS['release.lookup']({ ...ref, tag: created.result.release.tag }, context);
-    const archive = await publicCall(`${ORIGIN}/${owner}/${repo}/sb/${created.result.release.tag}.zip`);
-    record('GET-sb-archive-after-release', archive.request, { ...archive.response, json: { bytes: archive.response.json?.unparsed?.length ?? null } });
-    phase3.archive_status = archive.response.status;
+    // The archive's own size, from its bytes: publicCall reads text and keeps 2,000 characters of it, which measures nothing.
+    const archiveUrl = `${ORIGIN}/${owner}/${repo}/sb/${created.result.release.tag}.zip`;
+    const archiveStarted = Date.now();
+    const archive = await fetch(archiveUrl, { redirect: 'manual' });
+    const archiveBytes = archive.ok ? (await archive.arrayBuffer()).byteLength : null;
+    record('GET-sb-archive-after-release', { method: 'GET', url: archiveUrl }, { status: archive.status, ms: Date.now() - archiveStarted, json: { archive_bytes: archiveBytes } });
+    phase3.archive_status = archive.status;
   } catch (error) {
     fail('second_release', error);
   }

@@ -4,7 +4,7 @@
 
 - Request bodies: the bodies of the three content writes the operations made (`10`, `49`, `71`) are replaced by their length.
 - Response contents: a file the contents endpoint answered as more than 4,000 characters of base64 is replaced by its length: the license in `10`, and MAT and MRK in `49`. The smaller files stay inline: `metadata.json` and `README.md` in `10`, `metadata.json` in `49`.
-- Archives: the Scripture Burrito zips in `19`, `44`, `45`, `66`, and `67` are recorded as `archive_bytes: null`, and the one in `57` as its size alone.
+- Archives: the Scripture Burrito zips in `19`, `44`, `45`, `66`, and `67` are recorded as `archive_bytes: null`, and the one in `57` as `bytes: 2000`, which is not the archive's size: the probe stored the length of its own text preview, capped at 2,000 characters (Frank, #175). The probe now records an archive's size from its bytes, as `archive_bytes`.
 - Seven exchanges carry no request headers: `11`, `12`, `33`, `34`, `35`, `57`, and `75`. The two writes onto `main`, `11` and `34`, keep only the URL, a note where the body was, the status, and the commit sha, so the branch each request named is not recorded. Their landing on `main` is witnessed by `12` and `35`, where the catalog's `latest` names `main` at those shas (`c9acaba290`, then `a7cf701557`).
 
 | Phase | Files | What happened |
