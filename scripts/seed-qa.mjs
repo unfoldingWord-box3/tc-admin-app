@@ -216,7 +216,7 @@ for (const project of PROJECTS) {
       }
       if (step.release) {
         const planned = await HANDLERS['release.plan'](ref, context);
-        // The release takes its books from main: the plan is bound to main's head as Door43 has it now (R5).
+        // The release takes its books from the branch Door43 answered (#170): the plan is bound to its head as Door43 has it now (R5).
         const head = await branchHead(ref.owner, repo, branch);
         if (planned.bound_to.default_branch_sha !== head) throw new Error(`the release plan is bound to ${planned.bound_to.default_branch_sha}, not ${branch}'s head ${head}`);
         // An Open Bible Stories release takes the whole default branch, so it sends no selection (release.prepare refuses one).
