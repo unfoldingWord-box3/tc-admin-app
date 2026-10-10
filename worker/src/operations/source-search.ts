@@ -38,7 +38,9 @@ function revisionOf(entry: CatalogSearchEntry, stage: ParsedInput<'source.search
     if (entry.stage !== 'prod' || !entry.revision) return null;
     return { revision: { tag: entry.revision.name, sha: entry.revision.sha }, itemized: true };
   }
-  const head = entry.refs.default_branch ?? (entry.stage === 'latest' ? entry.revision : null);
+  // The repository's own default branch and its head (#170): with neither known, the repository is not offered at its latest
+  // content, never at the branch a catalog entry names instead (H3).
+  const head = entry.refs.default_branch;
   if (!head) return null;
   return { revision: { branch: head.name, sha: head.sha }, itemized: entry.revision?.sha === head.sha };
 }

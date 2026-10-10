@@ -69,6 +69,15 @@ const redactEmails = value => {
   }
   return value;
 };
+/** Every `content` longer than 4000 characters (a whole file as base64, as the contents endpoint answers it) as its length only. */
+const omitLargeContent = value => {
+  if (Array.isArray(value)) value.forEach(omitLargeContent);
+  else if (value && typeof value === 'object') for (const [key, inner] of Object.entries(value)) {
+    if (key === 'content' && typeof inner === 'string' && inner.length > 4000) value[key] = `[${inner.length} bytes of base64 omitted]`;
+    else omitLargeContent(inner);
+  }
+  return value;
+};
 const redactHeaders = headers => {
   const safe = Object.fromEntries(new Headers(headers));
   if (safe.authorization) safe.authorization = 'token [redacted]';
@@ -96,6 +105,7 @@ const recording = async (url, init = {}) => {
     json = text.length > 2000 ? { unparsed: `[${text.length} bytes]` } : { unparsed: text };
   }
   redactEmails(json);
+  omitLargeContent(json);
   const method = init.method || 'GET';
   let body = init.body === undefined ? undefined : String(init.body);
   if (body && body.length > 4000) body = `[${body.length} bytes omitted: file contents as base64]`;
