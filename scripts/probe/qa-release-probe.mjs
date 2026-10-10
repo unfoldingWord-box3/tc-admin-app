@@ -60,6 +60,24 @@ const { HANDLERS, operationContext } = await import(pathToFileURL(bundle).href);
 let outDir;
 let step = 0;
 const summary = { host: HOST, date: new Date().toISOString(), steps: [], phases: {} };
+/** Every non-empty `email` in an answer, at any depth (the user, and each release's and commit's author), as `[redacted]`. */
+const redactEmails = value => {
+  if (Array.isArray(value)) value.forEach(redactEmails);
+  else if (value && typeof value === 'object') for (const [key, inner] of Object.entries(value)) {
+    if (key === 'email' && typeof inner === 'string' && inner) value[key] = '[redacted]';
+    else redactEmails(inner);
+  }
+  return value;
+};
+/** Every `content` longer than 4000 characters (a whole file as base64, as the contents endpoint answers it) as its length only. */
+const omitLargeContent = value => {
+  if (Array.isArray(value)) value.forEach(omitLargeContent);
+  else if (value && typeof value === 'object') for (const [key, inner] of Object.entries(value)) {
+    if (key === 'content' && typeof inner === 'string' && inner.length > 4000) value[key] = `[${inner.length} bytes of base64 omitted]`;
+    else omitLargeContent(inner);
+  }
+  return value;
+};
 const redactHeaders = headers => {
   const safe = Object.fromEntries(new Headers(headers));
   if (safe.authorization) safe.authorization = 'token [redacted]';
@@ -86,7 +104,8 @@ const recording = async (url, init = {}) => {
   } catch {
     json = text.length > 2000 ? { unparsed: `[${text.length} bytes]` } : { unparsed: text };
   }
-  if (json && typeof json === 'object' && typeof json.email === 'string' && json.email) json.email = '[redacted]';
+  redactEmails(json);
+  omitLargeContent(json);
   const method = init.method || 'GET';
   let body = init.body === undefined ? undefined : String(init.body);
   if (body && body.length > 4000) body = `[${body.length} bytes omitted: file contents as base64]`;
@@ -144,7 +163,7 @@ async function readUntilHealth(context, ref, id) {
 
 const md5 = bytes => createHash('md5').update(bytes).digest('hex');
 const b64 = bytes => Buffer.from(bytes).toString('base64');
-const raw = async (owner, repo, path, ref = 'master') => {
+const raw = async (owner, repo, path, ref) => {
   const response = await fetch(`${ORIGIN}/${owner}/${repo}/raw/branch/${ref}/${path}`);
   if (!response.ok) throw new Error(`raw ${owner}/${repo}/${path}: ${response.status}`);
   return Buffer.from(await response.arrayBuffer());
@@ -178,8 +197,11 @@ const fail = (phase, error) => {
 
   // 01 seed
   const phase1 = (summary.phases.seed = {});
-  // The new project's default branch, as created (main since #167); the source's stays master.
+  // Each repository's branch is the default_branch Door43 answers for it (#170): the new project's from its receipt
+  // (main since #167), the source's from its repository read (master for Pendau).
   let branch;
+  const sourceBranch = (await publicCall(`/repos/${SOURCE.owner}/${SOURCE.repo}`)).response.json?.default_branch;
+  if (typeof sourceBranch !== 'string' || !sourceBranch) throw new Error(`Door43 names no default branch for ${SOURCE.owner}/${SOURCE.repo}`);
   try {
     const created = await HANDLERS['project.create.plan']({ owner, project_type: 'bible', title: `tC Admin release probe ${today} ${stamp}`, abbreviation, language: { code: 'id', title: 'Bahasa Indonesia', direction: 'ltr' }, testament_scope: 'nt', license: 'cc-by-sa-4.0' }, context);
     const applied = await HANDLERS['project.create.apply']({ plan_id: created.id }, context);
@@ -187,8 +209,8 @@ const fail = (phase, error) => {
     branch = applied.result.default_branch;
     phase1.created = { repo: created.preview.repo_name, setup: applied.result.setup.state, default_branch: branch };
     const metadata = JSON.parse((await raw(owner, repo, 'metadata.json', branch)).toString('utf8'));
-    const mat = await raw(SOURCE.owner, SOURCE.repo, 'ingredients/MAT.usfm');
-    const jhn = await raw(SOURCE.owner, SOURCE.repo, 'ingredients/JHN.usfm');
+    const mat = await raw(SOURCE.owner, SOURCE.repo, 'ingredients/MAT.usfm', sourceBranch);
+    const jhn = await raw(SOURCE.owner, SOURCE.repo, 'ingredients/JHN.usfm', sourceBranch);
     metadata.ingredients['ingredients/MAT.usfm'] = ingredient(mat, 'MAT');
     metadata.ingredients['ingredients/JHN.usfm'] = ingredient(jhn, 'JHN');
     metadata.type.flavorType.currentScope = { MAT: [], JHN: [] };
@@ -242,7 +264,7 @@ const fail = (phase, error) => {
   try {
     const current = JSON.parse((await raw(owner, repo, 'metadata.json', branch)).toString('utf8'));
     const mat = Buffer.concat([await raw(owner, repo, 'ingredients/MAT.usfm', branch), Buffer.from('\n\\rem Revised for the tC Admin release probe.\n')]);
-    const mrk = await raw(SOURCE.owner, SOURCE.repo, 'ingredients/MRK.usfm');
+    const mrk = await raw(SOURCE.owner, SOURCE.repo, 'ingredients/MRK.usfm', sourceBranch);
     current.ingredients['ingredients/MAT.usfm'] = ingredient(mat, 'MAT');
     current.ingredients['ingredients/MRK.usfm'] = ingredient(mrk, 'MRK');
     current.type.flavorType.currentScope = { MAT: [], MRK: [], JHN: [] };

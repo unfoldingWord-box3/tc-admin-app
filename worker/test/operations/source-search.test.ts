@@ -216,6 +216,20 @@ describe('source.search at the default branch (latest)', () => {
     });
     expect(sources.find(s => s.ref.repo === 'id_obs')).toMatchObject({ project_type: 'obs', books: null });
   });
+
+  test('#170, H3: an unreleased repository whose default_branch is not the branch its catalog entry names, or whose entry comes without its repository, is not offered at its latest content, never at the entry\'s branch', async () => {
+    // PB-Loli-Edisi-Percobaan is the one entry at the latest stage, its own branch master (E35).
+    const offered = async (change: (entry: Record<string, unknown>) => void) => {
+      const search = structuredClone(BAHTRAKU);
+      change(search.data.find(entry => entry.name === 'PB-Loli-Edisi-Percobaan')! as unknown as Record<string, unknown>);
+      return (await run({ owner: 'bahtraku', stage: 'latest' }, door43({ 'bahtraku:latest': search }))).sources.map(s => s.ref.repo);
+    };
+    expect(await offered(() => {})).toContain('PB-Loli-Edisi-Percobaan');
+    const renamed = await offered(entry => void ((entry.repo as { default_branch: string }).default_branch = 'main'));
+    expect(renamed).not.toContain('PB-Loli-Edisi-Percobaan');
+    expect(renamed).toHaveLength(40);
+    expect(await offered(entry => void delete entry.repo)).not.toContain('PB-Loli-Edisi-Percobaan');
+  });
 });
 
 describe('a search entry for another commit than the branch head (#163)', () => {

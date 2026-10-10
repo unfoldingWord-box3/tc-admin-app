@@ -148,6 +148,22 @@ describe('createRepository', () => {
     expect((await failure(answer(500, {})))!.code).toBe('door43_unavailable');
     expect((await failure(answer(201, { name: 'no id' })))!.code).toBe('door43_unavailable');
   });
+
+  test('#170: the default branch is the one Door43 answered, even master, and an answer that names none is read back, never given one', async () => {
+    const created = (body: unknown, readBack: unknown) => {
+      const urls: string[] = [];
+      const fetch: Fetch = async (url, init) => (urls.push(`${init?.method ?? 'GET'} ${new URL(url).pathname}`), (init?.method ?? 'GET') === 'POST' ? json(body, 201) : json(readBack, 200));
+      return { urls, created: createRepository(client(fetch), { login: 'tc-admin-qa-org', kind: 'organization' }, { name: 'tca-probe-20260922194921', description: '' }) };
+    };
+    const onMaster = created({ ...createdRepo.response.json, default_branch: 'master' }, null);
+    expect((await onMaster.created).default_branch).toBe('master');
+    expect(onMaster.urls).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos']);
+    const { default_branch: _, ...unnamed } = { ...createdRepo.response.json, default_branch: '' };
+    const readBack = created(unnamed, { ...createdRepo.response.json, default_branch: 'main' });
+    expect((await readBack.created).default_branch).toBe('main');
+    expect(readBack.urls).toEqual(['POST /api/v1/orgs/tc-admin-qa-org/repos', 'GET /api/v1/repos/tc-admin-qa-org/tca-probe-20260922194921']);
+    expect((await failure(created(unnamed, unnamed).created))!.details).toMatchObject({ reason: 'created, then an unexpected repository shape' });
+  });
 });
 
 describe('commitFiles', () => {
@@ -243,5 +259,12 @@ describe('the state of a created repository (#31)', () => {
     const body = { ...(answer('07-POST-orgs_tc-admin-qa-org_repos.json') as Record<string, unknown>), empty: 'yes' };
     expect((await readRepositoryState(client(async () => json(body, 200)), 'o', 'r')).empty).toBeNull();
     expect((await failure(readRepositoryState(client(async () => json({ message: 'not found' }, 404)), 'o', 'r')))!.code).toBe('not_found');
+  });
+
+  test('#170: a repository answer that names no default branch is not given one: door43_unavailable', async () => {
+    const { default_branch: _, ...unnamed } = answer('07-POST-orgs_tc-admin-qa-org_repos.json') as Record<string, unknown>;
+    const refused = (await failure(readRepositoryState(client(async () => json(unnamed, 200)), 'o', 'r')))!;
+    expect(refused.code).toBe('door43_unavailable');
+    expect(refused.details).toMatchObject({ reason: 'unexpected repository shape' });
   });
 });
