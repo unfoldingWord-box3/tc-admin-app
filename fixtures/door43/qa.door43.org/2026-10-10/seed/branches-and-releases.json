@@ -1,0 +1,71 @@
+{
+  "read_at": "2026-10-10T02:01:57.612Z",
+  "note": "Public reads after the seed run, kept to default branch, branch names and heads, release tags and targets, and each release commit's parents.",
+  "repositories": [
+    {
+      "repository": "tc-admin-qa-org/id_seedtb",
+      "default_branch": "main",
+      "branches": [
+        {
+          "name": "main",
+          "commit": {
+            "id": "19e925ad1c09548d25642659614dcf71380d64eb"
+          }
+        }
+      ],
+      "releases": [
+        {
+          "tag": "v1.1.0",
+          "prerelease": true,
+          "target_commitish": "00ad564199848c68f14e1d0da24615805d790a66",
+          "commit_parents": [
+            "033f7b88fd0998437dd7c5983969cbda477053c8"
+          ]
+        },
+        {
+          "tag": "v1.0.0",
+          "prerelease": false,
+          "target_commitish": "033f7b88fd0998437dd7c5983969cbda477053c8",
+          "commit_parents": [
+            "5d8281499895a776417f933db81daf7d7b200504"
+          ]
+        }
+      ]
+    },
+    {
+      "repository": "tc-admin-qa-org/en_seedobs",
+      "default_branch": "main",
+      "branches": [
+        {
+          "name": "main",
+          "commit": {
+            "id": "7a1a7b71a095d467f0bd450fd0d9b1453e038ed9"
+          }
+        }
+      ],
+      "releases": [
+        {
+          "tag": "v1.0.0",
+          "prerelease": false,
+          "target_commitish": "9bc9df5fa63d503640d3ebab343fadebec9a73ae",
+          "commit_parents": [
+            "7a1a7b71a095d467f0bd450fd0d9b1453e038ed9"
+          ]
+        }
+      ]
+    },
+    {
+      "repository": "tc-admin-qa/id_seedhf",
+      "default_branch": "main",
+      "branches": [
+        {
+          "name": "main",
+          "commit": {
+            "id": "e11d0f94154304f0d1fd6519087c9009f577125e"
+          }
+        }
+      ],
+      "releases": []
+    }
+  ]
+}

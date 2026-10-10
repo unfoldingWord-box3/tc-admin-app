@@ -6,6 +6,6 @@ Each `NN-<METHOD>-<path>.json` holds one Door43 request the operations made (hea
 
 | Run | Owner | Result |
 | --- | --- | --- |
-| `tc-admin-qa-org-main/` | the organization (`POST /orgs/{org}/repos`) | the plan named the commit `@main`; repository `tc-admin-qa-org/id_tcap0118` created with `default_branch: main` and answered `default_branch: main`, `empty: true` (step 09, 201); one commit of `metadata.json`, `ingredients/license.md`, `README.md` (step 10, 201, `d0ece3e6`); health on `main` `info` with only `release_needed` after 5.5 s (step 11); the repository view says `default_branch: main` and the catalog entry for `main` is valid Scripture Burrito (steps 12, 13); the repository is kept for inspection |
+| `tc-admin-qa-org-main/` | the organization (`POST /orgs/{org}/repos`) | the plan named the commit `@main`; repository `tc-admin-qa-org/id_tcap0118` created with `default_branch: main` and answered `default_branch: main`, `empty: true` (step 09, 201); one commit of `metadata.json`, `ingredients/license.md`, `README.md` (step 10, 201, `d0ece3e6`); health on `main` `info` with only `release_needed` after 5.5 s (step 11); the repository view says `default_branch: main` and the catalog entry for `main` is valid Scripture Burrito (steps 12, 13); `14-GET-repos_branches.json`, a public read after the run kept to each branch's name and commit, lists `main` alone; the repository is kept for inspection |
 
 The fact derived is E79 in `docs/evidence.md`.

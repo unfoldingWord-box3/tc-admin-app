@@ -197,7 +197,11 @@ async function recordCommitOutcome(context: OperationContext, stored: StoredPlan
   }
 }
 
-/** The receipt of an apply: the repository, the commit when there is one, else the `setup_incomplete` warning. */
+/**
+ * The receipt of an apply: the repository, the commit when there is one, else the `setup_incomplete` warning.
+ * The commit is named on the branch Door43 answered for the repository, which the first commit starts: `main`
+ * since #167 (E79), and `master` for a repository created before, whose receipt is answered again.
+ */
 function receiptFor(
   planId: string,
   context: OperationContext,
@@ -208,7 +212,7 @@ function receiptFor(
 ): ProjectCreateReceipt {
   const target = `${payload.owner.login}/${payload.repo_name}`;
   const wrote: ProjectCreateReceipt['wrote'] = [{ kind: 'repo', target, url: repository.url }];
-  if (commit) wrote.push({ kind: 'commit', target: `${target}@${NEW_PROJECT_BRANCH}`, sha: commit.sha, url: commit.url });
+  if (commit) wrote.push({ kind: 'commit', target: `${target}@${repository.default_branch}`, sha: commit.sha, url: commit.url });
   const finished = context.now();
   return {
     operation: 'project.create.apply',

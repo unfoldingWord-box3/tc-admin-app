@@ -53,6 +53,8 @@ let teamsAnswer: unknown;
 /** What the contents endpoint answers: the recorded commit, a status, or a thrown network failure. */
 let commitAnswer: 'created' | number | 'network' | 'broken-body';
 let createAnswer: 'created' | number | 'broken-body';
+/** The default branch Door43 answers for a created repository: the one asked for, unless set. */
+let answeredBranch: string | null;
 
 const door43: Fetch = async (url, init) => {
   const { pathname } = new URL(url);
@@ -72,7 +74,7 @@ const door43: Fetch = async (url, init) => {
     const owner = pathname.startsWith('/api/v1/orgs/') ? 'tc-admin-qa-org' : 'tc-admin-qa';
     existing.add(`${owner}/${name}`);
     if (createAnswer === 'broken-body') return new Response(new ReadableStream({ start: controller => controller.error(new TypeError('terminated')) }), { status: 201 });
-    return Response.json({ ...createdRepo, name, default_branch, full_name: `${owner}/${name}`, html_url: `https://qa.door43.org/${owner}/${name}` }, { status: 201 });
+    return Response.json({ ...createdRepo, name, default_branch: answeredBranch ?? default_branch, full_name: `${owner}/${name}`, html_url: `https://qa.door43.org/${owner}/${name}` }, { status: 201 });
   }
   if (method === 'POST' && /^\/api\/v1\/repos\/[^/]+\/[^/]+\/contents$/.test(pathname)) {
     if (commitAnswer === 'network') throw new TypeError('fetch failed');
@@ -110,6 +112,7 @@ beforeEach(() => {
   teamsAnswer = teams;
   commitAnswer = 'created';
   createAnswer = 'created';
+  answeredBranch = null;
   clock = new Date('2026-10-05T15:00:00.000Z');
 });
 
@@ -172,6 +175,15 @@ describe('a successful apply', () => {
     });
     expect(result.coverage.units).toHaveLength(27);
     expect(result.coverage.units.every(unit => !unit.present)).toBe(true);
+  });
+
+  test('W5: the receipt names the commit on the branch Door43 answered, so a repository Door43 put on another branch is never reported as main', async () => {
+    answeredBranch = 'master';
+    const planned = await plan();
+    const receipt = await apply(planned.id);
+    expect(planned.would_write[1]).toEqual({ kind: 'commit', target: 'tc-admin-qa-org/id_tcap@main' });
+    expect(receipt.wrote[1]).toMatchObject({ kind: 'commit', target: 'tc-admin-qa-org/id_tcap@master' });
+    expect(receipt.result.default_branch).toBe('master');
   });
 
   test('H5: an Open Bible Stories project\'s report counts 0 of 50 stories, type obs, editable (#82)', async () => {

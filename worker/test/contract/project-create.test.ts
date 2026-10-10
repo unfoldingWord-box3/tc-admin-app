@@ -379,9 +379,10 @@ describe('the recorded QA creation on the default branch main (E79, #167)', () =
     expect(receipt.result).toMatchObject({ default_branch: 'main', setup: { state: 'complete', failed_step: null } });
   });
 
-  test('H1: Door43 reads main as the default branch: the repository view, the catalog entry for main, and health info with only release_needed (E28)', () => {
+  test('H1: Door43 reads main as the default branch: the repository view, main the only branch, the catalog entry for main, and health info with only release_needed (E28)', () => {
     const view = recorded<Door43Repository & { default_branch: string; catalog: { latest: { branch_or_tag_name: string; commit_sha: string } } }>('12-GET-repos_catalog-view.json', dir);
     expect(view.default_branch).toBe('main');
+    expect(recorded<{ name: string; commit: { id: string } }[]>('14-GET-repos_branches.json', dir)).toEqual([{ name: 'main', commit: { id: receipt.wrote[1]!.sha } }]);
     expect(view.catalog.latest).toMatchObject({ branch_or_tag_name: 'main', commit_sha: receipt.wrote[1]!.sha });
     expect(classifyProject(projectCatalog(view))).toMatchObject({ project_type: 'bible', metadata_format: 'sb', editability: { state: 'editable' } });
     const entry = recorded<{ branch_or_tag_name: string; is_valid: boolean; metadata_type: string }>('13-GET-catalog_entry_main.json', dir);

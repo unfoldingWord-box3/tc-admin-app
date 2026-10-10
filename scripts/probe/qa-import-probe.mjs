@@ -249,6 +249,7 @@ const memoryKV = () => {
     summary.branches = (branches.response.json || []).map(b => b.name);
     // The project's own default branch: main for a project created since #167, master for one named by --project from before.
     const branch = (await publicCall(`/repos/${projectOwner}/${projectRepo}`)).response.json?.default_branch;
+    if (typeof branch !== 'string' || !branch) throw new Error(`Door43 names no default branch for ${project}`);
     summary.default_branch = branch;
     summary.health_default_branch = await pollHealth(projectOwner, projectRepo, branch);
     const entry = await publicCall(`/catalog/entry/${projectOwner}/${projectRepo}/${encodeURIComponent(branch)}`);

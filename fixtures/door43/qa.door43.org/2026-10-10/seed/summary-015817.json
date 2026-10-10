@@ -1,0 +1,97 @@
+{
+  "host": "qa.door43.org",
+  "date": "2026-10-10T01:58:17.764Z",
+  "projects": [
+    {
+      "project": "tc-admin-qa-org/id_seedtb",
+      "outcome": "built",
+      "steps": [
+        {
+          "step": "create",
+          "setup": "complete",
+          "commit": "5d025015388eb541810dda1b32c07d1aa4ec1c49"
+        },
+        {
+          "step": "import",
+          "source": "bahtraku/id_tb1@1974",
+          "files": 2,
+          "target": "tc-admin-qa-org/id_seedtb@main",
+          "commit": "5d8281499895a776417f933db81daf7d7b200504"
+        },
+        {
+          "step": "full release",
+          "tag": "v1.0.0",
+          "from": "main@5d8281499895a776417f933db81daf7d7b200504",
+          "baseline": null,
+          "health": "healthy",
+          "acknowledged_warnings": false
+        },
+        {
+          "step": "import",
+          "source": "bahtraku/id_tb1@1974",
+          "files": 1,
+          "target": "tc-admin-qa-org/id_seedtb@main",
+          "commit": "19e925ad1c09548d25642659614dcf71380d64eb"
+        },
+        {
+          "step": "pre-release",
+          "tag": "v1.1.0",
+          "from": "main@19e925ad1c09548d25642659614dcf71380d64eb",
+          "baseline": "v1.0.0",
+          "health": "healthy",
+          "acknowledged_warnings": false
+        }
+      ],
+      "default_branch": "main",
+      "health_on_default_branch": "success"
+    },
+    {
+      "project": "tc-admin-qa-org/en_seedobs",
+      "outcome": "built",
+      "steps": [
+        {
+          "step": "create",
+          "setup": "complete",
+          "commit": "44132f11615e8ee218abca193c1ef68744df1f95"
+        },
+        {
+          "step": "import",
+          "source": "unfoldingWord/en_obs@v9",
+          "files": 50,
+          "target": "tc-admin-qa-org/en_seedobs@main",
+          "commit": "7a1a7b71a095d467f0bd450fd0d9b1453e038ed9"
+        },
+        {
+          "step": "full release",
+          "tag": "v1.0.0",
+          "from": "main@7a1a7b71a095d467f0bd450fd0d9b1453e038ed9",
+          "baseline": null,
+          "health": "healthy",
+          "acknowledged_warnings": false
+        }
+      ],
+      "default_branch": "main",
+      "health_on_default_branch": "success"
+    },
+    {
+      "project": "tc-admin-qa/id_seedhf",
+      "outcome": "built",
+      "steps": [
+        {
+          "step": "create",
+          "setup": "complete",
+          "commit": "8270bfa60e587867e28245f35b09e51b87130bbd"
+        },
+        {
+          "step": "import",
+          "source": "bahtraku/id_tb1@1974",
+          "files": 1,
+          "target": "tc-admin-qa/id_seedhf@main",
+          "commit": "e11d0f94154304f0d1fd6519087c9009f577125e"
+        }
+      ],
+      "default_branch": "main",
+      "health_on_default_branch": "info"
+    }
+  ]
+}
